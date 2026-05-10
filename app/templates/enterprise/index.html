@@ -1,0 +1,319 @@
+{% extends "company/base.html" %}
+
+{% block title %}مركز المؤسسة{% endblock %}
+
+{% block page_title %}مركز المؤسسة{% endblock %}
+{% block page_subtitle %}إعدادات المؤسسة بالكامل (Enterprise Settings){% endblock %}
+
+{% block extra_css %}
+<style>
+    .enterprise-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .enterprise-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+        border: 1px solid #eef2f7;
+        cursor: pointer;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .enterprise-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        border-color: var(--primary);
+    }
+    
+    .card-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+    }
+    
+    .card-icon.eps { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .card-icon.obs { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .card-icon.resources { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .card-icon.roles { background: rgba(156, 39, 176, 0.1); color: #9c27b0; }
+    .card-icon.codes { background: rgba(0, 150, 136, 0.1); color: #009688; }
+    .card-icon.calendars { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+    .card-icon.udf { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .card-icon.global { background: rgba(255, 193, 7, 0.1); color: #ffc107; }
+    .card-icon.admin { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+    .card-icon.reports { background: rgba(40, 167, 69, 0.1); color: #28a745; }
+    
+    .card-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+    
+    .card-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        flex-grow: 1;
+    }
+    
+    .card-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 0.8rem;
+        border-top: 1px solid #eef2f7;
+    }
+    
+    .stat-badge {
+        background: #eef2f7;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .stat-badge i {
+        margin-left: 0.3rem;
+    }
+    
+    .info-section {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 20px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    
+    .info-title {
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .info-text {
+        opacity: 0.9;
+        margin-bottom: 0;
+    }
+    
+    .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .quick-stat {
+        background: white;
+        border-radius: 15px;
+        padding: 1rem;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+    
+    .quick-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .quick-label {
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- معلومات سريعة -->
+<div class="info-section">
+    <h4 class="info-title"><i class="fas fa-building me-2"></i>Enterprise - إعدادات المؤسسة</h4>
+    <p class="info-text">أي شيء يتم ضبطه هنا يؤثر على كل المشاريع داخل النظام. هذه الإعدادات تمثل الأساس الذي تبني عليه جميع مشاريعك.</p>
+</div>
+
+<!-- إحصائيات سريعة -->
+<div class="quick-stats">
+    <div class="quick-stat">
+        <div class="quick-value">{{ stats.eps_count }}</div>
+        <div class="quick-label">EPS</div>
+    </div>
+    <div class="quick-stat">
+        <div class="quick-value">{{ stats.obs_count }}</div>
+        <div class="quick-label">OBS</div>
+    </div>
+    <div class="quick-stat">
+        <div class="quick-value">{{ stats.resources_count }}</div>
+        <div class="quick-label">موارد</div>
+    </div>
+    <div class="quick-stat">
+        <div class="quick-value">{{ stats.roles_count }}</div>
+        <div class="quick-label">أدوار</div>
+    </div>
+</div>
+
+<!-- شبكة الخيارات -->
+<div class="enterprise-grid">
+    <!-- 1️⃣ EPS -->
+    <div class="enterprise-card" onclick="window.location.href='{{ url_for('enterprise.eps_list') }}'">
+        <div class="card-icon eps">
+            <i class="fas fa-layer-group"></i>
+        </div>
+        <h5 class="card-title">EPS - Enterprise Project Structure</h5>
+        <p class="card-description">هيكل المشاريع المؤسسي. ينظم جميع مشاريع الشركة في هيكل هرمي.</p>
+        <div class="card-stats">
+            <span class="stat-badge"><i class="fas fa-sitemap"></i> {{ stats.eps_count }} عنصر</span>
+            <i class="fas fa-arrow-left text-muted"></i>
+        </div>
+    </div>
+    
+    <!-- 2️⃣ OBS -->
+    <div class="enterprise-card" onclick="window.location.href='{{ url_for('enterprise.obs_list') }}'">
+        <div class="card-icon obs">
+            <i class="fas fa-users-cog"></i>
+        </div>
+        <h5 class="card-title">OBS - Organizational Breakdown Structure</h5>
+        <p class="card-description">هيكل المسؤولية والصلاحيات. يحدد من المسؤول عن كل مشروع.</p>
+        <div class="card-stats">
+            <span class="stat-badge"><i class="fas fa-users"></i> {{ stats.obs_count }} عنصر</span>
+            <i class="fas fa-arrow-left text-muted"></i>
+        </div>
+    </div>
+    
+    <!-- 3️⃣ Resources -->
+    <div class="enterprise-card" onclick="window.location.href='{{ url_for('enterprise.resources_list') }}'">
+        <div class="card-icon resources">
+            <i class="fas fa-tools"></i>
+        </div>
+        <h5 class="card-title">Resources - الموارد</h5>
+        <p class="card-description">إدارة جميع موارد الشركة: عمال، معدات، مواد، مع تحديد التكاليف.</p>
+        <div class="card-stats">
+            <span class="stat-badge"><i class="fas fa-cubes"></i> {{ stats.resources_count }} مورد</span>
+            <i class="fas fa-arrow-left text-muted"></i>
+        </div>
+    </div>
+    
+    <!-- 4️⃣ Roles -->
+    <div class="enterprise-card" onclick="window.location.href='{{ url_for('enterprise.roles_list') }}'">
+        <div class="card-icon roles">
+            <i class="fas fa-user-tag"></i>
+        </div>
+        <h5 class="card-title">Roles - الأدوار الوظيفية</h5>
+        <p class="card-description">وصف وظيفي للموارد. يستخدم في التخطيط قبل تعيين الأفراد.</p>
+        <div class="card-stats">
+            <span class="stat-badge"><i class="fas fa-tag"></i> {{ stats.roles_count }} دور</span>
+            <i class="fas fa-arrow-left text-muted"></i>
+        </div>
+    </div>
+    
+    <!-- 5️⃣ Resource Codes -->
+    <div class="enterprise-card" onclick="window.location.href='{{ url_for('enterprise.resource_codes_list') }}'">
+        <div class="card-icon codes">
+            <i class="fas fa-code"></i>
+        </div>
+        <h5 class="card-title">Resource Codes - أكواد الموارد</h5>
+        <p class="card-description">تصنيف الموارد حسب الأقسام، المهارات، الشهادات للتقارير.</p>
+        <div class="card-stats">
+            <span class="stat-badge"><i class="fas fa-tags"></i> تصنيفات</span>
+            <i class="fas fa-arrow-left text-muted"></i>
+        </div>
+    </div>
+    
+    <!-- 6️⃣ Activity Codes -->
+    <div class="enterprise-card" onclick="window.location.href='{{ url_for('enterprise.activity_codes_list') }}'">
+        <div class="card-icon codes">
+            <i class="fas fa-tags"></i>
+        </div>
+        <h5 class="card-title">Activity Codes - أكواد الأنشطة</h5>
+        <p class="card-description">تصنيف الأنشطة حسب المرحلة، التخصص، الموقع لتحليلات متقدمة.</p>
+        <div class="card-stats">
+            <span class="stat-badge"><i class="fas fa-list"></i> تصنيفات</span>
+            <i class="fas fa-arrow-left text-muted"></i>
+        </div>
+    </div>
+    
+    <!-- 7️⃣ Calendars -->
+    <div class="enterprise-card" onclick="window.location.href='{{ url_for('enterprise.calendars_list') }}'">
+        <div class="card-icon calendars">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <h5 class="card-title">Calendars - التقويمات</h5>
+        <p class="card-description">تحديد أيام العمل، ساعات العمل، الإجازات للمشاريع والموارد.</p>
+        <div class="card-stats">
+            <span class="stat-badge"><i class="fas fa-calendar"></i> {{ stats.calendars_count }} تقويم</span>
+            <i class="fas fa-arrow-left text-muted"></i>
+        </div>
+    </div>
+    
+    <!-- 8️⃣ UDF -->
+    <div class="enterprise-card" onclick="window.location.href='{{ url_for('enterprise.udf_list') }}'">
+        <div class="card-icon udf">
+            <i class="fas fa-plus-circle"></i>
+        </div>
+        <h5 class="card-title">UDF - User Defined Fields</h5>
+        <p class="card-description">حقول مخصصة تضيفها بنفسك للأنشطة، المشاريع، الموارد.</p>
+        <div class="card-stats">
+            <span class="stat-badge"><i class="fas fa-database"></i> حقول مخصصة</span>
+            <i class="fas fa-arrow-left text-muted"></i>
+        </div>
+    </div>
+    
+    <!-- 9️⃣ Global Change -->
+    <div class="enterprise-card" onclick="window.location.href='{{ url_for('enterprise.global_change_list') }}'">
+        <div class="card-icon global">
+            <i class="fas fa-globe"></i>
+        </div>
+        <h5 class="card-title">Global Change - التغيير الشامل</h5>
+        <p class="card-description">تعديل جماعي للأنشطة. مثل تحديث المدة، التكلفة، الأكواد لمجموعة أنشطة.</p>
+        <div class="card-stats">
+            <span class="stat-badge"><i class="fas fa-bolt"></i> تعديل جماعي</span>
+            <i class="fas fa-arrow-left text-muted"></i>
+        </div>
+    </div>
+    
+    <!-- 🔟 Admin Preferences -->
+    <div class="enterprise-card" onclick="window.location.href='{{ url_for('enterprise.admin_preferences') }}'">
+        <div class="card-icon admin">
+            <i class="fas fa-cog"></i>
+        </div>
+        <h5 class="card-title">Admin Preferences - تفضيلات الإدارة</h5>
+        <p class="card-description">إعدادات عامة: تنسيق الأرقام، العملة، وحدات القياس، بداية السنة المالية.</p>
+        <div class="card-stats">
+            <span class="stat-badge"><i class="fas fa-sliders-h"></i> إعدادات</span>
+            <i class="fas fa-arrow-left text-muted"></i>
+        </div>
+    </div>
+    <!-- بعد كارد Admin Preferences -->
+    <div class="enterprise-card" onclick="window.location.href='{{ url_for('enterprise.eps_obs_matrix') }}'">
+        <div class="card-icon" style="background: rgba(156, 39, 176, 0.1); color: #9c27b0;">
+            <i class="fas fa-th"></i>
+        </div>
+        <h5 class="card-title">EPS-OBS Matrix</h5>
+        <p class="card-description">مصفوفة الصلاحيات - ربط هيكل المشاريع بهيكل المسؤولية</p>
+        <div class="card-stats">
+            <span class="stat-badge"><i class="fas fa-link"></i> {{ eps_nodes|length }} × {{ obs_nodes|length }}</span>
+        </div>
+    </div>
+    <!-- 1️⃣1️⃣ Reporting Settings -->
+    <div class="enterprise-card" onclick="window.location.href='{{ url_for('enterprise.reporting_settings') }}'">
+        <div class="card-icon reports">
+            <i class="fas fa-chart-pie"></i>
+        </div>
+        <h5 class="card-title">Reporting Settings - إعدادات التقارير</h5>
+        <p class="card-description">ضبط إعدادات التقارير المؤسسية، تصميم قوالب، تحديد الأعمدة الافتراضية.</p>
+        <div class="card-stats">
+            <span class="stat-badge"><i class="fas fa-file-alt"></i> تقارير</span>
+            <i class="fas fa-arrow-left text-muted"></i>
+        </div>
+    </div>
+</div>
+{% endblock %}

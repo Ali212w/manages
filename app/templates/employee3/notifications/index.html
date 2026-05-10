@@ -1,0 +1,327 @@
+{% extends "employee/base.html" %}
+
+{% block title %}الإشعارات - نظام المهام{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">الإشعارات</h2>
+        <p class="text-muted">جميع الإشعارات والتنبيهات الخاصة بك</p>
+    </div>
+    <div>
+        <button class="btn btn-outline-primary me-2" onclick="markAllAsRead()">
+            <i class="fas fa-check-double me-2"></i>تحديد الكل كمقروء
+        </button>
+        <button class="btn btn-outline-secondary" onclick="filterNotifications('all')">
+            <i class="fas fa-filter me-2"></i>الكل
+        </button>
+    </div>
+</div>
+
+<!-- تبويبات الإشعارات -->
+<ul class="nav nav-tabs mb-4" id="notificationTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+            <i class="fas fa-bell me-2"></i>الكل
+            <span class="badge bg-primary ms-2">{{ notifications|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="unread-tab" data-bs-toggle="tab" data-bs-target="#unread" type="button" role="tab">
+            <i class="fas fa-envelope me-2"></i>غير مقروء
+            <span class="badge bg-warning ms-2">{{ notifications|selectattr('is_read', 'equalto', false)|list|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="read-tab" data-bs-toggle="tab" data-bs-target="#read" type="button" role="tab">
+            <i class="fas fa-envelope-open me-2"></i>مقروء
+            <span class="badge bg-secondary ms-2">{{ notifications|selectattr('is_read', 'equalto', true)|list|length }}</span>
+        </button>
+    </li>
+</ul>
+
+<!-- محتوى التبويبات -->
+<div class="tab-content" id="notificationTabsContent">
+    <!-- تبويب الكل -->
+    <div class="tab-pane fade show active" id="all" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for notification in notifications %}
+                    <div class="list-group-item list-group-item-action {% if not notification.is_read %}bg-light{% endif %}" 
+                         id="notification-{{ notification.id }}">
+                        <div class="d-flex">
+                            <!-- أيقونة حسب النوع -->
+                            <div class="me-3">
+                                {% if notification.notification_type == 'task_assigned' %}
+                                    <div class="stat-icon primary" style="width: 45px; height: 45px;">
+                                        <i class="fas fa-tasks"></i>
+                                    </div>
+                                {% elif notification.notification_type == 'task_completed' %}
+                                    <div class="stat-icon success" style="width: 45px; height: 45px;">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                {% elif notification.notification_type == 'task_updated' %}
+                                    <div class="stat-icon warning" style="width: 45px; height: 45px;">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </div>
+                                {% elif notification.notification_type == 'mention' %}
+                                    <div class="stat-icon info" style="width: 45px; height: 45px;">
+                                        <i class="fas fa-at"></i>
+                                    </div>
+                                {% elif notification.notification_type == 'deadline' %}
+                                    <div class="stat-icon danger" style="width: 45px; height: 45px;">
+                                        <i class="fas fa-hourglass-end"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="stat-icon secondary" style="width: 45px; height: 45px;">
+                                        <i class="fas fa-bell"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- محتوى الإشعار -->
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1 {% if not notification.is_read %}fw-bold{% endif %}">
+                                            {{ notification.title }}
+                                        </h6>
+                                        <p class="mb-1 text-muted">{{ notification.message }}</p>
+                                        <small class="text-muted">
+                                            <i class="far fa-clock me-1"></i>
+                                            {{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                        </small>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        {% if not notification.is_read %}
+                                        <button class="action-btn" onclick="markAsRead({{ notification.id }})" 
+                                                title="تحديد كمقروء">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button class="action-btn" onclick="deleteNotification({{ notification.id }})" 
+                                                title="حذف">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- رابط للمحتوى المرتبط -->
+                                {% if notification.related_task_id %}
+                                <div class="mt-2">
+                                    <a href="{{ url_for('employee.view_task', task_id=notification.related_task_id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i>عرض المهمة
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="far fa-bell fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">لا توجد إشعارات</h5>
+                        <p class="small text-muted">سوف تظهر الإشعارات هنا عندما يكون لديك نشاط جديد</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- تبويب غير مقروء -->
+    <div class="tab-pane fade" id="unread" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for notification in notifications if not notification.is_read %}
+                    <div class="list-group-item list-group-item-action bg-light" id="notification-{{ notification.id }}">
+                        <!-- نفس المحتوى أعلاه -->
+                        <div class="d-flex">
+                            <div class="me-3">
+                                {% if notification.notification_type == 'task_assigned' %}
+                                    <div class="stat-icon primary" style="width: 45px; height: 45px;">
+                                        <i class="fas fa-tasks"></i>
+                                    </div>
+                                {% elif notification.notification_type == 'task_completed' %}
+                                    <div class="stat-icon success" style="width: 45px; height: 45px;">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="stat-icon secondary" style="width: 45px; height: 45px;">
+                                        <i class="fas fa-bell"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">{{ notification.title }}</h6>
+                                        <p class="mb-1 text-muted">{{ notification.message }}</p>
+                                        <small class="text-muted">
+                                            <i class="far fa-clock me-1"></i>
+                                            {{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                        </small>
+                                    </div>
+                                    <button class="action-btn" onclick="markAsRead({{ notification.id }})" 
+                                            title="تحديد كمقروء">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="far fa-check-circle fa-4x text-success mb-3"></i>
+                        <h5 class="text-muted">لا توجد إشعارات غير مقروءة</h5>
+                        <p class="small text-muted">لقد قرأت جميع الإشعارات</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- تبويب مقروء -->
+    <div class="tab-pane fade" id="read" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for notification in notifications if notification.is_read %}
+                    <div class="list-group-item list-group-item-action text-muted" id="notification-{{ notification.id }}">
+                        <div class="d-flex">
+                            <div class="me-3 opacity-50">
+                                <div class="stat-icon secondary" style="width: 45px; height: 45px;">
+                                    <i class="fas fa-bell"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ notification.title }}</h6>
+                                        <p class="mb-1">{{ notification.message }}</p>
+                                        <small>
+                                            <i class="far fa-clock me-1"></i>
+                                            {{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                            {% if notification.read_at %}
+                                            <span class="mx-2">|</span>
+                                            <i class="fas fa-check-circle text-success me-1"></i>
+                                            قرئت في {{ notification.read_at.strftime('%H:%M') }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <button class="action-btn" onclick="deleteNotification({{ notification.id }})" 
+                                            title="حذف">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="far fa-envelope-open fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">لا توجد إشعارات مقروءة</h5>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- إعدادات الإشعارات -->
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-cog me-2 text-primary"></i>
+            إعدادات الإشعارات
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                    <label class="form-check-label" for="emailNotifications">
+                        <i class="fas fa-envelope me-2 text-primary"></i>
+                        إشعارات البريد الإلكتروني
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="pushNotifications" checked>
+                    <label class="form-check-label" for="pushNotifications">
+                        <i class="fas fa-bell me-2 text-warning"></i>
+                        إشعارات سطح المكتب
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="smsNotifications">
+                    <label class="form-check-label" for="smsNotifications">
+                        <i class="fas fa-mobile-alt me-2 text-success"></i>
+                        إشعارات SMS
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function markAsRead(notificationId) {
+    fetch(`/employee/notifications/${notificationId}/read`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const notification = document.getElementById(`notification-${notificationId}`);
+            notification.classList.remove('bg-light');
+            notification.querySelector('h6').classList.remove('fw-bold');
+            showSuccess('تم تحديث الإشعار');
+            setTimeout(() => location.reload(), 1000);
+        }
+    });
+}
+
+function markAllAsRead() {
+    confirmAction('تحديد جميع الإشعارات كمقروءة؟', function() {
+        fetch('/employee/notifications/mark-all-read', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(data.message);
+                setTimeout(() => location.reload(), 1500);
+            }
+        });
+    });
+}
+
+function deleteNotification(notificationId) {
+    confirmAction('هل أنت متأكد من حذف هذا الإشعار؟', function() {
+        // TODO: حذف الإشعار
+        showSuccess('تم حذف الإشعار');
+        setTimeout(() => location.reload(), 1500);
+    });
+}
+
+function filterNotifications(type) {
+    // TODO: تصفية الإشعارات حسب النوع
+}
+</script>
+{% endblock %}

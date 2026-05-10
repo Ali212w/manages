@@ -1,0 +1,167 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ _('report_issue') }} - {{ _('company_dashboard') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .form-section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .form-section-title i {
+        color: var(--primary-color);
+        margin-left: 10px;
+    }
+    
+    .priority-option {
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid transparent;
+    }
+    
+    .priority-option.selected {
+        border-color: var(--primary-color);
+        transform: scale(1.02);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-bug me-2"></i> {{ _('report_issue') }}</h4>
+            <a href="{{ url_for('company.issues_list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right me-2"></i> {{ _('back_to_issues') }}
+            </a>
+        </div>
+    </div>
+</div>
+
+<form method="POST">
+    <!-- Basic Information -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-info-circle"></i> {{ _('basic_information') }}</h5>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('title') }} <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" required>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('title_arabic') }}</label>
+                <input type="text" name="title_ar" class="form-control">
+            </div>
+            
+            <div class="col-md-12 mb-3">
+                <label class="form-label">{{ _('description') }} <span class="text-danger">*</span></label>
+                <textarea name="description" class="form-control" rows="4" required></textarea>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('project') }} <span class="text-danger">*</span></label>
+                <select name="project_id" class="form-select" required>
+                    <option value="">{{ _('select_project') }}</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}">{{ project.name }} ({{ project.project_code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('category') }}</label>
+                <select name="category" class="form-select">
+                    <option value="technical">{{ _('technical') }}</option>
+                    <option value="quality">{{ _('quality') }}</option>
+                    <option value="safety">{{ _('safety') }}</option>
+                    <option value="schedule">{{ _('schedule') }}</option>
+                    <option value="cost">{{ _('cost') }}</option>
+                    <option value="communication">{{ _('communication') }}</option>
+                    <option value="other">{{ _('other') }}</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Priority & Assignment -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-flag"></i> {{ _('priority_and_assignment') }}</h5>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('priority') }} <span class="text-danger">*</span></label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="priority-option text-center p-3 rounded" data-priority="critical">
+                        <i class="fas fa-skull-crosswalk fa-2x text-danger"></i>
+                        <div class="mt-1">{{ _('critical') }}</div>
+                    </div>
+                    <div class="priority-option text-center p-3 rounded" data-priority="high">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                        <div class="mt-1">{{ _('high') }}</div>
+                    </div>
+                    <div class="priority-option text-center p-3 rounded" data-priority="medium">
+                        <i class="fas fa-chart-line fa-2x text-info"></i>
+                        <div class="mt-1">{{ _('medium') }}</div>
+                    </div>
+                    <div class="priority-option text-center p-3 rounded" data-priority="low">
+                        <i class="fas fa-arrow-down fa-2x text-success"></i>
+                        <div class="mt-1">{{ _('low') }}</div>
+                    </div>
+                </div>
+                <input type="hidden" name="priority" id="priorityInput" value="medium">
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('assign_to') }}</label>
+                <select name="assigned_to" class="form-select">
+                    <option value="">{{ _('select_user') }}</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}">{{ user.full_name }} ({{ user.job_title or user.role }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('due_date') }}</label>
+                <input type="date" name="due_date" class="form-control">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Submit Buttons -->
+    <div class="d-flex gap-3">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i> {{ _('submit_issue') }}
+        </button>
+        <a href="{{ url_for('company.issues_list') }}" class="btn btn-secondary">
+            <i class="fas fa-times me-2"></i> {{ _('cancel') }}
+        </a>
+    </div>
+</form>
+
+<script>
+// Priority selection
+$('.priority-option').click(function() {
+    $('.priority-option').removeClass('selected border-primary');
+    $(this).addClass('selected border-primary');
+    const priority = $(this).data('priority');
+    $('#priorityInput').val(priority);
+});
+
+// Select default priority
+$('.priority-option[data-priority="medium"]').addClass('selected border-primary');
+</script>
+{% endblock %}

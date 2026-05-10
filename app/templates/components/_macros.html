@@ -1,0 +1,175 @@
+{# ============================================================
+   _macros.html — najm2 component library (Jinja2)
+   Usage:
+     {% from "components/_macros.html" import card, button, stat_card,
+                                                 badge, page_header, empty_state %}
+   ============================================================ #}
+
+{# ---------- card ----------
+   Wraps content in a modern card with optional header/footer.
+   Usage:
+     {% call card(title="Title", description="...", actions=true) %}
+       …body…
+       {% if actions %}{% endcall %} (footer slot via separate macro)
+   For more control, use raw markup:
+     <div class="card">
+       <div class="card-header"><h3 class="card-title">…</h3></div>
+       <div class="card-body">…</div>
+     </div>
+#}
+{% macro card(title=None, description=None, classes='', body_classes='') %}
+<div class="card {{ classes }}">
+  {% if title or description %}
+  <div class="card-header">
+    <div>
+      {% if title %}<h3 class="card-title">{{ title }}</h3>{% endif %}
+      {% if description %}<p class="card-description">{{ description }}</p>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+  <div class="card-body {{ body_classes }}">{{ caller() }}</div>
+</div>
+{% endmacro %}
+
+
+{# ---------- button ----------
+   Renders a styled button or link.
+   Usage:
+     {{ button("Save", icon="save", variant="primary") }}
+     {{ button("View", icon="eye", variant="ghost", href=url_for('x.y')) }}
+#}
+{% macro button(label='', icon=None, variant='primary', size='', href=None, type='button', classes='', extra='', icon_class='fas') %}
+{% set tag = 'a' if href else 'button' %}
+<{{ tag }}
+  class="btn btn-{{ variant }} {% if size %}btn-{{ size }}{% endif %} {{ classes }}"
+  {% if href %}href="{{ href }}"{% else %}type="{{ type }}"{% endif %}
+  {{ extra|safe }}>
+  {% if icon %}<i class="{{ icon_class }} fa-{{ icon }}"></i>{% endif %}
+  {% if label %}<span>{{ label }}</span>{% endif %}
+</{{ tag }}>
+{% endmacro %}
+
+
+{# ---------- stat_card ----------
+   Modern stat tile with icon, value, label, optional trend.
+   Tones: blue, emerald, amber, red, purple, slate
+#}
+{% macro stat_card(label, value, icon='chart-bar', tone='blue', trend=None, trend_dir='up', icon_class='fas') %}
+<div class="stat-card tone-{{ tone }}">
+  <div class="stat-card-glow"></div>
+  <div class="stat-card-header">
+    <div class="stat-card-icon"><i class="{{ icon_class }} fa-{{ icon }}"></i></div>
+    {% if trend %}
+    <div class="stat-card-trend {{ trend_dir }}">
+      <i class="fas fa-arrow-{{ 'up' if trend_dir == 'up' else 'down' }}"></i>
+      <span>{{ trend }}</span>
+    </div>
+    {% endif %}
+  </div>
+  <div class="stat-card-value">{{ value }}</div>
+  <div class="stat-card-label">{{ label }}</div>
+</div>
+{% endmacro %}
+
+
+{# ---------- badge ----------
+   Inline status badge.
+   Variants: primary, success, warning, danger, info, secondary
+#}
+{% macro badge(label, variant='secondary', icon=None, icon_class='fas') %}
+<span class="badge bg-{{ variant }} n-badge-{{ variant }}">
+  {% if icon %}<i class="{{ icon_class }} fa-{{ icon }}"></i>{% endif %}
+  {{ label }}
+</span>
+{% endmacro %}
+
+
+{# ---------- page_header ---------- #}
+{% macro page_header(title, description=None, breadcrumbs=None) %}
+<div class="page-header">
+  <div>
+    {% if breadcrumbs %}
+    <nav>
+      <ol class="breadcrumb">
+        {% for crumb in breadcrumbs %}
+          <li class="breadcrumb-item {% if loop.last %}active{% endif %}">
+            {% if crumb.href and not loop.last %}<a href="{{ crumb.href }}">{{ crumb.label }}</a>
+            {% else %}{{ crumb.label }}{% endif %}
+          </li>
+        {% endfor %}
+      </ol>
+    </nav>
+    {% endif %}
+    <h1 class="page-header-title">{{ title }}</h1>
+    {% if description %}<p class="page-header-description">{{ description }}</p>{% endif %}
+  </div>
+  {% if caller is defined %}
+  <div class="page-header-actions">{{ caller() if caller else '' }}</div>
+  {% endif %}
+</div>
+{% endmacro %}
+
+
+{# ---------- empty_state ---------- #}
+{% macro empty_state(title, description=None, icon='inbox', icon_class='fas') %}
+<div class="empty-state">
+  <div class="empty-state-icon"><i class="{{ icon_class }} fa-{{ icon }}"></i></div>
+  <div class="empty-state-title">{{ title }}</div>
+  {% if description %}<div class="empty-state-description">{{ description }}</div>{% endif %}
+  {% if caller is defined %}{{ caller() if caller else '' }}{% endif %}
+</div>
+{% endmacro %}
+
+
+{# ---------- avatar ---------- #}
+{% macro avatar(name=None, src=None, size='md') %}
+<span class="avatar avatar-{{ size }}">
+  {% if src %}<img src="{{ src }}" alt="{{ name or '' }}">
+  {% elif name %}{{ name[0]|upper }}
+  {% else %}<i class="fas fa-user"></i>{% endif %}
+</span>
+{% endmacro %}
+
+
+{# ---------- progress_bar ---------- #}
+{% macro progress_bar(value, max=100, variant='primary', label=None, show_value=true) %}
+<div>
+  {% if label or show_value %}
+  <div class="flex items-center justify-between mb-1">
+    {% if label %}<span class="text-xs text-muted-foreground">{{ label }}</span>{% endif %}
+    {% if show_value %}<span class="text-xs font-semibold">{{ value }}%</span>{% endif %}
+  </div>
+  {% endif %}
+  <div class="progress">
+    <div class="progress-bar bg-{{ variant }}" style="width: {{ value }}%"></div>
+  </div>
+</div>
+{% endmacro %}
+
+
+{# ---------- form_field ---------- #}
+{% macro form_field(name, label=None, type='text', value='', placeholder='', required=false, help=None, error=None, icon=None, autofocus=false) %}
+<div class="mb-4">
+  {% if label %}<label class="form-label" for="{{ name }}">{{ label }}{% if required %} <span class="text-danger">*</span>{% endif %}</label>{% endif %}
+  {% if icon %}
+  <div class="input-group {% if error %}is-invalid{% endif %}">
+    <span class="input-group-text"><i class="fas fa-{{ icon }}"></i></span>
+    <input type="{{ type }}" id="{{ name }}" name="{{ name }}" class="form-control" value="{{ value }}" placeholder="{{ placeholder }}" {% if required %}required{% endif %} {% if autofocus %}autofocus{% endif %}>
+  </div>
+  {% else %}
+  <input type="{{ type }}" id="{{ name }}" name="{{ name }}" class="form-control {% if error %}is-invalid{% endif %}" value="{{ value }}" placeholder="{{ placeholder }}" {% if required %}required{% endif %} {% if autofocus %}autofocus{% endif %}>
+  {% endif %}
+  {% if help %}<div class="form-text">{{ help }}</div>{% endif %}
+  {% if error %}<div class="invalid-feedback">{{ error }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+
+{# ---------- alert ---------- #}
+{% macro alert(message, variant='info', icon=None, dismissible=true) %}
+<div class="alert alert-{{ variant }} {% if dismissible %}alert-dismissible{% endif %} fade show" role="alert">
+  {% if icon %}<i class="fas fa-{{ icon }}"></i>{% endif %}
+  <div class="flex-1">{{ message }}</div>
+  {% if dismissible %}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>{% endif %}
+</div>
+{% endmacro %}

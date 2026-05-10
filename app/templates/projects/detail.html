@@ -1,0 +1,587 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ project.name }} - تفاصيل المشروع{% endblock %}
+
+{% block page_title %}{{ project.name }}{% endblock %}
+{% block page_subtitle %}كود المشروع: {{ project.project_code }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== شريط المعلومات السريعة ===== */
+    .quick-info-bar {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .info-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    .info-content {
+        flex: 1;
+    }
+
+    .info-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0.2rem;
+    }
+
+    .info-value {
+        font-weight: 700;
+        color: var(--dark);
+        font-size: 1.2rem;
+    }
+
+    .status-badge {
+        padding: 0.3rem 1rem;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .status-planning { background: #fff3cd; color: #856404; }
+    .status-active { background: #cce5ff; color: #004085; }
+    .status-completed { background: #d4edda; color: #155724; }
+
+    /* ===== تبويبات المشروع ===== */
+    .project-tabs {
+        background: white;
+        border-radius: 20px 20px 0 0;
+        padding: 0 1.5rem;
+        border-bottom: 2px solid #eef2f7;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .project-tabs .nav-tabs {
+        border-bottom: none;
+        flex-wrap: nowrap;
+    }
+
+    .project-tabs .nav-link {
+        border: none;
+        color: #6c757d;
+        font-weight: 600;
+        padding: 1rem 1.5rem;
+        margin: 0 0.2rem;
+        border-radius: 10px 10px 0 0;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+    .project-tabs .nav-link:hover {
+        color: var(--primary);
+        background: #f8f9fa;
+    }
+
+    .project-tabs .nav-link.active {
+        color: var(--primary);
+        background: transparent;
+    }
+
+    .project-tabs .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--primary);
+        border-radius: 3px 3px 0 0;
+    }
+
+    .project-tabs .nav-link i {
+        margin-left: 0.5rem;
+    }
+
+    .tab-badge {
+        background: var(--primary);
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        margin-right: 0.5rem;
+    }
+
+    /* ===== محتوى التبويبات ===== */
+    .tab-content-container {
+        background: white;
+        border-radius: 0 0 20px 20px;
+        padding: 2rem;
+        min-height: 500px;
+    }
+
+    /* ===== أزرار التحكم ===== */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        justify-content: flex-end;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border: none;
+        color: white;
+        padding: 0.6rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+
+    .btn-cancel {
+        background: white;
+        border: 2px solid #eef2f7;
+        color: #6c757d;
+        padding: 0.6rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-cancel:hover {
+        background: #f8f9fa;
+        border-color: #dae0e5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- شريط المعلومات السريعة -->
+<div class="quick-info-bar">
+    <div class="info-item">
+        <div class="info-icon">
+            <i class="fas fa-tag"></i>
+        </div>
+        <div class="info-content">
+            <div class="info-label">كود المشروع</div>
+            <div class="info-value">{{ project.project_code }}</div>
+        </div>
+    </div>
+    
+    <div class="info-item">
+        <div class="info-icon">
+            <i class="fas fa-layer-group"></i>
+        </div>
+        <div class="info-content">
+            <div class="info-label">التصنيف</div>
+            <div class="info-value">{{ project.category or '-' }}</div>
+        </div>
+    </div>
+    
+    <div class="info-item">
+        <div class="info-icon">
+            <i class="fas fa-calendar"></i>
+        </div>
+        <div class="info-content">
+            <div class="info-label">تاريخ البداية</div>
+            <div class="info-value">{{ project.dates.planned_start.strftime('%Y-%m-%d') if project.dates and project.dates.planned_start else '-' }}</div>
+        </div>
+    </div>
+    
+    <div class="info-item">
+        <div class="info-icon">
+            <i class="fas fa-flag-checkered"></i>
+        </div>
+        <div class="info-content">
+            <div class="info-label">تاريخ النهاية</div>
+            <div class="info-value {% if project.is_overdue %}text-danger fw-bold{% endif %}">
+                {{ project.dates.planned_finish.strftime('%Y-%m-%d') if project.dates and project.dates.planned_finish else '-' }}
+            </div>
+        </div>
+    </div>
+    
+    <div class="info-item">
+        <span class="status-badge status-{{ project.status }}">
+            {% if project.status == 'planning' %}
+            <i class="fas fa-clock me-1"></i>مخطط
+            {% elif project.status == 'active' %}
+            <i class="fas fa-play-circle me-1"></i>نشط
+            {% elif project.status == 'completed' %}
+            <i class="fas fa-check-circle me-1"></i>مكتمل
+            {% endif %}
+        </span>
+        {% if project.is_overdue %}
+        <span class="badge bg-danger p-2">متأخر</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- تبويبات المشروع -->
+<div class="project-tabs">
+    <ul class="nav nav-tabs" id="projectTabs">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#general">
+                <i class="fas fa-info-circle"></i> General
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#notebook">
+                <i class="fas fa-book"></i> Notebook
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#budget">
+                <i class="fas fa-coins"></i> Budget Log
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#spending_plan">
+                <i class="fas fa-chart-line"></i> Spending Plan
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#budget_summary">
+                <i class="fas fa-chart-pie"></i> Budget Summary
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#dates">
+                <i class="fas fa-calendar-alt"></i> Dates
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#funding">
+                <i class="fas fa-hand-holding-usd"></i> Funding
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#codes">
+                <i class="fas fa-tags"></i> Codes
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#resources">
+                <i class="fas fa-tags"></i> Resources
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#defaults">
+                <i class="fas fa-sliders-h"></i> Defaults
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#settings">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#calculations">
+                <i class="fas fa-calculator"></i> Calculations
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#budget">
+                <i class="fas fa-coins"></i> الميزانية
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#performance">
+                <i class="fas fa-chart-line"></i> الأداء
+            </button>
+        </li>
+        
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#milestones">
+                <i class="fas fa-flag"></i> المعالم
+                <span class="tab-badge">{{ milestones|length }}</span>
+            </button>
+        </li>
+
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#udf">
+                <i class="fas fa-database"></i> حقول مخصصة
+            </button>
+        </li>
+        
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activities">
+                <i class="fas fa-tasks"></i> الأنشطة
+                <span class="tab-badge">{{ stats.total_activities }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tasks">
+                <i class="fas fa-check-circle"></i> المهام
+                <span class="tab-badge">{{ stats.total_tasks }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#risks">
+                <i class="fas fa-shield-alt"></i> المخاطر
+                <span class="tab-badge">{{ stats.risks }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#documents">
+                <i class="fas fa-file-alt"></i> المستندات
+            </button>
+        </li>
+    </ul>
+</div>
+
+<!-- محتوى التبويبات -->
+<div class="tab-content-container">
+    <div class="tab-content">
+        <!-- عام -->
+        <div class="tab-pane fade show active" id="general">
+            {% include 'projects/tabs/general.html' %}
+        </div>
+        <!-- Budget Tab -->
+        <div class="tab-pane fade" id="budget">
+            {% include 'projects/tabs/budget.html' %}
+        </div>
+        <!-- Spending Plan Tab -->
+        <div class="tab-pane fade" id="spending_plan">
+            {% include 'projects/tabs/spending_plan.html' %}
+        </div>
+        <!-- Budget Summary Tab -->
+        <div class="tab-pane fade" id="budget_summary">
+            {% include 'projects/tabs/budget_summary.html' %}
+        </div>
+
+        <!-- Funding Tab -->
+        <div class="tab-pane fade" id="funding">
+            {% include 'projects/tabs/funding.html' %}
+        </div>
+
+        <!-- Codes Tab -->
+        <div class="tab-pane fade" id="codes">
+            {% include 'projects/tabs/codes.html' %}
+        </div>
+        <!-- Resource Tab -->
+        <div class="tab-pane fade" id="resources">
+            {% include 'projects/tabs/resources.html' %}
+        </div>
+        <!-- Defaults Tab -->
+        <div class="tab-pane fade" id="defaults">
+            {% include 'projects/tabs/defaults.html' %}
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-pane fade" id="settings">
+            {% include 'projects/tabs/settings.html' %}
+        </div>
+
+        <!-- Calculations Tab -->
+        <div class="tab-pane fade" id="calculations">
+            {% include 'projects/tabs/calculations.html' %}
+        </div>
+        <!-- التواريخ -->
+        <div class="tab-pane fade" id="dates">
+            {% include 'projects/tabs/dates.html' %}
+        </div>
+        
+        <!-- الميزانية -->
+        <div class="tab-pane fade" id="budget">
+            {% include 'projects/tabs/budget.html' %}
+        </div>
+        
+        <!-- الأداء -->
+        <div class="tab-pane fade" id="performance">
+            {% include 'projects/tabs/performance.html' %}
+        </div>
+        
+        <!-- التمويل -->
+        <div class="tab-pane fade" id="funding">
+            {% include 'projects/tabs/funding.html' %}
+        </div>
+        
+        <!-- المعالم -->
+        <div class="tab-pane fade" id="milestones">
+            {% include 'projects/tabs/milestones.html' %}
+        </div>
+        
+        <!-- الأكواد -->
+        <div class="tab-pane fade" id="codes">
+            {% include 'projects/tabs/codes.html' %}
+        </div>
+        
+        <!-- الحقول المخصصة -->
+        <div class="tab-pane fade" id="udf">
+            {% include 'projects/tabs/udf.html' %}
+        </div>
+        
+        <!-- الملاحظات -->
+        <div class="tab-pane fade" id="notebook">
+            {% include 'projects/tabs/notebook.html' %}
+        </div>
+        
+        <!-- الأنشطة -->
+        <div class="tab-pane fade" id="activities">
+            {% include 'projects/tabs/activities.html' %}
+        </div>
+        
+        <!-- المهام -->
+        <div class="tab-pane fade" id="tasks">
+            {% include 'projects/tabs/tasks.html' %}
+        </div>
+        
+        <!-- المخاطر -->
+        <div class="tab-pane fade" id="risks">
+            {% include 'projects/tabs/risks.html' %}
+        </div>
+        
+        <!-- المستندات -->
+        <div class="tab-pane fade" id="documents">
+            {% include 'projects/tabs/documents.html' %}
+        </div>
+    </div>
+    
+    <!-- أزرار التحكم -->
+    <div class="action-buttons">
+        <button class="btn-cancel" onclick="window.location.href='{{ url_for('projects.list_projects') }}'">
+            <i class="fas fa-arrow-right me-2"></i>إغلاق
+        </button>
+        <a href="{{ url_for('projects.edit_project', project_id=project.id) }}" class="btn-save">
+            <i class="fas fa-edit me-2"></i>تعديل المشروع
+        </a>
+        <a href="{{ url_for('projects.project_resource_requests', project_id=project.id) }}" class="btn-save">
+            <i class="fas fa-edit me-2"></i> طالبات التوريد للمشروع
+        </a>
+        <a href="{{ url_for('company.project_resource_requests', project_id=project.id) }}" class="btn-save">
+            <i class="fas fa-edit me-2"></i> طالبات  التوريد للشركه
+        </a>
+        <a href="{{ url_for('company.project_gallery', project_id=project.id) }}" class="btn btn-outline-primary">
+            <i class="fas fa-images me-2"></i>
+            معرض المشروع
+        </a>
+    </div>
+</div>
+<script>
+// ============================================
+// دوال مساعدة عامة
+// ============================================
+
+function showSuccess(message) {
+    Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: message,
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+    });
+}
+
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: message
+    });
+}
+
+function showWarning(message) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Warning',
+        text: message
+    });
+}
+
+function confirmDelete(message, callback) {
+    Swal.fire({
+        title: 'Confirm Delete',
+        text: message || 'Are you sure you want to delete this item?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed && callback) {
+            callback();
+        }
+    });
+}
+
+// تحديث معاينة الميزانية
+function updateBudgetSummary() {
+    fetch(`/projects/api/{{ project.id }}/budget-summary`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Budget summary updated:', data.summary);
+            }
+        });
+}
+
+// تحديث خطة الصرف
+function refreshSpendingPlan() {
+    if (document.getElementById('spending_plan_table')) {
+        location.reload();
+    }
+}
+
+function formatNumber(number) {
+    return new Intl.NumberFormat('en-US').format(number);
+}
+
+function formatCurrency(amount, currency = 'SAR') {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(amount);
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function formatDateTime(dateString) {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// تهيئة جميع تلميحات الأدوات
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+</script>
+{% endblock %}

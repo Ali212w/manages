@@ -1,0 +1,666 @@
+{% extends "base.html" %}
+
+{% block title %}معاينة القالب - {{ format|upper }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-header {
+        background: linear-gradient(135deg, #6f42c1 0%, #007bff 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .template-info-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .format-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-size: 1rem;
+        font-weight: bold;
+    }
+    
+    .badge-excel { background: #28a745; color: white; }
+    .badge-word { background: #007bff; color: white; }
+    .badge-csv { background: #17a2b8; color: white; }
+    .badge-json { background: #ffc107; color: #212529; }
+    .badge-pdf { background: #dc3545; color: white; }
+    .badge-html { background: #6f42c1; color: white; }
+    
+    .preview-container {
+        background: white;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+        min-height: 500px;
+        overflow-x: auto;
+    }
+    
+    .preview-excel table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        direction: rtl;
+    }
+    
+    .preview-excel th {
+        background: #4CAF50;
+        color: white;
+        padding: 12px;
+        font-weight: bold;
+        border: 1px solid #45a049;
+    }
+    
+    .preview-excel td {
+        padding: 8px;
+        border: 1px solid #ddd;
+    }
+    
+    .preview-excel .example-row td {
+        background: #f9f9f9;
+        color: #666;
+        font-style: italic;
+    }
+    
+    .preview-word {
+        font-family: 'Times New Roman', serif;
+        line-height: 1.6;
+    }
+    
+    .preview-word h1 {
+        color: #4CAF50;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .preview-word table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+    
+    .preview-word th {
+        background: #4CAF50;
+        color: white;
+        padding: 10px;
+    }
+    
+    .preview-word td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+    
+    .preview-json pre {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+        direction: ltr;
+        text-align: left;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        overflow-x: auto;
+    }
+    
+    .preview-csv table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .preview-csv th {
+        background: #17a2b8;
+        color: white;
+        padding: 10px;
+    }
+    
+    .preview-csv td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+    
+    .field-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .field-item {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        border-right: 3px solid #4CAF50;
+    }
+    
+    .field-name {
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    .field-label {
+        color: #28a745;
+        font-size: 0.9rem;
+    }
+    
+    .field-example {
+        color: #6c757d;
+        font-size: 0.8rem;
+        font-style: italic;
+        margin-top: 5px;
+    }
+    
+    .download-options {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    .instruction-step {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .instruction-step:last-child {
+        border-bottom: none;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        background: #4CAF50;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-left: 15px;
+    }
+    
+    .compatibility-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-left: 5px;
+    }
+    
+    .compatibility-high { background: #d4edda; color: #155724; }
+    .compatibility-medium { background: #fff3cd; color: #856404; }
+    .compatibility-low { background: #f8d7da; color: #721c24; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="preview-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="fas fa-eye"></i> معاينة القالب</h2>
+            <h4>
+                <span class="format-badge badge-{{ format }}">
+                    {% if format == 'excel' %}Excel
+                    {% elif format == 'word' %}Word
+                    {% elif format == 'csv' %}CSV
+                    {% elif format == 'json' %}JSON
+                    {% elif format == 'pdf' %}PDF
+                    {% elif format == 'html' %}HTML
+                    {% endif %}
+                </span>
+            </h4>
+            <p class="mb-0">معاينة القالب قبل التحميل - يمكنك رؤية هيكل البيانات والحقول المتوقعة</p>
+        </div>
+        <div>
+            <a href="{{ url_for('list_templates') }}" class="btn btn-light me-2">
+                <i class="fas fa-arrow-right"></i> العودة للقوالب
+            </a>
+            <a href="{{ url_for('download_template', format=format) }}?examples=true" class="btn btn-success">
+                <i class="fas fa-download"></i> تحميل القالب
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- معاينة القالب -->
+        <div class="preview-container">
+            <h5 class="mb-3"><i class="fas fa-file-{{ format }}"></i> معاينة {{ format|upper }}</h5>
+            
+            <!-- معاينة Excel -->
+            {% if format == 'excel' %}
+            <div class="preview-excel">
+                <h6>📊 صفحة: معلومات المشروع</h6>
+                <table>
+                    <tr>
+                        <th>الحقل</th>
+                        <th>القيمة</th>
+                    </tr>
+                    <tr>
+                        <td>عنوان المشروع</td>
+                        <td class="example-row">مشروع بناء مجمع سكني</td>
+                    </tr>
+                    <tr>
+                        <td>وصف المشروع</td>
+                        <td class="example-row">إنشاء مجمع سكني يضم 50 وحدة سكنية</td>
+                    </tr>
+                    <tr>
+                        <td>الموقع</td>
+                        <td class="example-row">الرياض، حي النرجس</td>
+                    </tr>
+                    <tr>
+                        <td>المنطقة</td>
+                        <td class="example-row">منطقة الرياض</td>
+                    </tr>
+                    <tr>
+                        <td>اسم العميل</td>
+                        <td class="example-row">شركة التطوير العقاري</td>
+                    </tr>
+                    <tr>
+                        <td>الميزانية التقديرية</td>
+                        <td class="example-row">5,000,000</td>
+                    </tr>
+                </table>
+                
+                <h6 class="mt-4">📋 صفحة: المهام</h6>
+                <table>
+                    <tr>
+                        <th>رقم البند</th>
+                        <th>مواصفات العمل</th>
+                        <th>الوحدة</th>
+                        <th>الكمية</th>
+                        <th>سعر الوحدة</th>
+                        <th>رمز المهمة الأم</th>
+                    </tr>
+                    <tr class="example-row">
+                        <td>1</td>
+                        <td>أعمال الحفر</td>
+                        <td>متر مكعب</td>
+                        <td>5000</td>
+                        <td>50</td>
+                        <td></td>
+                    </tr>
+                    <tr class="example-row">
+                        <td>1.1</td>
+                        <td>أعمال الخرسانة</td>
+                        <td>متر مكعب</td>
+                        <td>800</td>
+                        <td>350</td>
+                        <td>1</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- معاينة Word -->
+            {% elif format == 'word' %}
+            <div class="preview-word">
+                <h1>قالب مشروع - منصة إدارة المشاريع الذكية</h1>
+                
+                <h2>معلومات المشروع الأساسية</h2>
+                <table>
+                    <tr>
+                        <th>الحقل</th>
+                        <th>القيمة</th>
+                    </tr>
+                    <tr>
+                        <td>عنوان المشروع</td>
+                        <td>مشروع بناء مجمع سكني</td>
+                    </tr>
+                    <tr>
+                        <td>الموقع</td>
+                        <td>الرياض، حي النرجس</td>
+                    </tr>
+                    <tr>
+                        <td>العميل</td>
+                        <td>شركة التطوير العقاري</td>
+                    </tr>
+                </table>
+                
+                <h2>المهام</h2>
+                <table>
+                    <tr>
+                        <th>رقم البند</th>
+                        <th>مواصفات العمل</th>
+                        <th>الوحدة</th>
+                        <th>الكمية</th>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td>أعمال الحفر</td>
+                        <td>متر مكعب</td>
+                        <td>5000</td>
+                    </tr>
+                    <tr>
+                        <td>1.1</td>
+                        <td>أعمال الخرسانة</td>
+                        <td>متر مكعب</td>
+                        <td>800</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- معاينة JSON -->
+            {% elif format == 'json' %}
+            <div class="preview-json">
+                <pre>
+{
+  "project": {
+    "title": "مشروع بناء مجمع سكني",
+    "description": "إنشاء مجمع سكني يضم 50 وحدة سكنية",
+    "location": "الرياض، حي النرجس",
+    "region": "منطقة الرياض",
+    "client_name": "شركة التطوير العقاري",
+    "client_phone": "0555555555",
+    "start_date": "2024-01-01",
+    "end_date": "2025-12-31",
+    "estimated_budget": 5000000,
+    "priority": "عالية"
+  },
+  "tasks": [
+    {
+      "code": "1",
+      "title": "أعمال الحفر",
+      "description": "حفر الأساسات للمباني",
+      "unit": "متر مكعب",
+      "quantity": 5000,
+      "unit_price": 50,
+      "parent_code": "",
+      "planned_start": "2024-01-15",
+      "planned_end": "2024-02-15",
+      "notes": "باستخدام معدات ثقيلة"
+    },
+    {
+      "code": "1.1",
+      "title": "أعمال الخرسانة",
+      "description": "صب الخرسانة للميدات",
+      "unit": "متر مكعب",
+      "quantity": 800,
+      "unit_price": 350,
+      "parent_code": "1",
+      "planned_start": "2024-02-16",
+      "planned_end": "2024-03-15",
+      "notes": "خرسانة مسلحة"
+    }
+  ]
+}
+                </pre>
+            </div>
+            
+            <!-- معاينة CSV -->
+            {% elif format == 'csv' %}
+            <div class="preview-csv">
+                <table>
+                    <tr>
+                        <th>رقم البند</th>
+                        <th>مواصفات العمل</th>
+                        <th>الوحدة</th>
+                        <th>الكمية</th>
+                        <th>سعر الوحدة</th>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td>أعمال الحفر</td>
+                        <td>متر مكعب</td>
+                        <td>5000</td>
+                        <td>50</td>
+                    </tr>
+                    <tr>
+                        <td>1.1</td>
+                        <td>أعمال الخرسانة</td>
+                        <td>متر مكعب</td>
+                        <td>800</td>
+                        <td>350</td>
+                    </tr>
+                </table>
+                <p class="text-muted mt-3">ملاحظة: سيتم إنشاء ملفين (CSF للمهام + TXT لمعلومات المشروع)</p>
+            </div>
+            
+            <!-- معاينة PDF -->
+            {% elif format == 'pdf' %}
+            <div class="text-center py-5">
+                <i class="fas fa-file-pdf fa-5x text-danger mb-3"></i>
+                <h5>معاينة PDF غير متاحة مباشرة</h5>
+                <p class="text-muted">يمكنك تحميل الملف لمعاينته في برنامج PDF</p>
+                <a href="{{ url_for('download_template', format='pdf') }}?examples=true" class="btn btn-danger">
+                    <i class="fas fa-download"></i> تحميل PDF للمعاينة
+                </a>
+            </div>
+            
+            <!-- معاينة HTML -->
+            {% elif format == 'html' %}
+            <div style="font-family: 'Segoe UI'; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+                <h2 style="color: #4CAF50; text-align: center;">قالب مشروع</h2>
+                
+                <h3>معلومات المشروع</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr><th style="background: #4CAF50; color: white; padding: 8px;">الحقل</th><th style="background: #4CAF50; color: white; padding: 8px;">القيمة</th></tr>
+                    <tr><td style="border: 1px solid #ddd; padding: 8px;">عنوان المشروع</td><td style="border: 1px solid #ddd; padding: 8px; color: #666;">مشروع بناء مجمع سكني</td></tr>
+                    <tr><td style="border: 1px solid #ddd; padding: 8px;">الموقع</td><td style="border: 1px solid #ddd; padding: 8px; color: #666;">الرياض، حي النرجس</td></tr>
+                </table>
+                
+                <h3>المهام</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr><th style="background: #4CAF50; color: white; padding: 8px;">رقم البند</th><th style="background: #4CAF50; color: white; padding: 8px;">الوصف</th></tr>
+                    <tr><td style="border: 1px solid #ddd; padding: 8px;">1</td><td style="border: 1px solid #ddd; padding: 8px; color: #666;">أعمال الحفر</td></tr>
+                    <tr><td style="border: 1px solid #ddd; padding: 8px;">1.1</td><td style="border: 1px solid #ddd; padding: 8px; color: #666;">أعمال الخرسانة</td></tr>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- إرشادات الاستخدام -->
+        <div class="template-info-card">
+            <h5><i class="fas fa-lightbulb"></i> كيفية استخدام هذا القالب</h5>
+            
+            <div class="instruction-step">
+                <div class="step-number">1</div>
+                <div>
+                    <strong>حمّل القالب</strong>
+                    <p class="text-muted mb-0">اضغط على زر التحميل لتحصل على الملف</p>
+                </div>
+            </div>
+            
+            <div class="instruction-step">
+                <div class="step-number">2</div>
+                <div>
+                    <strong>عبئ البيانات</strong>
+                    <p class="text-muted mb-0">افتح الملف وعبئ بيانات مشروعك (يمكنك تعديل الأمثلة أو حذفها)</p>
+                </div>
+            </div>
+            
+            <div class="instruction-step">
+                <div class="step-number">3</div>
+                <div>
+                    <strong>احفظ الملف</strong>
+                    <p class="text-muted mb-0">احفظ الملف بعد التعبئة بنفس الصيغة</p>
+                </div>
+            </div>
+            
+            <div class="instruction-step">
+                <div class="step-number">4</div>
+                <div>
+                    <strong>ارفع الملف</strong>
+                    <p class="text-muted mb-0">اذهب لصفحة إنشاء مشروع جديد وارفع الملف</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- معلومات القالب -->
+        <div class="template-info-card">
+            <h5><i class="fas fa-info-circle"></i> معلومات القالب</h5>
+            
+            <table class="table table-sm">
+                <tr>
+                    <td>الصيغة:</td>
+                    <td><strong>{{ format|upper }}</strong></td>
+                </tr>
+                <tr>
+                    <td>حجم الملف:</td>
+                    <td>~15 كيلوبايت</td>
+                </tr>
+                <tr>
+                    <td>عدد الحقول:</td>
+                    <td>19 حقلاً</td>
+                </tr>
+                <tr>
+                    <td>التوافق:</td>
+                    <td>
+                        <span class="compatibility-badge compatibility-high">عالٍ</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- الحقول المتوقعة -->
+        <div class="template-info-card">
+            <h5><i class="fas fa-list"></i> الحقول المتوقعة</h5>
+            
+            <h6 class="mt-3 text-primary">مشروع:</h6>
+            <div class="field-list">
+                <div class="field-item">
+                    <span class="field-name">عنوان المشروع</span>
+                    <div class="field-example">مثال: مشروع بناء مجمع سكني</div>
+                </div>
+                <div class="field-item">
+                    <span class="field-name">الموقع</span>
+                    <div class="field-example">مثال: الرياض</div>
+                </div>
+                <div class="field-item">
+                    <span class="field-name">المنطقة</span>
+                    <div class="field-example">مثال: منطقة الرياض</div>
+                </div>
+                <div class="field-item">
+                    <span class="field-name">العميل</span>
+                    <div class="field-example">مثال: شركة التطوير</div>
+                </div>
+                <div class="field-item">
+                    <span class="field-name">الميزانية</span>
+                    <div class="field-example">مثال: 5000000</div>
+                </div>
+            </div>
+            
+            <h6 class="mt-3 text-success">مهام:</h6>
+            <div class="field-list">
+                <div class="field-item">
+                    <span class="field-name">رقم البند</span>
+                    <div class="field-example">مثال: 1, 1.1, 2.1.1</div>
+                </div>
+                <div class="field-item">
+                    <span class="field-name">الوصف</span>
+                    <div class="field-example">مثال: أعمال الحفر</div>
+                </div>
+                <div class="field-item">
+                    <span class="field-name">الوحدة</span>
+                    <div class="field-example">مثال: متر مكعب</div>
+                </div>
+                <div class="field-item">
+                    <span class="field-name">الكمية</span>
+                    <div class="field-example">مثال: 1000</div>
+                </div>
+                <div class="field-item">
+                    <span class="field-name">سعر الوحدة</span>
+                    <div class="field-example">مثال: 50</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- خيارات التحميل -->
+        <div class="download-options">
+            <h5><i class="fas fa-download"></i> خيارات التحميل</h5>
+            
+            <div class="mb-3">
+                <label class="form-label">نوع القالب</label>
+                <select class="form-select" id="templateType">
+                    <option value="with_examples">بأمثلة توضيحية</option>
+                    <option value="without_examples">بدون أمثلة</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">اللغة</label>
+                <select class="form-select" id="templateLanguage">
+                    <option value="ar">العربية</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-success w-100 mb-2" onclick="downloadWithOptions()">
+                <i class="fas fa-download"></i> تحميل القالب
+            </button>
+            
+            <a href="{{ url_for('new_project') }}" class="btn btn-primary w-100">
+                <i class="fas fa-plus-circle"></i> إنشاء مشروع جديد
+            </a>
+        </div>
+        
+        <!-- ملاحظات -->
+        <div class="template-info-card mt-3">
+            <h6><i class="fas fa-exclamation-triangle text-warning"></i> ملاحظات مهمة</h6>
+            <ul class="small">
+                <li>الحقول المطلوبة مميزة بعلامة *</li>
+                <li>يمكنك إضافة صفوف جديدة للمهام</li>
+                <li>استخدم التسلسل الهرمي في أرقام البنود</li>
+                <li>الأرقام العشرية تفصل بالنقطة (.)</li>
+                <li>التواريخ بصيغة YYYY-MM-DD</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function downloadWithOptions() {
+    const templateType = document.getElementById('templateType').value;
+    const language = document.getElementById('templateLanguage').value;
+    const includeExamples = templateType === 'with_examples';
+    
+    window.location.href = `{{ url_for('download_template', format=format) }}?examples=${includeExamples}&lang=${language}`;
+}
+
+// معاينة ديناميكية حسب الخيارات (اختياري)
+document.getElementById('templateType').addEventListener('change', function() {
+    // يمكن تحديث المعاينة هنا إذا أردت
+    const showExamples = this.value === 'with_examples';
+    document.querySelectorAll('.example-row').forEach(el => {
+        el.style.display = showExamples ? 'table-row' : 'none';
+    });
+});
+
+// تحديث اللغة
+document.getElementById('templateLanguage').addEventListener('change', function() {
+    // يمكن تحديث المعاينة حسب اللغة
+    const lang = this.value;
+    if (lang === 'en') {
+        // تغيير النصوص للإنجليزية
+        document.querySelectorAll('[data-ar]').forEach(el => {
+            el.textContent = el.getAttribute('data-en');
+        });
+    } else {
+        document.querySelectorAll('[data-en]').forEach(el => {
+            el.textContent = el.getAttribute('data-ar');
+        });
+    }
+});
+
+// طباعة المعاينة (اختياري)
+function printPreview() {
+    window.print();
+}
+</script>
+{% endblock %}

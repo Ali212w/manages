@@ -1,0 +1,162 @@
+{% extends "company/base.html" %}
+
+{% block title %}تعديل القسم - {{ department.name }}{% endblock %}
+
+{% block page_title %}تعديل القسم{% endblock %}
+{% block page_subtitle %}{{ department.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="table-card">
+            <form method="POST" action="{{ url_for('company.edit_department', dept_id=department.id) }}" id="editDeptForm">
+                <!-- معلومات القسم الأساسية -->
+                <h6 class="fw-bold mb-3"><i class="fas fa-info-circle me-2 text-primary"></i>معلومات القسم</h6>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">كود القسم <span class="text-danger">*</span></label>
+                        <input type="text" name="dept_code" class="form-control" required 
+                               value="{{ department.dept_code }}" readonly>
+                        <small class="text-muted">لا يمكن تعديل كود القسم</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">اسم القسم <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" required 
+                               value="{{ department.name }}">
+                    </div>
+                </div>
+                
+                <div class="row">
+                  
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">الميزانية</label>
+                        <div class="input-group">
+                            <input type="number" name="budget" class="form-control" 
+                                   value="{{ department.budget }}" min="0" step="1000">
+                            <span class="input-group-text">ر.س</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">وصف القسم</label>
+                    <textarea name="description" class="form-control" rows="3">{{ department.description or '' }}</textarea>
+                </div>
+                
+                <hr>
+                
+                <!-- الهيكل التنظيمي -->
+                <h6 class="fw-bold mb-3"><i class="fas fa-sitemap me-2 text-primary"></i>الهيكل التنظيمي</h6>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">القسم الرئيسي</label>
+                        <select name="parent_id" class="form-select select2">
+                            <option value="">-- قسم رئيسي (بدون أب) --</option>
+                            {% for dept in parent_departments %}
+                                <option value="{{ dept.id }}" {% if department.parent_id == dept.id %}selected{% endif %}>
+                                    {{ dept.name }} ({{ dept.dept_code }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">اختر إذا كان هذا القسم تابعاً لقسم آخر</small>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">مدير القسم</label>
+                        <select name="manager_id" class="form-select select2">
+                            <option value="">-- اختر مدير القسم --</option>
+                            {% for manager in managers %}
+                                <option value="{{ manager.id }}" {% if department.manager_id == manager.id %}selected{% endif %}>
+                                    {{ manager.full_name }} ({{ manager.job_title or 'موظف' }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- الحالة -->
+                <h6 class="fw-bold mb-3"><i class="fas fa-toggle-on me-2 text-primary"></i>الحالة</h6>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="isActive" 
+                                   {% if department.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="isActive">القسم نشط</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- معلومات إضافية -->
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>معلومات:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>عدد الموظفين الحالي: <strong>{{ department.employees|length }}</strong></li>
+                        <li>عدد الأقسام الفرعية: <strong>{{ department.sub_departments|length }}</strong></li>
+                        <li>تاريخ الإنشاء: <strong>{{ department.created_at.strftime('%Y-%m-%d') }}</strong></li>
+                    </ul>
+                </div>
+                
+                <!-- تحذير عند وجود أقسام فرعية -->
+                {% if department.sub_departments %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>تنبيه:</strong> هذا القسم يحتوي على {{ department.sub_departments|length }} أقسام فرعية. تغيير القسم الرئيسي قد يؤثر على هيكل هذه الأقسام.
+                </div>
+                {% endif %}
+                
+                <!-- أزرار التحكم -->
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn-primary-gradient px-5">
+                        <i class="fas fa-save me-2"></i>حفظ التغييرات
+                    </button>
+                    <a href="{{ url_for('company.view_department', dept_id=department.id) }}" class="btn btn-outline-secondary ms-2 px-5">
+                        <i class="fas fa-times me-2"></i>إلغاء
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// تأكيد التغييرات عند وجود أقسام فرعية
+document.getElementById('editDeptForm').addEventListener('submit', function(e) {
+    const hasSubDepts = {{ department.sub_departments|length }} > 0;
+    const parentChanged = this.parent_id.value != '{{ department.parent_id or '' }}';
+    
+    if (hasSubDepts && parentChanged) {
+        e.preventDefault();
+        Swal.fire({
+            title: 'تأكيد التغيير',
+            text: 'هذا القسم يحتوي على أقسام فرعية. تغيير القسم الرئيسي سيؤثر على هيكل هذه الأقسام. هل أنت متأكد؟',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--primary)',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'نعم، متأكد',
+            cancelButtonText: 'إلغاء'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                e.target.submit();
+            }
+        });
+    }
+});
+
+// تفعيل select2
+$(document).ready(function() {
+    $('.select2').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: 'اختر...',
+        allowClear: true
+    });
+});
+</script>
+{% endblock %}

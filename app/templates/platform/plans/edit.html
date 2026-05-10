@@ -1,0 +1,598 @@
+{# templates/platform/plans/edit.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('plans.edit') }}: {{ plan.name }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="page-title">{{ _('plans.edit') }}</h1>
+            <p class="text-muted mb-0">
+                <i class="fas fa-layer-group me-1"></i> 
+                {{ _('plans.editing_plan') }}: <strong>{{ plan.name }}</strong>
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('platform.plans') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-{{ 'right' if get_direction() == 'rtl' else 'left' }} me-2"></i>
+                {{ _('common.back') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Form -->
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4">
+                    <h5 class="card-title">
+                        <i class="fas fa-edit text-primary me-2"></i>
+                        {{ _('plans.basic_information') }}
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" id="editPlanForm">
+                        <!-- Plan ID (Disabled) -->
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('plans.plan_id') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-tag"></i>
+                                    </span>
+                                    <input type="text" class="form-control bg-light" value="{{ plan.plan_id }}" disabled>
+                                </div>
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    {{ _('plans.plan_id_cannot_change') }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('plans.display_order') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-sort-numeric-down"></i>
+                                    </span>
+                                    <input type="number" name="display_order" class="form-control" value="{{ plan.display_order }}" min="0">
+                                </div>
+                                <div class="form-text">{{ _('plans.display_order_hint') }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Name Fields -->
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('plans.name') }} <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-font"></i>
+                                    </span>
+                                    <input type="text" name="name" class="form-control" value="{{ plan.name }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('plans.name_ar') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-language"></i>
+                                    </span>
+                                    <input type="text" name="name_ar" class="form-control" value="{{ plan.name_ar or '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Description Fields -->
+                        <div class="row g-4 mb-4">
+                            <div class="col-12">
+                                <label class="form-label">{{ _('plans.description') }}</label>
+                                <textarea name="description" class="form-control" rows="3" placeholder="{{ _('plans.description_placeholder') }}">{{ plan.description or '' }}</textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ _('plans.description_ar') }}</label>
+                                <textarea name="description_ar" class="form-control" rows="3" placeholder="{{ _('plans.description_placeholder_ar') }}">{{ plan.description_ar or '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Pricing Section -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-money-bill-wave text-success me-2"></i>
+                            {{ _('plans.pricing') }}
+                        </h5>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('plans.price_monthly') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">{{ plan.currency or 'SAR' }}</span>
+                                    <input type="number" step="0.01" name="price_monthly" class="form-control" value="{{ plan.price_monthly }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('plans.price_yearly') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">{{ plan.currency or 'SAR' }}</span>
+                                    <input type="number" step="0.01" name="price_yearly" class="form-control" value="{{ plan.price_yearly }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('plans.currency') }}</label>
+                                <select name="currency" class="form-select">
+                                    <option value="SAR" {% if plan.currency == 'SAR' %}selected{% endif %}>🇸🇦 SAR - {{ _('currency.sar') }}</option>
+                                    <option value="USD" {% if plan.currency == 'USD' %}selected{% endif %}>🇺🇸 USD - {{ _('currency.usd') }}</option>
+                                    <option value="EUR" {% if plan.currency == 'EUR' %}selected{% endif %}>🇪🇺 EUR - {{ _('currency.eur') }}</option>
+                                    <option value="GBP" {% if plan.currency == 'GBP' %}selected{% endif %}>🇬🇧 GBP - {{ _('currency.gbp') }}</option>
+                                    <option value="AED" {% if plan.currency == 'AED' %}selected{% endif %}>🇦🇪 AED - {{ _('currency.aed') }}</option>
+                                    <option value="KWD" {% if plan.currency == 'KWD' %}selected{% endif %}>🇰🇼 KWD - {{ _('currency.kwd') }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Quota Section -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-chart-pie text-info me-2"></i>
+                            {{ _('plans.quota_limits') }}
+                        </h5>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('plans.max_users') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-users"></i>
+                                    </span>
+                                    <input type="number" name="max_users" class="form-control" value="{{ plan.max_users }}">
+                                </div>
+                                <div class="form-text">{{ _('plans.unlimited_hint') }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('plans.max_projects') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-project-diagram"></i>
+                                    </span>
+                                    <input type="number" name="max_projects" class="form-control" value="{{ plan.max_projects }}">
+                                </div>
+                                <div class="form-text">{{ _('plans.unlimited_hint') }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('plans.storage_gb') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-database"></i>
+                                    </span>
+                                    <input type="number" name="storage_gb" class="form-control" value="{{ plan.storage_gb }}">
+                                </div>
+                                <div class="form-text">{{ _('plans.unlimited_hint') }}</div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Features Section -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-list-check text-warning me-2"></i>
+                            {{ _('plans.features') }}
+                        </h5>
+                        
+                        <!-- English Features -->
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-flag-usa me-1"></i> {{ _('plans.features_english') }}
+                        </label>
+                        <div id="featuresList" class="mb-4">
+                            {% if plan.features %}
+                                {% for feature in plan.features %}
+                                <div class="input-group mb-2 feature-item">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                    </span>
+                                    <input type="text" name="features[]" class="form-control" value="{{ feature }}" placeholder="{{ _('plans.feature_placeholder') }}">
+                                    <button type="button" class="btn btn-outline-danger remove-feature" title="{{ _('common.remove') }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="input-group mb-2 feature-item">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                    </span>
+                                    <input type="text" name="features[]" class="form-control" placeholder="{{ _('plans.feature_placeholder') }}">
+                                    <button type="button" class="btn btn-outline-danger remove-feature" title="{{ _('common.remove') }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <button type="button" id="addFeature" class="btn btn-sm btn-outline-primary mb-4">
+                            <i class="fas fa-plus me-1"></i> {{ _('plans.add_feature') }}
+                        </button>
+
+                        <!-- Arabic Features -->
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-language me-1"></i> {{ _('plans.features_arabic') }}
+                        </label>
+                        <div id="featuresArList" class="mb-4">
+                            {% if plan.features_ar %}
+                                {% for feature in plan.features_ar %}
+                                <div class="input-group mb-2 feature-ar-item">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                    </span>
+                                    <input type="text" name="features_ar[]" class="form-control" value="{{ feature }}" placeholder="{{ _('plans.feature_placeholder_ar') }}">
+                                    <button type="button" class="btn btn-outline-danger remove-feature-ar" title="{{ _('common.remove') }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="input-group mb-2 feature-ar-item">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                    </span>
+                                    <input type="text" name="features_ar[]" class="form-control" placeholder="{{ _('plans.feature_placeholder_ar') }}">
+                                    <button type="button" class="btn btn-outline-danger remove-feature-ar" title="{{ _('common.remove') }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <button type="button" id="addFeatureAr" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus me-1"></i> {{ _('plans.add_feature_arabic') }}
+                        </button>
+
+                        <hr class="my-4">
+
+                        <!-- Status Section -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-toggle-on text-secondary me-2"></i>
+                            {{ _('plans.status_settings') }}
+                        </h5>
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="is_active" class="form-check-input" id="isActive" {% if plan.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="isActive">
+                                        <i class="fas fa-circle text-success me-1"></i>
+                                        {{ _('plans.is_active') }}
+                                    </label>
+                                </div>
+                                <div class="form-text">{{ _('plans.is_active_hint') }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="is_featured" class="form-check-input" id="isFeatured" {% if plan.is_featured %}checked{% endif %}>
+                                    <label class="form-check-label" for="isFeatured">
+                                        <i class="fas fa-star text-warning me-1"></i>
+                                        {{ _('plans.is_featured') }}
+                                    </label>
+                                </div>
+                                <div class="form-text">{{ _('plans.is_featured_hint') }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="is_default" class="form-check-input" id="isDefault" {% if plan.is_default %}checked{% endif %}>
+                                    <label class="form-check-label" for="isDefault">
+                                        <i class="fas fa-crown text-primary me-1"></i>
+                                        {{ _('plans.is_default') }}
+                                    </label>
+                                </div>
+                                <div class="form-text">{{ _('plans.is_default_hint') }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <hr class="my-4">
+                        <div class="d-flex justify-content-end gap-3">
+                            <a href="{{ url_for('platform.plans') }}" class="btn btn-lg btn-outline-secondary px-4">
+                                <i class="fas fa-times me-2"></i>{{ _('common.cancel') }}
+                            </a>
+                            <button type="submit" class="btn btn-lg btn-gradient px-5">
+                                <i class="fas fa-save me-2"></i>{{ _('common.save_changes') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar - Plan Preview -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-eye me-2"></i>
+                        {{ _('plans.live_preview') }}
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="preview-card text-center">
+                        <div class="preview-icon mb-3">
+                            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                                <i class="fas fa-layer-group fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                        <h3 class="preview-name mb-1">{{ plan.name }}</h3>
+                        <p class="preview-name-ar text-muted small">{{ plan.name_ar or '' }}</p>
+                        
+                        <div class="preview-price my-3">
+                            <span class="display-6 fw-bold text-primary" id="previewPrice">{{ format_currency(plan.price_monthly) }}</span>
+                            <span class="text-muted">/ {{ _('subscriptions.month') }}</span>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="preview-features text-start">
+                            <div class="mb-2">
+                                <i class="fas fa-users text-primary me-2"></i>
+                                <strong>{{ _('plans.max_users') }}:</strong>
+                                <span id="previewMaxUsers">{{ plan.max_users if plan.max_users > 0 else _('plans.unlimited') }}</span>
+                            </div>
+                            <div class="mb-2">
+                                <i class="fas fa-project-diagram text-primary me-2"></i>
+                                <strong>{{ _('plans.max_projects') }}:</strong>
+                                <span id="previewMaxProjects">{{ plan.max_projects if plan.max_projects > 0 else _('plans.unlimited') }}</span>
+                            </div>
+                            <div class="mb-3">
+                                <i class="fas fa-database text-primary me-2"></i>
+                                <strong>{{ _('plans.storage_gb') }}:</strong>
+                                <span id="previewStorage">{{ plan.storage_gb if plan.storage_gb > 0 else _('plans.unlimited') }}</span>
+                            </div>
+                            <hr>
+                            <div id="previewFeaturesList">
+                                {% for feature in plan.features[:3] %}
+                                <div class="small mb-1">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ feature }}
+                                </div>
+                                {% endfor %}
+                                {% if plan.features|length > 3 %}
+                                <div class="small text-muted mt-1">
+                                    <i class="fas fa-plus-circle me-2"></i>
+                                    {{ _('plans.and_more') }} {{ plan.features|length - 3 }} {{ _('plans.features') }}
+                                </div>
+                                {% elif not plan.features %}
+                                <div class="small text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    {{ _('plans.no_features_added') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent text-muted text-center small">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    {{ _('plans.preview_updates_live') }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Plan Modal -->
+<div class="modal fade" id="deletePlanModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {{ _('common.confirm_delete') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+                <p id="deletePlanMessage" class="mb-0"></p>
+                <p class="text-muted small mt-2">{{ _('plans.delete_warning') }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('common.cancel') }}</button>
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger">{{ _('common.delete') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // ========== Live Preview Update ==========
+    function updatePreview() {
+        // Update name
+        $('.preview-name').text($('input[name="name"]').val() || '{{ _("plans.plan_name") }}');
+        $('.preview-name-ar').text($('input[name="name_ar"]').val() || '');
+        
+        // Update price
+        const monthlyPrice = parseFloat($('input[name="price_monthly"]').val()) || 0;
+        $('#previewPrice').text(formatCurrency(monthlyPrice, $('select[name="currency"]').val()));
+        
+        // Update quotas
+        const maxUsers = parseInt($('input[name="max_users"]').val()) || 0;
+        const maxProjects = parseInt($('input[name="max_projects"]').val()) || 0;
+        const storageGb = parseInt($('input[name="storage_gb"]').val()) || 0;
+        
+        $('#previewMaxUsers').text(maxUsers > 0 ? maxUsers : '{{ _("plans.unlimited") }}');
+        $('#previewMaxProjects').text(maxProjects > 0 ? maxProjects : '{{ _("plans.unlimited") }}');
+        $('#previewStorage').text(storageGb > 0 ? storageGb + ' GB' : '{{ _("plans.unlimited") }}');
+        
+        // Update features preview
+        const features = [];
+        $('input[name="features[]"]').each(function() {
+            if ($(this).val().trim()) {
+                features.push($(this).val().trim());
+            }
+        });
+        
+        let featuresHtml = '';
+        for (let i = 0; i < Math.min(features.length, 3); i++) {
+            featuresHtml += `
+                <div class="small mb-1">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    ${escapeHtml(features[i])}
+                </div>
+            `;
+        }
+        if (features.length > 3) {
+            featuresHtml += `
+                <div class="small text-muted mt-1">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    {{ _('plans.and_more') }} ${features.length - 3} {{ _('plans.features') }}
+                </div>
+            `;
+        } else if (features.length === 0) {
+            featuresHtml = `
+                <div class="small text-muted">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {{ _('plans.no_features_added') }}
+                </div>
+            `;
+        }
+        $('#previewFeaturesList').html(featuresHtml);
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function formatCurrency(amount, currency) {
+        const symbols = {
+            'SAR': '{{ "ر.س" if get_current_lang() == "ar" else "SAR" }}',
+            'USD': '$', 'EUR': '€', 'GBP': '£', 'AED': 'د.إ', 'KWD': 'د.ك'
+        };
+        const symbol = symbols[currency] || currency;
+        return amount.toFixed(2) + ' ' + symbol;
+    }
+    
+    // Watch for changes
+    $('input, select').on('input change', updatePreview);
+    updatePreview();
+    
+    // ========== Features Management ==========
+    // Add English Feature
+    $('#addFeature').click(function() {
+        $('#featuresList').append(`
+            <div class="input-group mb-2 feature-item">
+                <span class="input-group-text bg-light">
+                    <i class="fas fa-check-circle text-success"></i>
+                </span>
+                <input type="text" name="features[]" class="form-control" placeholder="{{ _('plans.feature_placeholder') }}">
+                <button type="button" class="btn btn-outline-danger remove-feature" title="{{ _('common.remove') }}">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        `);
+        updatePreview();
+    });
+    
+    // Remove English Feature
+    $(document).on('click', '.remove-feature', function() {
+        if ($('#featuresList .feature-item').length > 1) {
+            $(this).closest('.feature-item').remove();
+        } else {
+            $(this).closest('.feature-item').find('input').val('');
+        }
+        updatePreview();
+    });
+    
+    // Add Arabic Feature
+    $('#addFeatureAr').click(function() {
+        $('#featuresArList').append(`
+            <div class="input-group mb-2 feature-ar-item">
+                <span class="input-group-text bg-light">
+                    <i class="fas fa-check-circle text-success"></i>
+                </span>
+                <input type="text" name="features_ar[]" class="form-control" placeholder="{{ _('plans.feature_placeholder_ar') }}">
+                <button type="button" class="btn btn-outline-danger remove-feature-ar" title="{{ _('common.remove') }}">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        `);
+    });
+    
+    // Remove Arabic Feature
+    $(document).on('click', '.remove-feature-ar', function() {
+        if ($('#featuresArList .feature-ar-item').length > 1) {
+            $(this).closest('.feature-ar-item').remove();
+        } else {
+            $(this).closest('.feature-ar-item').find('input').val('');
+        }
+    });
+    
+    // ========== Form Submission ==========
+    $('#editPlanForm').submit(function(e) {
+        e.preventDefault();
+        
+        // Validate required fields
+        if (!$('input[name="name"]').val().trim()) {
+            toastr.error('{{ _("plans.name_required") }}');
+            $('input[name="name"]').focus();
+            return;
+        }
+        
+        const formData = $(this).serialize();
+        
+        $.ajax({
+            url: window.location.href,
+            method: 'POST',
+            data: formData,
+            beforeSend: function() {
+                showLoading();
+            },
+            success: function(response) {
+                hideLoading();
+                if (response.success) {
+                    toastr.success(response.message);
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('platform.plans') }}";
+                    }, 1500);
+                } else {
+                    toastr.error(response.error);
+                }
+            },
+            error: function() {
+                hideLoading();
+                toastr.error('{{ _("common.error") }}');
+            }
+        });
+    });
+    
+    // ========== Delete Plan ==========
+    let deletePlanId = null;
+    
+    $('.delete-plan').click(function() {
+        deletePlanId = $(this).data('id');
+        const planName = $(this).data('name');
+        $('#deletePlanMessage').text('{{ _("plans.confirm_delete") }} ' + planName + '?');
+        $('#deletePlanModal').modal('show');
+    });
+    
+    $('#confirmDeleteBtn').click(function() {
+        if (deletePlanId) {
+            $.ajax({
+                url: "{{ url_for('platform.delete_plan', plan_id=0) }}".replace('0', deletePlanId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        $('#deletePlanModal').modal('hide');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

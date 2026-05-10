@@ -1,0 +1,705 @@
+{% extends "company/base.html" %}
+
+{% block title %}إدارة طلبات التوريد - مواد ومعدات{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* أنماط رئيسية */
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 25px;
+        padding: 35px 30px;
+        color: white;
+        margin-bottom: 30px;
+    }
+    
+    /* بطاقات الإحصائيات */
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-bottom: 4px solid;
+        cursor: pointer;
+        height: 100%;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+    }
+    .stat-card.total { border-bottom-color: #667eea; }
+    .stat-card.materials { border-bottom-color: #3498db; }
+    .stat-card.equipment { border-bottom-color: #00b894; }
+    .stat-card.pending { border-bottom-color: #fdcb6e; }
+    .stat-card.started { border-bottom-color: #74b9ff; }
+    .stat-card.completed { border-bottom-color: #00b894; }
+    .stat-card.delayed { border-bottom-color: #d63031; }
+    .stat-card.offers { border-bottom-color: #e17055; }
+    
+    .stat-number {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    /* شريط التصفية */
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .filter-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+    .filter-btn {
+        border-radius: 30px;
+        padding: 8px 22px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        color: #495057;
+    }
+    .filter-btn:hover {
+        transform: translateY(-2px);
+    }
+    .filter-btn.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    .filter-btn.type-material.active {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    }
+    .filter-btn.type-equipment.active {
+        background: linear-gradient(135deg, #00b894 0%, #019874 100%);
+    }
+    
+    /* بطاقات الطلبات */
+    .request-card {
+        background: white;
+        border-radius: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        border: 1px solid #f0f0f0;
+    }
+    .request-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }
+    .request-header {
+        padding: 18px 25px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .request-header.material {
+        background: linear-gradient(135deg, #e8f4fd 0%, #d6eaf8 100%);
+    }
+    .request-header.equipment {
+        background: linear-gradient(135deg, #e8f8f5 0%, #d5f5e3 100%);
+    }
+    .request-body {
+        padding: 20px 25px;
+    }
+    .request-footer {
+        padding: 15px 25px;
+        background: #fafbfc;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    /* نوع الطلب */
+    .request-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    .request-type-badge.material {
+        background: #3498db;
+        color: white;
+    }
+    .request-type-badge.equipment {
+        background: #00b894;
+        color: white;
+    }
+    
+    /* حالة الطلب */
+    .status-badge {
+        padding: 5px 14px;
+        border-radius: 25px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .status-pending {
+        background: #ffeaa7;
+        color: #d63031;
+    }
+    .status-started {
+        background: #74b9ff;
+        color: #0984e3;
+    }
+    .status-completed {
+        background: #55efc4;
+        color: #00b894;
+    }
+    .status-cancelled {
+        background: #fab1a0;
+        color: #d63031;
+    }
+    .status-delayed {
+        background: #ff7675;
+        color: #fff;
+    }
+    
+    /* شريط التقدم */
+    .progress-custom {
+        height: 8px;
+        border-radius: 4px;
+        background: #e0e0e0;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+    .progress-fill.material { background: linear-gradient(90deg, #3498db, #2980b9); }
+    .progress-fill.equipment { background: linear-gradient(90deg, #00b894, #019874); }
+    
+    /* عناصر المعدات/المواد */
+    .items-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 15px;
+    }
+    .item-tag {
+        background: #f8f9fa;
+        border-radius: 25px;
+        padding: 5px 15px;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #e0e0e0;
+    }
+    .item-tag i {
+        font-size: 14px;
+    }
+    .item-tag.material i { color: #3498db; }
+    .item-tag.equipment i { color: #00b894; }
+    
+    /* أزرار الإجراءات */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+    .action-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        border: none;
+        background: #f8f9fa;
+        color: #6c757d;
+    }
+    .action-btn:hover {
+        transform: translateY(-2px);
+    }
+    .action-btn.view:hover { background: #667eea; color: white; }
+    .action-btn.offers:hover { background: #fdcb6e; color: white; }
+    .action-btn.remind:hover { background: #e17055; color: white; }
+    
+    /* القيمة الإجمالية */
+    .total-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #00b894;
+    }
+    
+    /* خالية من الطلبات */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 25px;
+    }
+    .empty-icon {
+        font-size: 70px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    
+    /* تواريخ متأخرة */
+    .date-overdue {
+        color: #d63031;
+        font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+        .stat-number { font-size: 1.5rem; }
+        .request-header { flex-direction: column; align-items: flex-start; }
+        .request-footer { flex-direction: column; align-items: stretch; }
+        .action-buttons { justify-content: flex-end; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- رأس الصفحة -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="fas fa-truck me-3"></i> طلبات التوريد
+                </h1>
+                <p class="mb-0 text-white-50">
+                    إدارة ومتابعة طلبات المواد والمعدات للموردين
+                </p>
+            </div>
+            <div>
+                <a href="{{ url_for('company.export_procurement_report') }}" class="btn btn-light btn-lg me-2">
+                    <i class="fas fa-file-excel me-2"></i> تصدير تقرير
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- إحصائيات سريعة -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-2 col-md-3 col-6">
+            <div class="stat-card total" onclick="filterByTypeAndStatus('all', 'all')">
+                <div class="stat-number">{{ stats.total }}</div>
+                <div class="stat-label">إجمالي الطلبات</div>
+                <i class="fas fa-clipboard-list float-end mt-2 opacity-25" style="font-size: 2rem;"></i>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-3 col-6">
+            <div class="stat-card materials" onclick="filterByTypeAndStatus('materials', 'all')">
+                <div class="stat-number">{{ stats.materials_total }}</div>
+                <div class="stat-label">طلبات مواد</div>
+                <i class="fas fa-boxes float-end mt-2 opacity-25" style="font-size: 2rem;"></i>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-3 col-6">
+            <div class="stat-card equipment" onclick="filterByTypeAndStatus('equipment', 'all')">
+                <div class="stat-number">{{ stats.equipment_total }}</div>
+                <div class="stat-label">طلبات معدات</div>
+                <i class="fas fa-tools float-end mt-2 opacity-25" style="font-size: 2rem;"></i>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-3 col-6">
+            <div class="stat-card pending" onclick="filterByTypeAndStatus('all', 'pending')">
+                <div class="stat-number">{{ stats.pending }}</div>
+                <div class="stat-label">في انتظار العرض</div>
+                <i class="fas fa-hourglass-half float-end mt-2 opacity-25" style="font-size: 2rem;"></i>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-3 col-6">
+            <div class="stat-card offers" onclick="filterByTypeAndStatus('all', 'offers')">
+                <div class="stat-number">{{ stats.pending_offers }}</div>
+                <div class="stat-label">عروض pending</div>
+                <i class="fas fa-file-invoice-dollar float-end mt-2 opacity-25" style="font-size: 2rem;"></i>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-3 col-6">
+            <div class="stat-card delayed" onclick="filterByTypeAndStatus('all', 'delayed')">
+                <div class="stat-number">{{ stats.delayed }}</div>
+                <div class="stat-label">متأخرة</div>
+                <i class="fas fa-exclamation-triangle float-end mt-2 opacity-25" style="font-size: 2rem;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- شريط التصفية -->
+    <div class="filter-bar">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="filter-group">
+                    <span class="text-muted me-2"><i class="fas fa-filter"></i> نوع الطلب:</span>
+                    <button class="filter-btn {% if type_filter == 'all' %}active{% endif %}" onclick="filterByType('all')">
+                        <i class="fas fa-list me-1"></i> الكل
+                    </button>
+                    <button class="filter-btn type-material {% if type_filter == 'materials' %}active{% endif %}" onclick="filterByType('materials')">
+                        <i class="fas fa-boxes me-1"></i> مواد
+                    </button>
+                    <button class="filter-btn type-equipment {% if type_filter == 'equipment' %}active{% endif %}" onclick="filterByType('equipment')">
+                        <i class="fas fa-tools me-1"></i> معدات
+                    </button>
+                    
+                    <span class="text-muted mx-2"><i class="fas fa-chart-line me-1"></i> الحالة:</span>
+                    <select id="statusFilter" class="form-select form-select-sm w-auto" onchange="filterByStatus(this.value)">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>جميع الحالات</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>في انتظار العرض</option>
+                        <option value="started" {% if status_filter == 'started' %}selected{% endif %}>قيد التنفيذ</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>مكتملة</option>
+                        <option value="delayed" {% if status_filter == 'delayed' %}selected{% endif %}>متأخرة</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mt-3 mt-md-0">
+                <div class="input-group">
+                    <input type="text" id="searchInput" class="form-control" placeholder="بحث بمشروع، مورد..." onkeyup="searchRequests()">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- قائمة الطلبات -->
+    {% if requests %}
+        {% for item in requests %}
+        {% set req = item.request %}
+        <div class="request-card" data-type="{{ item.type }}" data-status="{{ item.status }}" data-search="{{ item.project_name }} {{ item.supplier_name }}">
+            <div class="request-header {{ item.type }}">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div class="request-type-badge {{ item.type }}">
+                        <i class="{{ item.type_icon }}"></i>
+                        {{ item.type_badge }}
+                    </div>
+                    <div>
+                        <div class="fw-bold">#{{ req.id }}</div>
+                        <div class="small text-muted">{{ req.created_at.strftime('%Y-%m-%d %H:%M') if req.created_at else '' }}</div>
+                    </div>
+                    <div>
+                        <div><i class="fas fa-building text-muted me-1"></i> {{ item.project_name }}</div>
+                        <div class="small text-muted">{{ item.project_code }}</div>
+                    </div>
+                    <div>
+                        <div><i class="fas fa-truck text-muted me-1"></i> {{ item.supplier_name }}</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="status-badge status-{{ item.status }}">
+                        {% if item.status == 'pending' %}
+                            <i class="fas fa-clock"></i> في انتظار العرض
+                        {% elif item.status == 'started' %}
+                            <i class="fas fa-play-circle"></i> قيد التنفيذ
+                        {% elif item.status == 'completed' %}
+                            <i class="fas fa-check-circle"></i> مكتمل
+                        {% elif item.status == 'cancelled' %}
+                            <i class="fas fa-ban"></i> ملغي
+                        {% elif item.status == 'delayed' %}
+                            <i class="fas fa-exclamation-triangle"></i> متأخر
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="request-body">
+                <div class="row">
+                    <div class="col-md-5">
+                        <div class="mb-2">
+                            <i class="fas fa-calendar-alt text-muted me-2"></i>
+                            <span class="text-muted">التسليم المطلوب:</span>
+                            <span class="fw-bold ms-1 {% if item.required_date and item.required_date < now.date() and item.status not in ['completed', 'cancelled'] %}date-overdue{% endif %}">
+                                {{ item.required_date.strftime('%Y-%m-%d') if item.required_date else 'غير محدد' }}
+                                {% if item.required_date and item.required_date < now.date() and item.status not in ['completed', 'cancelled'] %}
+                                <i class="fas fa-exclamation-circle ms-1"></i>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="mb-2">
+                            <i class="fas fa-cubes text-muted me-2"></i>
+                            <span class="text-muted">إجمالي الكمية:</span>
+                            <span class="fw-bold ms-1">{{ item.total_required|round(1) if item.total_required else 0 }}</span>
+                        </div>
+                        <div>
+                            <i class="fas fa-chart-line text-muted me-2"></i>
+                            <span class="text-muted">نسبة الإنجاز:</span>
+                            <div class="d-inline-block w-50 ms-2">
+                                <div class="progress-custom">
+                                    <div class="progress-fill {{ item.type }}" style="width: {{ item.completion_percentage }}%"></div>
+                                </div>
+                            </div>
+                            <span class="ms-2 small">{{ "%.0f"|format(item.completion_percentage) }}%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="items-preview">
+                            {% for req_item in req.items[:3] %}
+                            <span class="item-tag {{ item.type }}">
+                                <i class="{{ 'fa-boxes' if item.type == 'material' else 'fa-microchip' }}"></i>
+                                {{ req_item.resource_name if item.type == 'material' else req_item.equipment_name }}
+                                <span class="fw-bold">({{ req_item.required_quantity }} {{ req_item.unit }})</span>
+                            </span>
+                            {% endfor %}
+                            {% if item.items_count > 3 %}
+                            <span class="item-tag">
+                                <i class="fas fa-ellipsis-h"></i>
+                                +{{ item.items_count - 3 }} أخرى
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-md-end">
+                        <div class="total-value">
+                            {{ item.total_required|round(2) if item.total_required else 0 }} 
+                            <small>وحدة</small>
+                        </div>
+                        <div class="small text-muted mt-1">
+                            <span class="text-success">{{ item.total_delivered|round(1) if item.total_delivered else 0 }}</span> مسلم /
+                            <span class="text-warning">{{ item.total_remaining|round(1) if item.total_remaining else 0 }}</span> متبقي
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="request-footer">
+                <div>
+                    {% if item.has_offers %}
+                    <span class="badge bg-warning text-dark me-2">
+                        <i class="fas fa-file-invoice-dollar me-1"></i> عروض pending
+                    </span>
+                    {% endif %}
+                    {% if item.status == 'started' %}
+                    <span class="badge bg-info">
+                        <i class="fas fa-play-circle me-1"></i> قيد التنفيذ
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="action-buttons">
+                    <a href="{{ url_for('company.view_procurement_request', request_id=item.id, request_type=item.type) }}" class="action-btn view" title="عرض التفاصيل">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <button class="action-btn offers" onclick="viewOffers({{ item.id }}, '{{ item.type }}')" title="عروض الأسعار">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </button>
+                    <button class="action-btn remind" onclick="sendReminder({{ item.id }}, '{{ item.type }}')" title="إرسال تذكير للمورد">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-truck"></i>
+            </div>
+            <h4 class="text-muted mb-2">لا توجد طلبات توريد</h4>
+            <p class="text-muted">لم يتم إنشاء أي طلبات مواد أو معدات بعد</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal: عروض الأسعار -->
+<div class="modal fade" id="offersModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%); color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-invoice-dollar me-2"></i> عروض الأسعار
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="offersModalBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2">جاري تحميل العروض...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentRequestId = null;
+    let currentRequestType = null;
+    
+    function filterByType(type) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('type', type);
+        window.location.href = url.toString();
+    }
+    
+    function filterByStatus(status) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('status', status);
+        window.location.href = url.toString();
+    }
+    
+    function filterByTypeAndStatus(type, status) {
+        const url = new URL(window.location.href);
+        if (type) url.searchParams.set('type', type);
+        if (status) url.searchParams.set('status', status);
+        window.location.hfr = url.toString();
+    }
+    
+    function searchRequests() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const cards = document.querySelectorAll('.request-card');
+        
+        cards.forEach(card => {
+            const searchText = card.getAttribute('data-search') || '';
+            if (searchText.toLowerCase().includes(searchTerm)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+    
+    function viewOffers(requestId, requestType) {
+        currentRequestId = requestId;
+        currentRequestType = requestType;
+        
+        const modal = new bootstrap.Modal(document.getElementById('offersModal'));
+        const modalBody = document.getElementById('offersModalBody');
+        
+        modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><p class="mt-2">جاري تحميل العروض...</p></div>';
+        modal.show();
+        
+        const apiUrl = requestType === 'material' 
+            ? `/company/api/resource-request/${requestId}/offers`
+            : `/company/api/equipment-request/${requestId}/offers`;
+        
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.offers.length > 0) {
+                    let html = '';
+                    data.offers.forEach(offer => {
+                        const itemName = offer.resource_name || offer.equipment_name;
+                        html += `
+                            <div class="border rounded p-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold mb-0">
+                                        <i class="fas ${requestType === 'material' ? 'fa-boxes' : 'fa-microchip'} text-primary me-2"></i>
+                                        ${itemName}
+                                    </h6>
+                                    <span class="badge bg-secondary">المطلوب: ${offer.required_quantity} ${offer.unit}</span>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-2">
+                                            <span class="text-muted">السعر المقترح:</span>
+                                            <span class="fw-bold text-primary">${offer.offer_price} ${offer.offer_currency}</span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="text-muted">ملاحظات المورد:</span>
+                                            <p class="small mb-0">${offer.offer_notes || 'لا توجد ملاحظات'}</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <div class="d-flex gap-2 justify-content-end">
+                                            <button class="btn btn-sm btn-success" onclick="approveOffer(${offer.id}, 'approve', '${requestType}')">
+                                                <i class="fas fa-check me-1"></i> اعتماد
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="approveOffer(${offer.id}, 'reject', '${requestType}')">
+                                                <i class="fas fa-times me-1"></i> رفض
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    modalBody.innerHTML = html;
+                } else {
+                    modalBody.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">لا توجد عروض أسعار مقدمة بعد</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                modalBody.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                        <p class="text-danger">حدث خطأ في تحميل العروض</p>
+                    </div>
+                `;
+            });
+    }
+    
+    function approveOffer(itemId, action, requestType) {
+        let notes = '';
+        if (action === 'reject') {
+            notes = prompt('الرجاء إدخال سبب الرفض:');
+            if (!notes) return;
+        }
+        
+        const apiUrl = requestType === 'material'
+            ? `/company/api/resource-offer/${itemId}/approve`
+            : `/company/api/equipment-offer/${itemId}/approve`;
+        
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ action: action, notes: notes })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('خطأ: ' + data.error);
+            }
+        });
+    }
+    
+    function sendReminder(requestId, requestType) {
+        if (confirm('هل أنت متأكد من إرسال تذكير للمورد بالكميات المتبقية؟')) {
+            const apiUrl = requestType === 'material'
+                ? `/company/api/resource-request/${requestId}/send-reminder`
+                : `/company/api/equipment-request/${requestId}/send-reminder`;
+            
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                } else {
+                    alert('خطأ: ' + data.error);
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}

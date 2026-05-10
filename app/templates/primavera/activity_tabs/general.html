@@ -1,0 +1,1721 @@
+<!-- templates/primavera/tabs/activity/general.html -->
+
+<div class="activity-general-container">
+    <!-- رأس القسم المتحرك -->
+    <div class="section-header-sticky">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="header-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0">تفاصيل النشاط</h4>
+                        <p class="mb-0 text-muted small">إدارة المعلومات الأساسية والمقاييس</p>
+                    </div>
+                </div>
+                <button class="btn-save" onclick="saveActivityChanges()" id="saveChangesBtn">
+                    <i class="fas fa-save me-2"></i>
+                    <span>حفظ التغييرات</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقة المعلومات الأساسية -->
+    <div class="glass-card">
+        <div class="card-header-modern">
+            <div class="header-decoration"></div>
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="header-title">
+                    <i class="fas fa-info-circle text-primary"></i>
+                    <h5 class="mb-0">المعلومات الأساسية</h5>
+                </div>
+                <div class="badge-id">
+                    <i class="fas fa-hashtag me-1"></i>
+                    {{ activity.activity_id }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body-modern">
+            <div class="form-grid">
+                <div class="form-field">
+                    <label class="field-label-modern">
+                        <i class="fas fa-tag"></i>
+                        <span>اسم النشاط</span>
+                        <span class="required-dot"></span>
+                    </label>
+                    <input type="text" class="input-modern" id="activityName" value="{{ activity.activity_name }}" 
+                           placeholder="أدخل اسم النشاط">
+                </div>
+                
+                <div class="form-field">
+                    <label class="field-label-modern">
+                        <i class="fas fa-code-branch"></i>
+                        <span>نوع النشاط</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <select class="select-modern" id="activityType">
+                            <option value="Task Dependent" {% if activity.activity_type == 'Task Dependent' %}selected{% endif %}>
+                                📋 Task Dependent
+                            </option>
+                            <option value="Resource Dependent" {% if activity.activity_type == 'Resource Dependent' %}selected{% endif %}>
+                                👥 Resource Dependent
+                            </option>
+                            <option value="Level of Effort" {% if activity.activity_type == 'Level of Effort' %}selected{% endif %}>
+                                ⚡ Level of Effort
+                            </option>
+                            <option value="Start Milestone" {% if activity.activity_type == 'Start Milestone' %}selected{% endif %}>
+                                🏁 Start Milestone
+                            </option>
+                            <option value="Finish Milestone" {% if activity.activity_type == 'Finish Milestone' %}selected{% endif %}>
+                                🎯 Finish Milestone
+                            </option>
+                            <option value="WBS Summary" {% if activity.activity_type == 'WBS Summary' %}selected{% endif %}>
+                                📊 WBS Summary
+                            </option>
+                        </select>
+                        <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="field-label-modern">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>التقويم</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <select class="select-modern" id="activityCalendar">
+                            <option value="">📅 التقويم الافتراضي</option>
+                            {% for cal in calendars %}
+                            <option value="{{ cal.id }}" {% if activity.calendar_id == cal.id %}selected{% endif %}>
+                                {{ cal.name }} {% if cal.is_default %}(افتراضي){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="field-label-modern">
+                        <i class="fas fa-clock"></i>
+                        <span>نوع المدة</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <select class="select-modern" id="durationType">
+                            <option value="Fixed Duration" {% if activity.duration_type == 'Fixed Duration' %}selected{% endif %}>
+                                📅 مدة ثابتة
+                            </option>
+                            <option value="Fixed Units" {% if activity.duration_type == 'Fixed Units' %}selected{% endif %}>
+                                📊 وحدات ثابتة
+                            </option>
+                            <option value="Fixed Duration & Units" {% if activity.duration_type == 'Fixed Duration & Units' %}selected{% endif %}>
+                                🔒 مدة ووحدات ثابتة
+                            </option>
+                        </select>
+                        <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="field-label-modern">
+                        <i class="fas fa-percent"></i>
+                        <span>نسبة الإنجاز</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <select class="select-modern" id="percentCompleteType">
+                            <option value="Duration" {% if activity.percent_complete_type == 'Duration' %}selected{% endif %}>
+                                ⏱️ حسب المدة
+                            </option>
+                            <option value="Physical" {% if activity.percent_complete_type == 'Physical' %}selected{% endif %}>
+                                📏 حسب الإنجاز الفعلي
+                            </option>
+                            <option value="Units" {% if activity.percent_complete_type == 'Units' %}selected{% endif %}>
+                                📦 حسب الوحدات
+                            </option>
+                        </select>
+                        <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="field-label-modern">
+                        <i class="fas fa-sitemap"></i>
+                        <span>هيكل العمل (WBS)</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <select class="select-modern" id="activityWBS">
+                            <option value="">🔲 اختر WBS</option>
+                            {% for wbs in wbs_list %}
+                            <option value="{{ wbs.id }}" {% if activity.wbs_id == wbs.id %}selected{% endif %}>
+                                {{ wbs.wbs_code }} - {{ wbs.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="field-label-modern">
+                        <i class="fas fa-user-tie"></i>
+                        <span>المسؤول</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <select class="select-modern" id="responsibleManager">
+                            <option value="">👤 اختر المسؤول...</option>
+                            {% for user in supervisors %}
+                            <option value="{{ user.id }}" {% if activity.responsible_id == user.id %}selected{% endif %}>
+                                {{ user.full_name }} ({{ user.role }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="field-label-modern">
+                        <i class="fas fa-boxes"></i>
+                        <span>المورد الرئيسي</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <select class="select-modern" id="primaryResource">
+                            <option value="">🔧 اختر المورد...</option>
+                            {% for resource in all_resources %}
+                            <option value="{{ resource.id }}" {% if activity.primary_resource_id == resource.id %}selected{% endif %}>
+                                {{ resource.name }} ({{ resource.resource_type }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="textarea-field mt-4">
+                <label class="field-label-modern">
+                    <i class="fas fa-align-left"></i>
+                    <span>الوصف</span>
+                </label>
+                <textarea class="textarea-modern" id="activityDescription" rows="3" 
+                          placeholder="أدخل وصفاً تفصيلياً للنشاط...">{{ activity.description }}</textarea>
+            </div>
+            
+            <div class="textarea-field mt-3">
+                <label class="field-label-modern">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>تعليمات خاصة</span>
+                </label>
+                <textarea class="textarea-modern" id="activityInstructions" rows="2" 
+                          placeholder="أدخل تعليمات خاصة لهذا النشاط...">{{ activity.instructions or '' }}</textarea>
+                <div class="field-hint">تعليمات إضافية للمنفذين</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقة المقاييس -->
+    <div class="glass-card mt-4">
+        <div class="card-header-modern">
+            <div class="header-decoration accent"></div>
+            <div class="header-title">
+                <i class="fas fa-chart-line text-success"></i>
+                <h5 class="mb-0">مقاييس النشاط</h5>
+            </div>
+        </div>
+        
+        <div class="card-body-modern">
+            <div class="metrics-grid">
+                <div class="metric-card-modern">
+                    <div class="metric-icon-wrapper primary">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="metric-info">
+                        <div class="metric-value">
+                            <input type="number" class="metric-input-modern" id="originalDuration" 
+                                   value="{{ activity.original_duration }}" step="0.5" min="0">
+                            <span class="metric-unit">أيام</span>
+                        </div>
+                        <div class="metric-label">المدة المخططة</div>
+                    </div>
+                </div>
+                
+                <div class="metric-card-modern">
+                    <div class="metric-icon-wrapper success">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="metric-info">
+                        <div class="metric-value">
+                            <input type="number" class="metric-input-modern" id="remainingDuration" 
+                                   value="{{ activity.remaining_duration }}" step="0.5" min="0">
+                            <span class="metric-unit">أيام</span>
+                        </div>
+                        <div class="metric-label">المدة المتبقية</div>
+                    </div>
+                </div>
+                
+                <div class="metric-card-modern">
+                    <div class="metric-icon-wrapper info">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="metric-info">
+                        <div class="metric-value">
+                            <input type="number" class="metric-input-modern" id="actualDuration" 
+                                   value="{{ activity.actual_duration }}" step="0.5" min="0" readonly>
+                            <span class="metric-unit">أيام</span>
+                        </div>
+                        <div class="metric-label">المدة الفعلية</div>
+                    </div>
+                </div>
+                
+                <div class="metric-card-modern">
+                    <div class="metric-icon-wrapper {% if activity.total_float <= 0 %}danger{% else %}warning{% endif %}">
+                        <i class="fas fa-arrows-alt-h"></i>
+                    </div>
+                    <div class="metric-info">
+                        <div class="metric-value {% if activity.total_float <= 0 %}text-danger{% endif %}">
+                            {{ activity.total_float }}
+                            <span class="metric-unit">أيام</span>
+                        </div>
+                        <div class="metric-label">المرونة الكلية</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- شريط التقدم المحسن -->
+            <div class="progress-section mt-4">
+                <div class="progress-header">
+                    <div class="progress-label">
+                        <i class="fas fa-chart-simple"></i>
+                        <span>نسبة الإنجاز</span>
+                    </div>
+                    <div class="progress-value" id="progressValue">{{ activity.progress_percentage }}%</div>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressBar" style="width: {{ activity.progress_percentage }}%">
+                        <div class="progress-glow"></div>
+                    </div>
+                </div>
+                <input type="range" id="progressSlider" class="progress-slider-modern" 
+                       value="{{ activity.progress_percentage }}" min="0" max="100" step="1">
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <label class="field-label-modern">
+                        <i class="fas fa-chart-line"></i>
+                        <span>حالة النشاط</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <select class="select-modern" id="activityStatus">
+                            <option value="not_started" {% if activity.status == 'not_started' %}selected{% endif %}>
+                                ⏳ لم يبدأ
+                            </option>
+                            <option value="in_progress" {% if activity.status == 'in_progress' %}selected{% endif %}>
+                                🔄 قيد التنفيذ
+                            </option>
+                            <option value="completed" {% if activity.status == 'completed' %}selected{% endif %}>
+                                ✅ مكتمل
+                            </option>
+                            <option value="suspended" {% if activity.status == 'suspended' %}selected{% endif %}>
+                                ⏸️ معلق
+                            </option>
+                        </select>
+                        <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="field-label-modern">
+                        <i class="fas fa-star"></i>
+                        <span>جودة الإكمال</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <select class="select-modern" id="completionQuality">
+                            <option value="">غير محدد</option>
+                            <option value="excellent" {% if activity.completion_quality == 'excellent' %}selected{% endif %}>
+                                🌟 ممتاز
+                            </option>
+                            <option value="good" {% if activity.completion_quality == 'good' %}selected{% endif %}>
+                                👍 جيد
+                            </option>
+                            <option value="fair" {% if activity.completion_quality == 'fair' %}selected{% endif %}>
+                                📊 متوسط
+                            </option>
+                            <option value="poor" {% if activity.completion_quality == 'poor' %}selected{% endif %}>
+                                ⚠️ ضعيف
+                            </option>
+                        </select>
+                        <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- خيارات متقدمة -->
+    <div class="glass-card mt-4">
+        <div class="card-header-modern cursor-pointer" data-bs-toggle="collapse" data-bs-target="#advancedOptions">
+            <div class="header-title">
+                <i class="fas fa-cog text-warning"></i>
+                <h5 class="mb-0">خيارات متقدمة</h5>
+            </div>
+            <i class="fas fa-chevron-down collapse-icon"></i>
+        </div>
+        
+        <div class="collapse" id="advancedOptions">
+            <div class="card-body-modern">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="criticalActivity" {% if activity.is_critical %}checked{% endif %}>
+                            <label for="criticalActivity">
+                                <span class="toggle-track"></span>
+                                <span class="toggle-label">
+                                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                                    نشاط حرج
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="milestoneActivity" {% if activity.is_milestone %}checked{% endif %}>
+                            <label for="milestoneActivity">
+                                <span class="toggle-track"></span>
+                                <span class="toggle-label">
+                                    <i class="fas fa-flag-checkered text-success"></i>
+                                    علامة فارقة
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dates-grid mt-4">
+                    <div class="date-card">
+                        <div class="date-icon">
+                            <i class="fas fa-calendar-plus"></i>
+                        </div>
+                        <div class="date-info">
+                            <div class="date-label">تاريخ البدء المخطط</div>
+                            <input type="date" class="date-input" id="plannedStart" 
+                                   value="{{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start else '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="date-card">
+                        <div class="date-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="date-info">
+                            <div class="date-label">تاريخ الانتهاء المخطط</div>
+                            <input type="date" class="date-input" id="plannedFinish" 
+                                   value="{{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish else '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="date-card">
+                        <div class="date-icon">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                        <div class="date-info">
+                            <div class="date-label">تاريخ البدء الفعلي</div>
+                            <input type="date" class="date-input" id="actualStart" 
+                                   value="{{ activity.actual_start.strftime('%Y-%m-%d') if activity.actual_start else '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="date-card">
+                        <div class="date-icon">
+                            <i class="fas fa-stop-circle"></i>
+                        </div>
+                        <div class="date-info">
+                            <div class="date-label">تاريخ الانتهاء الفعلي</div>
+                            <input type="date" class="date-input" id="actualFinish" 
+                                   value="{{ activity.actual_finish.strftime('%Y-%m-%d') if activity.actual_finish else '' }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="schedule-info mt-4">
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-calendar-week"></i>
+                            <span>البداية المبكرة</span>
+                        </div>
+                        <div class="info-value">
+                            {{ activity.early_start.strftime('%Y-%m-%d') if activity.early_start else 'غير محسوب' }}
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-calendar-week"></i>
+                            <span>النهاية المبكرة</span>
+                        </div>
+                        <div class="info-value">
+                            {{ activity.early_finish.strftime('%Y-%m-%d') if activity.early_finish else 'غير محسوب' }}
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-calendar-week"></i>
+                            <span>البداية المتأخرة</span>
+                        </div>
+                        <div class="info-value">
+                            {{ activity.late_start.strftime('%Y-%m-%d') if activity.late_start else 'غير محسوب' }}
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-calendar-week"></i>
+                            <span>النهاية المتأخرة</span>
+                        </div>
+                        <div class="info-value">
+                            {{ activity.late_finish.strftime('%Y-%m-%d') if activity.late_finish else 'غير محسوب' }}
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-arrows-alt-h"></i>
+                            <span>المرونة الحرة</span>
+                        </div>
+                        <div class="info-value">
+                            {{ activity.free_float }} يوم
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ============================================
+   تصميم احترافي متكامل
+============================================ */
+
+:root {
+    --primary-gradient: linear-gradient(135deg, #4361ee, #3f37c9);
+    --success-gradient: linear-gradient(135deg, #4cc9f0, #3aa85a);
+    --warning-gradient: linear-gradient(135deg, #f8961e, #f3722c);
+    --danger-gradient: linear-gradient(135deg, #f94144, #d32f2f);
+    --glass-bg: rgba(255, 255, 255, 0.98);
+    --card-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+.activity-general-container {
+    padding: 1rem;
+}
+
+/* رأس ثابت متحرك */
+.section-header-sticky {
+    position: sticky;
+    top: 70px;
+    z-index: 100;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--card-shadow);
+}
+
+.header-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #4361ee20, #3f37c920);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #4361ee;
+}
+
+.btn-save {
+    background: var(--primary-gradient);
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+}
+
+.btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(67, 97, 238, 0.4);
+}
+
+/* بطاقة زجاجية */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.glass-card:hover {
+    box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.15);
+}
+
+.card-header-modern {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(248, 250, 252, 0.5);
+}
+
+.header-decoration {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #4361ee, #3f37c9);
+}
+
+.header-decoration.accent {
+    background: linear-gradient(180deg, #4cc9f0, #3aa85a);
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-title i {
+    font-size: 1.25rem;
+}
+
+.badge-id {
+    background: #eef2f7;
+    padding: 0.25rem 0.75rem;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4361ee;
+    font-family: monospace;
+}
+
+.card-body-modern {
+    padding: 1.5rem;
+}
+
+/* شبكة النماذج */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.field-label-modern {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.field-label-modern i {
+    font-size: 0.85rem;
+    color: #4361ee;
+}
+
+.required-dot {
+    width: 4px;
+    height: 4px;
+    background: #f94144;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.input-modern {
+    width: 100%;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    background: white;
+}
+
+.input-modern:focus {
+    border-color: #4361ee;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+/* تنسيق السلكت المخصص */
+.select-wrapper {
+    position: relative;
+}
+
+.select-modern {
+    width: 100%;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    appearance: none;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.select-modern:focus {
+    border-color: #4361ee;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.select-icon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+    font-size: 0.8rem;
+}
+
+.textarea-modern {
+    width: 100%;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    resize: vertical;
+    transition: all 0.2s;
+}
+
+.textarea-modern:focus {
+    border-color: #4361ee;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.field-hint {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-top: 0.25rem;
+}
+
+/* مقاييس محسنة */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.metric-card-modern {
+    background: #f8fafc;
+    border-radius: 20px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s;
+    border: 1px solid #eef2f7;
+}
+
+.metric-card-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    border-color: #4361ee;
+}
+
+.metric-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.metric-icon-wrapper.primary { background: rgba(67, 97, 238, 0.1); color: #4361ee; }
+.metric-icon-wrapper.success { background: rgba(76, 175, 80, 0.1); color: #4caf50; }
+.metric-icon-wrapper.info { background: rgba(0, 188, 212, 0.1); color: #00bcd4; }
+.metric-icon-wrapper.warning { background: rgba(255, 152, 0, 0.1); color: #ff9800; }
+.metric-icon-wrapper.danger { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+
+.metric-info {
+    flex: 1;
+}
+
+.metric-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.metric-input-modern {
+    width: 80px;
+    border: none;
+    background: transparent;
+    font-size: 1.25rem;
+    font-weight: 700;
+    padding: 0;
+    display: inline;
+}
+
+.metric-input-modern:focus {
+    outline: none;
+    border-bottom: 2px solid #4361ee;
+}
+
+.metric-unit {
+    font-size: 0.7rem;
+    font-weight: normal;
+    color: #94a3b8;
+}
+
+.metric-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+/* شريط التقدم المحسن */
+.progress-section {
+    background: #f8fafc;
+    border-radius: 20px;
+    padding: 1.25rem;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.progress-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.progress-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #4361ee;
+}
+
+.progress-track {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4361ee, #3f37c9);
+    border-radius: 10px;
+    position: relative;
+    transition: width 0.3s ease;
+}
+
+.progress-glow {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 30px;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5));
+    animation: glow 1.5s infinite;
+}
+
+@keyframes glow {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.progress-slider-modern {
+    width: 100%;
+    margin-top: 0.75rem;
+    -webkit-appearance: none;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+}
+
+.progress-slider-modern::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #4361ee;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 0 2px white, 0 0 0 4px rgba(67, 97, 238, 0.2);
+}
+
+/* تبديلات محسنة */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+}
+
+.toggle-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-switch label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+.toggle-track {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+    background: #cbd5e1;
+    border-radius: 30px;
+    transition: all 0.3s;
+}
+
+.toggle-track::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 4px;
+    transition: all 0.3s;
+}
+
+.toggle-switch input:checked + label .toggle-track {
+    background: #4361ee;
+}
+
+.toggle-switch input:checked + label .toggle-track::after {
+    transform: translateX(24px);
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+/* تواريخ */
+.dates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+.date-card {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid #eef2f7;
+}
+
+.date-icon {
+    width: 36px;
+    height: 36px;
+    background: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4361ee;
+}
+
+.date-info {
+    flex: 1;
+}
+
+.date-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+}
+
+.date-input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.date-input:focus {
+    outline: none;
+}
+
+/* معلومات الجدولة */
+.schedule-info {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 1rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.info-value {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.85rem;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.collapse-icon {
+    transition: transform 0.3s;
+}
+
+.collapsed .collapse-icon {
+    transform: rotate(-90deg);
+}
+
+/* استجابة */
+@media (max-width: 768px) {
+    .section-header-sticky {
+        top: 60px;
+        padding: 0.75rem 1rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .dates-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+// ============================================
+// نظام إدارة نشاط - متقدم مع تتبع التغييرات
+// ============================================
+
+(function() {
+    'use strict';
+    
+    // ============================================
+    // المتغيرات العامة
+    // ============================================
+    let hasChanges = false;
+    let saveButton = document.getElementById('saveChangesBtn');
+    let autoSaveTimer = null;
+    const AUTO_SAVE_DELAY = 3000; // 3 ثواني
+    
+    // ============================================
+    // دوال تتبع التغييرات
+    // ============================================
+    
+    function markAsChanged() {
+        if (!hasChanges) {
+            hasChanges = true;
+            updateSaveButtonState(true);
+            
+            // تفعيل المؤشر البصري
+            showChangeIndicator();
+            
+            // إعادة ضبط المؤقت التلقائي
+            if (autoSaveTimer) clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                if (hasChanges) autoSave();
+            }, AUTO_SAVE_DELAY);
+        }
+    }
+    
+    function resetChanges() {
+        hasChanges = false;
+        updateSaveButtonState(false);
+        hideChangeIndicator();
+        if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    }
+    
+    function updateSaveButtonState(changed) {
+        if (!saveButton) return;
+        
+        if (changed) {
+            saveButton.classList.add('has-changes');
+            saveButton.classList.remove('btn-primary');
+            saveButton.classList.add('btn-warning');
+            saveButton.innerHTML = '<i class="fas fa-save me-2"></i><span>حفظ التغييرات *</span>';
+            
+            // تأثير نبض
+            saveButton.style.animation = 'pulse 0.5s ease';
+            setTimeout(() => { saveButton.style.animation = ''; }, 500);
+        } else {
+            saveButton.classList.remove('has-changes', 'btn-warning');
+            saveButton.classList.add('btn-primary');
+            saveButton.innerHTML = '<i class="fas fa-save me-2"></i><span>حفظ التغييرات</span>';
+        }
+    }
+    
+    function showChangeIndicator() {
+        // إضافة مؤشر تغيير في العنوان
+        const titleElement = document.querySelector('.section-header-sticky h4');
+        if (titleElement && !titleElement.querySelector('.change-indicator')) {
+            const indicator = document.createElement('span');
+            indicator.className = 'change-indicator';
+            indicator.innerHTML = ' <i class="fas fa-circle text-warning" style="font-size: 8px; vertical-align: middle;"></i>';
+            titleElement.appendChild(indicator);
+        }
+    }
+    
+    function hideChangeIndicator() {
+        const indicator = document.querySelector('.change-indicator');
+        if (indicator) indicator.remove();
+    }
+    
+    // ============================================
+    // الحفظ التلقائي
+    // ============================================
+    
+    function autoSave() {
+        if (!hasChanges) return;
+        
+        console.log('جاري الحفظ التلقائي...');
+        saveActivityChanges(true);
+    }
+    
+    // ============================================
+    // تحديث المدة الفعلية
+    // ============================================
+    
+    function updateActualDuration() {
+        const originalInput = document.getElementById('originalDuration');
+        const remainingInput = document.getElementById('remainingDuration');
+        const actualInput = document.getElementById('actualDuration');
+        
+        if (originalInput && remainingInput && actualInput) {
+            const original = parseFloat(originalInput.value) || 0;
+            const remaining = parseFloat(remainingInput.value) || 0;
+            const actual = Math.max(0, original - remaining);
+            actualInput.value = actual.toFixed(1);
+            
+            // تحديث شريط التقدم بناءً على المدة الفعلية
+            if (original > 0) {
+                const progressPercent = (actual / original) * 100;
+                const progressSlider = document.getElementById('progressSlider');
+                if (progressSlider && Math.abs(progressSlider.value - progressPercent) > 0.5) {
+                    progressSlider.value = Math.min(100, Math.max(0, progressPercent));
+                    updateProgressDisplay(progressPercent);
+                }
+            }
+        }
+    }
+    
+    // ============================================
+    // تحديث شريط التقدم
+    // ============================================
+    
+    function updateProgressDisplay(value) {
+        const progressValue = document.getElementById('progressValue');
+        const progressBar = document.getElementById('progressBar');
+        const progressSlider = document.getElementById('progressSlider');
+        
+        if (progressValue) progressValue.textContent = Math.round(value) + '%';
+        if (progressBar) progressBar.style.width = value + '%';
+        if (progressSlider && progressSlider.value != value) progressSlider.value = value;
+    }
+    
+    // ============================================
+    // جمع البيانات من جميع الحقول
+    // ============================================
+    
+    function collectFormData() {
+        return {
+            // المعلومات الأساسية
+            name: document.getElementById('activityName')?.value.trim() || '',
+            description: document.getElementById('activityDescription')?.value.trim() || '',
+            instructions: document.getElementById('activityInstructions')?.value.trim() || '',
+            
+            // الإعدادات
+            activity_type: document.getElementById('activityType')?.value || 'Task Dependent',
+            duration_type: document.getElementById('durationType')?.value || 'Fixed Duration',
+            percent_complete_type: document.getElementById('percentCompleteType')?.value || 'Duration',
+            calendar_id: document.getElementById('activityCalendar')?.value || null,
+            wbs_id: document.getElementById('activityWBS')?.value || null,
+            
+            // المسؤوليات
+            responsible_id: document.getElementById('responsibleManager')?.value || null,
+            primary_resource_id: document.getElementById('primaryResource')?.value || null,
+            
+            // المدة والتقدم
+            original_duration: parseFloat(document.getElementById('originalDuration')?.value) || 0,
+            remaining_duration: parseFloat(document.getElementById('remainingDuration')?.value) || 0,
+            progress_percentage: parseFloat(document.getElementById('progressSlider')?.value) || 0,
+            
+            // الحالة
+            status: document.getElementById('activityStatus')?.value || 'not_started',
+            completion_quality: document.getElementById('completionQuality')?.value || null,
+            
+            // الخيارات المتقدمة
+            is_critical: document.getElementById('criticalActivity')?.checked || false,
+            is_milestone: document.getElementById('milestoneActivity')?.checked || false,
+            
+            // التواريخ
+            planned_start: document.getElementById('plannedStart')?.value || null,
+            planned_finish: document.getElementById('plannedFinish')?.value || null,
+            actual_start: document.getElementById('actualStart')?.value || null,
+            actual_finish: document.getElementById('actualFinish')?.value || null
+        };
+    }
+    
+    // ============================================
+    // التحقق من صحة البيانات
+    // ============================================
+    
+    function validateFormData(data) {
+        const errors = [];
+        
+        if (!data.name) {
+            errors.push('اسم النشاط مطلوب');
+        }
+        
+        if (data.original_duration < 0) {
+            errors.push('المدة المخططة لا يمكن أن تكون سالبة');
+        }
+        
+        if (data.remaining_duration < 0) {
+            errors.push('المدة المتبقية لا يمكن أن تكون سالبة');
+        }
+        
+        if (data.remaining_duration > data.original_duration) {
+            errors.push('المدة المتبقية لا يمكن أن تتجاوز المدة المخططة');
+        }
+        
+        if (data.progress_percentage < 0 || data.progress_percentage > 100) {
+            errors.push('نسبة الإنجاز يجب أن تكون بين 0 و 100');
+        }
+        
+        // التحقق من التواريخ
+        if (data.planned_start && data.planned_finish && data.planned_start > data.planned_finish) {
+            errors.push('تاريخ البدء المخطط لا يمكن أن يكون بعد تاريخ الانتهاء المخطط');
+        }
+        
+        if (data.actual_start && data.actual_finish && data.actual_start > data.actual_finish) {
+            errors.push('تاريخ البدء الفعلي لا يمكن أن يكون بعد تاريخ الانتهاء الفعلي');
+        }
+        
+        return errors;
+    }
+    
+    // ============================================
+    // حفظ التغييرات
+    // ============================================
+    
+    window.saveActivityChanges = async function(isAutoSave = false) {
+        if (!hasChanges && !isAutoSave) {
+            Swal.fire({
+                icon: 'info',
+                title: 'لا توجد تغييرات',
+                text: 'لم تقم بإجراء أي تغييرات لحفظها',
+                timer: 2000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+            return;
+        }
+        
+        // جمع البيانات
+        const data = collectFormData();
+        
+        // التحقق من صحة البيانات
+        const validationErrors = validateFormData(data);
+        if (validationErrors.length > 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'بيانات غير صالحة',
+                html: validationErrors.map(e => `<div>⚠️ ${e}</div>`).join(''),
+                confirmButtonColor: '#f94144'
+            });
+            return;
+        }
+        
+        // تعطيل الزر أثناء الحفظ
+        if (saveButton && !isAutoSave) {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span><span>جاري الحفظ...</span>';
+        }
+        
+        try {
+            const response = await fetch(`/primavera/api/activity/{{ activity.id }}/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ general: data })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                resetChanges();
+                
+                if (!isAutoSave) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الحفظ',
+                        text: 'تم حفظ التغييرات بنجاح',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                } else {
+                    // إشعار صامت للحفظ التلقائي
+                    showAutoSaveNotification();
+                }
+                
+                // تحديث العرض المحسوب
+                updateCalculatedFields();
+                
+            } else {
+                throw new Error(result.error || 'فشل حفظ التغييرات');
+            }
+            
+        } catch (error) {
+            console.error('Save error:', error);
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: error.message || 'حدث خطأ أثناء حفظ التغييرات',
+                confirmButtonColor: '#f94144'
+            });
+            
+        } finally {
+            if (saveButton && !isAutoSave) {
+                saveButton.disabled = false;
+                updateSaveButtonState(hasChanges);
+            }
+        }
+    };
+    
+    // ============================================
+    // إشعار الحفظ التلقائي
+    // ============================================
+    
+    let autoSaveToast = null;
+    
+    function showAutoSaveNotification() {
+        if (autoSaveToast) autoSaveToast.close();
+        
+        autoSaveToast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true
+        });
+        
+        autoSaveToast.fire({
+            icon: 'success',
+            title: 'تم الحفظ تلقائياً'
+        });
+    }
+    
+    // ============================================
+    // تحديث الحقول المحسوبة
+    // ============================================
+    
+    function updateCalculatedFields() {
+        // تحديث المدة الفعلية
+        updateActualDuration();
+        
+        // تحديث شريط التقدم
+        const progressSlider = document.getElementById('progressSlider');
+        if (progressSlider) {
+            updateProgressDisplay(progressSlider.value);
+        }
+        
+        // تحديث حالة النشاط بناءً على نسبة الإنجاز
+        const statusSelect = document.getElementById('activityStatus');
+        const progressValue = parseFloat(document.getElementById('progressSlider')?.value) || 0;
+        
+        if (progressValue >= 100 && statusSelect && statusSelect.value !== 'completed') {
+            statusSelect.value = 'completed';
+            markAsChanged();
+        } else if (progressValue > 0 && progressValue < 100 && statusSelect && statusSelect.value === 'not_started') {
+            statusSelect.value = 'in_progress';
+            markAsChanged();
+        }
+    }
+    
+    // ============================================
+    // تحديث المدة عند تغيير الأصلية
+    // ============================================
+    
+    function onOriginalDurationChange() {
+        updateActualDuration();
+        markAsChanged();
+        
+        // تحديث نسبة الإنجاز بناءً على المدة
+        const original = parseFloat(document.getElementById('originalDuration')?.value) || 0;
+        const actual = parseFloat(document.getElementById('actualDuration')?.value) || 0;
+        if (original > 0) {
+            const newProgress = (actual / original) * 100;
+            const progressSlider = document.getElementById('progressSlider');
+            if (progressSlider && Math.abs(progressSlider.value - newProgress) > 0.5) {
+                progressSlider.value = Math.min(100, Math.max(0, newProgress));
+                updateProgressDisplay(newProgress);
+            }
+        }
+    }
+    
+    // ============================================
+    // تحديث المدة عند تغيير المتبقية
+    // ============================================
+    
+    function onRemainingDurationChange() {
+        updateActualDuration();
+        markAsChanged();
+    }
+    
+    // ============================================
+    // معالج تغيير شريط التقدم
+    // ============================================
+    
+    function onProgressChange() {
+        const slider = document.getElementById('progressSlider');
+        if (slider) {
+            const value = parseFloat(slider.value);
+            updateProgressDisplay(value);
+            markAsChanged();
+            
+            // تحديث المدة الفعلية بناءً على النسبة
+            const original = parseFloat(document.getElementById('originalDuration')?.value) || 0;
+            const actual = (value / 100) * original;
+            const actualInput = document.getElementById('actualDuration');
+            if (actualInput) actualInput.value = actual.toFixed(1);
+            
+            // تحديث المدة المتبقية
+            const remainingInput = document.getElementById('remainingDuration');
+            if (remainingInput) remainingInput.value = (original - actual).toFixed(1);
+        }
+    }
+    
+    // ============================================
+    // معالج تغيير الحالة
+    // ============================================
+    
+    function onStatusChange() {
+        const statusSelect = document.getElementById('activityStatus');
+        const qualitySelect = document.getElementById('completionQuality');
+        
+        if (statusSelect.value === 'completed') {
+            // عند اكتمال النشاط، تعيين نسبة الإنجاز إلى 100%
+            const slider = document.getElementById('progressSlider');
+            if (slider && parseFloat(slider.value) < 100) {
+                slider.value = 100;
+                onProgressChange();
+            }
+            
+            // عرض تنبيه لجودة الإكمال إذا لم يتم تحديدها
+            if (qualitySelect && !qualitySelect.value) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'جودة الإكمال',
+                    text: 'يرجى تحديد جودة إكمال النشاط',
+                    timer: 3000,
+                    toast: true,
+                    position: 'top-end'
+                });
+            }
+        }
+        
+        markAsChanged();
+    }
+    
+    // ============================================
+    // إعادة تعيين النموذج
+    // ============================================
+    
+    window.resetActivityForm = function() {
+        Swal.fire({
+            title: 'إعادة تعيين',
+            text: 'هل أنت متأكد من إعادة تعيين جميع التغييرات؟',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'نعم، إعادة تعيين',
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: '#f8961e'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                location.reload();
+            }
+        });
+    };
+    
+    // ============================================
+    // تهيئة المستمعين
+    // ============================================
+    
+    function initializeEventListeners() {
+        // جميع حقول الإدخال القابلة للتعديل
+        const editableFields = [
+            '#activityName', '#activityDescription', '#activityInstructions',
+            '#activityType', '#durationType', '#percentCompleteType',
+            '#activityCalendar', '#activityWBS', '#responsibleManager', '#primaryResource',
+            '#originalDuration', '#remainingDuration', '#activityStatus', '#completionQuality',
+            '#criticalActivity', '#milestoneActivity', '#plannedStart', '#plannedFinish',
+            '#actualStart', '#actualFinish'
+        ];
+        
+        editableFields.forEach(selector => {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.addEventListener('change', markAsChanged);
+                element.addEventListener('input', markAsChanged);
+            }
+        });
+        
+        // حقول خاصة
+        const originalDuration = document.getElementById('originalDuration');
+        if (originalDuration) {
+            originalDuration.addEventListener('change', onOriginalDurationChange);
+            originalDuration.addEventListener('input', onOriginalDurationChange);
+        }
+        
+        const remainingDuration = document.getElementById('remainingDuration');
+        if (remainingDuration) {
+            remainingDuration.addEventListener('change', onRemainingDurationChange);
+            remainingDuration.addEventListener('input', onRemainingDurationChange);
+        }
+        
+        const progressSlider = document.getElementById('progressSlider');
+        if (progressSlider) {
+            progressSlider.addEventListener('input', onProgressChange);
+        }
+        
+        const statusSelect = document.getElementById('activityStatus');
+        if (statusSelect) {
+            statusSelect.addEventListener('change', onStatusChange);
+        }
+        
+        // Select2
+        if (typeof $ !== 'undefined') {
+            $('.select2').on('change', function() {
+                markAsChanged();
+            });
+        }
+        
+        // منع إرسال النموذج بالضغط على Enter في الحقول
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            el.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                }
+            });
+        });
+    }
+    
+    // ============================================
+    // إضافة تأثيرات CSS إضافية
+    // ============================================
+    
+    function addDynamicStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+            
+            .btn-save.has-changes {
+                animation: pulse 0.5s ease;
+                box-shadow: 0 0 0 3px rgba(248, 150, 30, 0.3);
+            }
+            
+            .field-input:invalid, .input-modern:invalid, .select-modern:invalid {
+                border-color: #f94144;
+            }
+            
+            .field-input:invalid:focus, .input-modern:invalid:focus {
+                box-shadow: 0 0 0 3px rgba(249, 65, 68, 0.1);
+            }
+            
+            .change-indicator {
+                animation: fadeInOut 1s ease;
+            }
+            
+            @keyframes fadeInOut {
+                0% { opacity: 0; }
+                50% { opacity: 1; }
+                100% { opacity: 0.5; }
+            }
+            
+            /* تأثير التحميل */
+            .loading-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                backdrop-filter: blur(4px);
+            }
+            
+            .loading-spinner-custom {
+                width: 60px;
+                height: 60px;
+                border: 4px solid rgba(255,255,255,0.3);
+                border-top-color: #4361ee;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+            
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // ============================================
+    // إضافة زر إعادة تعيين
+    // ============================================
+    
+    function addResetButton() {
+        const header = document.querySelector('.section-header-sticky .d-flex');
+        if (header && !document.getElementById('resetBtn')) {
+            const resetBtn = document.createElement('button');
+            resetBtn.id = 'resetBtn';
+            resetBtn.className = 'btn-reset ms-2';
+            resetBtn.innerHTML = '<i class="fas fa-undo-alt me-2"></i><span>إعادة تعيين</span>';
+            resetBtn.onclick = () => window.resetActivityForm();
+            resetBtn.style.cssText = `
+                background: transparent;
+                border: 2px solid #e2e8f0;
+                padding: 0.6rem 1.2rem;
+                border-radius: 12px;
+                color: #64748b;
+                font-weight: 600;
+                transition: all 0.3s;
+            `;
+            resetBtn.addEventListener('mouseenter', () => {
+                resetBtn.style.borderColor = '#f8961e';
+                resetBtn.style.color = '#f8961e';
+            });
+            resetBtn.addEventListener('mouseleave', () => {
+                resetBtn.style.borderColor = '#e2e8f0';
+                resetBtn.style.color = '#64748b';
+            });
+            
+            const saveBtn = header.querySelector('.btn-save');
+            if (saveBtn) {
+                saveBtn.parentNode.insertBefore(resetBtn, saveBtn.nextSibling);
+            }
+        }
+    }
+    
+    // ============================================
+    // تحميل أولي للحقول
+    // ============================================
+    
+    function initializeFields() {
+        // تحديث المدة الفعلية عند التحميل
+        updateActualDuration();
+        
+        // تحديث شريط التقدم
+        const progressSlider = document.getElementById('progressSlider');
+        if (progressSlider) {
+            updateProgressDisplay(progressSlider.value);
+        }
+    }
+    
+    // ============================================
+    // منع إغلاق الصفحة عند وجود تغييرات غير محفوظة
+    // ============================================
+    
+    window.addEventListener('beforeunload', (e) => {
+        if (hasChanges) {
+            e.preventDefault();
+            e.returnValue = 'لديك تغييرات غير محفوظة. هل أنت متأكد من المغادرة؟';
+            return e.returnValue;
+        }
+    });
+    
+    // ============================================
+    // التهيئة عند تحميل الصفحة
+    // ============================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeEventListeners();
+        initializeFields();
+        addDynamicStyles();
+        addResetButton();
+        
+        console.log('Activity General Tab initialized successfully');
+    });
+    
+})();
+</script>

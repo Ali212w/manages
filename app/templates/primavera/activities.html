@@ -1,0 +1,371 @@
+{% extends "company/base.html" %}
+
+{% block title %}الأنشطة - {{ project.name }}{% endblock %}
+
+{% block page_title %}الأنشطة{% endblock %}
+{% block page_subtitle %}{{ project.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .activities-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .activity-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 0.5rem;
+    }
+    
+    .activity-table thead th {
+        background: #f8f9fa;
+        padding: 1rem;
+        font-weight: 600;
+        color: var(--dark);
+        border: none;
+        font-size: 0.9rem;
+    }
+    
+    .activity-table tbody tr {
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        border-radius: 12px;
+        transition: all 0.3s;
+    }
+    
+    .activity-table tbody tr:hover {
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    
+    .activity-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        border: none;
+    }
+    
+    .activity-id {
+        font-family: monospace;
+        font-weight: 600;
+        color: var(--primary);
+    }
+    
+    .activity-type-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .type-task { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .type-milestone { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .type-resource { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    
+    .status-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-not_started { background: #eef2f7; color: #6c757d; }
+    .status-in_progress { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .status-completed { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    
+    .critical-badge {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+        padding: 0.2rem 0.5rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="activities-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0"><i class="fas fa-tasks me-2 text-primary"></i>قائمة الأنشطة</h5>
+        <button class="btn-primary-gradient" onclick="showCreateActivityModal()">
+            <i class="fas fa-plus me-2"></i>نشاط جديد
+        </button>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>المعرف</th>
+                    <th>النشاط</th>
+                    <th>نوع النشاط</th>
+                    <th>WBS</th>
+                    <th>المدة</th>
+                    <th>تاريخ البدء</th>
+                    <th>تاريخ الانتهاء</th>
+                    <th>الحالة</th>
+                    <th>التقدم</th>
+                    <th>المسؤول</th>
+                    <th>المسار الحرج</th>
+                    <th>أكواد الأنشطة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in activities %}
+                <tr onclick="window.location.href='{{ url_for('primavera.activity_detail', activity_id=activity.id) }}'" style="cursor: pointer;">
+                    <td>
+                        <span class="activity-id">{{ activity.activity_id }}</span>
+                    </td>
+                    <td>
+                        <strong>{{ activity.activity_name }}</strong>
+                    </td>
+                    <td>
+                        <span class="activity-type-badge type-{{ activity.activity_type.split('_')[0] }}">
+                            {% if activity.activity_type == 'task_dependent' %}مهمة
+                            {% elif activity.activity_type == 'start_milestone' %}بداية
+                            {% elif activity.activity_type == 'finish_milestone' %}نهاية
+                            {% elif activity.activity_type == 'resource_dependent' %}تعتمد على مورد
+                            {% else %}{{ activity.activity_type }}{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% if activity.wbs %}
+                        <small>{{ activity.wbs.wbs_code }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ activity.original_duration }} يوم</td>
+                    <td>{{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start }}</td>
+                    <td>{{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish }}</td>
+                    <td>
+                        <span class="status-badge status-{{ activity.status }}">
+                            {% if activity.status == 'not_started' %}لم تبدأ
+                            {% elif activity.status == 'in_progress' %}قيد التنفيذ
+                            {% elif activity.status == 'completed' %}مكتملة
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="progress flex-grow-1 me-2" style="height: 5px;">
+                                <div class="progress-bar bg-{{ 'success' if activity.progress_percentage >= 80 else 'primary' if activity.progress_percentage >= 50 else 'warning' }}" 
+                                     style="width: {{ activity.progress_percentage }}%"></div>
+                            </div>
+                            <small>{{ activity.progress_percentage|round }}%</small>
+                        </div>
+                    </td>
+                    <td>
+                        {% if activity.responsible %}
+                        {{ activity.responsible.full_name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if activity.is_critical %}
+                        <span class="critical-badge">
+                            <i class="fas fa-exclamation-triangle me-1"></i>حرج
+                        </span>
+                        {% endif %}
+                    </td>
+                  <td>
+                    <div class="activity-codes" id="codes-{{ activity.id }}">
+                        {% if activity.activity_code_values %}
+                            {% for type, value in activity.activity_code_values.items() %}
+                            <span class="badge bg-info me-1">{{ type }}: {{ value }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info" onclick="showCodeSelector({{ activity.id }})">
+                        <i class="fas fa-tags"></i> إضافة كود
+                    </button>
+                    <a href="{{ url_for('tasks.create_task', project_id=project.id, activity_id=activity.id) }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>إضافة مهمة للنشاط
+                    </a>
+                </td>  
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="11" class="text-center py-5">
+                        <i class="fas fa-tasks fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">لا توجد أنشطة</h5>
+                        <p class="text-muted">قم بإضافة أول نشاط للمشروع</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal إنشاء نشاط -->
+<div class="modal fade" id="createActivityModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus-circle me-2 text-primary"></i>نشاط جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('primavera.activity_create') }}">
+                <input type="hidden" name="project_id" value="{{ project.id }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">معرف النشاط</label>
+                            <input type="text" name="activity_id" class="form-control" placeholder="A1000">
+                            <small class="text-muted">يتم إنشاؤه تلقائياً إذا ترك فارغاً</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required-field">اسم النشاط</label>
+                            <input type="text" name="activity_name" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نوع النشاط</label>
+                            <select name="activity_type" class="form-select">
+                                <option value="task_dependent">مهمة عادية</option>
+                                <option value="start_milestone">معلم بداية</option>
+                                <option value="finish_milestone">معلم نهاية</option>
+                                <option value="resource_dependent">تعتمد على مورد</option>
+                                <option value="level_of_effort">جهد مستمر</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">الوصف</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label required-field">المدة (أيام)</label>
+                            <input type="number" name="original_duration" class="form-control" required min="0" step="0.5" value="1">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">تاريخ البدء</label>
+                            <input type="date" name="planned_start" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">تاريخ الانتهاء</label>
+                            <input type="date" name="planned_finish" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">WBS</label>
+                            <select name="wbs_id" class="form-select">
+                                <option value="">-- بدون WBS --</option>
+                                {% for wbs in wbs_nodes %}
+                                <option value="{{ wbs.id }}">{{ wbs.wbs_code }} - {{ wbs.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">التقويم</label>
+                            <select name="calendar_id" class="form-select">
+                                <option value="">-- تقويم المشروع --</option>
+                                {% for cal in calendars %}
+                                <option value="{{ cal.id }}">{{ cal.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">الوزن</label>
+                            <input type="number" name="weight" class="form-control" value="1" min="0" step="0.1">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">الأولوية</label>
+                            <select name="priority" class="form-select">
+                                <option value="5">5 - عالية جداً</option>
+                                <option value="4">4 - عالية</option>
+                                <option value="3" selected>3 - متوسطة</option>
+                                <option value="2">2 - منخفضة</option>
+                                <option value="1">1 - منخفضة جداً</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">المسؤول</label>
+                            <select name="responsible_id" class="form-select">
+                                <option value="">-- غير معين --</option>
+                                {% if project.eps and project.eps.manager and project.eps.manager.org_id %}
+                                    {% for user in project.eps.manager.org_id.users %}
+                                
+                                <option value="{{ user.id }}">{{ user.full_name }}</option>
+                                {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn-primary-gradient">حفظ النشاط</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+   
+function showCreateActivityModal() {
+    new bootstrap.Modal(document.getElementById('createActivityModal')).show();
+}
+function showCodeSelector(activityId) {
+    fetch('/enterprise/api/activity-codes/list')
+        .then(response => response.json())
+        .then(data => {
+            let options = '<select class="form-select mb-2" id="codeType">';
+            data.codes.forEach(code => {
+                options += `<option value="${code.type}">${code.type}</option>`;
+            });
+            options += '</select>';
+            
+            options += '<input type="text" class="form-control" id="codeValue" placeholder="قيمة الكود">';
+            
+            Swal.fire({
+                title: 'إضافة كود نشاط',
+                html: options,
+                showCancelButton: true,
+                confirmButtonText: 'إضافة',
+                cancelButtonText: 'إلغاء'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const type = document.getElementById('codeType').value;
+                    const value = document.getElementById('codeValue').value;
+                    
+                    fetch(`/enterprise/api/apply-activity-code/${activityId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            code_type: type,
+                            code_value: value
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        }
+                    });
+                }
+            });
+        });
+}
+</script>
+{% endblock %}

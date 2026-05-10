@@ -1,0 +1,293 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('dashboard') }} — {{ _('org_admin') }}{% endblock %}
+
+{% block content %}
+<div class="role-dash" id="role-dashboard-org-admin">
+
+  <!-- ══ Header ══ -->
+  <div class="rd-header d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+      <h1 class="rd-title">
+        <span class="rd-badge badge-admin"><i class="fas fa-crown me-1"></i></span>
+        {{ _('welcome_back') }}, {{ current_user.full_name or current_user.username }}
+      </h1>
+      <p class="rd-subtitle text-muted mb-0">
+        <i class="far fa-clock me-1"></i> {{ now.strftime('%A, %d %B %Y') }}
+        &nbsp;|&nbsp;
+        <span class="text-success fw-semibold"><i class="fas fa-circle-dot me-1" style="font-size:.65rem"></i>{{ _('real_time_data') }}</span>
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('dashboard.advanced_dashboard') }}" class="btn rd-btn-primary">
+        <i class="fas fa-chart-bar me-1"></i> {{ _('financial_analysis') }}
+      </a>
+      <a href="{{ url_for('projects.list_projects') }}" class="btn rd-btn-outline">
+        <i class="fas fa-folder-open me-1"></i> {{ _('all_projects') }}
+      </a>
+    </div>
+  </div>
+
+  <!-- ══ KPI Row 1: المشاريع ══ -->
+  <div class="row g-3 mb-4">
+    {% set cards = [
+      ('fa-diagram-project', 'kpi-indigo',  kpis.total_projects,    _('total_projects'),     '', ''),
+      ('fa-play-circle',     'kpi-emerald', kpis.active_projects,   _('active_projects'),    '', ''),
+      ('fa-check-circle',    'kpi-blue',    kpis.completed_projects,_('completed'), '', ''),
+      ('fa-triangle-exclamation','kpi-red', kpis.overdue_projects,  _('overdue'),            '', ''),
+    ] %}
+    {% for icon, cls, val, label, sub, _ in cards %}
+    <div class="col-6 col-md-3">
+      <div class="rd-kpi {{ cls }}">
+        <div class="rd-kpi-icon"><i class="fas {{ icon }}"></i></div>
+        <div class="rd-kpi-body">
+          <div class="rd-kpi-value">{{ val }}</div>
+          <div class="rd-kpi-label">{{ label }}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ══ KPI Row 2: المهام ══ -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="rd-kpi kpi-slate">
+        <div class="rd-kpi-icon"><i class="fas fa-list-check"></i></div>
+        <div class="rd-kpi-body">
+          <div class="rd-kpi-value">{{ kpis.total_tasks }}</div>
+          <div class="rd-kpi-label">{{ _('total_tasks') }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="rd-kpi kpi-emerald">
+        <div class="rd-kpi-icon"><i class="fas fa-circle-check"></i></div>
+        <div class="rd-kpi-body">
+          <div class="rd-kpi-value">{{ kpis.completed_tasks }}</div>
+          <div class="rd-kpi-label">{{ _('completed_tasks') }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="rd-kpi kpi-indigo">
+        <div class="rd-kpi-icon"><i class="fas fa-spinner"></i></div>
+        <div class="rd-kpi-body">
+          <div class="rd-kpi-value">{{ kpis.in_progress_tasks }}</div>
+          <div class="rd-kpi-label">{{ _('in_progress_tasks') }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="rd-kpi kpi-amber">
+        <div class="rd-kpi-icon"><i class="fas fa-clock"></i></div>
+        <div class="rd-kpi-body">
+          <div class="rd-kpi-value">{{ kpis.overdue_tasks }}</div>
+          <div class="rd-kpi-label">{{ _('delayed_tasks') }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Middle Row: Charts + Finance ══ -->
+  <div class="row g-3 mb-4">
+    <!-- Chart: توزيع المهام -->
+    <div class="col-lg-4">
+      <div class="rd-card h-100">
+        <div class="rd-card-header">
+          <span><i class="fas fa-pie-chart me-2 text-primary"></i>{{ _('task_status_distribution') }}</span>
+        </div>
+        <div class="rd-card-body d-flex align-items-center justify-content-center">
+          <canvas id="taskStatusChart" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- نسبة الإنجاز الكلية -->
+    <div class="col-lg-4">
+      <div class="rd-card h-100">
+        <div class="rd-card-header">
+          <span><i class="fas fa-gauge-high me-2 text-success"></i>{{ _('completion_rate') }}</span>
+        </div>
+        <div class="rd-card-body text-center py-3">
+          <div class="rd-gauge-wrap">
+            <canvas id="completionGauge" height="180"></canvas>
+            <div class="rd-gauge-value">{{ kpis.task_completion_rate }}%</div>
+          </div>
+          <p class="text-muted small mt-2">{{ _('total_tasks') }}: <strong>{{ kpis.total_tasks }}</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- الميزانية -->
+    <div class="col-lg-4">
+      <div class="rd-card h-100">
+        <div class="rd-card-header">
+          <span><i class="fas fa-coins me-2 text-warning"></i>{{ _('financial_analysis') }}</span>
+        </div>
+        <div class="rd-card-body">
+          {% set rows = [
+            (_('total_budget'),       kpis.total_budget,  'text-primary'),
+            (_('actual_cost'),        kpis.total_cost,    'text-danger' if kpis.total_cost > kpis.total_budget else 'text-success'),
+            (_('total_variance'),     kpis.budget_variance,'text-success' if kpis.budget_variance >= 0 else 'text-danger'),
+          ] %}
+          {% for label, val, cls in rows %}
+          <div class="rd-fin-row">
+            <span class="rd-fin-label">{{ label }}</span>
+            <span class="rd-fin-val {{ cls }}">{{ "{:,.0f}".format(val) }} {{ _('sar') }}</span>
+          </div>
+          {% endfor %}
+          <!-- شريط الاستخدام -->
+          <div class="mt-3">
+            <div class="d-flex justify-content-between small text-muted mb-1">
+              <span>{{ _('budget_utilization') }}</span>
+              <strong>{{ kpis.budget_utilization }}%</strong>
+            </div>
+            <div class="rd-progress-bar">
+              {% set bar_w = kpis.budget_utilization if kpis.budget_utilization <= 100 else 100 %}
+              <div class="rd-progress-fill {{ 'danger' if kpis.budget_utilization > 90 else 'warning' if kpis.budget_utilization > 70 else 'success' }}"
+                   style="width: {{ bar_w }}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Bottom Row: Users + Projects ══ -->
+  <div class="row g-3 mb-4">
+
+    <!-- توزيع المستخدمين -->
+    <div class="col-lg-4">
+      <div class="rd-card">
+        <div class="rd-card-header">
+          <span><i class="fas fa-users me-2 text-indigo"></i>{{ _('team_members') }}</span>
+          <span class="badge bg-indigo-soft text-indigo">{{ kpis.total_users }}</span>
+        </div>
+        <div class="rd-card-body p-0">
+          {% set role_labels = {
+            'org_admin':       _('org_admin'),
+            'project_manager': _('project_manager'),
+            'supervisor':      _('supervisor'),
+            'delegate':        _('delegate'),
+            'employee':        _('employee'),
+          } %}
+          {% set role_icons = {
+            'org_admin':'fa-crown text-warning',
+            'project_manager':'fa-user-tie text-primary',
+            'supervisor':'fa-user-shield text-info',
+            'delegate':'fa-user-tag text-orange',
+            'employee':'fa-user text-secondary',
+          } %}
+          {% for role_key, count in kpis.role_distribution.items() %}
+          <div class="rd-user-row">
+            <div class="d-flex align-items-center gap-2">
+              <i class="fas {{ role_icons.get(role_key, 'fa-user text-secondary') }}"></i>
+              <span class="small">{{ role_labels.get(role_key, role_key) }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <div class="rd-mini-bar" style="width:80px">
+                <div style="width:{{ (count / kpis.total_users * 100)|int }}%;background:var(--primary);height:100%;border-radius:4px"></div>
+              </div>
+              <strong class="small">{{ count }}</strong>
+            </div>
+          </div>
+          {% else %}
+          <div class="text-muted text-center py-3 small">{{ _('no_data') }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- آخر المشاريع -->
+    <div class="col-lg-8">
+      <div class="rd-card">
+        <div class="rd-card-header">
+          <span><i class="fas fa-folder-open me-2 text-emerald"></i>{{ _('active_projects') }}</span>
+          <a href="{{ url_for('projects.list_projects') }}" class="btn rd-btn-xs">{{ _('view_all') }}</a>
+        </div>
+        <div class="table-responsive">
+          <table class="rd-table">
+            <thead>
+              <tr>
+                <th>{{ _('name') }}</th>
+                <th>{{ _('status') }}</th>
+                <th>{{ _('progress_percentage') }}</th>
+                <th>{{ _('budget') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in recent_projects %}
+              <tr>
+                <td><a href="{{ url_for('projects.project_detail', project_id=p.id) }}" class="rd-link">{{ p.name }}</a></td>
+                <td>
+                  {% set sc = {'active':'emerald','planning':'amber','completed':'blue','delayed':'red','cancelled':'slate'} %}
+                  <span class="rd-status-badge {{ sc.get(p.status, 'slate') }}">{{ _(p.status) }}</span>
+                </td>
+                <td>
+                  {% set prog = p.get_progress() %}
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="rd-mini-bar flex-grow-1">
+                      <div style="width:{{ prog }}%;background:{{ 'var(--accent)' if prog>=70 else 'var(--primary)' }};height:100%;border-radius:4px"></div>
+                    </div>
+                    <small>{{ prog }}%</small>
+                  </div>
+                </td>
+                <td class="small text-muted">
+                  {% if p.budget %}{{ "{:,.0f}".format(p.budget.current_budget) }} {{ _('sar') }}{% else %}—{% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="4" class="text-center text-muted py-3">{{ _('no_data') }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /role-dash -->
+
+<!-- Chart.js -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // توزيع المهام — Donut
+  const ctx1 = document.getElementById('taskStatusChart');
+  if(ctx1){
+    new Chart(ctx1, {
+      type: 'doughnut',
+      data: {
+        labels: ['{{ _("completed") }}','{{ _("in_progress") }}','{{ _("pending") }}','{{ _("overdue") }}'],
+        datasets:[{
+          data: [{{ kpis.completed_tasks }},{{ kpis.in_progress_tasks }},{{ kpis.total_tasks - kpis.completed_tasks - kpis.in_progress_tasks - kpis.overdue_tasks }},{{ kpis.overdue_tasks }}],
+          backgroundColor:['#10b981','#6366f1','#94a3b8','#ef4444'],
+          borderWidth: 2, borderColor:'#fff'
+        }]
+      },
+      options:{plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},cutout:'68%'}
+    });
+  }
+
+  // Gauge — Completion Rate (half-donut)
+  const ctx2 = document.getElementById('completionGauge');
+  if(ctx2){
+    const rate = {{ kpis.task_completion_rate }};
+    new Chart(ctx2,{
+      type:'doughnut',
+      data:{
+        datasets:[{
+          data:[rate, 100-rate],
+          backgroundColor:['#10b981','#e2e8f0'],
+          borderWidth:0
+        }]
+      },
+      options:{
+        circumference:180, rotation:-90,
+        plugins:{legend:{display:false}, tooltip:{enabled:false}},
+        cutout:'80%'
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

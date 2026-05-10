@@ -1,0 +1,460 @@
+{% extends "employee/base.html" %}
+
+{% block title %}تقرير مالي - {{ activity.activity_name }}{% endblock %}
+
+{% block page_title %}تقرير مالي{% endblock %}
+{% block page_subtitle %}{{ activity.activity_name }} - {{ activity.activity_id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-header {
+        background: linear-gradient(135deg, #1a2a3a, #0f1a24);
+        border-radius: 24px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        color: white;
+    }
+    
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .summary-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.25rem;
+        text-align: center;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08);
+    }
+    
+    .summary-value {
+        font-size: 1.8rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+    
+    .summary-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+    
+    .summary-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+    
+    .variance-positive {
+        color: #dc2626;
+    }
+    
+    .variance-negative {
+        color: #10b981;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.25rem;
+        border: 1px solid #eef2f7;
+        margin-bottom: 1.5rem;
+    }
+    
+    .chart-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .expenses-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .expenses-table th {
+        text-align: right;
+        padding: 0.75rem;
+        background: #f8fafc;
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: #475569;
+    }
+    
+    .expenses-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .category-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    .category-Labor { background: rgba(67, 97, 238, 0.1); color: #4361ee; }
+    .category-Material { background: rgba(76, 175, 80, 0.1); color: #4caf50; }
+    .category-Equipment { background: rgba(255, 152, 0, 0.1); color: #ff9800; }
+    .category-Transport { background: rgba(0, 188, 212, 0.1); color: #00bcd4; }
+    .category-Other { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+    
+    .cost-breakdown {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .breakdown-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .breakdown-label {
+        font-weight: 500;
+    }
+    
+    .breakdown-value {
+        font-weight: 700;
+    }
+    
+    .export-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-bottom: 1.5rem;
+    }
+    
+    .btn-export {
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        transition: all 0.3s;
+    }
+    
+    @media (max-width: 768px) {
+        .summary-cards {
+            grid-template-columns: 1fr;
+        }
+        
+        .expenses-table {
+            font-size: 0.75rem;
+        }
+        
+        .export-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- رأس التقرير -->
+    <div class="report-header">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <h3 class="mb-2">{{ activity.activity_name }}</h3>
+                <p class="mb-0 opacity-75">
+                    <i class="fas fa-code me-1"></i> {{ activity.activity_id }}
+                    <span class="mx-2">|</span>
+                    <i class="fas fa-project-diagram me-1"></i> {{ activity.project.name }}
+                </p>
+            </div>
+            <div>
+                <span class="badge bg-{{ 'success' if activity.status == 'completed' else 'primary' if activity.status == 'in_progress' else 'secondary' }} fs-6">
+                    {{ 'مكتمل' if activity.status == 'completed' else 'قيد التنفيذ' if activity.status == 'in_progress' else 'لم يبدأ' }}
+                </span>
+            </div>
+        </div>
+        <div class="mt-3">
+            <small class="opacity-75">
+                <i class="far fa-calendar-alt me-1"></i>
+                تاريخ التقرير: {{ now.strftime('%Y-%m-%d %H:%M') }}
+            </small>
+        </div>
+    </div>
+    
+    <!-- أزرار التصدير -->
+    <div class="export-buttons">
+        <button class="btn btn-outline-secondary btn-export" onclick="exportReport('pdf')">
+            <i class="fas fa-file-pdf me-2"></i> تصدير PDF
+        </button>
+        <button class="btn btn-outline-success btn-export" onclick="exportReport('excel')">
+            <i class="fas fa-file-excel me-2"></i> تصدير Excel
+        </button>
+        <button class="btn btn-outline-primary btn-export" onclick="window.print()">
+            <i class="fas fa-print me-2"></i> طباعة
+        </button>
+    </div>
+    
+    <!-- بطاقات الملخص -->
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="summary-icon bg-primary bg-opacity-10 mx-auto">
+                <i class="fas fa-chart-line fa-2x text-primary"></i>
+            </div>
+            <div class="summary-value">{{ "{:,.2f}".format(total_planned) }} ريال</div>
+            <div class="summary-label">الميزانية المخططة</div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="summary-icon bg-danger bg-opacity-10 mx-auto">
+                <i class="fas fa-money-bill-wave fa-2x text-danger"></i>
+            </div>
+            <div class="summary-value">{{ "{:,.2f}".format(total_actual) }} ريال</div>
+            <div class="summary-label">التكلفة الفعلية</div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="summary-icon {% if variance > 0 %}bg-danger{% else %}bg-success{% endif %} bg-opacity-10 mx-auto">
+                <i class="fas fa-chart-simple fa-2x {% if variance > 0 %}text-danger{% else %}text-success{% endif %}"></i>
+            </div>
+            <div class="summary-value {% if variance > 0 %}variance-positive{% else %}variance-negative{% endif %}">
+                {{ "{:,.2f}".format(variance) }} ريال
+            </div>
+            <div class="summary-label">الفارق</div>
+            <small class="text-muted">{{ "%.1f"|format(variance_percentage) }}%</small>
+        </div>
+        
+        <div class="summary-card">
+            <div class="summary-icon bg-info bg-opacity-10 mx-auto">
+                <i class="fas fa-percent fa-2x text-info"></i>
+            </div>
+            <div class="summary-value">{{ "%.1f"|format(activity.progress_percentage) }}%</div>
+            <div class="summary-label">نسبة الإنجاز</div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-6">
+            <!-- توزيع التكاليف -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <i class="fas fa-chart-pie text-primary"></i>
+                    توزيع التكاليف حسب الفئة
+                </div>
+                <div class="cost-breakdown">
+                    {% for category, amount in expenses_by_category.items() %}
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">
+                            <span class="category-badge category-{{ category }}">
+                                <i class="fas fa-{% if category == 'Labor' %}user{% elif category == 'Material' %}box{% elif category == 'Equipment' %}cog{% elif category == 'Transport' %}truck{% else %}tag{% endif %} me-1"></i>
+                                {% if category == 'Labor' %}عمالة
+                                {% elif category == 'Material' %}مواد
+                                {% elif category == 'Equipment' %}معدات
+                                {% elif category == 'Transport' %}نقل
+                                {% else %}أخرى{% endif %}
+                            </span>
+                        </span>
+                        <span class="breakdown-value">{{ "{:,.2f}".format(amount) }} ريال</span>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-chart-pie fa-3x mb-2"></i>
+                        <p>لا توجد بيانات كافية</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- تفاصيل التكاليف -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <i class="fas fa-chart-line text-primary"></i>
+                    تفاصيل التكاليف
+                </div>
+                <div class="cost-breakdown">
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">تكاليف الموارد</span>
+                        <span class="breakdown-value">{{ "{:,.2f}".format(resources_cost) }} ريال</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">تكاليف المهام</span>
+                        <span class="breakdown-value">{{ "{:,.2f}".format(tasks_cost) }} ريال</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">المصروفات المباشرة</span>
+                        <span class="breakdown-value">{{ "{:,.2f}".format(total_actual - resources_cost - tasks_cost) }} ريال</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label fw-bold">الإجمالي</span>
+                        <span class="breakdown-value fw-bold">{{ "{:,.2f}".format(total_actual) }} ريال</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <!-- جدول المصروفات -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <i class="fas fa-receipt text-primary"></i>
+                    قائمة المصروفات
+                </div>
+                <div class="table-responsive">
+                    <table class="expenses-table">
+                        <thead>
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>الوصف</th>
+                                <th>الفئة</th>
+                                <th>المبلغ</th>
+                                <th>الحالة</th>
+                            </thead>
+                            <tbody>
+                                {% for expense in expenses %}
+                                <tr>
+                                    <td>{{ expense.expense_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ expense.description }}</td>
+                                    <td>
+                                        <span class="category-badge category-{{ expense.category }}">
+                                            {{ expense.category }}
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold">{{ "{:,.2f}".format(expense.amount) }} {{ expense.currency }}</td>
+                                    <td>
+                                        {% if expense.is_approved %}
+                                        <span class="badge bg-success">معتمد</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">قيد المراجعة</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        <i class="fas fa-receipt fa-2x mb-2"></i>
+                                        <p>لا توجد مصروفات مسجلة</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- رسم بياني للمصروفات (Canvas) -->
+        <div class="chart-container">
+            <div class="chart-title">
+                <i class="fas fa-chart-bar text-primary"></i>
+                اتجاه المصروفات
+            </div>
+            <canvas id="expensesChart" style="height: 300px;"></canvas>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    // رسم بياني للمصروفات
+    const ctx = document.getElementById('expensesChart').getContext('2d');
+    
+    // تجميع المصروفات حسب التاريخ
+    const expensesByDate = {};
+    {% for expense in expenses %}
+    const date = '{{ expense.expense_date.strftime('%Y-%m-%d') }}';
+    if (!expensesByDate[date]) expensesByDate[date] = 0;
+    expensesByDate[date] += expense.amount;
+    {% endfor %}
+    
+    const dates = Object.keys(expensesByDate).sort();
+    const amounts = dates.map(d => expensesByDate[d]);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'المصروفات اليومية (ريال)',
+                data: amounts,
+                borderColor: '#4361ee',
+                backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#4361ee',
+                pointBorderColor: 'white',
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.raw.toFixed(2)} ريال`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    title: {
+                        display: true,
+                        text: 'المبلغ (ريال)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString() + ' ريال';
+                        }
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'التاريخ'
+                    }
+                }
+            }
+        }
+    });
+    
+    function exportReport(format) {
+        Swal.fire({
+            title: 'جاري التصدير...',
+            text: `يتم تصدير التقرير بصيغة ${format.toUpperCase()}`,
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+        
+        // محاكاة التصدير
+        setTimeout(() => {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم التصدير',
+                text: `تم تصدير التقرير بنجاح`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }, 1500);
+    }
+    </script>
+    {% endblock %}

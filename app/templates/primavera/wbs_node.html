@@ -1,0 +1,86 @@
+<div class="wbs-node level-{{ node.level }}" id="wbs-{{ node.id }}">
+    <div class="d-flex align-items-center">
+        <div class="wbs-icon">
+            <i class="fas fa-folder"></i>
+        </div>
+        
+        <div class="flex-grow-1">
+            <div class="d-flex align-items-center">
+                <strong>{{ node.name }}</strong>
+                <span class="wbs-code">{{ node.wbs_code }}</span>
+                {% if node.budget > 0 %}
+                <span class="badge bg-primary ms-2">{{ "{:,.0f}".format(node.budget) }} ر.س</span>
+                {% endif %}
+            </div>
+            
+            {% if node.description %}
+            <p class="text-muted small mb-1">{{ node.description }}</p>
+            {% endif %}
+            
+            <div class="wbs-stats">
+                <span class="stat-badge">
+                    <i class="fas fa-tasks"></i>
+                    {{ node.activities|length }} نشاط
+                </span>
+                
+                <span class="stat-badge">
+                    <i class="fas fa-percent"></i>
+                    <div class="progress-small">
+                        <div class="progress-fill" style="width: {{ node.progress }}%"></div>
+                    </div>
+                    {{ node.progress|round }}%
+                </span>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button class="action-btn" onclick="editWBS({{ node.id }})" title="تعديل">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="action-btn" onclick="addChild({{ node.id }})" title="إضافة عنصر فرعي">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="action-btn" onclick="deleteWBS({{ node.id }})" title="حذف">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+{% for child in node.children %}
+    {% with node=child %}
+        {% include 'primavera/wbs_node.html' %}
+    {% endwith %}
+{% endfor %}
+
+<script>
+function editWBS(wbsId) {
+    // TODO: تنفيذ تعديل WBS
+    Swal.fire('جاري التطوير', 'سيتم إضافة هذه الميزة قريباً', 'info');
+}
+
+function addChild(parentId) {
+    document.querySelector('select[name="parent_id"]').value = parentId;
+    showCreateModal();
+}
+
+function deleteWBS(wbsId) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا العنصر؟ سيتم حذف جميع العناصر الفرعية أيضاً!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // TODO: استدعاء API الحذف
+            Swal.fire('تم الحذف', '', 'success').then(() => {
+                location.reload();
+            });
+        }
+    });
+}
+</script>

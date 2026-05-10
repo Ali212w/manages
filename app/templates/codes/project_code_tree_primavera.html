@@ -1,0 +1,39 @@
+<li>
+    <div class="code-item" style="border-right-color: {{ code.display_color }};">
+        <div class="code-level-indent" style="width: {{ code.level * 30 }}px;">
+            {% for i in range(code.level - 1) %}
+            <span style="display: inline-block; width: 20px;"></span>
+            {% endfor %}
+        </div>
+        <div class="code-color-indicator" style="background-color: {{ code.display_color }};"></div>
+        <div class="code-info">
+            <div class="code-value">
+                {{ code.code_value }}
+            </div>
+            {% if code.description %}
+            <div class="code-description">{{ code.description }}</div>
+            {% endif %}
+        </div>
+        <div class="code-actions">
+           
+            <!-- ✅ استخدام الدالة editCode بدلاً من showEditCodeModal -->
+            <button class="action-btn" onclick="showEditCodeModal('{{ code.id }}', '{{ code.code_value }}', '{{ code.description }}', '{{ code.display_color }}', {{ code.display_sequence }})" title="تعديل">
+            <i class="fas fa-edit"></i>
+        </button>
+            <!-- ✅ استخدام الدالة deleteCode بدلاً من showDeleteModal -->
+            <button class="action-btn" onclick="deleteCode({{ code.id }})" title="حذف">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    
+    {% if code.children %}
+    <ul class="code-tree">
+        {% for child in code.children %}
+            {% with code=child %}
+                {% include 'codes/project_code_tree_primavera.html' %}
+            {% endwith %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+</li>

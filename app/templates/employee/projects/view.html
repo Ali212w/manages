@@ -1,0 +1,271 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .project-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border-radius: var(--radius-lg);
+        padding: 25px;
+        color: white;
+        margin-bottom: 25px;
+    }
+    
+    .stat-card-mini {
+        background: rgba(255,255,255,0.15);
+        border-radius: var(--radius-md);
+        padding: 15px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+    }
+    
+    .section-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .task-item {
+        background: #f8f9fa;
+        border-radius: var(--radius-md);
+        padding: 15px;
+        margin-bottom: 12px;
+        transition: all 0.2s ease;
+    }
+    
+    .task-item:hover {
+        transform: translateX(-5px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .activity-item {
+        background: linear-gradient(135deg, #f8f9fa, #fff);
+        border-radius: var(--radius-md);
+        padding: 15px;
+        margin-bottom: 12px;
+        border-left: 4px solid;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .activity-item:hover {
+        transform: translateX(-5px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .progress-ring-small {
+        width: 50px;
+        height: 50px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="project-header">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <span class="badge bg-light text-dark mb-2">{{ project.project_code }}</span>
+            <h2 class="mb-2">{{ project.name }}</h2>
+            <p class="mb-0 text-white-50">{{ project.description|truncate(150) if project.description else '' }}</p>
+        </div>
+        <div>
+            {{ get_status_badge(project.status) | safe }}
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="stat-card-mini">
+                <div class="display-6 fw-bold">{{ "%.0f"|format(project.progress) }}%</div>
+                <small>{{ _('emp.completion') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card-mini">
+                <div class="display-6 fw-bold">{{ tasks|length }}</div>
+                <small>{{ _('emp.my_tasks') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card-mini">
+                <div class="display-6 fw-bold">{{ activities|length }}</div>
+                <small>{{ _('emp.my_activities') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card-mini">
+                <div class="display-6 fw-bold">{{ project.dates.planned_finish.strftime('%Y-%m-%d') if project.dates else '-' }}</div>
+                <small>{{ _('emp.deadline') }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-7">
+        <!-- مهامي في هذا المشروع -->
+        <div class="section-card">
+            <h5 class="mb-3"><i class="fas fa-tasks me-2 text-primary"></i> {{ _('emp.my_tasks') }}</h5>
+            {% if tasks %}
+                {% for task in tasks %}
+                <div class="task-item" onclick="window.location.href='{{ url_for('employee.view_task', task_id=task.id) }}'">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1 fw-bold">{{ task.task_name }}</h6>
+                            <div class="d-flex gap-3">
+                                <small class="text-muted">{{ task.task_code }}</small>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i> {{ format_date(get_task_planned_end(task)) }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            {{ get_status_badge(task.status) | safe }}
+                            <div class="mt-1">
+                                <div class="progress" style="width: 80px; height: 4px;">
+                                    <div class="progress-bar bg-success" style="width: {{ get_task_progress(task) }}%"></div>
+                                </div>
+                                <small>{{ get_task_progress(task)|round|int }}%</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                    <p class="mb-0 text-muted">{{ _('emp.no_tasks_assigned') }}</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- أنشطتي في هذا المشروع -->
+        <div class="section-card">
+            <h5 class="mb-3"><i class="fas fa-microchip me-2 text-primary"></i> {{ _('emp.my_activities') }}</h5>
+            {% if activities %}
+                {% for activity in activities %}
+                <div class="activity-item" style="border-left-color: {% if activity.status == 'completed' %}#00b894{% elif activity.status == 'in_progress' %}#f9c74f{% else %}#6c757d{% endif %}"
+                     onclick="window.location.href='{{ url_for('employee.view_activity', activity_id=activity.id) }}'">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1 fw-bold">{{ activity.activity_name }}</h6>
+                            <small class="text-muted">{{ activity.activity_id }}</small>
+                        </div>
+                        <div class="text-end">
+                            {{ get_status_badge(activity.status) | safe }}
+                            <div class="mt-1">
+                                <div class="progress" style="width: 80px; height: 4px;">
+                                    <div class="progress-bar bg-success" style="width: {{ activity.progress_percentage }}%"></div>
+                                </div>
+                                <small>{{ "%.0f"|format(activity.progress_percentage) }}%</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-microchip fa-2x text-muted mb-2"></i>
+                    <p class="mb-0 text-muted">{{ _('emp.no_activities_assigned') }}</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-lg-5">
+        <!-- معلومات المشروع -->
+        <div class="section-card">
+            <h5 class="mb-3"><i class="fas fa-info-circle me-2 text-primary"></i> {{ _('emp.project_details') }}</h5>
+            <div class="mb-2">
+                <small class="text-muted">{{ _('emp.planned_start') }}</small>
+                <div class="fw-bold">{{ format_date(project.dates.planned_start) if project.dates else '-' }}</div>
+            </div>
+            <div class="mb-2">
+                <small class="text-muted">{{ _('emp.planned_end') }}</small>
+                <div class="fw-bold">{{ format_date(project.dates.planned_finish) if project.dates else '-' }}</div>
+            </div>
+            <div class="mb-2">
+                <small class="text-muted">{{ _('emp.project_manager') }}</small>
+                <div class="fw-bold">{{ project.manager.full_name if project.manager else '-' }}</div>
+            </div>
+            <div class="mb-2">
+                <small class="text-muted">{{ _('emp.category') }}</small>
+                <div class="fw-bold">{{ project.category or '-' }}</div>
+            </div>
+            <div class="mb-2">
+                <small class="text-muted">{{ _('emp.priority') }}</small>
+                <div>{{ get_priority_badge(project.priority_level) | safe }}</div>
+            </div>
+        </div>
+        
+        <!-- تقدم المشروع -->
+        <div class="section-card">
+            <h5 class="mb-3"><i class="fas fa-chart-line me-2 text-primary"></i> {{ _('emp.project_progress') }}</h5>
+            <canvas id="projectProgressChart" width="200" height="200"></canvas>
+            <div class="text-center mt-2">
+                <span class="fw-bold">{{ "%.1f"|format(project.progress) }}%</span>
+                <small class="text-muted">{{ _('emp.complete') }}</small>
+            </div>
+        </div>
+        
+        <!-- إحصائيات سريعة -->
+        <div class="section-card">
+            <h5 class="mb-3"><i class="fas fa-chart-pie me-2 text-primary"></i> {{ _('emp.statistics') }}</h5>
+            <div class="row text-center">
+                <div class="col-6 mb-3">
+                    <div class="fw-bold text-primary">{{ tasks|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+                    <small class="text-muted">{{ _('emp.tasks_completed') }}</small>
+                </div>
+                <div class="col-6 mb-3">
+                    <div class="fw-bold text-success">{{ tasks|selectattr('status', 'equalto', 'in_progress')|list|length }}</div>
+                    <small class="text-muted">{{ _('emp.tasks_in_progress') }}</small>
+                </div>
+                <div class="col-6">
+                    <div class="fw-bold text-info">{{ activities|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+                    <small class="text-muted">{{ _('emp.activities_completed') }}</small>
+                </div>
+                <div class="col-6">
+                    <div class="fw-bold text-warning">{{ activities|selectattr('status', 'equalto', 'in_progress')|list|length }}</div>
+                    <small class="text-muted">{{ _('emp.activities_in_progress') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // رسم مخطط تقدم المشروع
+    const ctx = document.getElementById('projectProgressChart').getContext('2d');
+    const progress = {{ project.progress }};
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['{{ _("completed") }}', '{{ _("remaining") }}'],
+            datasets: [{
+                data: [progress, 100 - progress],
+                backgroundColor: ['#00b894', '#e0e0e0'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            cutout: '70%',
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 10,
+                        font: { size: 10 }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

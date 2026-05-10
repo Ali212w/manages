@@ -1,0 +1,272 @@
+{% extends "client/base.html" %}
+
+{% block title %}المعالم - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4><i class="fas fa-flag-checkered me-2"></i> معالم المشروع</h4>
+                <p class="text-muted mb-0">{{ project.name }}</p>
+            </div>
+            <a href="{{ url_for('client.project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> العودة للمشروع
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-success">{{ stats.achieved }}</h3>
+            <small>تم الإنجاز</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-warning">{{ stats.pending }}</h3>
+            <small>معلقة</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-danger">{{ stats.delayed }}</h3>
+            <small>متأخرة</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-info">{{ stats.upcoming }}</h3>
+            <small>قادمة</small>
+        </div>
+    </div>
+</div>
+
+<!-- Milestones Timeline -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-timeline me-2"></i> الجدول الزمني للمعالم</h6>
+    </div>
+    <div class="card-body">
+        <div class="timeline-wrapper">
+            {% for milestone in milestones %}
+            <div class="timeline-item mb-4 {% if milestone.status == 'achieved' %}achieved{% elif milestone.planned_date < now.date() %}delayed{% endif %}">
+                <div class="timeline-marker {% if milestone.status == 'achieved' %}bg-success{% elif milestone.planned_date < now.date() %}bg-danger{% else %}bg-primary{% endif %}">
+                    <i class="fas {% if milestone.status == 'achieved' %}fa-check{% elif milestone.planned_date < now.date() %}fa-exclamation{% else %}fa-flag{% endif %}"></i>
+                </div>
+                <div class="timeline-content card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap">
+                            <div>
+                                <h5 class="mb-1">{{ milestone.name }}</h5>
+                                <p class="text-muted mb-2">{{ milestone.description or 'لا يوجد وصف' }}</p>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-tag me-1"></i> النوع: {{ milestone.milestone_type or 'عام' }}
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-weight-hanging me-1"></i> الوزن: {{ "%.1f"|format(milestone.weight) }}%
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="mb-2">
+                                    {% if milestone.status == 'achieved' %}
+                                    <span class="badge bg-success">تم الإنجاز</span>
+                                    {% elif milestone.planned_date < now.date() %}
+                                    <span class="badge bg-danger">متأخر</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">قادم</span>
+                                    {% endif %}
+                                </div>
+                                <div class="date-info">
+                                    <div><i class="fas fa-calendar-alt me-1"></i> المخطط: {{ milestone.planned_date.strftime('%Y-%m-%d') }}</div>
+                                    {% if milestone.actual_date %}
+                                    <div class="text-success"><i class="fas fa-check-circle me-1"></i> الفعلي: {{ milestone.actual_date.strftime('%Y-%m-%d') }}</div>
+                                    {% endif %}
+                                    {% set days_diff = (milestone.planned_date - now.date()).days %}
+                                    {% if milestone.status != 'achieved' %}
+                                        {% if days_diff > 0 %}
+                                        <div class="text-info"><i class="fas fa-hourglass-half me-1"></i> متبقي: {{ days_diff }} يوم</div>
+                                        {% elif days_diff < 0 %}
+                                        <div class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i> متأخر: {{ days_diff|abs }} يوم</div>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if milestone.status == 'achieved' and milestone.achieved_by_user %}
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-success">
+                                <i class="fas fa-user-check me-1"></i>
+                                تم بواسطة: {{ milestone.achieved_by_user.full_name }}
+                            </small>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                تم الإنجاز في: {{ milestone.updated_at.strftime('%Y-%m-%d %H:%M') if milestone.updated_at else milestone.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-flag-checkered fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">لا توجد معالم مسجلة</h5>
+                <p class="text-muted">سيتم عرض معالم المشروع هنا عند إضافتها</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Progress Chart -->
+<div class="card mt-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i> تقدم إنجاز المعالم</h6>
+    </div>
+    <div class="card-body">
+        <canvas id="milestonesProgressChart" height="100"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Milestones Progress Chart
+    const milestonesCtx = document.getElementById('milestonesProgressChart').getContext('2d');
+    
+    const milestoneNames = {{ milestones|map(attribute='name')|list|tojson }};
+    const plannedDates = {{ milestones|map(attribute='planned_date')|map('isoformat')|list|tojson }};
+    const actualDates = {{ milestones|map(attribute='actual_date')|map('isoformat')|list|tojson }};
+    
+    // تحويل التواريخ إلى أيام من بداية المشروع
+    const startDate = new Date('{{ project.dates.planned_start.isoformat() if project.dates and project.dates.planned_start else now.isoformat() }}');
+    
+    const plannedDays = plannedDates.map(d => {
+        if (!d) return 0;
+        const diff = (new Date(d) - startDate) / (1000 * 60 * 60 * 24);
+        return Math.max(0, diff);
+    });
+    
+    const actualDays = actualDates.map(d => {
+        if (!d) return null;
+        const diff = (new Date(d) - startDate) / (1000 * 60 * 60 * 24);
+        return Math.max(0, diff);
+    });
+    
+    new Chart(milestonesCtx, {
+        type: 'bar',
+        data: {
+            labels: milestoneNames,
+            datasets: [
+                {
+                    label: 'المخطط (يوم)',
+                    data: plannedDays,
+                    backgroundColor: 'rgba(67, 97, 238, 0.7)',
+                    borderRadius: 8
+                },
+                {
+                    label: 'الفعلي (يوم)',
+                    data: actualDays,
+                    backgroundColor: 'rgba(76, 175, 80, 0.7)',
+                    borderRadius: 8
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.raw} يوم`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    title: { display: true, text: 'الأيام من بداية المشروع' }
+                }
+            }
+        }
+    });
+</script>
+
+<style>
+    .timeline-wrapper {
+        position: relative;
+        padding: 20px 0;
+    }
+    
+    .timeline-item {
+        position: relative;
+        display: flex;
+        margin-bottom: 30px;
+    }
+    
+    .timeline-marker {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-left: 20px;
+        flex-shrink: 0;
+        z-index: 2;
+    }
+    
+    .timeline-marker i {
+        font-size: 18px;
+    }
+    
+    .timeline-content {
+        flex: 1;
+        margin-right: 0;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        right: 19px;
+        top: 40px;
+        bottom: -30px;
+        width: 2px;
+        background: linear-gradient(to bottom, #e9ecef, #e9ecef);
+        z-index: 1;
+    }
+    
+    .timeline-item:last-child::before {
+        display: none;
+    }
+    
+    .date-info {
+        font-size: 0.85rem;
+    }
+    
+    @media (max-width: 768px) {
+        .timeline-marker {
+            width: 30px;
+            height: 30px;
+        }
+        .timeline-marker i {
+            font-size: 12px;
+        }
+        .timeline-item::before {
+            right: 14px;
+        }
+    }
+</style>
+{% endblock %}

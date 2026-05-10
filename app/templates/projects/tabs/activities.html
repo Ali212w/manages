@@ -1,0 +1,62 @@
+<div class="card">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-tasks text-primary me-2"></i>أنشطة المشروع</h6>
+        <a href="{{ url_for('primavera.create_activitys', project_id=project.id) }}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i>إضافة نشاط
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>كود النشاط</th>
+                        <th>اسم النشاط</th>
+                        <th>الحالة</th>
+                        <th>التقدم</th>
+                        <th>تاريخ البداية</th>
+                        <th>تاريخ النهاية</th>
+                        <th>المسؤول</th>
+                        <th>المهام</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in project.activities %}
+                    <tr>
+                        <td><span class="fw-bold text-primary">{{ activity.activity_code }}</span></td>
+                        <td>{{ activity.activity_name }}</td>
+                        <td>
+                            <span class="badge bg-{% if activity.status == 'in_progress' %}info{% elif activity.status == 'completed' %}success{% else %}warning{% endif %}">
+                                {{ activity.status }}
+                            </span>
+                            {% if activity.is_critical %}
+                            <span class="badge bg-danger">حرج</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-success" style="width: {{ activity.progress_percentage }}%"></div>
+                            </div>
+                            <small>{{ activity.progress_percentage }}%</small>
+                        </td>
+                        <td>{{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start else '-' }}</td>
+                        <td>{{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish else '-' }}</td>
+                        <td>{{ activity.responsible.full_name if activity.responsible else '-' }}</td>
+                        <td><span class="badge bg-info">{{ activity.tasks_count }}</span></td>
+                        <td>
+                            <a href="{{ url_for('primavera.activity_detail', activity_id=activity.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-3">لا توجد أنشطة</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

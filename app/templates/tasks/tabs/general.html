@@ -1,0 +1,137 @@
+<div class="row">
+    <div class="col-md-6">
+        <div class="info-card">
+            <h6 class="info-card-title">
+                <i class="fas fa-info-circle"></i> معلومات أساسية
+            </h6>
+            <table class="info-table">
+                <tr>
+                    <td>كود المهمة:</td>
+                    <td class="fw-bold text-primary">{{ task.task_code }}</td>
+                </tr>
+                <tr>
+                    <td>اسم المهمة:</td>
+                    <td>{{ task.task_name }}</td>
+                </tr>
+                <tr>
+                    <td>الوصف:</td>
+                    <td>{{ task.description or '-' }}</td>
+                </tr>
+                <tr>
+                    <td>تعليمات التنفيذ:</td>
+                    <td>{{ task.instructions or '-' }}</td>
+                </tr>
+                <tr>
+                    <td>المشروع:</td>
+                    <td>
+                        <a href="{{ url_for('projects.project_detail', project_id=task.project.id) }}">
+                            {{ task.project.name }}
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>النشاط المرتبط:</td>
+                    <td>
+                        {% if task.activity %}
+                        <a href="{{ url_for('primavera.activity_detail', activity_id=task.activity.id) }}">
+                            {{ task.activity.activity_code }} - {{ task.activity.activity_name }}
+                        </a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>الترتيب:</td>
+                    <td>{{ task.task_order }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="info-card">
+            <h6 class="info-card-title">
+                <i class="fas fa-users"></i> المسؤولون
+            </h6>
+            <table class="info-table">
+                <tr>
+                    <td>المشرف:</td>
+                    <td class="fw-bold">{{ task.supervisor.full_name if task.supervisor else '-' }}</td>
+                </tr>
+                <tr>
+                    <td>المندوب:</td>
+                    <td>{{ task.delegate.full_name if task.delegate else '-' }}</td>
+                </tr>
+                <tr>
+                    <td>تاريخ الإنشاء:</td>
+                    <td>{{ task.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                <tr>
+                    <td>آخر تحديث:</td>
+                    <td>{{ task.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                <tr>
+                    <td>أنشئ بواسطة:</td>
+                    <td>{{ task.creator.full_name if task.creator else '-' }}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="info-card mt-3">
+            <h6 class="info-card-title">
+                <i class="fas fa-map-marker-alt"></i> الموقع
+            </h6>
+            <table class="info-table">
+                <tr>
+                    <td>الموقع:</td>
+                    <td>{{ task.location_rel.location if task.location_rel else '-' }}</td>
+                </tr>
+                <tr>
+                    <td>الإحداثيات:</td>
+                    <td>{{ task.location_rel.coordinates if task.location_rel else '-' }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="info-card">
+            <h6 class="info-card-title">
+                <i class="fas fa-code-branch"></i> سلسلة التبعيات
+            </h6>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                {% set chain = task.get_dependencies_chain() %}
+                {% if chain %}
+                    {% for pred in chain %}
+                    <a href="{{ url_for('tasks.task_detail', task_id=pred.id) }}" class="badge bg-primary text-decoration-none">
+                        {{ pred.code }}
+                    </a>
+                    <i class="fas fa-arrow-left text-muted"></i>
+                    {% endfor %}
+                {% endif %}
+                
+                <span class="badge bg-success">{{ task.task_code }}</span>
+                
+                {% set successors = task.get_successors_chain() %}
+                {% if successors %}
+                    <i class="fas fa-arrow-right text-muted"></i>
+                    {% for succ in successors %}
+                    <a href="{{ url_for('tasks.task_detail', task_id=succ.id) }}" class="badge bg-info text-decoration-none">
+                        {{ succ.code }}
+                    </a>
+                    {% if not loop.last %}
+                    <i class="fas fa-arrow-left text-muted"></i>
+                    {% endif %}
+                    {% endfor %}
+                {% endif %}
+                
+                {% if not chain and not successors %}
+                <span class="text-muted">لا توجد تبعيات لهذه المهمة</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

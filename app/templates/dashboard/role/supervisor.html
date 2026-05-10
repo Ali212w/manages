@@ -1,0 +1,81 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('dashboard') }} — {{ _('supervisor') }}{% endblock %}
+{% block content %}
+<div class="role-dash" id="role-dashboard-supervisor">
+  <div class="rd-header d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+      <h1 class="rd-title"><span class="rd-badge badge-sup"><i class="fas fa-user-shield me-1"></i></span> {{ _('welcome_back') }}, {{ current_user.full_name or current_user.username }}</h1>
+      <p class="rd-subtitle text-muted mb-0">{{ _('supervisor') }}</p>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    {% for icon, cls, val, label in [
+      ('fa-list-check',  'kpi-indigo', kpis.supervised_tasks, _('total_tasks')),
+      ('fa-circle-check','kpi-emerald',kpis.completed_tasks,  _('completed_tasks')),
+      ('fa-spinner',     'kpi-blue',   kpis.in_progress_tasks,_('in_progress_tasks')),
+      ('fa-clock',       'kpi-red',    kpis.overdue_tasks,    _('delayed_tasks')),
+    ] %}
+    <div class="col-6 col-md-3">
+      <div class="rd-kpi {{ cls }}">
+        <div class="rd-kpi-icon"><i class="fas {{ icon }}"></i></div>
+        <div class="rd-kpi-body">
+          <div class="rd-kpi-value">{{ val }}</div>
+          <div class="rd-kpi-label">{{ label }}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="rd-card">
+        <div class="rd-card-header"><span><i class="fas fa-users me-2"></i>{{ _('team_members') }}</span><span class="badge bg-primary-soft text-primary">{{ kpis.employees_count }}</span></div>
+        <div class="rd-card-body text-center py-4">
+          <div class="rd-big-number" style="font-size:3rem;font-weight:900;color:var(--primary)">{{ kpis.employees_count }}</div>
+          <div class="text-muted">{{ _('team_members') }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="rd-card">
+        <div class="rd-card-header"><span><i class="fas fa-chart-line me-2"></i>{{ _('completion_rate') }}</span></div>
+        <div class="rd-card-body text-center py-4">
+          <div class="rd-big-number" style="font-size:3rem;font-weight:900;color:var(--accent)">{{ kpis.task_completion_rate }}%</div>
+          <div class="text-muted">{{ _('completion_rate') }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="rd-card">
+        <div class="rd-card-header"><span><i class="fas fa-folder me-2"></i>{{ _('project') }}</span></div>
+        <div class="rd-card-body text-center py-4">
+          <div class="rd-big-number" style="font-size:3rem;font-weight:900;color:var(--indigo)">{{ kpis.projects_count }}</div>
+          <div class="text-muted">{{ _('active_projects') }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- المهام المشرف عليها -->
+  <div class="rd-card">
+    <div class="rd-card-header"><span><i class="fas fa-tasks me-2 text-primary"></i>{{ _('total_tasks') }}</span></div>
+    <div class="table-responsive">
+      <table class="rd-table">
+        <thead><tr><th>{{ _('name') }}</th><th>{{ _('status') }}</th><th>{{ _('project') }}</th><th>{{ _('due_date') }}</th></tr></thead>
+        <tbody>
+          {% for t in supervised_tasks %}
+          <tr>
+            <td><a href="{{ url_for('tasks.task_detail',task_id=t.id) }}" class="rd-link">{{ t.task_name }}</a></td>
+            <td>{% set sc={'completed':'emerald','in_progress':'indigo','pending':'amber','delayed':'red'} %}<span class="rd-status-badge {{ sc.get(t.status,'slate') }}">{{ _(t.status) }}</span></td>
+            <td class="small text-muted">{{ t.project.name if t.project else '—' }}</td>
+            <td class="small text-muted">{{ t.end_date.strftime('%Y-%m-%d') if t.end_date else '—' }}</td>
+          </tr>
+          {% else %}<tr><td colspan="4" class="text-center py-3 text-muted">{{ _('no_data') }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

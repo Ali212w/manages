@@ -1,0 +1,77 @@
+{% if node.children %}
+<details open>
+    <summary>
+        <span class="expand-btn" onclick="event.preventDefault(); this.closest('details').open = !this.closest('details').open;">
+            <i class="fas fa-chevron-down"></i>
+        </span>
+        <div class="wbs-item level-{{ node.level }}" onclick="viewWBS({{ node.id }})">
+            <div class="item-icon">
+                <i class="fas fa-folder"></i>
+            </div>
+            <div class="item-content">
+                <div class="item-title">
+                    {{ node.name }}
+                    <span class="item-code">{{ node.wbs_code }}</span>
+                </div>
+                <div class="item-stats">
+                    <span><i class="fas fa-coins"></i> {{ "{:,.0f}".format(node.budget) }} ر.س</span>
+                    <span><i class="fas fa-tasks"></i> {{ node.stats.total_activities }} نشاط</span>
+                    <span class="item-progress">
+                        <div class="progress">
+                            <div class="progress-bar bg-{{ 'success' if node.progress >= 70 else 'warning' if node.progress >= 40 else 'danger' }}" 
+                                 style="width: {{ node.progress }}%"></div>
+                        </div>
+                    </span>
+                </div>
+            </div>
+            <div class="item-actions" onclick="event.stopPropagation()">
+                <button class="action-btn" onclick="editWBS({{ node.id }})" title="تعديل">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn" onclick="deleteWBS({{ node.id }}, '{{ node.name }}')" title="حذف">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </summary>
+    <ul style="margin-right: 2rem;">
+        {% for child in node.children %}
+            {% with node=child %}
+                {% include 'primavera/wbs/wbs_tree_node.html' %}
+            {% endwith %}
+        {% endfor %}
+    </ul>
+</details>
+{% else %}
+<li>
+    <div class="wbs-item level-{{ node.level }}" style="margin-right: 2rem;" onclick="viewWBS({{ node.id }})">
+        <div class="item-icon">
+            <i class="fas fa-file"></i>
+        </div>
+        <div class="item-content">
+            <div class="item-title">
+                {{ node.name }}
+                <span class="item-code">{{ node.wbs_code }}</span>
+            </div>
+            <div class="item-stats">
+                <span><i class="fas fa-coins"></i> {{ "{:,.0f}".format(node.budget) }} ر.س</span>
+                <span><i class="fas fa-tasks"></i> {{ node.stats.total_activities }} نشاط</span>
+                <span class="item-progress">
+                    <div class="progress">
+                        <div class="progress-bar bg-{{ 'success' if node.progress >= 70 else 'warning' if node.progress >= 40 else 'danger' }}" 
+                             style="width: {{ node.progress }}%"></div>
+                    </div>
+                </span>
+            </div>
+        </div>
+        <div class="item-actions" onclick="event.stopPropagation()">
+            <button class="action-btn" onclick="editWBS({{ node.id }})" title="تعديل">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="action-btn" onclick="deleteWBS({{ node.id }}, '{{ node.name }}')" title="حذف">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+</li>
+{% endif %}

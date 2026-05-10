@@ -1,0 +1,666 @@
+{% extends "company/base.html" %}
+
+{% block title %}تقرير التأخيرات - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}تقرير التأخيرات{% endblock %}
+{% block page_subtitle %}تحليل ومراقبة المهام المتأخرة في جميع المشاريع{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Summary Cards */
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .summary-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+        text-align: center;
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .summary-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        margin: 0 auto 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+    }
+    
+    .summary-icon.total {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+    }
+    
+    .summary-icon.delayed {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+    }
+    
+    .summary-icon.days {
+        background: rgba(248, 150, 30, 0.1);
+        color: var(--warning);
+    }
+    
+    .summary-icon.completed {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .summary-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0.5rem 0;
+    }
+    
+    .summary-label {
+        color: #6c757d;
+        margin: 0;
+    }
+    
+    /* Filters */
+    .filters-section {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .filter-group {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .filter-input {
+        flex: 1;
+        min-width: 200px;
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        transition: all 0.3s;
+    }
+    
+    .filter-input:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    /* Delays Table */
+    .delays-table-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .delays-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .delays-table thead th {
+        background: #f8f9fa;
+        padding: 1rem;
+        font-weight: 600;
+        color: var(--dark);
+        border: none;
+        font-size: 0.9rem;
+        text-align: right;
+    }
+    
+    .delays-table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #eef2f7;
+        vertical-align: middle;
+    }
+    
+    .delays-table tbody tr {
+        transition: all 0.3s;
+    }
+    
+    .delays-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .project-badge {
+        display: inline-block;
+        padding: 0.3rem 1rem;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .delay-cell {
+        font-weight: 700;
+        color: var(--danger);
+    }
+    
+    .progress-cell {
+        min-width: 120px;
+    }
+    
+    .progress-bar-container {
+        height: 8px;
+        background: #eef2f7;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 0.3rem;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        background: var(--primary);
+        border-radius: 4px;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-pending {
+        background: rgba(248, 150, 30, 0.1);
+        color: var(--warning);
+    }
+    
+    .status-in_progress {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+    }
+    
+    .action-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 10px;
+        border: none;
+        background: #f8f9fa;
+        color: #6c757d;
+        transition: all 0.3s;
+        margin: 0 2px;
+    }
+    
+    .action-btn:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .action-btn.danger:hover {
+        background: var(--danger);
+    }
+    
+    /* Chart Section */
+    .chart-section {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .chart-container {
+        height: 300px;
+        margin-top: 1.5rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 992px) {
+        .summary-cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .summary-cards {
+            grid-template-columns: 1fr;
+        }
+        
+        .filter-group {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Summary Cards -->
+<div class="summary-cards">
+    <div class="summary-card">
+        <div class="summary-icon total">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <div class="summary-value">{{ total_delays }}</div>
+        <div class="summary-label">إجمالي المهام المتأخرة</div>
+    </div>
+    
+    <div class="summary-card">
+        <div class="summary-icon days">
+            <i class="fas fa-calendar-times"></i>
+        </div>
+        <div class="summary-value">{{ delays|sum(attribute='delay_days') }}</div>
+        <div class="summary-label">إجمالي أيام التأخير</div>
+    </div>
+    
+    <div class="summary-card">
+        <div class="summary-icon delayed">
+            <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <div class="summary-value">{{ delays|selectattr('current_status', 'equalto', 'pending')|list|length }}</div>
+        <div class="summary-label">مهام معلقة متأخرة</div>
+    </div>
+    
+    <div class="summary-card">
+        <div class="summary-icon completed">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="summary-value">{{ delays|selectattr('current_status', 'equalto', 'in_progress')|list|length }}</div>
+        <div class="summary-label">مهام قيد التنفيذ متأخرة</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filters-section">
+    <div class="filter-group">
+        <input type="text" class="filter-input" id="searchInput" placeholder="بحث في المشاريع أو المهام...">
+        <select class="filter-input" id="projectFilter">
+            <option value="all">جميع المشاريع</option>
+            {% for project in delays|map(attribute='project_name')|unique %}
+            <option value="{{ project }}">{{ project }}</option>
+            {% endfor %}
+        </select>
+        <select class="filter-input" id="statusFilter">
+            <option value="all">جميع الحالات</option>
+            <option value="pending">معلقة</option>
+            <option value="in_progress">قيد التنفيذ</option>
+        </select>
+        <button class="btn-primary-gradient" onclick="applyFilters()">
+            <i class="fas fa-filter me-2"></i> تصفية
+        </button>
+    </div>
+</div>
+
+<!-- Delays Table -->
+<div class="delays-table-container">
+    <div class="table-header">
+        <h5 class="mb-0"><i class="fas fa-exclamation-triangle text-danger ms-2"></i>تفاصيل المهام المتأخرة</h5>
+        <div>
+            <button class="btn-outline-primary btn-sm" onclick="exportReport()">
+                <i class="fas fa-file-excel me-1"></i> تصدير تقرير
+            </button>
+            <button class="btn-outline-primary btn-sm ms-2" onclick="sendReport()">
+                <i class="fas fa-envelope me-1"></i> إرسال تقرير
+            </button>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="delays-table" id="delaysTable">
+            <thead>
+                <tr>
+                    <th>المشروع</th>
+                    <th>رمز المهمة</th>
+                    <th>اسم المهمة</th>
+                    <th>المسؤول</th>
+                    <th>التاريخ المخطط</th>
+                    <th>أيام التأخير</th>
+                    <th>الحالة الحالية</th>
+                    <th>التقدم</th>
+                    <th>سبب التأخير</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for delay in delays %}
+                <tr>
+                    <td>
+                        <span class="project-badge">{{ delay.project_name }}</span>
+                        <br><small class="text-muted">{{ delay.project_code }}</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary">{{ delay.task_code }}</span>
+                    </td>
+                    <td>
+                        <strong>{{ delay.task_name }}</strong>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="responsible-avatar ms-2">{{ delay.responsible[0] }}</div>
+                            {{ delay.responsible }}
+                        </div>
+                    </td>
+                    <td>{{ delay.planned_end.strftime('%Y-%m-%d') if delay.planned_end }}</td>
+                    <td class="delay-cell">
+                        <strong>{{ delay.delay_days }}</strong> يوم
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ delay.current_status }}">
+                            {% if delay.current_status == 'pending' %}معلقة
+                            {% elif delay.current_status == 'in_progress' %}قيد التنفيذ
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td class="progress-cell">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: {{ delay.progress }}%"></div>
+                        </div>
+                        <small>{{ delay.progress }}%</small>
+                    </td>
+                    <td>
+                        <small class="text-muted">{{ delay.delay_reason }}</small>
+                    </td>
+                    <td>
+                        <button class="action-btn" onclick="viewTask({{ delay.task_id }})" title="عرض المهمة">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="action-btn" onclick="remindResponsible({{ delay.task_id }})" title="تذكير المسؤول">
+                            <i class="fas fa-bell"></i>
+                        </button>
+                        <button class="action-btn danger" onclick="escalate({{ delay.task_id }})" title="تصعيد">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" class="text-center py-5">
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <h5 class="text-muted mb-3">مبارك! لا توجد أي مهام متأخرة</h5>
+                        <p class="text-muted">جميع المشاريع تسير وفق الجدول الزمني المخطط</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Delay Analysis Chart -->
+<div class="chart-section">
+    <h5 class="mb-4"><i class="fas fa-chart-line ms-2 text-primary"></i>تحليل التأخيرات حسب المشروع</h5>
+    <div class="chart-container">
+        <canvas id="delayChart"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// تهيئة الرسم البياني
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('delayChart').getContext('2d');
+    
+    // تجميع البيانات حسب المشروع
+    const projectData = {};
+    {% for delay in delays %}
+        if (!projectData['{{ delay.project_name }}']) {
+            projectData['{{ delay.project_name }}'] = {
+                total: 0,
+                pending: 0,
+                in_progress: 0,
+                days: 0
+            };
+        }
+        projectData['{{ delay.project_name }}'].total++;
+        projectData['{{ delay.project_name }}'].days += {{ delay.delay_days }};
+        if ('{{ delay.current_status }}' === 'pending') {
+            projectData['{{ delay.project_name }}'].pending++;
+        } else {
+            projectData['{{ delay.project_name }}'].in_progress++;
+        }
+    {% endfor %}
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(projectData),
+            datasets: [
+                {
+                    label: 'مهام معلقة',
+                    data: Object.values(projectData).map(d => d.pending),
+                    backgroundColor: 'rgba(248, 150, 30, 0.8)',
+                    borderRadius: 8
+                },
+                {
+                    label: 'مهام قيد التنفيذ',
+                    data: Object.values(projectData).map(d => d.in_progress),
+                    backgroundColor: 'rgba(249, 65, 68, 0.8)',
+                    borderRadius: 8
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    rtl: true,
+                    labels: {
+                        font: {
+                            family: 'Cairo'
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#eef2f7'
+                    }
+                }
+            }
+        }
+    });
+});
+
+function applyFilters() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const project = document.getElementById('projectFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    const rows = document.querySelectorAll('#delaysTable tbody tr');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        if (row.cells.length < 10) return; // تجاهل صف "لا توجد بيانات"
+        
+        const projectName = row.cells[0].querySelector('.project-badge').textContent;
+        const taskName = row.cells[2].textContent.toLowerCase();
+        const taskCode = row.cells[1].textContent;
+        const taskStatus = row.cells[6].textContent.trim();
+        
+        let show = true;
+        
+        if (search && !taskName.includes(search) && !taskCode.includes(search)) {
+            show = false;
+        }
+        
+        if (project !== 'all' && projectName !== project) {
+            show = false;
+        }
+        
+        if (status !== 'all') {
+            const statusMap = {
+                'pending': 'معلقة',
+                'in_progress': 'قيد التنفيذ'
+            };
+            if (taskStatus !== statusMap[status]) {
+                show = false;
+            }
+        }
+        
+        if (show) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    Swal.fire({
+        icon: 'info',
+        title: 'تم التصفية',
+        text: `عرض ${visibleCount} تأخير`,
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
+
+function viewTask(taskId) {
+    window.location.href = `/company/task/${taskId}`;
+}
+
+function remindResponsible(taskId) {
+    Swal.fire({
+        title: 'تذكير المسؤول',
+        text: 'هل تريد إرسال تذكير للمسؤول عن هذه المهمة؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، أرسل',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/tracking/api/task/${taskId}/remind`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الإرسال',
+                        text: 'تم إرسال التذكير بنجاح',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        }
+    });
+}
+
+function escalate(taskId) {
+    Swal.fire({
+        title: 'تصعيد المشكلة',
+        text: 'هل تريد تصعيد هذه المهمة إلى الإدارة العليا؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، صعد',
+        cancelButtonText: 'إلغاء',
+        input: 'textarea',
+        inputPlaceholder: 'أضف ملاحظات للتصعيد...'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/tracking/api/task/${taskId}/escalate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    notes: result.value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم التصعيد',
+                        text: 'تم تصعيد المشكلة إلى الإدارة العليا',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        }
+    });
+}
+
+function exportReport() {
+    Swal.fire({
+        title: 'تصدير التقرير',
+        text: 'سيتم تحميل تقرير التأخيرات بصيغة Excel',
+        icon: 'info',
+        timer: 2000,
+        showConfirmButton: false
+    });
+    
+    setTimeout(() => {
+        window.location.href = '/tracking/api/export-delays-report';
+    }, 2000);
+}
+
+function sendReport() {
+    Swal.fire({
+        title: 'إرسال التقرير',
+        text: 'أدخل البريد الإلكتروني للمستلم',
+        icon: 'question',
+        input: 'email',
+        inputPlaceholder: 'example@company.com',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'إرسال',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/tracking/api/send-delays-report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: result.value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الإرسال',
+                        text: 'تم إرسال التقرير إلى البريد الإلكتروني',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

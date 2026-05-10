@@ -1,0 +1,233 @@
+{% extends "employee/base.html" %}
+
+{% block title %}لوحة تحكم المشرف{% endblock %}
+
+{% block page_title %}لوحة تحكم المشرف{% endblock %}
+{% block page_subtitle %}مراقبة وإدارة المهام والأنشطة تحت إشرافك{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .verification-card {
+        background: #fff9e8;
+        border-right: 3px solid #f59e0b;
+        transition: all 0.3s;
+    }
+    
+    .verification-card:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+    
+    .task-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .task-card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+    
+    .task-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .task-title {
+        font-weight: 700;
+    }
+    
+    .task-meta {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+    
+    .btn-verify {
+        background: #f59e0b;
+        color: white;
+        border: none;
+        padding: 0.25rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-verify:hover {
+        background: #d97706;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- إحصائيات سريعة -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value text-primary">{{ stats.total_tasks }}</div>
+            <div class="stat-label">إجمالي المهام</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-success">{{ stats.completed_tasks }}</div>
+            <div class="stat-label">مهام مكتملة</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-warning">{{ stats.in_progress_tasks }}</div>
+            <div class="stat-label">مهام قيد التنفيذ</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-danger">{{ stats.overdue_tasks }}</div>
+            <div class="stat-label">مهام متأخرة</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-info">{{ stats.total_activities }}</div>
+            <div class="stat-label">إجمالي الأنشطة</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-warning">{{ stats.pending_verifications }}</div>
+            <div class="stat-label">طلبات تحقق معلقة</div>
+        </div>
+    </div>
+    
+    <!-- طلبات التحقق المعلقة -->
+    {% if pending_verifications %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-clipboard-list text-warning me-2"></i>
+                طلبات التحقق المعلقة
+                <span class="badge bg-warning ms-2">{{ pending_verifications|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% for verification in pending_verifications %}
+            <div class="verification-card card mb-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <div class="fw-bold">{{ verification.task.task_name }}</div>
+                            <small class="text-muted">
+                                المهمة: {{ verification.task.task_code }} |
+                                المندوب: {{ verification.user.full_name }} |
+                                التاريخ: {{ verification.submitted_at.strftime('%Y-%m-%d %H:%M') }}
+                            </small>
+                            <div class="mt-1 small">المتطلب: {{ verification.requirement.description }}</div>
+                            {% if verification.verified_value %}
+                            <div class="mt-1 small text-muted">القيمة: {{ verification.verified_value }}</div>
+                            {% endif %}
+                            {% if verification.notes %}
+                            <div class="mt-1 small text-muted">ملاحظات: {{ verification.notes }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-success" onclick="approveVerification({{ verification.id }}, true)">
+                                <i class="fas fa-check me-1"></i> موافقة
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="approveVerification({{ verification.id }}, false)">
+                                <i class="fas fa-times me-1"></i> رفض
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- المهام الحديثة -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-tasks text-primary me-2"></i>
+                المهام الحديثة
+            </h5>
+        </div>
+        <div class="card-body">
+            {% for task in recent_tasks %}
+            <div class="task-card">
+                <div class="task-header">
+                    <div>
+                        <span class="task-title">{{ task.task_name }}</span>
+                        <span class="task-code text-muted ms-2">({{ task.task_code }})</span>
+                    </div>
+                    <span class="badge bg-{{ 'success' if task.status == 'completed' else 'primary' if task.status == 'in_progress' else 'secondary' }}">
+                        {{ 'مكتمل' if task.status == 'completed' else 'قيد التنفيذ' if task.status == 'in_progress' else 'معلق' }}
+                    </span>
+                </div>
+                <div class="task-meta">
+                    <span><i class="fas fa-user me-1"></i> المندوب: {{ task.delegate.full_name if task.delegate else 'غير محدد' }}</span>
+                    <span class="mx-2">|</span>
+                    <span><i class="fas fa-calendar me-1"></i> الموعد: {{ task.planning.planned_finish.strftime('%Y-%m-%d') if task.planning and task.planning.planned_finish else 'غير محدد' }}</span>
+                </div>
+                <div class="mt-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="progress flex-grow-1" style="height: 4px;">
+                            <div class="progress-bar" style="width: {{ task.progress_percentage }}%"></div>
+                        </div>
+                        <small>{{ "%.0f"|format(task.progress_percentage) }}%</small>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <a href="{{ url_for('employee.view_task', task_id=task.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i> عرض التفاصيل
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-tasks fa-3x mb-3"></i>
+                <p>لا توجد مهام حالياً</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+function approveVerification(verificationId, approved) {
+    Swal.fire({
+        title: approved ? 'موافقة على الطلب' : 'رفض الطلب',
+        text: approved ? 'هل أنت متأكد من الموافقة على هذا الطلب؟' : 'الرجاء إدخال سبب الرفض',
+        icon: 'question',
+        input: !approved ? 'textarea' : null,
+        inputPlaceholder: 'سبب الرفض...',
+        showCancelButton: true,
+        confirmButtonText: approved ? 'نعم، موافقة' : 'نعم، رفض',
+        cancelButtonText: 'إلغاء'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch(`/employee/supervisor/verifications/${verificationId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ approved: approved, notes: result.value || '' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('تم', 'تم معالجة الطلب بنجاح', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('خطأ', data.error, 'error');
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

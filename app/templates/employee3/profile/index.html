@@ -1,0 +1,276 @@
+{% extends "employee/base.html" %}
+
+{% block title %}الملف الشخصي - {{ user.full_name }}{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">الملف الشخصي</h2>
+        <p class="text-muted">عرض وتحديث معلوماتك الشخصية</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- بطاقة الملف الشخصي -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center mb-4">
+            <div class="card-body p-4">
+                <div class="profile-avatar mx-auto mb-3" 
+                     style="width: 120px; height: 120px; border-radius: 60px; 
+                            background: linear-gradient(135deg, var(--primary), var(--secondary));
+                            display: flex; align-items: center; justify-content: center;">
+                    <span style="font-size: 3rem; color: white; font-weight: bold;">
+                        {{ user.full_name[0] }}
+                    </span>
+                </div>
+                
+                <h4 class="fw-bold mb-1">{{ user.full_name }}</h4>
+                <p class="text-muted mb-3">{{ user.job_title or 'موظف' }}</p>
+                
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    <span class="badge bg-primary p-2">
+                        <i class="fas fa-tag me-1"></i>
+                        {% if user.role == 'supervisor' %}مشرف
+                        {% elif user.role == 'delegate' %}مندوب
+                        {% else %}موظف{% endif %}
+                    </span>
+                    {% if user.is_user_active %}
+                    <span class="badge bg-success p-2">
+                        <i class="fas fa-check-circle me-1"></i>نشط
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <!-- إحصائيات سريعة -->
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h5 class="fw-bold text-primary">{{ stats.tasks_completed }}</h5>
+                        <small class="text-muted">مهام مكتملة</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="fw-bold text-success">{{ stats.days_active }}</h5>
+                        <small class="text-muted">يوم معنا</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="fw-bold text-warning">{{ stats.login_count }}</h5>
+                        <small class="text-muted">دخول</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- معلومات إضافية -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2 text-primary"></i>
+                    معلومات الحساب
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td class="text-muted">تاريخ الانضمام:</td>
+                        <td class="fw-bold">{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">تاريخ التعيين:</td>
+                        <td class="fw-bold">{{ user.hire_date.strftime('%Y-%m-%d') if user.hire_date }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">آخر دخول:</td>
+                        <td class="fw-bold">{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'لم يسجل' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">عدد الدخول:</td>
+                        <td class="fw-bold">{{ user.login_count or 0 }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- نموذج تحديث البيانات -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-edit me-2 text-primary"></i>
+                    تحديث البيانات الشخصية
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('employee.profile') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الاسم الكامل (عربي)</label>
+                            <input type="text" name="full_name" class="form-control" 
+                                   value="{{ user.full_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الاسم الكامل (إنجليزي)</label>
+                            <input type="text" name="full_name_ar" class="form-control" 
+                                   value="{{ user.full_name_ar or '' }}" dir="ltr">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رقم الهاتف</label>
+                            <input type="tel" name="phone" class="form-control" 
+                                   value="{{ user.phone or '' }}" dir="ltr">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رقم الجوال</label>
+                            <input type="tel" name="mobile" class="form-control" 
+                                   value="{{ user.mobile or '' }}" dir="ltr">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">المسمى الوظيفي</label>
+                        <input type="text" name="job_title" class="form-control" 
+                               value="{{ user.job_title or '' }}">
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="fw-bold mb-3">تغيير كلمة المرور</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">كلمة المرور الحالية</label>
+                        <div class="input-group">
+                            <input type="password" name="current_password" class="form-control" 
+                                   id="currentPassword">
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="togglePassword('currentPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">كلمة المرور الجديدة</label>
+                            <div class="input-group">
+                                <input type="password" name="new_password" class="form-control" 
+                                       id="newPassword">
+                                <button class="btn btn-outline-secondary" type="button" 
+                                        onclick="togglePassword('newPassword')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تأكيد كلمة المرور</label>
+                            <div class="input-group">
+                                <input type="password" name="confirm_password" class="form-control" 
+                                       id="confirmPassword">
+                                <button class="btn btn-outline-secondary" type="button" 
+                                        onclick="togglePassword('confirmPassword')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- مؤشر قوة كلمة المرور -->
+                    <div class="mb-3" id="passwordStrength" style="display: none;">
+                        <small class="text-muted">قوة كلمة المرور: </small>
+                        <div class="progress mt-1" style="height: 5px;">
+                            <div class="progress-bar" id="strengthBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="btn-primary-gradient px-5">
+                            <i class="fas fa-save me-2"></i>حفظ التغييرات
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- آخر النشاطات -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history me-2 text-primary"></i>
+                    آخر النشاطات
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% if stats.last_login %}
+                    <div class="timeline-item d-flex mb-3">
+                        <div class="timeline-icon bg-primary text-white rounded-circle me-3" 
+                             style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">تسجيل دخول</h6>
+                            <small class="text-muted">{{ stats.last_login.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if user.created_at %}
+                    <div class="timeline-item d-flex">
+                        <div class="timeline-icon bg-success text-white rounded-circle me-3" 
+                             style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">انضمام للنظام</h6>
+                            <small class="text-muted">{{ user.created_at.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+}
+
+// التحقق من قوة كلمة المرور
+document.getElementById('newPassword').addEventListener('input', function() {
+    const password = this.value;
+    const strengthDiv = document.getElementById('passwordStrength');
+    const strengthBar = document.getElementById('strengthBar');
+    
+    if (password.length > 0) {
+        strengthDiv.style.display = 'block';
+        
+        let strength = 0;
+        if (password.length >= 8) strength += 25;
+        if (/[A-Z]/.test(password)) strength += 25;
+        if (/[a-z]/.test(password)) strength += 25;
+        if (/[0-9]/.test(password)) strength += 25;
+        
+        strengthBar.style.width = strength + '%';
+        
+        if (strength < 50) {
+            strengthBar.className = 'progress-bar bg-danger';
+        } else if (strength < 75) {
+            strengthBar.className = 'progress-bar bg-warning';
+        } else {
+            strengthBar.className = 'progress-bar bg-success';
+        }
+    } else {
+        strengthDiv.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

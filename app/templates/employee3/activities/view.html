@@ -1,0 +1,792 @@
+{% extends "employee/base.html" %}
+
+{% block title %}تفاصيل النشاط - {{ activity.activity_name }}{% endblock %}
+
+{% block page_title %}{{ activity.activity_name }}{% endblock %}
+{% block page_subtitle %}{{ activity.activity_id }} | {{ activity.project.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .nav-tabs-custom {
+        background: white;
+        border-radius: 20px;
+        padding: 0 1.5rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .nav-tabs-custom .nav-link {
+        border: none;
+        padding: 1rem 1.5rem;
+        color: #64748b;
+        font-weight: 500;
+        position: relative;
+    }
+    
+    .nav-tabs-custom .nav-link.active {
+        color: var(--primary);
+        background: transparent;
+    }
+    
+    .nav-tabs-custom .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--primary);
+    }
+    
+    .tab-content {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .info-card {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        background: #f8fafc;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .step-number {
+        width: 32px;
+        height: 32px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+    
+    .step-item.completed .step-number {
+        background: #4caf50;
+        color: white;
+    }
+    
+    .step-content {
+        flex: 1;
+    }
+    
+    .step-title {
+        font-weight: 600;
+    }
+    
+    .expense-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .resource-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: #f8fafc;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .progress-circle {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        justify-content: flex-end;
+    }
+    
+    @media (max-width: 768px) {
+        .nav-tabs-custom .nav-link {
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- معلومات أساسية -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="info-card">
+                <small class="text-muted">الحالة</small>
+                <div class="fw-bold">
+                    <span class="badge bg-{{ 'success' if activity.status == 'completed' else 'primary' if activity.status == 'in_progress' else 'secondary' }}">
+                        {{ 'مكتمل' if activity.status == 'completed' else 'قيد التنفيذ' if activity.status == 'in_progress' else 'لم يبدأ' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="info-card">
+                <small class="text-muted">نسبة الإنجاز</small>
+                <div class="fw-bold">{{ "%.1f"|format(activity.progress_percentage) }}%</div>
+                <div class="progress mt-1" style="height: 4px;">
+                    <div class="progress-bar" style="width: {{ activity.progress_percentage }}%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="info-card">
+                <small class="text-muted">الميزانية</small>
+                <div class="fw-bold">{{ "{:,.2f}".format(activity.planned_cost or 0) }}ريال</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="info-card">
+                <small class="text-muted">التكلفة الفعلية</small>
+                <div class="fw-bold {% if (activity.actual_cost or 0) > (activity.planned_cost or 0) %}text-danger{% else %}text-success{% endif %}">
+                    {{ "{:,.2f}".format(activity.actual_cost or 0) }} ريال
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- أزرار الإجراءات -->
+    {% if can_update %}
+    <div class="action-buttons">
+        {% if can_start %}
+        <button class="btn btn-success" onclick="startActivity()">
+            <i class="fas fa-play me-2"></i> بدء النشاط
+        </button>
+        {% endif %}
+        {% if can_complete %}
+        <button class="btn btn-primary" onclick="completeActivity()">
+            <i class="fas fa-check-circle me-2"></i> إكمال النشاط
+        </button>
+        {% endif %}
+        <button class="btn btn-outline-primary" onclick="updateProgress()">
+            <i class="fas fa-chart-line me-2"></i> تحديث التقدم
+        </button>
+    </div>
+    {% endif %}
+    
+    <!-- التبويبات -->
+    <ul class="nav nav-tabs-custom mt-4">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#overview">
+                <i class="fas fa-info-circle me-2"></i> نظرة عامة
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#steps">
+                <i class="fas fa-list-ol me-2"></i> خطوات التنفيذ
+                <span class="badge bg-primary ms-1">{{ steps|length }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tasks">
+                <i class="fas fa-tasks me-2"></i> المهام
+                <span class="badge bg-primary ms-1">{{ tasks|length }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#resources">
+                <i class="fas fa-boxes me-2"></i> الموارد
+                <span class="badge bg-primary ms-1">{{ resources|length }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#expenses">
+                <i class="fas fa-money-bill me-2"></i> المصروفات
+                <span class="badge bg-primary ms-1">{{ expenses|length }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#documents">
+                <i class="fas fa-paperclip me-2"></i> المستندات
+                <span class="badge bg-primary ms-1">{{ documents|length }}</span>
+            </a>
+        </li>
+    </ul>
+    
+    <div class="tab-content">
+        <!-- تبويب نظرة عامة -->
+        <div class="tab-pane fade show active" id="overview">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-3">معلومات النشاط</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td class="text-muted" style="width: 40%;">كود النشاط</td>
+                            <td class="fw-bold">{{ activity.activity_id }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">المشروع</td>
+                            <td>{{ activity.project.name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">المشرف</td>
+                            <td>{{ activity.supervisor.full_name if activity.supervisor else 'غير محدد' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">المنفذ</td>
+                            <td>{{ activity.delegate.full_name if activity.delegate else 'غير محدد' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">تاريخ البدء المخطط</td>
+                            <td>{{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start else 'غير محدد' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">تاريخ الانتهاء المخطط</td>
+                            <td>{{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish else 'غير محدد' }}</td>
+                        </tr>
+                        {% if activity.actual_start %}
+                        <tr>
+                            <td class="text-muted">تاريخ البدء الفعلي</td>
+                            <td>{{ activity.actual_start.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if activity.actual_finish %}
+                        <tr>
+                            <td class="text-muted">تاريخ الانتهاء الفعلي</td>
+                            <td>{{ activity.actual_finish.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-3">الوصف</h6>
+                    <p>{{ activity.description or 'لا يوجد وصف' }}</p>
+                    
+                    {% if activity.instructions %}
+                    <h6 class="fw-bold mb-3 mt-3">تعليمات التنفيذ</h6>
+                    <p>{{ activity.instructions }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- تبويب خطوات التنفيذ -->
+        <div class="tab-pane fade" id="steps">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">خطوات تنفيذ النشاط</h6>
+                {% if can_update %}
+                <button class="btn btn-sm btn-primary" onclick="addStep()">
+                    <i class="fas fa-plus me-1"></i> إضافة خطوة
+                </button>
+                {% endif %}
+            </div>
+            
+            <div id="stepsList">
+                {% for step in steps %}
+                <div class="step-item {% if step.is_completed %}completed{% endif %}" data-step-id="{{ step.id }}">
+                    <div class="step-number">{{ step.order }}</div>
+                    <div class="step-content">
+                        <div class="step-title">{{ step.title }}</div>
+                        {% if step.description %}
+                        <small class="text-muted">{{ step.description }}</small>
+                        {% endif %}
+                    </div>
+                    {% if not step.is_completed and can_update %}
+                    <button class="btn btn-sm btn-success" onclick="completeStep({{ step.id }})">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-list-ol fa-3x mb-3"></i>
+                    <p>لا توجد خطوات تنفيذ</p>
+                    {% if can_update %}
+                    <button class="btn btn-sm btn-primary" onclick="addStep()">إضافة خطوة</button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- تبويب المهام -->
+        <div class="tab-pane fade" id="tasks">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>كود المهمة</th>
+                            <th>اسم المهمة</th>
+                            <th>المنفذ</th>
+                            <th>التقدم</th>
+                            <th>الحالة</th>
+                            <th></th>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr>
+                                <td>{{ task.task_code }}</td>
+                                <td>{{ task.task_name }}</td>
+                                <td>{{ task.delegate.full_name if task.delegate else '-' }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 4px;">
+                                            <div class="progress-bar" style="width: {{ task.progress_percentage }}%"></div>
+                                        </div>
+                                        <small>{{ "%.0f"|format(task.progress_percentage) }}%</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if task.status == 'completed' else 'primary' if task.status == 'in_progress' else 'secondary' }}">
+                                        {{ 'مكتمل' if task.status == 'completed' else 'قيد التنفيذ' if task.status == 'in_progress' else 'معلق' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('employee.view_task', task_id=task.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- تبويب الموارد -->
+            <div class="tab-pane fade" id="resources">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">الموارد المخصصة</h6>
+                    {% if can_update %}
+                    <button class="btn btn-sm btn-primary" onclick="requestResource()">
+                        <i class="fas fa-plus me-1"></i> طلب مورد
+                    </button>
+                    {% endif %}
+                </div>
+                
+                {% for resource in resources %}
+                <div class="resource-item">
+                    <div>
+                        <div class="fw-bold">{{ resource.resource.name if resource.resource else 'غير محدد' }}</div>
+                        <small class="text-muted">{{ resource.resource.resource_type if resource.resource else '' }}</small>
+                    </div>
+                    <div class="text-end">
+                        <div>المخطط: {{ resource.planned_quantity }} {{ resource.resource.unit if resource.resource else '' }}</div>
+                        <div>الفعلي: {{ resource.actual_quantity }} {{ resource.resource.unit if resource.resource else '' }}</div>
+                        <div class="text-warning">المتبقي: {{ resource.remaining_quantity }} {{ resource.resource.unit if resource.resource else '' }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-boxes fa-3x mb-3"></i>
+                    <p>لا توجد موارد مخصصة</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- تبويب المصروفات -->
+            <div class="tab-pane fade" id="expenses">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">المصروفات</h6>
+                    {% if can_update %}
+                    <button class="btn btn-sm btn-primary" onclick="addExpense()">
+                        <i class="fas fa-plus me-1"></i> إضافة مصروف
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="info-card text-center">
+                            <small class="text-muted">إجمالي المصروفات</small>
+                            <div class="fw-bold fs-4">{{ "{:,.2f}".format(stats.total_actual or 0) }} ريال</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-card text-center">
+                            <small class="text-muted">الفارق عن الميزانية</small>
+                            <div class="fw-bold fs-4 {% if stats.variance > 0 %}text-danger{% else %}text-success{% endif %}">
+                                {{ "{:,.2f}".format(stats.variance or 0) }} ريال
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-card text-center">
+                            <small class="text-muted">نسبة الصرف</small>
+                            <div class="fw-bold fs-4">{{ "%.1f"|format(stats.variance_percentage) }}%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% for expense in expenses %}
+                <div class="expense-item">
+                    <div>
+                        <div class="fw-bold">{{ expense.description }}</div>
+                        <small class="text-muted">{{ expense.expense_date.strftime('%Y-%m-%d') }} | {{ expense.category }}</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold">{{ "{:,.2f}".format(expense.amount) }} {{ expense.currency }}</div>
+                        <small class="text-{{ 'success' if expense.is_approved else 'warning' }}">
+                            {{ 'معتمد' if expense.is_approved else 'قيد المراجعة' }}
+                        </small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-receipt fa-3x mb-3"></i>
+                    <p>لا توجد مصروفات</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- تبويب المستندات -->
+            <div class="tab-pane fade" id="documents">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">المستندات</h6>
+                    {% if can_update %}
+                    <button class="btn btn-sm btn-primary" onclick="uploadDocument()">
+                        <i class="fas fa-upload me-1"></i> رفع مستند
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <div class="row g-3">
+                    {% for doc in documents %}
+                    <div class="col-md-4">
+                        <div class="document-card">
+                            <div class="document-icon">
+                                <i class="fas fa-file-alt fa-2x text-primary"></i>
+                            </div>
+                            <div class="document-info">
+                                <div class="document-title">{{ doc.title or doc.original_filename }}</div>
+                                <small class="text-muted">{{ doc.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                <div class="mt-2">
+                                    <a href="{{ doc.file_url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="fas fa-eye"></i> عرض
+                                    </a>
+                                    {% if doc.uploaded_by == current_user.id %}
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDocument({{ doc.id }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-12">
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-paperclip fa-3x mb-3"></i>
+                            <p>لا توجد مستندات</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    const activityId = {{ activity.id }};
+    
+    function startActivity() {
+        Swal.fire({
+            title: 'بدء النشاط',
+            text: 'هل أنت متأكد من بدء تنفيذ هذا النشاط؟',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'نعم',
+            cancelButtonText: 'إلغاء'
+        }).then(result => {
+            if (result.isConfirmed) {
+                fetch(`/employee/api/activities/${activityId}/start`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('تم', 'تم بدء النشاط بنجاح', 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('خطأ', data.error, 'error');
+                    }
+                });
+            }
+        });
+    }
+    
+    function completeActivity() {
+        Swal.fire({
+            title: 'إكمال النشاط',
+            text: 'هل أنت متأكد من إكمال هذا النشاط؟',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'نعم',
+            cancelButtonText: 'إلغاء'
+        }).then(result => {
+            if (result.isConfirmed) {
+                fetch(`/employee/api/activities/${activityId}/complete`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('تم', 'تم إكمال النشاط بنجاح', 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('خطأ', data.error, 'error');
+                    }
+                });
+            }
+        });
+    }
+    
+    function updateProgress() {
+        Swal.fire({
+            title: 'تحديث التقدم',
+            input: 'range',
+            inputLabel: 'نسبة الإنجاز',
+            inputAttributes: { min: 0, max: 100, step: 1 },
+            inputValue: {{ activity.progress_percentage }},
+            showCancelButton: true,
+            confirmButtonText: 'حفظ',
+            cancelButtonText: 'إلغاء'
+        }).then(result => {
+            if (result.isConfirmed) {
+                fetch(`/employee/api/activities/${activityId}/progress`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ progress: result.value })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('تم', 'تم تحديث التقدم', 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('خطأ', data.error, 'error');
+                    }
+                });
+            }
+        });
+    }
+    
+    function completeStep(stepId) {
+        fetch(`/employee/api/activities/${activityId}/steps/${stepId}/complete`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                Swal.fire('خطأ', data.error, 'error');
+            }
+        });
+    }
+    
+    function addStep() {
+        Swal.fire({
+            title: 'إضافة خطوة',
+            html: `
+                <input type="text" id="stepTitle" class="swal2-input" placeholder="عنوان الخطوة">
+                <textarea id="stepDesc" class="swal2-textarea" placeholder="وصف الخطوة (اختياري)"></textarea>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'إضافة',
+            cancelButtonText: 'إلغاء',
+            preConfirm: () => {
+                const title = document.getElementById('stepTitle').value;
+                if (!title) {
+                    Swal.showValidationMessage('عنوان الخطوة مطلوب');
+                    return false;
+                }
+                return { title: title, description: document.getElementById('stepDesc').value };
+            }
+        }).then(result => {
+            if (result.isConfirmed) {
+                fetch(`/employee/api/activities/${activityId}/steps/add`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(result.value)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        Swal.fire('خطأ', data.error, 'error');
+                    }
+                });
+            }
+        });
+    }
+    
+    function addExpense() {
+        Swal.fire({
+            title: 'إضافة مصروف',
+            html: `
+                <input type="date" id="expenseDate" class="swal2-input" value="{{ now.strftime('%Y-%m-%d') }}">
+                <select id="expenseCategory" class="swal2-select">
+                    <option value="Labor">عمالة</option>
+                    <option value="Material">مواد</option>
+                    <option value="Equipment">معدات</option>
+                    <option value="Transport">نقل</option>
+                    <option value="Other">أخرى</option>
+                </select>
+                <input type="text" id="expenseDesc" class="swal2-input" placeholder="الوصف">
+                <input type="number" id="expenseAmount" class="swal2-input" placeholder="المبلغ" step="0.01">
+                <select id="expenseCurrency" class="swal2-select">
+                    <option value="SAR">ريال سعودي</option>
+                    <option value="USD">دولار أمريكي</option>
+                    <option value="EUR">يورو</option>
+                </select>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'إضافة',
+            cancelButtonText: 'إلغاء',
+            preConfirm: () => {
+                const amount = document.getElementById('expenseAmount').value;
+                if (!amount || parseFloat(amount) <= 0) {
+                    Swal.showValidationMessage('المبلغ مطلوب');
+                    return false;
+                }
+                return {
+                    date: document.getElementById('expenseDate').value,
+                    category: document.getElementById('expenseCategory').value,
+                    description: document.getElementById('expenseDesc').value,
+                    amount: parseFloat(amount),
+                    currency: document.getElementById('expenseCurrency').value
+                };
+            }
+        }).then(result => {
+            if (result.isConfirmed) {
+                fetch(`/employee/api/activities/${activityId}/expenses`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(result.value)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        Swal.fire('خطأ', data.error, 'error');
+                    }
+                });
+            }
+        });
+    }
+    
+    function requestResource() {
+        Swal.fire({
+            title: 'طلب مورد',
+            html: `
+                <input type="text" id="resourceName" class="swal2-input" placeholder="اسم المورد">
+                <input type="number" id="resourceQuantity" class="swal2-input" placeholder="الكمية" step="0.01">
+                <input type="text" id="resourceUnit" class="swal2-input" placeholder="الوحدة">
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'إرسال الطلب',
+            cancelButtonText: 'إلغاء',
+            preConfirm: () => {
+                const name = document.getElementById('resourceName').value;
+                const quantity = document.getElementById('resourceQuantity').value;
+                if (!name || !quantity || parseFloat(quantity) <= 0) {
+                    Swal.showValidationMessage('الرجاء إدخال البيانات المطلوبة');
+                    return false;
+                }
+                return {
+                    name: name,
+                    quantity: parseFloat(quantity),
+                    unit: document.getElementById('resourceUnit').value
+                };
+            }
+        }).then(result => {
+            if (result.isConfirmed) {
+                Swal.fire('تم', 'تم إرسال طلب المورد', 'success');
+            }
+        });
+    }
+    
+    function uploadDocument() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                Swal.fire({
+                    title: 'جاري الرفع...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+                
+                fetch(`/employee/api/activities/${activityId}/documents`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('تم', 'تم رفع المستند بنجاح', 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('خطأ', data.error, 'error');
+                    }
+                });
+            }
+        };
+        input.click();
+    }
+    
+    function deleteDocument(docId) {
+        Swal.fire({
+            title: 'حذف المستند',
+            text: 'هل أنت متأكد من حذف هذا المستند؟',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'نعم',
+            cancelButtonText: 'إلغاء'
+        }).then(result => {
+            if (result.isConfirmed) {
+                fetch(`/employee/api/activities/${activityId}/documents/${docId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        Swal.fire('خطأ', data.error, 'error');
+                    }
+                });
+            }
+        });
+    }
+    </script>
+    {% endblock %}

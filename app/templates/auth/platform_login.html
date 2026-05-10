@@ -1,0 +1,124 @@
+{% extends "layouts/auth_base.html" %}
+
+{% block title %}دخول مدير المنصة{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center min-vh-100 align-items-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="text-center mb-4">
+                <div class="mb-3">
+                    <i class="fas fa-crown fa-4x text-warning"></i>
+                </div>
+                <h2 class="fw-bold">منصة إدارة المشاريع</h2>
+                <p class="text-muted">لوحة تحكم مدير المنصة</p>
+            </div>
+            
+            <div class="card shadow border-0">
+                <div class="card-header bg-gradient bg-dark text-white py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lock me-2"></i>
+                        دخول مدير المنصة
+                    </h5>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- تحذير أمني -->
+                    <div class="alert alert-warning d-flex align-items-center mb-4">
+                        <i class="fas fa-shield-alt fa-2x me-3"></i>
+                        <div>
+                            <strong>منطقة محمية</strong><br>
+                            <small>هذه الصفحة مخصصة لمديري المنصة فقط. يمنع الدخول لغير المخولين.</small>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('auth.platform_login') }}">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">البريد الإلكتروني</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       placeholder="admin@platform.com" required autofocus>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">كلمة المرور</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" id="password" 
+                                       name="password" placeholder="••••••••" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                            <label class="form-check-label" for="remember">تذكرني</label>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-dark btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                دخول مدير المنصة
+                            </button>
+                            <a href="{{ url_for('auth.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-right me-2"></i>
+                                العودة للصفحة الرئيسية
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <a href="{{ url_for('auth.forgot_password') }}?type=platform" class="text-decoration-none small">
+                            <i class="fas fa-key me-1"></i>
+                            نسيت كلمة المرور؟
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- معلومات الدخول التجريبي -->
+            <div class="card mt-4 bg-light border-0">
+                <div class="card-body">
+                    <h6 class="fw-bold"><i class="fas fa-flask text-primary me-2"></i>بيانات الدخول التجريبية:</h6>
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <div class="p-2 bg-white rounded">
+                                <small class="text-muted d-block">البريد:</small>
+                                <strong dir="ltr">admin@platform.com</strong>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 bg-white rounded">
+                                <small class="text-muted d-block">كلمة المرور:</small>
+                                <strong>Admin123!</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- تذكير أمني -->
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    جميع الدخول يتم تسجيله للأغراض الأمنية
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+}
+</script>
+{% endblock %}

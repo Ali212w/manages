@@ -1,0 +1,193 @@
+{# templates/platform/profile/index.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('profile.title') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1 class="page-title">{{ _('profile.title') }}</h1>
+        <p class="text-muted mb-0">{{ _('profile.description') }}</p>
+    </div>
+    
+    <div class="row g-4">
+        <!-- Profile Card -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body p-4">
+                    <div class="profile-avatar mx-auto mb-3">
+                        <div class="bg-gradient-primary rounded-circle d-flex align-items-center justify-content-center text-white mx-auto" style="width: 120px; height: 120px; font-size: 48px;">
+                            {{ admin.full_name[0]|upper }}
+                        </div>
+                    </div>
+                    <h4>{{ admin.full_name }}</h4>
+                    {% if admin.full_name_ar %}
+                    <p class="text-muted">{{ admin.full_name_ar }}</p>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <span class="badge bg-primary">
+                            {% if admin.role == 'super_admin' %}
+                            {{ _('admins.role_super_admin') }}
+                            {% elif admin.role == 'admin' %}
+                            {{ _('admins.role_admin') }}
+                            {% elif admin.role == 'support' %}
+                            {{ _('admins.role_support') }}
+                            {% elif admin.role == 'finance' %}
+                            {{ _('admins.role_finance') }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-start">
+                        <div class="info-row d-flex py-2 border-bottom">
+                            <div class="label text-muted" style="width: 100px;">{{ _('profile.email') }}</div>
+                            <div class="value">{{ admin.email }}</div>
+                        </div>
+                        <div class="info-row d-flex py-2 border-bottom">
+                            <div class="label text-muted" style="width: 100px;">{{ _('profile.phone') }}</div>
+                            <div class="value">{{ admin.phone or '-' }}</div>
+                        </div>
+                        <div class="info-row d-flex py-2 border-bottom">
+                            <div class="label text-muted" style="width: 100px;">{{ _('profile.username') }}</div>
+                            <div class="value">{{ admin.username }}</div>
+                        </div>
+                        <div class="info-row d-flex py-2">
+                            <div class="label text-muted" style="width: 100px;">{{ _('profile.member_since') }}</div>
+                            <div class="value">{{ format_date(admin.created_at) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Edit Form -->
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-3">
+                    <h5 class="card-title"><i class="fas fa-user-edit me-2"></i>{{ _('profile.personal_info') }}</h5>
+                </div>
+                <div class="card-body">
+                    <form id="profileForm" method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('profile.full_name') }} *</label>
+                                <input type="text" name="full_name" class="form-control" value="{{ admin.full_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('profile.full_name_ar') }}</label>
+                                <input type="text" name="full_name_ar" class="form-control" value="{{ admin.full_name_ar or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('profile.email') }}</label>
+                                <input type="email" class="form-control" value="{{ admin.email }}" disabled>
+                                <div class="form-text text-muted">{{ _('profile.email_cannot_change') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('profile.phone') }}</label>
+                                <input type="tel" name="phone" class="form-control" value="{{ admin.phone or '' }}">
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <h5 class="mb-3">{{ _('profile.change_password') }}</h5>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('profile.current_password') }}</label>
+                                <input type="password" name="current_password" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('profile.new_password') }}</label>
+                                <input type="password" name="new_password" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('profile.confirm_password') }}</label>
+                                <input type="password" name="confirm_password" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-gradient px-4">
+                                <i class="fas fa-save me-2"></i>{{ _('profile.update') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Session Info -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-transparent border-0 pt-3">
+                    <h5 class="card-title"><i class="fas fa-shield-alt me-2"></i>{{ _('profile.session_info') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-row d-flex py-2">
+                                <div class="label text-muted" style="width: 120px;">{{ _('profile.last_login') }}</div>
+                                <div class="value">{{ format_datetime(admin.last_login) if admin.last_login else '-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-row d-flex py-2">
+                                <div class="label text-muted" style="width: 120px;">{{ _('profile.login_count') }}</div>
+                                <div class="value">{{ admin.login_count or 0 }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#profileForm').submit(function(e) {
+        e.preventDefault();
+        
+        const newPassword = $('input[name="new_password"]').val();
+        const confirmPassword = $('input[name="confirm_password"]').val();
+        
+        if (newPassword && newPassword !== confirmPassword) {
+            toastr.error('{{ _("profile.password_mismatch") }}');
+            return;
+        }
+        
+        if (newPassword && newPassword.length < 8) {
+            toastr.error('{{ _("profile.password_weak") }}');
+            return;
+        }
+        
+        const formData = $(this).serialize();
+        
+        $.ajax({
+            url: "{{ url_for('platform.profile') }}",
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    if (response.password_changed) {
+                        setTimeout(() => {
+                            window.location.href = "{{ url_for('auth.logout') }}";
+                        }, 2000);
+                    }
+                } else {
+                    toastr.error(response.error);
+                }
+            },
+            error: function() {
+                toastr.error('{{ _("common.error") }}');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,464 @@
+{% extends "company/base.html" %}
+
+{% block title %}WBS - {{ project.name }}{% endblock %}
+
+{% block page_title %}هيكل تقسيم العمل (WBS){% endblock %}
+{% block page_subtitle %}{{ project.name }} - {{ project.project_code }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<style>
+    .wbs-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-icon.primary { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .stat-icon.success { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .stat-icon.warning { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .stat-icon.info { background: rgba(72, 149, 239, 0.1); color: var(--info); }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        margin: 0;
+    }
+    
+    .wbs-tree-container {
+        background: white;
+        border-radius: 30px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .wbs-tree {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .wbs-tree li {
+        list-style-type: none;
+        margin: 0.5rem 0;
+    }
+    
+    .wbs-tree details {
+        margin-top: 0.5rem;
+    }
+    
+    .wbs-tree summary {
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 10px;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+    
+    .wbs-tree summary:hover {
+        background: rgba(67, 97, 238, 0.05);
+    }
+    
+    .wbs-tree .wbs-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.8rem 1rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        margin-bottom: 0.3rem;
+        transition: all 0.3s;
+        border-right: 4px solid transparent;
+    }
+    
+    .wbs-tree .wbs-item:hover {
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateX(-5px);
+        border-right-color: var(--primary);
+    }
+    
+    .wbs-item.level-1 { background: rgba(67, 97, 238, 0.05); }
+    .wbs-item.level-2 { background: rgba(67, 97, 238, 0.03); }
+    .wbs-item.level-3 { background: rgba(67, 97, 238, 0.02); }
+    
+    .item-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    
+    .item-content {
+        flex: 1;
+    }
+    
+    .item-title {
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .item-code {
+        font-size: 0.8rem;
+        color: #6c757d;
+        background: #eef2f7;
+        padding: 0.2rem 0.5rem;
+        border-radius: 30px;
+    }
+    
+    .item-stats {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .item-progress {
+        width: 100px;
+    }
+    
+    .progress {
+        height: 6px;
+        background: #eef2f7;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        border-radius: 3px;
+    }
+    
+    .item-actions {
+        display: flex;
+        gap: 0.3rem;
+    }
+    
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: white;
+        border: 1px solid #eef2f7;
+        color: #6c757d;
+        transition: all 0.3s;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .action-btn:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+    
+    .btn-add {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.7rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-add:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+    }
+    
+    .btn-outline {
+        background: transparent;
+        border: 2px solid #eef2f7;
+        padding: 0.6rem 1.2rem;
+        border-radius: 10px;
+        color: #6c757d;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .btn-outline:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .search-box {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        width: 300px;
+        transition: all 0.3s;
+    }
+    
+    .search-box:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    @media (max-width: 992px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .toolbar {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .search-box {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wbs-container">
+    <!-- إحصائيات سريعة -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="fas fa-sitemap"></i>
+            </div>
+            <h3 class="stat-value">{{ stats.total_nodes }}</h3>
+            <p class="stat-label">إجمالي العقد</p>
+            <small class="text-muted">{{ stats.root_nodes }} عقد جذرية</small>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="fas fa-coins"></i>
+            </div>
+            <h3 class="stat-value">{{ "{:,.0f}".format(stats.total_budget) }}</h3>
+            <p class="stat-label">الميزانية</p>
+            <small class="text-muted">ر.س</small>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3 class="stat-value">{{ "%.1f"|format(stats.avg_progress) }}%</h3>
+            <p class="stat-label">متوسط التقدم</p>
+            <div class="progress mt-2">
+                <div class="progress-bar bg-warning" style="width: {{ stats.avg_progress }}%"></div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon info">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+            <h3 class="stat-value">{{ "{:,.0f}".format(stats.variance) }}</h3>
+            <p class="stat-label">فرق التكلفة</p>
+            <small class="text-{{ 'success' if stats.variance >= 0 else 'danger' }}">
+                {{ 'توفير' if stats.variance >= 0 else 'تجاوز' }}
+            </small>
+        </div>
+    </div>
+    
+    <!-- شريط الأدوات -->
+    <div class="toolbar">
+        <div class="d-flex gap-2">
+            <button class="btn-add" onclick="createWBS()">
+                <i class="fas fa-plus"></i>
+                إضافة عنصر جديد
+            </button>
+            <button class="btn-outline" onclick="exportWBS()">
+                <i class="fas fa-download"></i>
+                تصدير
+            </button>
+            <button class="btn-outline" onclick="expandAll()">
+                <i class="fas fa-expand-arrows-alt"></i>
+                توسيع الكل
+            </button>
+            <button class="btn-outline" onclick="collapseAll()">
+                <i class="fas fa-compress-arrows-alt"></i>
+                طي الكل
+            </button>
+        </div>
+        
+        <input type="text" class="search-box" id="searchInput" placeholder="🔍 بحث في WBS...">
+    </div>
+    
+    <!-- شجرة WBS -->
+    <div class="wbs-tree-container">
+        <ul class="wbs-tree">
+            {% for node in tree_data %}
+                {% include 'primavera/wbs/wbs_tree_node.html' with context %}
+            {% else %}
+            <li class="text-center text-muted py-5">
+                <i class="fas fa-folder-open fa-3x mb-3" style="opacity: 0.3;"></i>
+                <h5>لا توجد عناصر WBS</h5>
+                <p>لم يتم إضافة أي عناصر WBS لهذا المشروع بعد</p>
+                <button class="btn-add mt-3" onclick="createWBS()">
+                    <i class="fas fa-plus"></i>
+                    إضافة عنصر جديد
+                </button>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- نوافذ منبثقة -->
+{% include 'primavera/wbs/wbs_modals.html' %}
+
+<script>
+// متغيرات عامة
+let currentWbsId = null;
+
+// إنشاء عنصر WBS جديد
+function createWBS() {
+    window.location.href = `/primavera/project/{{ project.id }}/wbs/create`;
+}
+
+// عرض تفاصيل WBS
+function viewWBS(id) {
+    window.location.href = `/primavera/wbs/${id}`;
+}
+
+// تعديل WBS
+function editWBS(id) {
+    window.location.href = `/primavera/wbs/${id}/edit`;
+}
+
+// حذف WBS
+function deleteWBS(id, name) {
+    currentWbsId = id;
+    document.getElementById('deleteWbsName').textContent = name;
+    new bootstrap.Modal(document.getElementById('deleteWbsModal')).show();
+}
+
+// تأكيد الحذف
+document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+    fetch(`/primavera/api/wbs/${currentWbsId}/delete`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('deleteWbsModal')).hide();
+            Swal.fire({
+                icon: 'success',
+                title: 'تم الحذف',
+                text: 'تم حذف عنصر WBS بنجاح',
+                timer: 1500
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error
+            });
+        }
+    });
+});
+
+// البحث في الشجرة
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const items = document.querySelectorAll('.wbs-item');
+    
+    items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if (searchTerm === '') {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+        }
+    });
+});
+
+// توسيع الكل
+function expandAll() {
+    document.querySelectorAll('details').forEach(details => {
+        details.open = true;
+    });
+}
+
+// طي الكل
+function collapseAll() {
+    document.querySelectorAll('details').forEach(details => {
+        details.open = false;
+    });
+}
+
+// تصدير WBS
+function exportWBS() {
+    window.location.href = `/primavera/api/project/{{ project.id }}/wbs/export`;
+}
+</script>
+{% endblock %}

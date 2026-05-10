@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}نظام المهام{% endblock %} | {{ g.user.full_name if g.user else 'الموظفين' }}</title>
+    
+    <!-- CSS الأساسي -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- CSS إضافي -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/perfect-scrollbar@1.5.5/css/perfect-scrollbar.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
+    <style>
+        /* ===== المتغيرات الأساسية ===== */
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a3fc9;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --info: #4895ef;
+            --warning: #f8961e;
+            --danger: #f94144;
+            --danger-dark: #d32f2f;
+            --dark: #1e1e2f;
+            --dark-light: #2a2a3a;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --gray-light: #eef2f7;
+            --border-radius: 12px;
+            --box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+            --box-shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #f5f7fa;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* ===== الشريط العلوي ===== */
+        .navbar-top {
+            background: white;
+            box-shadow: var(--box-shadow);
+            padding: 0 30px;
+            height: 70px;
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--primary);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .logo h4 {
+            color: var(--dark);
+            font-weight: 700;
+            margin: 0;
+            font-size: 1.4rem;
+        }
+        
+        .logo span {
+            color: var(--primary);
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        /* ===== صندوق البحث ===== */
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box .input-group {
+            background: var(--light);
+            border-radius: 30px;
+            overflow: hidden;
+        }
+        
+        .search-box input {
+            background: var(--light);
+            border: none;
+            padding: 10px 15px;
+            width: 280px;
+            font-size: 0.9rem;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            box-shadow: none;
+            background: white;
+        }
+        
+        .search-box .input-group-text {
+            background: transparent;
+            border: none;
+            color: var(--gray);
+        }
+        
+        /* ===== أيقونة الإشعارات ===== */
+        .notification-icon {
+            position: relative;
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            background: var(--light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--gray);
+            font-size: 1.2rem;
+        }
+        
+        .notification-icon:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            background: var(--danger);
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(249, 65, 68, 0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        /* ===== قائمة المستخدم ===== */
+        .profile-dropdown {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 18px;
+            background: var(--light);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+        
+        .profile-dropdown:hover {
+            background: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow-hover);
+        }
+        
+        .profile-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+        }
+        
+        .profile-info {
+            line-height: 1.4;
+        }
+        
+        .profile-info strong {
+            font-size: 0.95rem;
+            color: var(--dark);
+            display: block;
+        }
+        
+        .profile-info small {
+            font-size: 0.75rem;
+            color: var(--gray);
+            display: block;
+        }
+        
+        .profile-dropdown i.fa-chevron-down {
+            color: var(--gray);
+            font-size: 0.8rem;
+            transition: var(--transition);
+        }
+        
+        .profile-dropdown:hover i.fa-chevron-down {
+            color: var(--primary);
+            transform: rotate(180deg);
+        }
+        
+        /* ===== القائمة المنسدلة ===== */
+        .dropdown-menu {
+            border: none;
+            border-radius: 15px;
+            box-shadow: var(--box-shadow-hover);
+            padding: 10px;
+            margin-top: 10px;
+            min-width: 220px;
+            border-top: 3px solid var(--primary);
+        }
+        
+        .dropdown-item {
+            padding: 10px 15px;
+            border-radius: 10px;
+            transition: var(--transition);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .dropdown-item i {
+            width: 20px;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+        
+        .dropdown-item:hover {
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+            transform: translateX(-5px);
+        }
+        
+        .dropdown-item.text-danger i {
+            color: var(--danger);
+        }
+        
+        .dropdown-item.text-danger:hover {
+            background: rgba(249, 65, 68, 0.1);
+            color: var(--danger);
+        }
+        
+        .dropdown-divider {
+            margin: 5px 0;
+            border-color: var(--gray-light);
+        }
+        
+        /* ===== المحتوى الرئيسي ===== */
+        .main-content {
+            margin-top: 90px;
+            padding: 30px;
+            min-height: calc(100vh - 90px);
+        }
+        
+        /* ===== رأس الصفحة ===== */
+        .page-header {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .page-header h2 {
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        
+        .page-header p {
+            color: var(--gray);
+            margin: 5px 0 0;
+        }
+        
+        .page-header i {
+            color: var(--primary);
+        }
+        
+        .page-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        /* ===== بطاقات الإحصائيات ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: var(--transition);
+            border: 1px solid var(--gray-light);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow-hover);
+            border-color: var(--primary);
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+        
+        .stat-icon.primary { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+        .stat-icon.success { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+        .stat-icon.warning { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+        .stat-icon.danger { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+        .stat-icon.info { background: rgba(72, 149, 239, 0.1); color: var(--info); }
+        
+        .stat-info {
+            flex: 1;
+        }
+        
+        .stat-info h3 {
+            font-weight: 700;
+            margin: 0;
+            font-size: 2rem;
+            color: var(--dark);
+            line-height: 1.2;
+        }
+        
+        .stat-info p {
+            color: var(--gray);
+            margin: 5px 0 0;
+            font-size: 0.9rem;
+        }
+        
+        /* ===== بطاقات المهام ===== */
+        .task-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            border-right: 4px solid transparent;
+            margin-bottom: 15px;
+            border: 1px solid var(--gray-light);
+        }
+        
+        .task-card:hover {
+            transform: translateY(-3px) translateX(-3px);
+            box-shadow: var(--box-shadow-hover);
+            border-color: var(--primary);
+        }
+        
+        .task-card.pending {
+            border-right-color: var(--warning);
+        }
+        
+        .task-card.in_progress {
+            border-right-color: var(--primary);
+        }
+        
+        .task-card.completed {
+            border-right-color: var(--success);
+            opacity: 0.9;
+        }
+        
+        .task-card.overdue {
+            border-right-color: var(--danger);
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .task-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--dark);
+        }
+        
+        .task-project {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+        
+        .task-meta {
+            display: flex;
+            gap: 15px;
+            color: var(--gray);
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .task-meta i {
+            width: 16px;
+            color: var(--primary);
+        }
+        
+        .task-progress {
+            margin-top: 15px;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .progress-header small {
+            color: var(--gray);
+        }
+        
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+            background: var(--gray-light);
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+        }
+        
+        .progress-bar.success { background: var(--success); }
+        .progress-bar.warning { background: var(--warning); }
+        .progress-bar.danger { background: var(--danger); }
+        
+        /* ===== حالة المهمة ===== */
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        
+        .status-badge.pending {
+            background: rgba(248, 150, 30, 0.15);
+            color: var(--warning);
+        }
+        
+        .status-badge.in_progress {
+            background: rgba(67, 97, 238, 0.15);
+            color: var(--primary);
+        }
+        
+        .status-badge.completed {
+            background: rgba(76, 201, 240, 0.15);
+            color: var(--success);
+        }
+        
+        .status-badge.overdue {
+            background: rgba(249, 65, 68, 0.15);
+            color: var(--danger);
+        }
+        
+        /* ===== الأزرار ===== */
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
+        }
+        
+        .btn-primary-gradient:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(67, 97, 238, 0.3);
+            color: white;
+        }
+        
+        .btn-outline-primary {
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            background: transparent;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .btn-sm {
+            padding: 6px 15px;
+            font-size: 0.85rem;
+        }
+        
+        .btn-icon {
+            width: 35px;
+            height: 35px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+        
+        /* ===== الجداول ===== */
+        .table-responsive {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background: var(--light);
+            color: var(--dark);
+            font-weight: 600;
+            padding: 15px;
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        
+        .table tbody tr:hover {
+            background: rgba(67, 97, 238, 0.02);
+        }
+        
+        /* ===== نماذج الإدخال ===== */
+        .form-control, .form-select {
+            border: 2px solid var(--gray-light);
+            border-radius: 12px;
+            padding: 10px 15px;
+            transition: var(--transition);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        
+        .form-label i {
+            color: var(--primary);
+            margin-left: 5px;
+        }
+        
+        /* ===== الصور الرمزية ===== */
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+        
+        .user-avatar-sm {
+            width: 30px;
+            height: 30px;
+            font-size: 0.8rem;
+            border-radius: 8px;
+        }
+        
+        .user-avatar-lg {
+            width: 50px;
+            height: 50px;
+            font-size: 1.3rem;
+            border-radius: 12px;
+        }
+        
+        /* ===== الإشعارات ===== */
+        .alert {
+            border-radius: 15px;
+            border: none;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-right: 4px solid;
+        }
+        
+        .alert-success {
+            background: rgba(76, 201, 240, 0.1);
+            color: var(--success);
+            border-right-color: var(--success);
+        }
+        
+        .alert-danger {
+            background: rgba(249, 65, 68, 0.1);
+            color: var(--danger);
+            border-right-color: var(--danger);
+        }
+        
+        .alert-warning {
+            background: rgba(248, 150, 30, 0.1);
+            color: var(--warning);
+            border-right-color: var(--warning);
+        }
+        
+        .alert-info {
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+            border-right-color: var(--primary);
+        }
+        
+        /* ===== التجاوب ===== */
+        @media (max-width: 992px) {
+            .search-box input {
+                width: 200px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .navbar-top {
+                padding: 0 15px;
+            }
+            
+            .logo h4 {
+                display: none;
+            }
+            
+            .search-box {
+                display: none !important;
+            }
+            
+            .profile-info {
+                display: none;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .page-actions {
+                width: 100%;
+            }
+            
+            .page-actions .btn {
+                flex: 1;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .profile-dropdown {
+                padding: 8px 12px;
+            }
+            
+            .profile-img {
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
+            }
+        }
+        
+        /* ===== أنيميشن ===== */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fadeInUp {
+            animation: fadeInUp 0.5s ease;
+        }
+        
+        /* ===== Scrollbar ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--light);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- الشريط العلوي -->
+    <nav class="navbar-top">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <h4><span>نظام</span> المهام</h4>
+        </div>
+        
+        <div class="user-menu">
+            <!-- البحث السريع -->
+            <div class="search-box d-none d-md-block">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" class="form-control" 
+                           placeholder="بحث في المهام..." 
+                           id="quickSearch"
+                           autocomplete="off">
+                </div>
+            </div>
+            
+            <!-- الإشعارات -->
+            <div class="notification-icon" onclick="window.location.href='{{ url_for('employee.notifications') }}'">
+                <i class="far fa-bell"></i>
+                {% if g.notifications_count > 0 %}
+                <span class="notification-badge">{{ g.notifications_count }}</span>
+                {% endif %}
+            </div>
+            <!-- ⭐ عداد الخطة المجانية - يظهر فقط للشركات في الفترة التجريبية -->
+            {% if current_user.is_authenticated and current_user.organization and current_user.organization.subscription_status == 'trial' %}
+            <div class="dropdown ms-2">
+                <button class="btn btn-warning position-relative rounded-pill" type="button" data-bs-toggle="dropdown" 
+                        style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none;">
+                    <i class="fas fa-hourglass-half me-1"></i>
+                    <span class="trial-days">{{ current_user.organization.trial_days_remaining }}</span>
+                    <span class="small">يوم</span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 280px;">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-gift fa-2x text-warning mb-2"></i>
+                        <h6 class="mb-1">الفترة التجريبية المجانية</h6>
+                        <p class="small text-muted mb-2">استمتع بمزايا المنصة لمدة 20 يوم</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>الأيام المتبقية</span>
+                            <span class="fw-bold">{{ current_user.organization.trial_days_remaining }} / 20 يوم</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                style="width: {{ current_user.organization.trial_percentage }}%;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info small p-2 mb-2">
+                        <i class="fas fa-info-circle me-1"></i>
+                        بعد انتهاء الفترة التجريبية، يمكنك الاشتراك في إحدى الباقات المدفوعة للاستمرار.
+                    </div>
+                    
+                    <hr class="my-2">
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('company.view_plans') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-rocket me-1"></i> ترقية الاشتراك الآن
+                        </a>
+                        <a href="{{ url_for('company.subscription_status') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-chart-line me-1"></i> عرض تفاصيل الاشتراك
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ⭐ أيقونة تحذير عند اقتراب انتهاء الفترة التجريبية -->
+            {% if current_user.is_authenticated and current_user.organization and current_user.organization.is_trial_expiring_soon %}
+            <div class="ms-2">
+                <span class="badge bg-danger animate-pulse">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    ينتهي قريباً! {{ current_user.organization.trial_days_remaining }} يوم متبقي
+                </span>
+            </div>
+            {%endif%}
+            <!-- قائمة المستخدم -->
+            <div class="profile-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="profile-img">
+                    {{ current_user.full_name[0] if current_user.full_name else '?' }}
+                </div>
+                <div class="profile-info">
+                    <strong>{{ current_user.full_name.split()[0] if current_user.full_name else 'مستخدم' }}</strong>
+                    <small>
+                        {% if current_user.role == 'supervisor' %}
+                            مشرف
+                        {% elif current_user.role == 'delegate' %}
+                            مندوب
+                        {% elif current_user.role == 'employee' %}
+                            موظف
+                        {% else %}
+                            {{ current_user.role }}
+                        {% endif %}
+                    </small>
+                </div>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('employee.dashboard') }}">
+                        <i class="fas fa-chart-pie"></i>
+                        لوحة التحكم
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('employee.my_tasks') }}">
+                        <i class="fas fa-tasks"></i>
+                        مهامي
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('employee.my_projects') }}">
+                        <i class="fas fa-project-diagram"></i>
+                        مشاريعي
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('employee.my_activities') }}">
+                        <i class="fas fa-project-diagram"></i>
+                        الانشطة
+                    </a>
+                </li>
+                {% if current_user.role == 'supervisor' %}
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('employee.supervisor_dashboard') }}">
+                        <i class="fas fa-project-diagram"></i>
+                        لوحة التحكم الخاصة بالمشرف
+                    </a>
+                </li>
+                {% endif %}
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('employee.daily_reports') }}">
+                        <i class="fas fa-calendar-alt"></i>
+                        التقارير اليومية
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('employee.profile') }}">
+                        <i class="fas fa-user"></i>
+                        الملف الشخصي
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('employee.notifications') }}">
+                        <i class="fas fa-bell"></i>
+                        الإشعارات
+                        {% if g.notifications_count > 0 %}
+                        <span class="badge bg-danger float-start">{{ g.notifications_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i>
+                        تسجيل الخروج
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- المحتوى الرئيسي -->
+    <div class="main-content">
+        <!-- رسائل الـ Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'danger' else 'info-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="إغلاق"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- محتوى الصفحة -->
+        {% block content %}{% endblock %}
+    </div>
+    
+    <!-- سكريبتات -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/perfect-scrollbar@1.5.5/dist/perfect-scrollbar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        // تفعيل البحث السريع
+    document.getElementById('quickSearch')?.addEventListener('input', function(e) {
+        const query = e.target.value.trim();
+        const resultsDiv = document.getElementById('searchResults');
+        
+        if (query.length < 2) {
+            if (resultsDiv) resultsDiv.style.display = 'none';
+            return;
+        }
+        
+        fetch(`/employee/api/tasks/search?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.tasks.length > 0) {
+                    // عرض نتائج البحث
+                    showSearchResults(data.tasks);
+                }
+            });
+    });
+        
+        // تفعيل البحث عند الضغط على Enter
+        document.getElementById('quickSearch')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const query = e.target.value.trim();
+                if (query) {
+                    window.location.href = `/employee/search?q=${encodeURIComponent(query)}`;
+                }
+            }
+        });
+        
+        // ===== دوال مساعدة للإشعارات =====
+        
+        /**
+         * إظهار رسالة نجاح
+         * @param {string} message - نص الرسالة
+         */
+        function showSuccess(message) {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم بنجاح',
+                text: message,
+                timer: 3000,
+                showConfirmButton: false,
+                customClass: {
+                    popup: 'rounded-4'
+                }
+            });
+        }
+        
+        /**
+         * إظهار رسالة خطأ
+         * @param {string} message - نص الرسالة
+         */
+        function showError(message) {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: message,
+                confirmButtonColor: '#f94144',
+                confirmButtonText: 'حسناً',
+                customClass: {
+                    popup: 'rounded-4'
+                }
+            });
+        }
+        
+        /**
+         * إظهار رسالة تحذير
+         * @param {string} message - نص الرسالة
+         */
+        function showWarning(message) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'تنبيه',
+                text: message,
+                confirmButtonColor: '#f8961e',
+                confirmButtonText: 'موافق',
+                customClass: {
+                    popup: 'rounded-4'
+                }
+            });
+        }
+        
+        /**
+         * إظهار رسالة معلومات
+         * @param {string} message - نص الرسالة
+         */
+        function showInfo(message) {
+            Swal.fire({
+                icon: 'info',
+                title: 'معلومات',
+                text: message,
+                confirmButtonColor: '#4361ee',
+                confirmButtonText: 'موافق',
+                customClass: {
+                    popup: 'rounded-4'
+                }
+            });
+        }
+        
+        /**
+         * تأكيد الإجراء
+         * @param {string} message - نص رسالة التأكيد
+         * @param {function} callback - الدالة التي سيتم تنفيذها بعد التأكيد
+         * @param {string} confirmText - نص زر التأكيد (اختياري)
+         */
+        function confirmAction(message, callback, confirmText = 'نعم') {
+            Swal.fire({
+                title: 'تأكيد',
+                text: message,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#4361ee',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: confirmText,
+                cancelButtonText: 'إلغاء',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'rounded-4'
+                }
+            }).then((result) => {
+                if (result.isConfirmed && callback) {
+                    callback();
+                }
+            });
+        }
+        
+        /**
+         * تأكيد الحذف
+         * @param {string} message - نص رسالة التأكيد
+         * @param {function} callback - الدالة التي سيتم تنفيذها بعد التأكيد
+         */
+        function confirmDelete(message, callback) {
+            Swal.fire({
+                title: 'تأكيد الحذف',
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f94144',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'نعم، احذف',
+                cancelButtonText: 'إلغاء',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'rounded-4'
+                }
+            }).then((result) => {
+                if (result.isConfirmed && callback) {
+                    callback();
+                }
+            });
+        }
+        
+        // تفعيل Perfect Scrollbar على العناصر التي تحتاج تمرير
+        document.addEventListener('DOMContentLoaded', function() {
+            const scrollableElements = document.querySelectorAll('.scrollable');
+            scrollableElements.forEach(el => {
+                new PerfectScrollbar(el);
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,807 @@
+{% extends "company/base.html" %}
+
+{% block title %}المهام - نظام إدارة المشاريع{% endblock %}
+
+{% block page_title %}المهام{% endblock %}
+{% block page_subtitle %}
+    {% if view == 'my_tasks' %}المهام التي أنشأتها
+    {% elif view == 'assigned' %}المهام المعينة لي
+    {% elif view == 'overdue' %}المهام المتأخرة
+    {% else %}عرض وإدارة جميع المهام
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== المتغيرات الأساسية ===== */
+    :root {
+        --task-primary: #4361ee;
+        --task-success: #4caf50;
+        --task-warning: #ff9800;
+        --task-danger: #f44336;
+        --task-info: #00bcd4;
+        --task-purple: #9c27b0;
+    }
+
+    /* ===== الحاوية الرئيسية ===== */
+    .tasks-container {
+        padding: 1.5rem;
+        animation: fadeIn 0.5s ease;
+    }
+
+    /* ===== إحصائيات سريعة ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(67, 97, 238, 0.1);
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .stat-icon.total { background: rgba(67, 97, 238, 0.1); color: var(--task-primary); }
+    .stat-icon.pending { background: rgba(255, 152, 0, 0.1); color: var(--task-warning); }
+    .stat-icon.progress { background: rgba(0, 188, 212, 0.1); color: var(--task-info); }
+    .stat-icon.completed { background: rgba(76, 175, 80, 0.1); color: var(--task-success); }
+    .stat-icon.overdue { background: rgba(244, 67, 54, 0.1); color: var(--task-danger); }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--dark);
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ===== رأس الصفحة ===== */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .header-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--task-primary), #3f37c9);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .header-text h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+    }
+
+    .header-text p {
+        color: #6c757d;
+        margin: 0.2rem 0 0;
+        font-size: 0.9rem;
+    }
+
+    .btn-create {
+        background: linear-gradient(135deg, var(--task-primary), #3f37c9);
+        border: none;
+        padding: 0.7rem 1.5rem;
+        border-radius: 10px;
+        color: white;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+    .btn-create:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(67, 97, 238, 0.3);
+    }
+
+    /* ===== شريط التنقل ===== */
+    .view-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        background: white;
+        padding: 0.5rem;
+        border-radius: 12px;
+        border: 1px solid #eef2f7;
+    }
+
+    .view-tab {
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #6c757d;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .view-tab:hover {
+        background: #f8fafc;
+        color: var(--task-primary);
+    }
+
+    .view-tab.active {
+        background: linear-gradient(135deg, var(--task-primary), #3f37c9);
+        color: white;
+    }
+
+    .view-tab i {
+        font-size: 0.9rem;
+    }
+
+    /* ===== شريط الفلترة ===== */
+    .filter-section {
+        background: white;
+        border-radius: 16px;
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #eef2f7;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .filter-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.3rem;
+        font-size: 0.8rem;
+    }
+
+    .filter-input, .filter-select {
+        width: 100%;
+        padding: 0.5rem 0.8rem;
+        border: 2px solid #eef2f7;
+        border-radius: 8px;
+        transition: all 0.3s;
+        font-size: 0.9rem;
+    }
+
+    .filter-input:focus, .filter-select:focus {
+        border-color: var(--task-primary);
+        outline: none;
+    }
+
+    /* ===== جدول المهام ===== */
+    .table-container {
+        background: white;
+        border-radius: 16px;
+        padding: 1.2rem;
+        border: 1px solid #eef2f7;
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .table-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .table-title i {
+        color: var(--task-primary);
+    }
+
+    .tasks-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 0.5rem;
+    }
+
+    .tasks-table thead th {
+        background: #f8fafc;
+        padding: 0.8rem 1rem;
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .tasks-table tbody tr {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+        cursor: pointer;
+        border: 1px solid transparent;
+    }
+
+    .tasks-table tbody tr:hover {
+        border-color: var(--task-primary);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .tasks-table td {
+        padding: 0.8rem 1rem;
+        vertical-align: middle;
+    }
+
+    .task-code {
+        font-weight: 600;
+        color: var(--task-primary);
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+
+    .task-name {
+        font-weight: 500;
+        color: var(--dark);
+    }
+
+    .status-badge {
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-in_progress { background: #cce5ff; color: #004085; }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-on_hold { background: #fff3cd; color: #856404; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+
+    .priority-badge {
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .priority-5 { background: #f8d7da; color: #721c24; }
+    .priority-4 { background: #fff3cd; color: #856404; }
+    .priority-3 { background: #d4edda; color: #155724; }
+    .priority-2 { background: #cce5ff; color: #004085; }
+    .priority-1 { background: #e2e3e5; color: #383d41; }
+
+    .progress-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 100px;
+    }
+
+    .progress-bar {
+        flex: 1;
+        height: 6px;
+        background: #eef2f7;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--task-primary), var(--task-info));
+        border-radius: 3px;
+        transition: width 0.3s;
+    }
+
+    .progress-text {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .delay-badge {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .assigned-users {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2rem;
+    }
+
+    .user-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--task-primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        font-weight: 600;
+    }
+
+    .action-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 2px solid #eef2f7;
+        background: white;
+        color: #6c757d;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin: 0 0.1rem;
+        font-size: 0.8rem;
+    }
+
+    .action-btn:hover {
+        border-color: var(--task-primary);
+        color: var(--task-primary);
+        transform: translateY(-2px);
+    }
+
+    .action-btn.delete:hover {
+        border-color: var(--task-danger);
+        color: var(--task-danger);
+    }
+
+    /* ===== حالة فارغة ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        background: #f8fafc;
+        border-radius: 16px;
+    }
+
+    .empty-state-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .empty-state-icon i {
+        font-size: 2.5rem;
+        color: var(--task-primary);
+    }
+
+    .empty-state h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+    }
+
+    /* ===== رسوم متحركة ===== */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tasks-container">
+    <!-- إحصائيات سريعة -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon total">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.total }}</div>
+                <div class="stat-label">إجمالي المهام</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon pending">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.pending }}</div>
+                <div class="stat-label">معلقة</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon progress">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.in_progress }}</div>
+                <div class="stat-label">قيد التنفيذ</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon completed">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.completed }}</div>
+                <div class="stat-label">مكتملة</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon overdue">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.overdue }}</div>
+                <div class="stat-label">متأخرة</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- رأس الصفحة -->
+    <div class="page-header">
+        <div class="header-title">
+            <div class="header-icon">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <div class="header-text">
+                <h2>المهام</h2>
+                <p>
+                    {% if view == 'my_tasks' %}المهام التي أنشأتها
+                    {% elif view == 'assigned' %}المهام المعينة لي
+                    {% elif view == 'overdue' %}المهام المتأخرة
+                    {% else %}جميع المهام
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <a href="{{ url_for('tasks.create_task', project_id=project.id if project else None) }}" class="btn-create">
+            <i class="fas fa-plus"></i>
+            مهمة جديدة
+        </a>
+    </div>
+
+    <!-- تبويبات العرض -->
+    <div class="view-tabs">
+        <a href="{{ url_for('tasks.list_tasks', project_id=project.id if project else None, view='all') }}" 
+           class="view-tab {% if view == 'all' %}active{% endif %}">
+            <i class="fas fa-list"></i> الكل
+        </a>
+        <a href="{{ url_for('tasks.list_tasks', project_id=project.id if project else None, view='my_tasks') }}" 
+           class="view-tab {% if view == 'my_tasks' %}active{% endif %}">
+            <i class="fas fa-user"></i> مهامي
+        </a>
+        <a href="{{ url_for('tasks.list_tasks', project_id=project.id if project else None, view='assigned') }}" 
+           class="view-tab {% if view == 'assigned' %}active{% endif %}">
+            <i class="fas fa-users"></i> المعينة لي
+        </a>
+        <a href="{{ url_for('tasks.list_tasks', project_id=project.id if project else None, view='overdue') }}" 
+           class="view-tab {% if view == 'overdue' %}active{% endif %}">
+            <i class="fas fa-exclamation-triangle"></i> المتأخرة
+        </a>
+    </div>
+
+    <!-- شريط الفلترة -->
+    <div class="filter-section">
+        <div class="filter-grid">
+            <div>
+                <div class="filter-label">
+                    <i class="fas fa-search"></i> بحث
+                </div>
+                <input type="text" class="filter-input" id="searchInput" placeholder="ابحث بكود أو اسم المهمة...">
+            </div>
+            <div>
+                <div class="filter-label">
+                    <i class="fas fa-project-diagram"></i> المشروع
+                </div>
+                <select class="filter-select" id="projectFilter">
+                    <option value="">الكل</option>
+                    {% for p in projects %}
+                    <option value="{{ p.id }}" {% if project and project.id == p.id %}selected{% endif %}>{{ p.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <div class="filter-label">
+                    <i class="fas fa-tag"></i> الحالة
+                </div>
+                <select class="filter-select" id="statusFilter">
+                    <option value="">الكل</option>
+                    <option value="pending">معلقة</option>
+                    <option value="in_progress">قيد التنفيذ</option>
+                    <option value="completed">مكتملة</option>
+                    <option value="on_hold">مؤجلة</option>
+                    <option value="cancelled">ملغاة</option>
+                </select>
+            </div>
+            <div>
+                <div class="filter-label">
+                    <i class="fas fa-flag"></i> الأولوية
+                </div>
+                <select class="filter-select" id="priorityFilter">
+                    <option value="">الكل</option>
+                    <option value="5">عالية جداً (5)</option>
+                    <option value="4">عالية (4)</option>
+                    <option value="3">متوسطة (3)</option>
+                    <option value="2">منخفضة (2)</option>
+                    <option value="1">منخفضة جداً (1)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- جدول المهام -->
+    <div class="table-container">
+        <div class="table-header">
+            <div class="table-title">
+                <i class="fas fa-list"></i>
+                قائمة المهام
+            </div>
+            <span class="badge bg-primary">{{ tasks|length }} مهمة</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="tasks-table">
+                <thead>
+                    <tr>
+                        <th>كود المهمة</th>
+                        <th>اسم المهمة</th>
+                        <th>المشروع</th>
+                        <th>النشاط</th>
+                        <th>الحالة</th>
+                        <th>التقدم</th>
+                        <th>تاريخ النهاية</th>
+                        <th>المسؤول</th>
+                        <th>الأولوية</th>
+                        <th>المعينون</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr onclick="window.location.href='{{ url_for('tasks.task_detail', task_id=task.id) }}'">
+                        <td><span class="task-code">{{ task.task_code }}</span></td>
+                        <td>
+                            <span class="task-name">{{ task.task_name }}</span>
+                            {% if task.is_delayed %}
+                            <span class="delay-badge">متأخرة {{ task.delay_days }} يوم</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ task.project.name }}</td>
+                        <td>{{ task.activity.activity_code if task.activity else '-' }}</td>
+                        <td>
+                            <span class="status-badge status-{{ task.status }}">
+                                {% if task.status == 'pending' %}
+                                <i class="fas fa-clock"></i> معلقة
+                                {% elif task.status == 'in_progress' %}
+                                <i class="fas fa-play-circle"></i> قيد التنفيذ
+                                {% elif task.status == 'completed' %}
+                                <i class="fas fa-check-circle"></i> مكتملة
+                                {% elif task.status == 'on_hold' %}
+                                <i class="fas fa-pause-circle"></i> مؤجلة
+                                {% elif task.status == 'cancelled' %}
+                                <i class="fas fa-times-circle"></i> ملغاة
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="progress-container">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: {{ task.progress.progress_percentage }}%"></div>
+                                </div>
+                                <span class="progress-text">{{ task.progress.progress_percentage }}%</span>
+                            </div>
+                        </td>
+                        <td class="{% if task.is_delayed %}text-danger fw-bold{% endif %}">
+                            {{ task.planning.planned_finish.strftime('%Y-%m-%d') if task.planning and task.planning.planned_finish else '-' }}
+                        </td>
+                        <td>{{ task.supervisor.full_name if task.supervisor else '-' }}</td>
+                        <td>
+                            <span class="priority-badge priority-{{ task.priority }}">
+                                {{ task.priority }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="assigned-users">
+                                {% if task.assignments %}
+                                    {% for assignment in task.assignments[:3] %}
+                                    <span class="user-avatar" title="{{ assignment.user.full_name }}">
+                                        {{ assignment.user.full_name[0] }}
+                                    </span>
+                                    {% endfor %}
+                                    {% if task.assignments.count() > 3 %}
+                                    <span class="user-avatar" style="background: #6c757d;">+{{ task.assignments|length - 3 }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td onclick="event.stopPropagation()">
+                            <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="action-btn" title="عرض">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ url_for('tasks.edit_task', task_id=task.id) }}" class="action-btn" title="تعديل">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="action-btn delete" onclick="deleteTask({{ task.id }})" title="حذف">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="11">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                                <h3>لا توجد مهام</h3>
+                                <p>لم يتم إنشاء أي مهام بعد. ابدأ بإنشاء مهمة جديدة.</p>
+                                <a href="{{ url_for('tasks.create_task', project_id=project.id if project else None) }}" class="btn-create">
+                                    <i class="fas fa-plus"></i>
+                                    إنشاء مهمة جديدة
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// فلترة الجدول
+document.getElementById('searchInput').addEventListener('keyup', filterTable);
+document.getElementById('projectFilter').addEventListener('change', filterTable);
+document.getElementById('statusFilter').addEventListener('change', filterTable);
+document.getElementById('priorityFilter').addEventListener('change', filterTable);
+
+function filterTable() {
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    const projectFilter = document.getElementById('projectFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const priorityFilter = document.getElementById('priorityFilter').value;
+    
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        if (row.querySelector('td[colspan]')) return;
+        
+        const code = row.cells[0].textContent.toLowerCase();
+        const name = row.cells[1].textContent.toLowerCase();
+        const project = row.cells[2].textContent;
+        const status = row.cells[4].textContent.trim().toLowerCase();
+        const priority = row.cells[8].textContent.trim();
+        
+        const matchesSearch = code.includes(searchText) || name.includes(searchText);
+        const matchesProject = !projectFilter || project.includes(projectFilter);
+        const matchesStatus = !statusFilter || status.includes(statusFilter.replace('_', ' '));
+        const matchesPriority = !priorityFilter || priority === priorityFilter;
+        
+        row.style.display = matchesSearch && matchesProject && matchesStatus && matchesPriority ? '' : 'none';
+    });
+}
+
+// تحديث فلتر المشروع عند تغيير الرابط
+document.getElementById('projectFilter').addEventListener('change', function() {
+    const projectId = this.value;
+    const url = new URL(window.location.href);
+    if (projectId) {
+        url.searchParams.set('project_id', projectId);
+    } else {
+        url.searchParams.delete('project_id');
+    }
+    window.location.href = url.toString();
+});
+
+// حذف مهمة
+function deleteTask(id) {
+    confirmDelete('هل أنت متأكد من حذف هذه المهمة؟', function() {
+        fetch(`/tasks/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('تم حذف المهمة بنجاح');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.error || 'حدث خطأ أثناء الحذف');
+            }
+        });
+    });
+}
+</script>
+{% endblock %}

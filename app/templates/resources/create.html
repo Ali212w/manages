@@ -1,0 +1,371 @@
+{% extends "company/base.html" %}
+
+{% block title %}إضافة مورد جديد{% endblock %}
+
+{% block page_title %}إضافة مورد جديد{% endblock %}
+{% block page_subtitle %}إدخال بيانات المورد الجديد{% endblock %}
+
+{% block extra_css %}
+<style>
+    .create-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-card {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+    }
+    
+    .form-section {
+        background: #f8fafc;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px dashed #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .section-title i {
+        color: var(--primary);
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-label i {
+        color: var(--primary);
+        margin-left: 0.5rem;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.7rem 1rem;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        outline: none;
+    }
+    
+    .row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .help-text {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.3rem;
+    }
+    
+    .btn-submit {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .btn-secondary {
+        background: #eef2f7;
+        color: #6c757d;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+        .row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-container">
+    <div class="form-card">
+        <form method="POST" action="{{ url_for('resource.create') }}" id="resourceForm">
+            <!-- المعلومات الأساسية -->
+            <div class="form-section">
+                <h6 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    المعلومات الأساسية
+                </h6>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-barcode"></i>
+                            كود المورد <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="resource_id" class="form-control" 
+                               placeholder="مثال: RES-001" required>
+                        <div class="help-text">كود فريد للمورد</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i>
+                            اسم المورد <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="name" class="form-control" 
+                               placeholder="أدخل اسم المورد" required>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- تصنيف المورد -->
+            <div class="form-section">
+                <h6 class="section-title">
+                    <i class="fas fa-tag"></i>
+                    تصنيف المورد
+                </h6>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-layer-group"></i>
+                            نوع المورد <span class="text-danger">*</span>
+                        </label>
+                        <select name="resource_type" id="resourceType" class="form-select" required>
+                            <option value="">اختر نوع المورد</option>
+                            <option value="labor">موارد بشرية (عمالة)</option>
+                            <option value="material">مواد</option>
+                            <option value="equipment">معدات</option>
+                            <option value="non_labor">موارد أخرى</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-ruler"></i>
+                            الوحدة
+                        </label>
+                        <select name="unit" class="form-select">
+                            <option value="">اختر الوحدة</option>
+                            <option value="hour">ساعة</option>
+                            <option value="day">يوم</option>
+                            <option value="month">شهر</option>
+                            <option value="piece">قطعة</option>
+                            <option value="kg">كيلوجرام</option>
+                            <option value="ton">طن</option>
+                            <option value="m3">متر مكعب</option>
+                            <option value="m2">متر مربع</option>
+                            <option value="meter">متر طولي</option>
+                        </select>
+                        <div class="help-text">وحدة قياس المورد</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- حقول خاصة حسب النوع -->
+            <div id="laborFields" class="form-section" style="display: none;">
+                <h6 class="section-title">
+                    <i class="fas fa-user-tie"></i>
+                    معلومات الموارد البشرية
+                </h6>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label"> العامل</label>
+                    <select name="employeeId" class="form-select" >
+                        <option value="">-- اختر العامل --</option>
+                        {% for user in users %}
+                        <option value="{{user.id}}">{{ user.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">التخصص</label>
+                    <input type="text" name="specialization" class="form-control" placeholder="مثال: بناء، كهرباء، سباكة">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">المهارات</label>
+                    <textarea name="skills" class="form-control" rows="2" placeholder="مثال: لحام، تشغيل معدات، صب خرسانة"></textarea>
+                </div>
+            </div>
+            
+            <div id="equipmentFields" class="form-section" style="display: none;">
+                <h6 class="section-title">
+                    <i class="fas fa-tractor"></i>
+                    معلومات المعدات
+                </h6>
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">نوع المعدة</label>
+                        <input type="text" name="equipment_type" class="form-control" placeholder="مثال: حفار، رافعة، شاحنة">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">الموديل</label>
+                        <input type="text" name="equipment_model" class="form-control" placeholder="مثال: CAT 320D">
+                    </div>
+                    <div class="form-group">
+                    <label class="form-label">المورد</label>
+                    <select name="supplier_id" class="form-select">
+                        <option value="">اختر المورد</option>
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}">{{ supplier.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                </div>
+            </div>
+            
+            <div id="materialFields" class="form-section" style="display: none;">
+                <h6 class="section-title">
+                    <i class="fas fa-cube"></i>
+                    معلومات المواد
+                </h6>
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">نوع المادة</label>
+                        <input type="text" name="material_type" class="form-control" placeholder="مثال: حديد، اسمنت، خشب">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">المورد</label>
+                        <select name="supplier_id" class="form-select">
+                            <option value="">اختر المورد</option>
+                            {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- التكلفة والكمية -->
+            <div class="form-section">
+                <h6 class="section-title">
+                    <i class="fas fa-coins"></i>
+                    التكلفة والكمية
+                </h6>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-money-bill"></i>
+                            التكلفة لكل وحدة
+                        </label>
+                        <input type="number" name="cost_per_unit" class="form-control" 
+                               step="0.01" min="0" value="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-boxes"></i>
+                            الكمية المتاحة
+                        </label>
+                        <input type="number" name="available_quantity" class="form-control" 
+                               step="0.01" min="0" value="0">
+                        <div class="help-text">الكمية المتاحة للاستخدام</div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-dollar-sign"></i>
+                            العملة
+                        </label>
+                        <select name="currency" class="form-select">
+                            <option value="SAR">ريال سعودي (SAR)</option>
+                            <option value="USD">دولار أمريكي (USD)</option>
+                            <option value="EUR">يورو (EUR)</option>
+                            <option value="AED">درهم إماراتي (AED)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-calendar"></i>
+                            التقويم
+                        </label>
+                        <select name="calendar_id" class="form-select">
+                            <option value="">-- اختر التقويم --</option>
+                            {% for calendar in calendars %}
+                            <option value="{{ calendar.id }}">{{ calendar.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- أزرار الإجراءات -->
+            <div class="d-flex gap-3 mt-4">
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-save me-2"></i>
+                    حفظ المورد
+                </button>
+                <a href="{{ url_for('resource.index') }}" class="btn-secondary">
+                    <i class="fas fa-times me-2"></i>
+                    إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// إظهار الحقول الخاصة حسب نوع المورد
+document.getElementById('resourceType').addEventListener('change', function() {
+    const type = this.value;
+    document.getElementById('laborFields').style.display = type === 'labor' ? 'block' : 'none';
+    document.getElementById('equipmentFields').style.display = type === 'equipment' ? 'block' : 'none';
+    document.getElementById('materialFields').style.display = type === 'material' ? 'block' : 'none';
+});
+
+// التحقق من صحة النموذج
+document.getElementById('resourceForm').addEventListener('submit', function(e) {
+    const resourceId = document.querySelector('input[name="resource_id"]').value.trim();
+    const name = document.querySelector('input[name="name"]').value.trim();
+    const resourceType = document.querySelector('select[name="resource_type"]').value;
+    
+    if (!resourceId) {
+        e.preventDefault();
+        Swal.fire('تنبيه', 'يرجى إدخال كود المورد', 'warning');
+        return;
+    }
+    
+    if (!name) {
+        e.preventDefault();
+        Swal.fire('تنبيه', 'يرجى إدخال اسم المورد', 'warning');
+        return;
+    }
+    
+    if (!resourceType) {
+        e.preventDefault();
+        Swal.fire('تنبيه', 'يرجى اختيار نوع المورد', 'warning');
+        return;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,186 @@
+{% extends "company/base.html" %}
+
+{% block title %}أنشطة {{ project.name }}{% endblock %}
+
+{% block page_title %}أنشطة المشروع{% endblock %}
+{% block page_subtitle %}{{ project.project_code }} - {{ project.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<style>
+    .activities-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+        text-align: center;
+    }
+    
+    .activities-table-container {
+        background: white;
+        border-radius: 30px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .status-badge {
+        padding: 0.3rem 1rem;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .status-not_started { background: #eef2f7; color: #6c757d; }
+    .status-in_progress { background: rgba(76, 201, 240, 0.1); color: var(--info); }
+    .status-completed { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    
+    .critical-badge {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+        padding: 0.2rem 0.5rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+    
+    .btn-add {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.7rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-add:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="activities-container">
+    <!-- إحصائيات -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3 class="text-primary">{{ stats.total }}</h3>
+            <small>إجمالي الأنشطة</small>
+        </div>
+        <div class="stat-card">
+            <h3 class="text-success">{{ stats.completed }}</h3>
+            <small>مكتمل</small>
+        </div>
+        <div class="stat-card">
+            <h3 class="text-info">{{ stats.in_progress }}</h3>
+            <small>قيد التنفيذ</small>
+        </div>
+        <div class="stat-card">
+            <h3 class="text-danger">{{ stats.critical }}</h3>
+            <small>أنشطة حرجة</small>
+        </div>
+    </div>
+    
+    <!-- جدول الأنشطة -->
+    <div class="activities-table-container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+                <i class="fas fa-tasks ms-2 text-primary"></i>
+                قائمة الأنشطة
+            </h5>
+            <button class="btn-add" onclick="addActivity()">
+                <i class="fas fa-plus"></i>
+                إضافة نشاط
+            </button>
+        </div>
+        
+        <table class="table" id="activitiesTable">
+            <thead>
+                <tr>
+                    <th>الكود</th>
+                    <th>الاسم</th>
+                    <th>النوع</th>
+                    <th>الحالة</th>
+                    <th>التقدم</th>
+                    <th>البداية</th>
+                    <th>النهاية</th>
+                    <th>المدة</th>
+                    <th>حرج</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in activities %}
+                <tr>
+                    <td><strong>{{ activity.activity_id }}</strong></td>
+                    <td>{{ activity.activity_name }}</td>
+                    <td>{{ activity.activity_type }}</td>
+                    <td>
+                        <span class="status-badge status-{{ activity.status }}">
+                            {{ activity.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="progress" style="height: 5px; width: 80px;">
+                            <div class="progress-bar" style="width: {{ activity.progress_percentage }}%"></div>
+                        </div>
+                        <small>{{ activity.progress_percentage }}%</small>
+                    </td>
+                    <td>{{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start }}</td>
+                    <td>{{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish }}</td>
+                    <td>{{ activity.original_duration }} يوم</td>
+                    <td>
+                        {% if activity.is_critical %}
+                        <span class="critical-badge">
+                            <i class="fas fa-exclamation-circle"></i>
+                            حرج
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewActivity({{ activity.id }})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#activitiesTable').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/ar.json'
+        },
+        order: [[0, 'asc']],
+        pageLength: 25
+    });
+});
+
+function addActivity() {
+    window.location.href = `/primavera/project/{{ project.id }}/activity/create`;
+}
+
+function viewActivity(id) {
+    window.location.href = `/primavera/project/${id}/activities`;
+}
+</script>
+{% endblock %}

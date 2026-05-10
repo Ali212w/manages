@@ -1,0 +1,88 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('dashboard') }} — {{ _('employee') }}{% endblock %}
+{% block content %}
+<div class="role-dash" id="role-dashboard-employee">
+  <div class="rd-header mb-4">
+    <h1 class="rd-title"><span class="rd-badge badge-emp"><i class="fas fa-user me-1"></i></span> {{ _('welcome_back') }}, {{ current_user.full_name or current_user.username }}</h1>
+    <p class="rd-subtitle text-muted">{{ _('employee') }}</p>
+  </div>
+
+  <div class="row g-3 mb-4">
+    {% set mt = kpis.my_tasks %}
+    {% for icon, cls, val, label in [
+      ('fa-list-check',  'kpi-indigo', mt.total,            _('total_tasks')),
+      ('fa-circle-check','kpi-emerald',mt.completed,        _('completed_tasks')),
+      ('fa-spinner',     'kpi-blue',   mt.in_progress,      _('in_progress_tasks')),
+      ('fa-clock',       'kpi-red',    mt.overdue,          _('delayed_tasks')),
+    ] %}
+    <div class="col-6 col-md-3">
+      <div class="rd-kpi {{ cls }}">
+        <div class="rd-kpi-icon"><i class="fas {{ icon }}"></i></div>
+        <div class="rd-kpi-body">
+          <div class="rd-kpi-value">{{ val }}</div>
+          <div class="rd-kpi-label">{{ label }}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="rd-card">
+        <div class="rd-card-header"><span><i class="fas fa-chart-pie me-2 text-primary"></i>{{ _('completion_rate') }}</span></div>
+        <div class="rd-card-body text-center py-3">
+          <canvas id="empChart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="rd-card">
+        <div class="rd-card-header"><span><i class="fas fa-folder me-2 text-emerald"></i>{{ _('project') }}</span><span class="badge bg-emerald-soft text-emerald">{{ kpis.projects_count }}</span></div>
+        <div class="rd-card-body p-0">
+          {% for p in my_projects %}
+          <div class="rd-user-row">
+            <a href="{{ url_for('projects.project_detail',project_id=p.id) }}" class="rd-link">{{ p.name }}</a>
+            {% set pg = p.get_progress() %}
+            <div class="d-flex align-items-center gap-2">
+              <div class="rd-mini-bar" style="width:80px"><div style="width:{{ pg }}%;background:var(--accent);height:100%;border-radius:4px"></div></div>
+              <small>{{ pg }}%</small>
+            </div>
+          </div>
+          {% else %}<div class="text-center text-muted py-3 small">{{ _('no_data') }}</div>{% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rd-card">
+    <div class="rd-card-header"><span><i class="fas fa-tasks me-2 text-primary"></i>{{ _('total_tasks') }}</span></div>
+    <div class="table-responsive">
+      <table class="rd-table">
+        <thead><tr><th>{{ _('name') }}</th><th>{{ _('status') }}</th><th>{{ _('project') }}</th><th>{{ _('due_date') }}</th></tr></thead>
+        <tbody>
+          {% for t in tasks %}
+          <tr>
+            <td><a href="{{ url_for('tasks.task_detail',task_id=t.id) }}" class="rd-link">{{ t.task_name }}</a></td>
+            <td>{% set sc={'completed':'emerald','in_progress':'indigo','pending':'amber'} %}<span class="rd-status-badge {{ sc.get(t.status,'slate') }}">{{ _(t.status) }}</span></td>
+            <td class="small text-muted">{{ t.project.name if t.project else '—' }}</td>
+            <td class="small {% if t.end_date and t.end_date.date() < now.date() and t.status != 'completed' %}text-danger fw-bold{% else %}text-muted{% endif %}">
+              {{ t.end_date.strftime('%Y-%m-%d') if t.end_date else '—' }}
+            </td>
+          </tr>
+          {% else %}<tr><td colspan="4" class="text-center py-3 text-muted">{{ _('no_data') }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  const c=document.getElementById('empChart');
+  if(c){
+    const mt={{ kpis.my_tasks | tojson }};
+    new Chart(c,{type:'doughnut',data:{labels:['{{ _("completed") }}','{{ _("in_progress") }}','{{ _("pending") }}'],datasets:[{data:[mt.completed,mt.in_progress,mt.pending],backgroundColor:['#10b981','#6366f1','#94a3b8'],borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'bottom'}},cutout:'65%'}});
+  }
+});
+</script>
+{% endblock %}

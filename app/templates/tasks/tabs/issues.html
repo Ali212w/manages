@@ -1,0 +1,162 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-bold mb-0">
+        <i class="fas fa-exclamation-triangle text-primary me-2"></i>القضايا المرتبطة
+    </h6>
+    <button class="btn btn-sm btn-primary" onclick="showAddIssueModal()">
+        <i class="fas fa-plus me-1"></i> إضافة قضية
+    </button>
+</div>
+
+<div class="table-responsive">
+    <table class="detail-table">
+        <thead>
+            <tr>
+                <th>كود القضية</th>
+                <th>العنوان</th>
+                <th>التصنيف</th>
+                <th>الأولوية</th>
+                <th>الحالة</th>
+                <th>تاريخ التبليغ</th>
+                <th>المبلغ</th>
+                <th>المسند إلى</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for issue in issues %}
+            <tr>
+                <td><span class="fw-bold text-primary">{{ issue.issue_code }}</span></td>
+                <td>{{ issue.title }}</td>
+                <td>{{ issue.category }}</td>
+                <td>
+                    <span class="badge bg-{{ 'danger' if issue.priority == 'critical' else 'warning' if issue.priority == 'high' else 'info' }}">
+                        {{ issue.priority }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge bg-{{ 'success' if issue.status == 'resolved' or issue.status == 'closed' else 'warning' if issue.status == 'in_progress' else 'secondary' }}">
+                        {{ issue.status }}
+                    </span>
+                </td>
+                <td>{{ issue.reported_date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ issue.reporter.full_name }}</td>
+                <td>{{ issue.assignee.full_name if issue.assignee else '-' }}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewIssue({{ issue.id }})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">لا توجد قضايا مرتبطة</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal إضافة قضية -->
+<div class="modal fade" id="addIssueModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة قضية جديدة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="issueForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">العنوان</label>
+                        <input type="text" class="form-control" id="issueTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">الوصف</label>
+                        <textarea class="form-control" id="issueDescription" rows="2"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">التصنيف</label>
+                            <select class="form-select" id="issueCategory">
+                                <option value="technical">تقني</option>
+                                <option value="quality">جودة</option>
+                                <option value="safety">سلامة</option>
+                                <option value="coordination">تنسيق</option>
+                                <option value="other">أخرى</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">الأولوية</label>
+                            <select class="form-select" id="issuePriority">
+                                <option value="low">منخفضة</option>
+                                <option value="medium">متوسطة</option>
+                                <option value="high">عالية</option>
+                                <option value="critical">حرجة</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">المسند إلى</label>
+                        <select class="form-select" id="issueAssignee">
+                            <option value="">غير محدد</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="addIssue()">إضافة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAddIssueModal() {
+    document.getElementById('issueForm').reset();
+    new bootstrap.Modal(document.getElementById('addIssueModal')).show();
+}
+
+function addIssue() {
+    const data = {
+        title: document.getElementById('issueTitle').value,
+        description: document.getElementById('issueDescription').value,
+        category: document.getElementById('issueCategory').value,
+        priority: document.getElementById('issuePriority').value,
+        assigned_to: document.getElementById('issueAssignee').value || null
+    };
+    
+    if (!data.title) {
+        showWarning('الرجاء إدخال عنوان القضية');
+        return;
+    }
+    
+    fetch(`/projects/api/{{ task.project_id }}/issue`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            ...data,
+            task_id: {{ task.id }}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addIssueModal')).hide();
+            showSuccess('تم إضافة القضية');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'حدث خطأ');
+        }
+    });
+}
+</script>

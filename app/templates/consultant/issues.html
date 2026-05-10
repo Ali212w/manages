@@ -1,0 +1,181 @@
+{% extends "consultant/base.html" %}
+
+{% block title %}{{ _('issues') }} - {{ _('consultant_portal') }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-bug me-2"></i> {{ _('issues') }}</h4>
+            <a href="{{ url_for('consultant.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> {{ _('back_to_dashboard') }}
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-primary">{{ stats.total }}</h3>
+            <small>{{ _('total_issues') }}</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-danger">{{ stats.open }}</h3>
+            <small>{{ _('open_issues') }}</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-warning">{{ stats.in_progress }}</h3>
+            <small>{{ _('in_progress_issues') }}</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-success">{{ stats.resolved }}</h3>
+            <small>{{ _('resolved_issues') }}</small>
+        </div>
+    </div>
+</div>
+
+<!-- Issues List -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-list me-2"></i> {{ _('issues_list') }}</h6>
+    </div>
+    <div class="card-body p-0">
+        {% if issues %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{{ _('issue_title') }}</th>
+                        <th>{{ _('project') }}</th>
+                        <th>{{ _('priority') }}</th>
+                        <th>{{ _('status') }}</th>
+                        <th>{{ _('reported_date') }}</th>
+                        <th>{{ _('reporter') }}</th>
+                        <th>{{ _('actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for issue in issues %}
+                    <tr>
+                        <td>
+                            <strong>{{ issue.title }}</strong>
+                            {% if issue.description %}
+                            <br><small class="text-muted">{{ issue.description|truncate(50) }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ issue.project.name if issue.project else '-' }}</td>
+                        <td>
+                            {% if issue.priority == 'critical' %}
+                            <span class="badge bg-danger">{{ _('priority_critical') }}</span>
+                            {% elif issue.priority == 'high' %}
+                            <span class="badge bg-warning">{{ _('priority_high') }}</span>
+                            {% elif issue.priority == 'medium' %}
+                            <span class="badge bg-info">{{ _('priority_medium') }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ _('priority_low') }}</span>
+                            {% endif %}
+                         </td>
+                        <td>
+                            {% if issue.status == 'open' %}
+                            <span class="badge bg-danger">{{ _('open') }}</span>
+                            {% elif issue.status == 'in_progress' %}
+                            <span class="badge bg-warning">{{ _('in_progress') }}</span>
+                            {% elif issue.status == 'resolved' %}
+                            <span class="badge bg-success">{{ _('resolved') }}</span>
+                            {% elif issue.status == 'closed' %}
+                            <span class="badge bg-secondary">{{ _('closed') }}</span>
+                            {% endif %}
+                         </td>
+                        <td>{{ issue.reported_date.strftime('%Y-%m-%d') if issue.reported_date else '-' }}</td>
+                        <td>{{ issue.reporter.full_name if issue.reporter else '-' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary update-issue" data-issue-id="{{ issue.id }}" data-status="{{ issue.status }}">
+                                <i class="fas fa-edit"></i> {{ _('update_status') }}
+                            </button>
+                         </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+            <h5 class="text-muted">{{ _('no_issues') }}</h5>
+            <p class="text-muted">{{ _('no_issues_message') }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Update Issue Status Modal -->
+<div class="modal fade" id="updateIssueModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i> {{ _('update_issue_status') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ _('status') }}</label>
+                    <select id="issueStatus" class="form-select">
+                        <option value="open">{{ _('open') }}</option>
+                        <option value="in_progress">{{ _('in_progress') }}</option>
+                        <option value="resolved">{{ _('resolved') }}</option>
+                        <option value="closed">{{ _('closed') }}</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('resolution') }}</label>
+                    <textarea id="issueResolution" class="form-control" rows="3" 
+                              placeholder="{{ _('enter_resolution_notes') }}"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                <button type="button" class="btn btn-primary" id="saveIssueStatus">{{ _('save') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentIssueId = null;
+
+$('.update-issue').click(function() {
+    currentIssueId = $(this).data('issue-id');
+    const currentStatus = $(this).data('status');
+    $('#issueStatus').val(currentStatus);
+    $('#issueResolution').val('');
+    $('#updateIssueModal').modal('show');
+});
+
+$('#saveIssueStatus').click(function() {
+    const status = $('#issueStatus').val();
+    const resolution = $('#issueResolution').val();
+    
+    $.ajax({
+        url: `/consultant/issues/${currentIssueId}/update`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ status: status, resolution: resolution }),
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('{{ _("error_occurred") }}: ' + response.error);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

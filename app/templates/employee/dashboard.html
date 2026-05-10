@@ -1,0 +1,515 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ _('emp.dashboard') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* أنماط مخصصة للوحة التحكم */
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: var(--radius-xl);
+        padding: 30px;
+        color: white;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+    
+    .dashboard-header::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -5%;
+        width: 200px;
+        height: 200px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 50%;
+    }
+    
+    .welcome-text h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .date-badge {
+        background: rgba(255,255,255,0.2);
+        border-radius: 50px;
+        padding: 8px 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .performance-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        backdrop-filter: blur(10px);
+    }
+    
+    .performance-circle .value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    
+    .performance-circle .label {
+        font-size: 0.7rem;
+        opacity: 0.8;
+    }
+    
+    .task-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.05);
+        margin-bottom: 15px;
+    }
+    
+    .task-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .task-card .task-header {
+        padding: 15px 20px;
+        background: linear-gradient(135deg, #f8f9fa, #fff);
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .task-card .task-body {
+        padding: 15px 20px;
+    }
+    
+    .task-priority-high {
+        border-right: 4px solid var(--danger-color);
+    }
+    
+    .task-priority-medium {
+        border-right: 4px solid var(--warning-color);
+    }
+    
+    .task-priority-low {
+        border-right: 4px solid var(--success-color);
+    }
+    
+    .suggestion-card {
+        background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+        border-radius: var(--radius-lg);
+        padding: 15px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .suggestion-card:hover {
+        transform: translateX(-5px);
+    }
+    
+    .suggestion-card.warning {
+        background: linear-gradient(135deg, #fab1a0, #d63031);
+        color: white;
+    }
+    
+    .suggestion-card.success {
+        background: linear-gradient(135deg, #55efc4, #00b894);
+        color: white;
+    }
+    
+    .suggestion-card.info {
+        background: linear-gradient(135deg, #74b9ff, #0984e3);
+        color: white;
+    }
+    
+    .activity-timeline {
+        position: relative;
+        padding-left: 25px;
+    }
+    
+    .activity-timeline::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, var(--primary-color), var(--success-color));
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -18px;
+        top: 5px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        border: 2px solid white;
+    }
+    
+    .timeline-item.completed::before {
+        background: var(--success-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="row align-items-center">
+        <div class="col-md-7">
+            <div class="welcome-text">
+                <h1>
+                    <i class="fas fa-hand-peace me-2"></i>
+                    {{ _('emp.welcome_back') }}, {{ current_user.full_name }}!
+                </h1>
+                <p class="mb-3 text-white-50">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    {{ _('emp.today_is') }} {{ now | format_date('%A, %B %d, %Y') }}
+                </p>
+                <div class="date-badge">
+                    <i class="fas fa-clock"></i>
+                    <span id="currentTime"></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5 text-center text-md-end">
+            <div class="performance-circle d-inline-flex">
+                <span class="value">{{ (performance.completion_rate|default(0))|round|int }}%</span>
+                <span class="label">{{ _('emp.completion_rate') }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- إحصائيات سريعة -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-2 col-md-3 col-6">
+        <div class="stat-card primary" data-aos="fade-up" data-aos-delay="100">
+            <div class="stat-value">{{ stats.total_tasks }}</div>
+            <div class="stat-label">{{ _('emp.total_tasks') }}</div>
+            <i class="stat-icon fas fa-tasks"></i>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-3 col-6">
+        <div class="stat-card success" data-aos="fade-up" data-aos-delay="200">
+            <div class="stat-value">{{ stats.completed_tasks }}</div>
+            <div class="stat-label">{{ _('emp.completed') }}</div>
+            <i class="stat-icon fas fa-check-circle"></i>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-3 col-6">
+        <div class="stat-card warning" data-aos="fade-up" data-aos-delay="300">
+            <div class="stat-value">{{ stats.in_progress_tasks }}</div>
+            <div class="stat-label">{{ _('emp.in_progress') }}</div>
+            <i class="stat-icon fas fa-play-circle"></i>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-3 col-6">
+        <div class="stat-card info" data-aos="fade-up" data-aos-delay="400">
+            <div class="stat-value">{{ stats.total_activities }}</div>
+            <div class="stat-label">{{ _('emp.activities') }}</div>
+            <i class="stat-icon fas fa-microchip"></i>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-3 col-6">
+        <div class="stat-card purple" data-aos="fade-up" data-aos-delay="500">
+            <div class="stat-value">{{ stats.avg_activity_progress }}%</div>
+            <!-- |round|int -->
+            <div class="stat-label">{{ _('emp.avg_activity_progress') }}</div>
+            <i class="stat-icon fas fa-chart-line"></i>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-3 col-6">
+        <div class="stat-card" data-aos="fade-up" data-aos-delay="600">
+            <div class="stat-value">{{ (performance.avg_quality|default(0))|round(1) }}/5</div>
+            <div class="stat-label">{{ _('emp.quality_score') }}</div>
+            <i class="stat-icon fas fa-star"></i>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- المهام الحالية -->
+    <div class="col-lg-7">
+        <div class="card-modern" data-aos="fade-up">
+            <div class="card-header">
+                <i class="fas fa-tasks me-2"></i> {{ _('emp.current_tasks') }}
+                <a href="{{ url_for('employee.my_tasks') }}" class="float-{{ 'left' if is_rtl else 'right' }} text-white text-decoration-none">
+                    <small>{{ _('emp.view_all') }} <i class="fas fa-arrow-{{ 'left' if is_rtl else 'right' }} ms-1"></i></small>
+                </a>
+            </div>
+            <div class="card-body">
+                {% if my_tasks %}
+                    {% for task in my_tasks %}
+                    <div class="task-card task-priority-{% if task.priority >= 4 %}high{% elif task.priority >= 3 %}medium{% else %}low{% endif %}"
+                         onclick="window.location.href='{{ url_for('employee.view_task', task_id=task.id) }}'"
+                         style="cursor: pointer;">
+                        <div class="task-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-{{ 'danger' if task.priority >= 4 else 'warning' if task.priority >= 3 else 'success' }} me-2">
+                                        <i class="fas fa-flag"></i> {{ _('emp.priority') }} {{ task.priority }}
+                                    </span>
+                                    <span class="badge bg-{{ 'info' if task.status == 'in_progress' else 'warning' if task.status == 'pending' else 'success' }}">
+                                        {{ get_status_text(task.status) }}
+                                    </span>
+                                </div>
+                                <small class="text-muted">{{ task.task_code }}</small>
+                            </div>
+                        </div>
+                        <div class="task-body">
+                            <h6 class="fw-bold mb-2">{{ task.task_name }}</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex gap-3">
+                                    <div class="small text-muted">
+                                        <i class="far fa-calendar-alt me-1"></i>
+                                        {{ format_date(task.planning.planned_start) if task.planning else '-' }}
+                                        <i class="fas fa-arrow-{{ 'left' if is_rtl else 'right' }} mx-1"></i>
+                                        {{ format_date(task.planning.planned_finish) if task.planning else '-' }}
+                                    </div>
+                                    <div class="small">
+                                        <i class="fas fa-chart-line me-1"></i>
+                                        {{ (get_task_progress(task)|default(0))|round|int }}%
+                                    </div>
+                                </div>
+                                <div class="progress" style="width: 100px; height: 4px;">
+                                    <div class="progress-bar bg-success" style="width: {{ get_task_progress(task) }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <h5>{{ _('emp.no_tasks_assigned') }}</h5>
+                        <p class="text-muted">{{ _('emp.relax_and_enjoy') }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- مهام اليوم -->
+        <div class="card-modern" data-aos="fade-up" data-aos-delay="200">
+            <div class="card-header" style="background: linear-gradient(135deg, #f9c74f, #f8961e);">
+                <i class="fas fa-sun me-2"></i> {{ _('emp.today_tasks') }}
+            </div>
+            <div class="card-body">
+                {% if today_tasks %}
+                    {% for task in today_tasks %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <div>
+                            <i class="fas fa-hourglass-half text-warning me-2"></i>
+                            <strong>{{ task.task_name }}</strong>
+                            <span class="badge bg-secondary ms-2">{{ task.project.name if task.project else '-' }}</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline-success" onclick="startTask({{ task.id }})">
+                            <i class="fas fa-play"></i> {{ _('emp.start') }}
+                        </button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-coffee fa-2x text-muted mb-2"></i>
+                        <p class="mb-0 text-muted">{{ _('emp.no_tasks_today') }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-5">
+        <!-- توصيات ذكية -->
+        <div class="card-modern" data-aos="fade-up" data-aos-delay="300">
+            <div class="card-header" style="background: linear-gradient(135deg, #f72585, #b5179e);">
+                <i class="fas fa-lightbulb me-2"></i> {{ _('emp.smart_suggestions') }}
+            </div>
+            <div class="card-body">
+                {% for suggestion in smart_suggestions %}
+                <div class="suggestion-card {{ suggestion.type }}" onclick="window.location.href='{{ suggestion.action_url }}'">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="fas fa-{{ suggestion.icon }} fa-2x"></i>
+                        <div>
+                            <div class="fw-bold">{{ suggestion.title }}</div>
+                            <small>{{ suggestion.message }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <p class="mb-0">{{ _('emp.all_good') }}</p>
+                    <small class="text-muted">{{ _('emp.keep_up_good_work') }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- المشاريع المشارك فيها -->
+        <div class="card-modern" data-aos="fade-up" data-aos-delay="400">
+            <div class="card-header">
+                <i class="fas fa-project-diagram me-2"></i> {{ _('emp.my_projects') }}
+            </div>
+            <div class="card-body p-0">
+                {% for project in projects %}
+                <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                    <div>
+                        <h6 class="mb-0 fw-bold">{{ project.name }}</h6>
+                        <small class="text-muted">{{ project.code }}</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="small">{{ project.completed_count }}/{{ project.tasks_count }} {{ _('emp.tasks') }}</div>
+                        <div class="progress" style="width: 80px; height: 4px;">
+                            <div class="progress-bar bg-success" style="width: {{ project.progress }}%"></div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-folder-open fa-2x text-muted mb-2"></i>
+                    <p class="mb-0 text-muted">{{ _('emp.no_projects') }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- أداء المهام -->
+        <div class="card-modern" data-aos="fade-up" data-aos-delay="500">
+            <div class="card-header" style="background: linear-gradient(135deg, #06ffa5, #00b894);">
+                <i class="fas fa-chart-pie me-2"></i> {{ _('emp.task_performance') }}
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="display-4 fw-bold text-success">{{ "%.0f"|format(performance.completion_rate) }}%</div>
+                        <small class="text-muted">{{ _('emp.completion_rate') }}</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="display-4 fw-bold text-info">{{ "%.0f"|format(performance.on_time_rate) }}%</div>
+                        <small class="text-muted">{{ _('emp.on_time_rate') }}</small>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="small text-muted">
+                        <i class="fas fa-star text-warning me-1"></i>
+                        {{ _('emp.quality_average') }}: {{ performance.avg_quality }}/5
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- الأنشطة الأخيرة -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card-modern" data-aos="fade-up">
+            <div class="card-header">
+                <i class="fas fa-history me-2"></i> {{ _('emp.recent_activities') }}
+                <a href="{{ url_for('employee.my_activities') }}" class="float-{{ 'left' if is_rtl else 'right' }} text-white text-decoration-none">
+                    <small>{{ _('emp.view_all') }} <i class="fas fa-arrow-{{ 'left' if is_rtl else 'right' }} ms-1"></i></small>
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="activity-timeline">
+                    {% for activity in recent_activities %}
+                    <div class="timeline-item {% if activity.status == 'completed' %}completed{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ activity.activity_name }}</h6>
+                                <div class="d-flex gap-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-chart-line me-1"></i>
+                                        {{ (activity.progress_percentage|default(0))|round|int }}% {{ _('emp.complete') }}
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-tasks me-1"></i>
+                                        {{ activity.tasks|length }} {{ _('emp.tasks') }}
+                                    </small>
+                                </div>
+                            </div>
+                            <span class="badge bg-{{ 'success' if activity.status == 'completed' else 'warning' if activity.status == 'in_progress' else 'secondary' }}">
+                                {{ get_status_text(activity.status) }}
+                            </span>
+                        </div>
+                        <div class="progress mt-2" style="height: 4px;">
+                            <div class="progress-bar bg-success" style="width: {{ activity.progress_percentage }}%"></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-microchip fa-2x text-muted mb-2"></i>
+                        <p class="mb-0 text-muted">{{ _('emp.no_activities') }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // تحديث الساعة
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('{{ "ar-EG" if current_lang == "ar" else "en-US" }}');
+        document.getElementById('currentTime').textContent = timeString;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+    
+    // بدء مهمة
+    function startTask(taskId) {
+        showLoading();
+        $.ajax({
+            url: `/employee/api/tasks/${taskId}/start`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showToast('{{ _("task_started_success") }}', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(response.error || '{{ _("error_occurred") }}', 'danger');
+                }
+            },
+            error: function() {
+                showToast('{{ _("server_error") }}', 'danger');
+            },
+            complete: function() {
+                hideLoading();
+            }
+        });
+    }
+</script>
+{% endblock %}

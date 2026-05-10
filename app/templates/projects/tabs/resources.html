@@ -1,0 +1,708 @@
+<div class="card">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-tools text-primary me-2"></i>Resource Assignments</h6>
+    </div>
+    <div class="card-body">
+        <!-- Resource Assignment Defaults -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card bg-light">
+                    <div class="card-header bg-transparent">
+                        <h6 class="mb-0"><i class="fas fa-cog text-primary me-2"></i>Assignment Defaults</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Default Rate Type for new assignments</label>
+                            <select class="form-select" id="default_rate_type">
+                                <option value="Standard Rate" {% if project.defaults and project.defaults.rate_type == 'Standard Rate' %}selected{% endif %}>Standard Rate</option>
+                                <option value="Overtime Rate" {% if project.defaults and project.defaults.rate_type == 'Overtime Rate' %}selected{% endif %}>Overtime Rate</option>
+                                <option value="Price per Unit" {% if project.defaults and project.defaults.rate_type == 'Price per Unit' %}selected{% endif %}>Price per Unit</option>
+                            </select>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="drive_activity_dates" 
+                                   {% if project.defaults and project.defaults.drive_activity_dates %}checked{% endif %}>
+                            <label class="form-check-label" for="drive_activity_dates">
+                                <strong>Drive activity dates by default</strong>
+                                <small class="d-block text-muted">Resource assignments will determine activity dates</small>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="allow_multiple_assignments"
+                                   {% if project.defaults and project.defaults.allow_multiple_assignments %}checked{% endif %}>
+                            <label class="form-check-label" for="allow_multiple_assignments">
+                                <strong>Resources can be assigned to the same activity more than once</strong>
+                                <small class="d-block text-muted">Allow multiple assignments of the same resource</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resource Summary -->
+            <div class="col-md-6">
+                <div class="card bg-light">
+                    <div class="card-header bg-transparent">
+                        <h6 class="mb-0"><i class="fas fa-chart-pie text-primary me-2"></i>Resource Summary</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <small class="text-muted">Labor</small>
+                                <h5 class="mb-0">{{ resource_stats.labor_count if resource_stats else 0 }}</h5>
+                                <small class="text-muted">({{ resource_stats.labor_units|default(0) }} units)</small>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted">Equipment</small>
+                                <h5 class="mb-0">{{ resource_stats.equipment_count if resource_stats else 0 }}</h5>
+                                <small class="text-muted">({{ resource_stats.equipment_units|default(0) }} units)</small>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted">Material</small>
+                                <h5 class="mb-0">{{ resource_stats.material_count if resource_stats else 0 }}</h5>
+                                <small class="text-muted">({{ resource_stats.material_units|default(0) }} units)</small>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <small class="text-muted">Total Planned Cost</small>
+                                <h6 class="mb-0 text-primary">
+                                    {{ resource_stats.total_planned_cost|format_currency(project.currency) if resource_stats.total_planned_cost else '0'|format_currency(project.currency) }}
+                                </h6>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Total Actual Cost</small>
+                                <h6 class="mb-0 text-danger">
+                                    {{ resource_stats.total_actual_cost|format_currency(project.currency) if resource_stats.total_actual_cost else '0'|format_currency(project.currency) }}
+                                </h6>
+                            </div>
+                        </div>
+                        <div class="progress mt-3" style="height: 10px;">
+                            {% set cost_percent = (resource_stats.total_actual_cost / resource_stats.total_planned_cost * 100) if resource_stats.total_planned_cost > 0 else 0 %}
+                            <div class="progress-bar bg-{{ 'danger' if cost_percent > 100 else 'warning' if cost_percent > 80 else 'success' }}" 
+                                 style="width: {{ cost_percent }}%"></div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="text-muted">Cost Performance: {{ "%.1f"|format(cost_percent) }}% of budget</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resource Assignments Table - Primavera Style -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold mb-0">
+                <i class="fas fa-list text-primary me-2"></i>Resource Assignments
+            </h6>
+            <div class="btn-group">
+                <button class="btn btn-sm btn-primary" onclick="showAddResourceModal()">
+                    <i class="fas fa-plus me-1"></i> Assign Resource
+                </button>
+                <button class="btn btn-sm btn-outline-primary" onclick="showBulkImportModal()">
+                    <i class="fas fa-file-excel me-1"></i> Import
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="exportAssignments()">
+                    <i class="fas fa-download me-1"></i> Export
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="resourcesTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Resource ID</th>
+                        <th>Resource Name</th>
+                        <th>Type</th>
+                        <th>Activity</th>
+                        <th>Planned Units</th>
+                        <th>Actual Units</th>
+                        <th>Remaining Units</th>
+                        <th>Planned Cost</th>
+                        <th>Actual Cost</th>
+                        <th>Variance</th>
+                        <th>Rate Type</th>
+                        <th>Drive Dates</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="resource_assignments_table">
+                    {% for assignment in resource_assignments %}
+                    <tr data-id="{{ assignment.id }}" data-resource-id="{{ assignment.resource_id }}">
+                        <td><span class="fw-bold text-primary">{{ assignment.resource_code }}</span></td>
+                        <td>{{ assignment.resource_name }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'primary' if assignment.resource_type == 'labor' else 'success' if assignment.resource_type == 'material' else 'warning' }}">
+                                {{ assignment.resource_type }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="#" onclick="viewActivity({{ assignment.activity_id }})" class="text-decoration-none">
+                                {{ assignment.activity_code }} - {{ assignment.activity_name }}
+                            </a>
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm planned-units" 
+                                   value="{{ assignment.planned_units }}" step="0.01" min="0"
+                                   onchange="updateAssignment({{ assignment.id }}, 'planned_units', this.value)">
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm actual-units" 
+                                   value="{{ assignment.actual_units }}" step="0.01" min="0"
+                                   onchange="updateAssignment({{ assignment.id }}, 'actual_units', this.value)">
+                        </td>
+                        <td class="remaining-units fw-bold">{{ assignment.remaining_units }}</td>
+                        <td class="planned-cost">{{ "{:,.2f}".format(assignment.planned_cost) }}</td>
+                        <td class="actual-cost">{{ "{:,.2f}".format(assignment.actual_cost) }}</td>
+                        <td class="cost-variance">{{ "{:,.2f}".format(assignment.planned_cost - assignment.actual_cost) }}</td>
+                        <td>
+                            <select class="form-select form-select-sm" onchange="updateAssignment({{ assignment.id }}, 'rate_type', this.value)">
+                                <option value="Standard" {% if assignment.rate_type == 'Standard' %}selected{% endif %}>Standard</option>
+                                <option value="Overtime" {% if assignment.rate_type == 'Overtime' %}selected{% endif %}>Overtime</option>
+                                <option value="Price per Unit" {% if assignment.rate_type == 'Price per Unit' %}selected{% endif %}>Price per Unit</option>
+                            </select>
+                        </td>
+                        <td class="text-center">
+                            <input type="checkbox" class="form-check-input drive-dates" 
+                                   {% if assignment.drive_dates %}checked{% endif %}
+                                   onchange="updateAssignment({{ assignment.id }}, 'drive_dates', this.checked)">
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteAssignment({{ assignment.id }})" title="Remove">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="13" class="text-center py-4">
+                            <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No resource assignments yet</p>
+                            <button class="btn btn-sm btn-primary" onclick="showAddResourceModal()">
+                                <i class="fas fa-plus me-1"></i> Assign First Resource
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <th colspan="4">Totals</th>
+                        <th id="total_planned_units">0</th>
+                        <th id="total_actual_units">0</th>
+                        <th id="total_remaining_units">0</th>
+                        <th id="total_planned_cost">0</th>
+                        <th id="total_actual_cost">0</th>
+                        <th id="total_variance">0</th>
+                        <th colspan="3"></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Resource Utili zation Chart -->
+        <div class="mt-4">
+            <h6 class="fw-bold mb-3"><i class="fas fa-chart-bar text-primary me-2"></i>Resource Utilization</h6>
+            <canvas id="resourceUtilizationChart" height="100"></canvas>
+        </div>
+
+        <!-- Save Defaults Button -->
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <button class="btn btn-outline-secondary btn-sm" onclick="resetDefaults()">
+                <i class="fas fa-undo me-1"></i>Reset
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="saveDefaults()">
+                <i class="fas fa-save me-1"></i>Save Defaults
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Resource Assignment Modal - Primavera Style -->
+<div class="modal fade" id="addResourceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Assign Resource to Activity
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="resourceForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Resource <span class="text-danger">*</span></label>
+                            <select class="form-select" id="resource_select" required onchange="updateResourceInfo()">
+                                <option value="">-- Select Resource --</option>
+                                {% for resource in all_resources %}
+                                <option value="{{ resource.id }}" 
+                                        data-type="{{ resource.resource_type }}"
+                                        data-unit="{{ resource.unit }}"
+                                        data-cost="{{ resource.cost_per_unit }}"
+                                        data-available="{{ resource.available_quantity }}">
+                                    {{ resource.name }} ({{ resource.resource_id }}) - {{ resource.unit }} - {{ resource.cost_per_unit }}/{{ resource.unit }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Activity <span class="text-danger">*</span></label>
+                            <select class="form-select" id="activity_select" required>
+                                <option value="">-- Select Activity --</option>
+                                {% for activity in activities %}
+                                <option value="{{ activity.id }}">{{ activity.activity_code }} - {{ activity.activity_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Planned Units</label>
+                            <input type="number" class="form-control" id="planned_units" value="1" step="0.01" min="0" onchange="updateTotalCost()">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Rate Type</label>
+                            <select class="form-select" id="assignment_rate_type" onchange="updateTotalCost()">
+                                <option value="Standard">Standard Rate</option>
+                                <option value="Overtime">Overtime Rate (1.5x)</option>
+                                <option value="Price per Unit">Price per Unit</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Cost per Unit</label>
+                            <input type="text" class="form-control" id="cost_per_unit" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Start Date</label>
+                            <input type="date" class="form-control" id="assignment_start">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Finish Date</label>
+                            <input type="date" class="form-control" id="assignment_finish">
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="drive_activity_dates_new" checked>
+                                <label class="form-check-label">Drive Activity Dates</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Total Planned Cost</label>
+                            <input type="text" class="form-control" id="total_planned_cost" readonly style="background: #f8fafc;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Available Quantity</label>
+                            <input type="text" class="form-control" id="available_quantity" readonly style="background: #f8fafc;">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addResourceAssignment()">Assign</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Import Modal -->
+<div class="modal fade" id="bulkImportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-excel me-2"></i>
+                    Import Resource Assignments
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-area" onclick="document.getElementById('importFile').click()">
+                    <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                    <h6>Click to upload Excel file</h6>
+                    <p class="text-muted small">Supports .xlsx, .xls, .csv formats</p>
+                    <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display: none;" onchange="handleImportFile(this)">
+                </div>
+                <div class="text-center mt-3">
+                    <a href="#" onclick="downloadTemplate()" class="text-primary">
+                        <i class="fas fa-download me-1"></i> Download Template
+                    </a>
+                </div>
+                <div id="importPreview" class="mt-3" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="importBtn" onclick="executeImport()" disabled>Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let resourceChart = null;
+let currentProjectId = {{ project.id }};
+
+// Update totals in table footer
+function updateTableTotals() {
+    let totalPlannedUnits = 0;
+    let totalActualUnits = 0;
+    let totalRemainingUnits = 0;
+    let totalPlannedCost = 0;
+    let totalActualCost = 0;
+    
+    document.querySelectorAll('#resource_assignments_table tr[data-id]').forEach(row => {
+        const plannedUnits = parseFloat(row.querySelector('.planned-units')?.value) || 0;
+        const actualUnits = parseFloat(row.querySelector('.actual-units')?.value) || 0;
+        const plannedCost = parseFloat(row.querySelector('.planned-cost')?.textContent.replace(/,/g, '')) || 0;
+        const actualCost = parseFloat(row.querySelector('.actual-cost')?.textContent.replace(/,/g, '')) || 0;
+        
+        totalPlannedUnits += plannedUnits;
+        totalActualUnits += actualUnits;
+        totalRemainingUnits += (plannedUnits - actualUnits);
+        totalPlannedCost += plannedCost;
+        totalActualCost += actualCost;
+    });
+    
+    document.getElementById('total_planned_units').textContent = totalPlannedUnits.toFixed(2);
+    document.getElementById('total_actual_units').textContent = totalActualUnits.toFixed(2);
+    document.getElementById('total_remaining_units').textContent = totalRemainingUnits.toFixed(2);
+    document.getElementById('total_planned_cost').textContent = totalPlannedCost.toFixed(2);
+    document.getElementById('total_actual_cost').textContent = totalActualCost.toFixed(2);
+    document.getElementById('total_variance').textContent = (totalPlannedCost - totalActualCost).toFixed(2);
+}
+
+// Update assignment
+function updateAssignment(id, field, value) {
+    const data = {};
+    data[field] = field === 'drive_dates' ? value : parseFloat(value);
+    
+    fetch(`/projects/api/resource-assignment/${id}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update remaining units
+            const row = document.querySelector(`tr[data-id="${id}"]`);
+            if (row) {
+                const planned = parseFloat(row.querySelector('.planned-units').value) || 0;
+                const actual = parseFloat(row.querySelector('.actual-units').value) || 0;
+                const remaining = planned - actual;
+                row.querySelector('.remaining-units').textContent = remaining.toFixed(2);
+                
+                // Update costs if rate info available
+                if (data.planned_cost) {
+                    row.querySelector('.planned-cost').textContent = data.planned_cost.toFixed(2);
+                    row.querySelector('.actual-cost').textContent = data.actual_cost.toFixed(2);
+                    row.querySelector('.cost-variance').textContent = (data.planned_cost - data.actual_cost).toFixed(2);
+                }
+                
+                updateTableTotals();
+                updateResourceChart();
+            }
+        } else {
+            showError(data.error || 'Error updating assignment');
+        }
+    });
+}
+
+// Delete assignment
+function deleteAssignment(id) {
+    confirmDelete('Are you sure you want to delete this resource assignment?', function() {
+        fetch(`/projects/api/resource-assignment/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('Assignment deleted successfully');
+                location.reload();
+            } else {
+                showError(data.error || 'Error deleting assignment');
+            }
+        });
+    });
+}
+
+// Resource info update
+function updateResourceInfo() {
+    const select = document.getElementById('resource_select');
+    const selected = select.options[select.selectedIndex];
+    const cost = selected.dataset.cost || 0;
+    const available = selected.dataset.available || 0;
+    const units = document.getElementById('planned_units').value || 1;
+    
+    document.getElementById('cost_per_unit').value = cost;
+    document.getElementById('available_quantity').value = available;
+    updateTotalCost();
+}
+
+function updateTotalCost() {
+    const cost = parseFloat(document.getElementById('cost_per_unit').value) || 0;
+    const units = parseFloat(document.getElementById('planned_units').value) || 0;
+    const rateType = document.getElementById('assignment_rate_type').value;
+    
+    let finalCost = cost * units;
+    if (rateType === 'Overtime') {
+        finalCost = cost * units * 1.5;
+    }
+    
+    document.getElementById('total_planned_cost').value = finalCost.toFixed(2);
+}
+
+// Resource Utilization Chart
+function initResourceChart() {
+    const ctx = document.getElementById('resourceUtilizationChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    const chartData = {{ resource_chart_data|tojson|safe }};
+    if (chartData.length === 0) return;
+    
+    if (resourceChart) resourceChart.destroy();
+    
+    resourceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.map(r => r.name),
+            datasets: [
+                {
+                    label: 'Available',
+                    data: chartData.map(r => r.available),
+                    backgroundColor: 'rgba(67, 97, 238, 0.8)',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Assigned',
+                    data: chartData.map(r => r.assigned),
+                    backgroundColor: 'rgba(248, 150, 30, 0.8)',
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Units' }
+                }
+            },
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.raw.toFixed(2)} units`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateResourceChart() {
+    if (resourceChart) {
+        // Refresh chart data from server
+        fetch(`/projects/api/{{ project.id }}/resource-chart-data`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resourceChart.data.labels = data.labels;
+                    resourceChart.data.datasets[0].data = data.available;
+                    resourceChart.data.datasets[1].data = data.assigned;
+                    resourceChart.update();
+                }
+            });
+    }
+}
+
+// Show modals
+function showAddResourceModal() {
+    document.getElementById('resourceForm').reset();
+    document.getElementById('cost_per_unit').value = '';
+    document.getElementById('total_planned_cost').value = '';
+    new bootstrap.Modal(document.getElementById('addResourceModal')).show();
+}
+
+function showBulkImportModal() {
+    document.getElementById('importFile').value = '';
+    document.getElementById('importPreview').style.display = 'none';
+    document.getElementById('importBtn').disabled = true;
+    new bootstrap.Modal(document.getElementById('bulkImportModal')).show();
+}
+
+// Add resource assignment
+function addResourceAssignment() {
+    const data = {
+        resource_id: document.getElementById('resource_select').value,
+        activity_id: document.getElementById('activity_select').value,
+        planned_units: parseFloat(document.getElementById('planned_units').value),
+        rate_type: document.getElementById('assignment_rate_type').value,
+        start_date: document.getElementById('assignment_start').value,
+        finish_date: document.getElementById('assignment_finish').value,
+        drive_dates: document.getElementById('drive_activity_dates_new').checked
+    };
+    
+    if (!data.resource_id || !data.activity_id) {
+        showWarning('Please select both resource and activity');
+        return;
+    }
+    
+    fetch(`/projects/api/{{ project.id }}/resource-assign`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Resource assigned successfully');
+            location.reload();
+        } else {
+            showError(data.error || 'Error assigning resource');
+        }
+    });
+}
+
+// Export assignments
+function exportAssignments() {
+    window.location.href = `/projects/api/{{ project.id }}/export-resources`;
+}
+
+// Save and reset defaults
+function saveDefaults() {
+    const data = {
+        rate_type: document.getElementById('default_rate_type').value,
+        drive_activity_dates: document.getElementById('drive_activity_dates').checked,
+        allow_multiple_assignments: document.getElementById('allow_multiple_assignments').checked
+    };
+    
+    fetch(`/projects/api/{{ project.id }}/update-resource-defaults`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Resource defaults saved');
+        } else {
+            showError(data.error || 'Error saving defaults');
+        }
+    });
+}
+
+function resetDefaults() {
+    location.reload();
+}
+
+// Calculate and update totals on load
+document.addEventListener('DOMContentLoaded', function() {
+    updateTableTotals();
+    initResourceChart();
+});
+</script>
+
+<style>
+/* Resource tab specific styles */
+.table td {
+    vertical-align: middle;
+}
+
+.table input[type="number"] {
+    width: 100px;
+    min-width: 80px;
+}
+
+.table .form-select-sm {
+    width: 120px;
+}
+
+.badge {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+}
+
+.remaining-units {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.planned-cost {
+    font-weight: 600;
+    color: var(--success);
+}
+
+.actual-cost {
+    font-weight: 600;
+    color: var(--danger);
+}
+
+.cost-variance {
+    font-weight: 600;
+    color: var(--info);
+}
+
+tfoot th, tfoot td {
+    background: #f8fafc;
+    font-weight: 600;
+    border-top: 2px solid #dee2e6;
+}
+
+.upload-area {
+    border: 2px dashed #eef2f7;
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.upload-area:hover {
+    border-color: var(--primary);
+    background: rgba(67, 97, 238, 0.02);
+}
+
+.modal-lg {
+    max-width: 800px;
+}
+
+@media (max-width: 768px) {
+    .table {
+        font-size: 0.8rem;
+    }
+    
+    .table input[type="number"],
+    .table .form-select-sm {
+        width: 70px;
+        font-size: 0.7rem;
+    }
+}
+</style>

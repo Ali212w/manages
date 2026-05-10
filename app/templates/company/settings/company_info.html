@@ -1,0 +1,165 @@
+{% extends "company/base.html" %}
+
+{% block title %}معلومات الشركة - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}معلومات الشركة{% endblock %}
+{% block page_subtitle %}تحديث البيانات الأساسية للشركة{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="table-card">
+            <form method="POST" action="{{ url_for('company.company_settings') }}" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">اسم الشركة (عربي) <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" value="{{ company.name }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">اسم الشركة (إنجليزي)</label>
+                        <input type="text" name="name_ar" class="form-control" value="{{ company.name_ar or '' }}" dir="ltr">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">وصف الشركة</label>
+                    <textarea name="description" class="form-control" rows="3">{{ company.description or '' }}</textarea>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">البريد الإلكتروني</label>
+                        <input type="email" name="email" class="form-control" value="{{ company.email or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">رقم الهاتف</label>
+                        <input type="tel" name="phone" class="form-control" value="{{ company.phone or '' }}" dir="ltr">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">العنوان</label>
+                    <textarea name="address" class="form-control" rows="2">{{ company.address or '' }}</textarea>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">الموقع الإلكتروني</label>
+                        <input type="url" name="website" class="form-control" value="{{ company.website or '' }}" dir="ltr">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">السجل التجاري</label>
+                        <input type="text" name="commercial_register" class="form-control" value="{{ company.commercial_register or '' }}">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">الرقم الضريبي</label>
+                        <input type="text" name="tax_number" class="form-control" value="{{ company.tax_number or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">شعار الشركة</label>
+                        <input type="file" name="logo" class="form-control" accept="image/*">
+                        <small class="text-muted">اتركه فارغاً إذا لم ترد تغيير الشعار</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6 class="fw-bold mb-3">إعدادات النظام</h6>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">العملة</label>
+                        <select name="currency" class="form-select">
+                                                        <option value="SAR" {% if company.settings.currency == 'SAR' %}selected{% endif %}>ريال سعودي</option>
+                            <option value="USD" {% if company.settings.currency == 'USD' %}selected{% endif %}>دولار أمريكي</option>
+                            <option value="EUR" {% if company.settings.currency == 'EUR' %}selected{% endif %}>يورو</option>
+                            <option value="AED" {% if company.settings.currency == 'AED' %}selected{% endif %}>درهم إماراتي</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">اللغة الافتراضية</label>
+                        <select name="language" class="form-select">
+                            <option value="ar" {% if company.settings.language == 'ar' %}selected{% endif %}>العربية</option>
+                            <option value="en" {% if company.settings.language == 'en' %}selected{% endif %}>English</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">المنطقة الزمنية</label>
+                        <select name="timezone" class="form-select">
+                            <option value="Asia/Riyadh" {% if company.settings.timezone == 'Asia/Riyadh' %}selected{% endif %}>الرياض</option>
+                            <option value="Asia/Dubai" {% if company.settings.timezone == 'Asia/Dubai' %}selected{% endif %}>دبي</option>
+                            <option value="Asia/Kuwait" {% if company.settings.timezone == 'Asia/Kuwait' %}selected{% endif %}>الكويت</option>
+                            <option value="Asia/Qatar" {% if company.settings.timezone == 'Asia/Qatar' %}selected{% endif %}>قطر</option>
+                            <option value="Asia/Bahrain" {% if company.settings.timezone == 'Asia/Bahrain' %}selected{% endif %}>البحرين</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">صيغة التاريخ</label>
+                        <select name="date_format" class="form-select">
+                            <option value="dd/MM/yyyy" {% if company.settings.date_format == 'dd/MM/yyyy' %}selected{% endif %}>يوم/شهر/سنة</option>
+                            <option value="yyyy-MM-dd" {% if company.settings.date_format == 'yyyy-MM-dd' %}selected{% endif %}>سنة-شهر-يوم</option>
+                            <option value="MM/dd/yyyy" {% if company.settings.date_format == 'MM/dd/yyyy' %}selected{% endif %}>شهر/يوم/سنة</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">عدد المنازل العشرية</label>
+                        <select name="decimal_places" class="form-select">
+                            <option value="0" {% if company.settings.decimal_places == 0 %}selected{% endif %}>0</option>
+                            <option value="1" {% if company.settings.decimal_places == 1 %}selected{% endif %}>1</option>
+                            <option value="2" {% if company.settings.decimal_places == 2 %}selected{% endif %}>2</option>
+                            <option value="3" {% if company.settings.decimal_places == 3 %}selected{% endif %}>3</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- الشعار الحالي إن وجد -->
+                {% if company.logo_url %}
+                <div class="mb-3">
+                    <label class="form-label">الشعار الحالي</label>
+                    <div>
+                        <img src="{{ company.logo_url }}" alt="{{ company.name }}" style="max-height: 100px; border-radius: 10px; border: 2px solid #eef2f7;">
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn-primary-gradient px-5">
+                        <i class="fas fa-save me-2"></i>حفظ التغييرات
+                    </button>
+                    <a href="{{ url_for('company.settings') }}" class="btn btn-outline-secondary ms-2 px-5">
+                        <i class="fas fa-times me-2"></i>إلغاء
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// معاينة الشعار قبل الرفع
+document.querySelector('input[name="logo"]').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            Swal.fire({
+                title: 'معاينة الشعار',
+                imageUrl: e.target.result,
+                imageHeight: 200,
+                imageAlt: 'الشعار الجديد',
+                confirmButtonText: 'حسنًا'
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

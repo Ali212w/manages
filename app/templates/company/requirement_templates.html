@@ -1,0 +1,103 @@
+<!-- templates/company/requirement_templates.html -->
+{% extends "company/base.html" %}
+
+{% block title %}قوالب المتطلبات{% endblock %}
+
+{% block page_title %}قوالب المتطلبات{% endblock %}
+{% block page_subtitle %}متطلبات جاهزة للإضافة السريعة{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-clipboard-list me-2 text-primary"></i>قوالب المتطلبات</h5>
+                <button class="btn-primary-gradient btn-sm" onclick="showAddTemplateModal()">
+                    <i class="fas fa-plus me-1"></i> قالب جديد
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- قالب السلامة -->
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-shield-alt text-danger me-2"></i>متطلبات السلامة</h6>
+                                <ul class="list-unstyled small">
+                                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>ارتداء معدات السلامة</li>
+                                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>فحص موقع العمل</li>
+                                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>تأمين طوارئ</li>
+                                </ul>
+                                <button class="btn btn-sm btn-outline-primary w-100 mt-2" onclick="applyTemplate('safety')">
+                                    تطبيق القالب
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- قالب المواد -->
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-boxes text-warning me-2"></i>متطلبات المواد</h6>
+                                <ul class="list-unstyled small">
+                                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>فحص جودة المواد</li>
+                                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>تأكيد الكميات</li>
+                                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>توفر المعدات</li>
+                                </ul>
+                                <button class="btn btn-sm btn-outline-primary w-100 mt-2" onclick="applyTemplate('materials')">
+                                    تطبيق القالب
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- قالب المستندات -->
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-file-alt text-info me-2"></i>متطلبات المستندات</h6>
+                                <ul class="list-unstyled small">
+                                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>تقديم تقرير فني</li>
+                                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>صور الموقع</li>
+                                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>موافقة مهندس</li>
+                                </ul>
+                                <button class="btn btn-sm btn-outline-primary w-100 mt-2" onclick="applyTemplate('documents')">
+                                    تطبيق القالب
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function applyTemplate(templateType) {
+    const taskId = getTaskIdFromUrl(); // الحصول على معرف المهمة من الرابط
+    
+    fetch(`/tracking/api/task/${taskId}/apply-template`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ template: templateType })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم',
+                text: 'تم تطبيق القالب بنجاح',
+                timer: 2000
+            }).then(() => {
+                location.reload();
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

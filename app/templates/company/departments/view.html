@@ -1,0 +1,308 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ department.name }} - تفاصيل القسم{% endblock %}
+
+{% block page_title %}{{ department.name }}{% endblock %}
+{% block page_subtitle %}معلومات القسم والموظفين{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة مع معلومات القسم -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border: none;">
+            <div class="card-body p-4 text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center gap-4">
+                            <div class="user-avatar" style="width: 80px; height: 80px; background: rgba(255,255,255,0.2);">
+                                <i class="fas fa-building fa-2x"></i>
+                            </div>
+                            <div>
+                                <h1 class="display-6 fw-bold mb-2">{{ department.name }}</h1>
+                              
+                                <div class="d-flex gap-3 flex-wrap">
+                                    <span class="badge bg-white text-dark p-2">
+                                        <i class="fas fa-code me-2"></i>{{ department.dept_code }}
+                                    </span>
+                                    <span class="badge bg-white text-dark p-2">
+                                        <i class="fas fa-users me-2"></i>{{ stats.employees_count }} موظف
+                                    </span>
+                                    {% if department.is_active %}
+                                        <span class="badge bg-success p-2"><i class="fas fa-check-circle me-2"></i>نشط</span>
+                                    {% else %}
+                                        <span class="badge bg-danger p-2"><i class="fas fa-times-circle me-2"></i>غير نشط</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-start">
+                        <a href="{{ url_for('company.edit_department', dept_id=department.id) }}" class="btn btn-light">
+                            <i class="fas fa-edit me-2"></i>تعديل القسم
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- إحصائيات القسم -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="fas fa-users"></i>
+            </div>
+            <h2 class="stat-value">{{ stats.employees_count }}</h2>
+            <p class="stat-label">إجمالي الموظفين</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="fas fa-sitemap"></i>
+            </div>
+            <h2 class="stat-value">{{ stats.sub_depts_count }}</h2>
+            <p class="stat-label">الأقسام الفرعية</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <h2 class="stat-value">{{ stats.projects_count }}</h2>
+            <p class="stat-label">المشاريع المرتبطة</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon danger">
+                <i class="fas fa-money-bill"></i>
+            </div>
+            <h2 class="stat-value">{{ stats.budget_used|format_currency }}</h2>
+            <p class="stat-label">الميزانية المستخدمة</p>
+        </div>
+    </div>
+</div>
+
+<!-- معلومات القسم التفصيلية -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="table-card">
+            <h5 class="table-title mb-4"><i class="fas fa-info-circle me-2 text-primary"></i>معلومات القسم</h5>
+            
+            <table class="table table-borderless">
+                <tr>
+                    <th width="150">كود القسم:</th>
+                    <td><span class="badge bg-secondary">{{ department.dept_code }}</span></td>
+                </tr>
+                <tr>
+                    <th>الاسم بالعربية:</th>
+                    <td>{{ department.name }}</td>
+                </tr>
+               
+                <tr>
+                    <th>الوصف:</th>
+                    <td>{{ department.description or 'لا يوجد وصف' }}</td>
+                </tr>
+                <tr>
+                    <th>الميزانية:</th>
+                    <td><strong>{{ department.budget|format_currency }}</strong></td>
+                </tr>
+                <tr>
+                    <th>تاريخ الإنشاء:</th>
+                    <td>{{ department.created_at.strftime('%Y-%m-%d') }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="table-card">
+            <h5 class="table-title mb-4"><i class="fas fa-sitemap me-2 text-primary"></i>الهيكل التنظيمي</h5>
+            
+            <table class="table table-borderless">
+                <tr>
+                    <th width="150">القسم الرئيسي:</th>
+                    <td>
+                        {% if department.parent %}
+                            <a href="{{ url_for('company.view_department', dept_id=department.parent.id) }}" class="text-decoration-none">
+                                <i class="fas fa-level-up-alt me-2 text-primary"></i>{{ department.parent.name }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">قسم رئيسي (بدون أب)</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>مدير القسم:</th>
+                    <td>
+                        {% if department.manager %}
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar me-2" style="width: 30px; height: 30px;">
+                                    {{ department.manager.full_name[0] }}
+                                </div>
+                                <div>
+                                    <strong>{{ department.manager.full_name }}</strong>
+                                    <small class="d-block text-muted">{{ department.manager.job_title or '' }}</small>
+                                </div>
+                            </div>
+                        {% else %}
+                            <span class="text-muted">غير معين</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>الأقسام الفرعية:</th>
+                    <td>
+                        {% if sub_departments %}
+                            <ul class="list-unstyled mb-0">
+                                {% for sub in sub_departments %}
+                                <li class="mb-2">
+                                    <a href="{{ url_for('company.view_department', dept_id=sub.id) }}" class="text-decoration-none">
+                                        <i class="fas fa-level-down-alt me-2 text-warning"></i>{{ sub.name }}
+                                        <small class="text-muted">({{ sub.employees|length }} موظف)</small>
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <span class="text-muted">لا يوجد أقسام فرعية</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- قائمة الموظفين في القسم -->
+<div class="table-card mb-4">
+    <div class="table-header">
+        <h5 class="table-title"><i class="fas fa-users me-2 text-primary"></i>موظفو القسم</h5>
+        <span class="badge bg-primary">{{ employees|length }} موظف</span>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>الموظف</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>المسمى الوظيفي</th>
+                    <th>الدور</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employees %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="user-avatar me-2" style="width: 35px; height: 35px;">
+                                {{ employee.full_name[0] }}
+                            </div>
+                            <div>
+                                <strong>{{ employee.full_name }}</strong>
+                                <small class="d-block text-muted">{{ employee.employee_id or '' }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ employee.email }}</td>
+                    <td>{{ employee.job_title or 'غير محدد' }}</td>
+                    <td>
+                        {% if employee.role == 'org_admin' %}
+                            <span class="badge bg-primary">مدير شركة</span>
+                        {% elif employee.role == 'project_manager' %}
+                            <span class="badge bg-success">مدير مشروع</span>
+                        {% elif employee.role == 'supervisor' %}
+                            <span class="badge bg-warning">مشرف</span>
+                        {% elif employee.role == 'delegate' %}
+                            <span class="badge bg-info">مندوب</span>
+                        {% else %}
+                            <span class="badge bg-secondary">موظف</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if employee.is_user_active %}
+                            <span class="badge-status active">نشط</span>
+                        {% else %}
+                            <span class="badge-status inactive">غير نشط</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('company.view_user', user_id=employee.id) }}" class="action-btn" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        <i class="fas fa-user-slash fa-3x mb-3"></i>
+                        <p>لا يوجد موظفين في هذا القسم</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- المشاريع المرتبطة بالقسم -->
+<div class="table-card">
+    <div class="table-header">
+        <h5 class="table-title"><i class="fas fa-project-diagram me-2 text-primary"></i>المشاريع المرتبطة</h5>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>المشروع</th>
+                    <th>كود المشروع</th>
+                    <th>الحالة</th>
+                    <th>مدير المشروع</th>
+                    <th>التقدم</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ project.name }}</strong></td>
+                    <td><span class="badge bg-secondary">{{ project.project_code }}</span></td>
+                    <td>
+                        <span class="badge-status {{ 'active' if project.status == 'active' else 'pending' }}">
+                            {{ project.status }}
+                        </span>
+                    </td>
+                    <td>{{ project.manager.full_name if project.manager else 'غير محدد' }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="progress flex-grow-1" style="height: 5px;">
+                                <div class="progress-bar bg-primary" style="width: {{ project.progress_percentage }}%"></div>
+                            </div>
+                            <span class="ms-2 small">{{ project.progress_percentage }}%</span>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        <i class="fas fa-folder-open fa-3x mb-3"></i>
+                        <p>لا توجد مشاريع مرتبطة بهذا القسم</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

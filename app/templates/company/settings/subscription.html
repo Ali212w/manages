@@ -1,0 +1,249 @@
+{% extends "company/base.html" %}
+
+{% block title %}الاشتراك والفواتير - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}الاشتراك والفواتير{% endblock %}
+{% block page_subtitle %}إدارة الباقة والمدفوعات{% endblock %}
+
+{% block content %}
+<!-- بطاقة الاشتراك الحالي -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border: none;">
+            <div class="card-body p-4 text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3 class="mb-2">الباقة الحالية: 
+                            <span class="badge bg-white text-dark">
+                                {% if company.subscription_status == 'trial' %}
+                                    تجريبية
+                                {% elif company.subscription_status == 'active' %}
+                                    {{ subscriptions[0].plan_name if subscriptions else 'مميزة' }}
+                                {% else %}
+                                    منتهية
+                                {% endif %}
+                            </span>
+                        </h3>
+                        <p class="mb-0 opacity-75">
+                            {% if company.subscription_status == 'trial' %}
+                                <i class="fas fa-clock me-2"></i> متبقي {{ (company.trial_end - now).days if company.trial_end else 30 }} يوم في الفترة التجريبية
+                            {% elif company.subscription_status == 'active' %}
+                                <i class="fas fa-check-circle me-2"></i> الاشتراك ساري حتى {{ company.subscription_end.strftime('%Y-%m-%d') if company.subscription_end }}
+                            {% else %}
+                                <i class="fas fa-exclamation-triangle me-2"></i> الاشتراك منتهي، يرجى التجديد
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-start">
+                        {% if company.subscription_status == 'trial' %}
+                            <button class="btn btn-light" onclick="upgradePlan()">
+                                <i class="fas fa-rocket me-2"></i>ترقية الباقة
+                            </button>
+                        {% elif company.subscription_status == 'active' %}
+                            <button class="btn btn-light" onclick="manageSubscription()">
+                                <i class="fas fa-cog me-2"></i>إدارة الاشتراك
+                            </button>
+                        {% else %}
+                            <button class="btn btn-light" onclick="renewSubscription()">
+                                <i class="fas fa-redo-alt me-2"></i>تجديد الاشتراك
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- حدود الاستخدام -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="fas fa-users"></i>
+            </div>
+            <h2 class="stat-value">{{ company.current_users }} / {{ company.max_users }}</h2>
+            <p class="stat-label">المستخدمين</p>
+            <div class="progress mt-2" style="height: 8px;">
+                <div class="progress-bar bg-primary" style="width: {{ (company.current_users / company.max_users * 100)|round }}%"></div>
+            </div>
+            <small class="text-muted">{{ company.max_users - company.current_users }} متبقي</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <h2 class="stat-value">{{ company.current_projects }} / {{ company.max_projects }}</h2>
+            <p class="stat-label">المشاريع</p>
+            <div class="progress mt-2" style="height: 8px;">
+                <div class="progress-bar bg-success" style="width: {{ (company.current_projects / company.max_projects * 100)|round }}%"></div>
+            </div>
+            <small class="text-muted">{{ company.max_projects - company.current_projects }} متبقي</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="fas fa-database"></i>
+            </div>
+            <h2 class="stat-value">{{ (company.storage_used_mb / 1024)|round(1) }} / {{ (company.storage_limit_mb / 1024)|round }} GB</h2>
+            <p class="stat-label">مساحة التخزين</p>
+            <div class="progress mt-2" style="height: 8px;">
+                <div class="progress-bar bg-warning" style="width: {{ (company.storage_used_mb / company.storage_limit_mb * 100)|round }}%"></div>
+            </div>
+            <small class="text-muted">{{ ((company.storage_limit_mb - company.storage_used_mb) / 1024)|round(1) }} GB متبقي</small>
+        </div>
+    </div>
+</div>
+
+<!-- الباقات المتاحة -->
+<div class="table-card mb-4">
+    <div class="table-header">
+        <h5 class="table-title"><i class="fas fa-crown me-2 text-primary"></i>الباقات المتاحة</h5>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-rocket fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="fw-bold">الباقة الأساسية</h4>
+                    <h2 class="text-primary mb-3">499 <small class="text-muted fs-6">ر.س/شهر</small></h2>
+                    <ul class="list-unstyled text-start mb-4">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> حتى 25 مستخدم</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> حتى 50 مشروع</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> 20 جيجا مساحة تخزين</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> دعم فني</li>
+                        <li class="mb-2"><i class="fas fa-times text-danger me-2"></i> التقارير المتقدمة</li>
+                    </ul>
+                    <button class="btn-outline-primary w-100">اختيار الباقة</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm" style="border: 2px solid var(--primary) !important;">
+                <div class="card-body text-center p-4">
+                    <span class="badge bg-primary position-absolute top-0 start-50 translate-middle">الأكثر شيوعاً</span>
+                    <div class="mb-3">
+                        <i class="fas fa-crown fa-3x text-warning"></i>
+                    </div>
+                    <h4 class="fw-bold">الباقة المتقدمة</h4>
+                    <h2 class="text-primary mb-3">999 <small class="text-muted fs-6">ر.س/شهر</small></h2>
+                    <ul class="list-unstyled text-start mb-4">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> حتى 100 مستخدم</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> مشاريع غير محدودة</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> 100 جيجا مساحة تخزين</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> دعم فني مميز</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> تقارير متقدمة</li>
+                    </ul>
+                    <button class="btn-primary-gradient w-100">اختيار الباقة</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-building fa-3x text-success"></i>
+                    </div>
+                    <h4 class="fw-bold">باقة المؤسسات</h4>
+                    <h2 class="text-primary mb-3">اتصل بنا</h2>
+                    <ul class="list-unstyled text-start mb-4">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> مستخدمين غير محدود</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> مشاريع غير محدودة</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> مساحة تخزين مخصصة</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> دعم فني على مدار الساعة</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> حلول مخصصة</li>
+                    </ul>
+                    <button class="btn-outline-primary w-100">تواصل معنا</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- سجل الفواتير -->
+<div class="table-card">
+    <div class="table-header">
+        <h5 class="table-title"><i class="fas fa-file-invoice me-2 text-primary"></i>سجل الفواتير</h5>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>رقم الفاتورة</th>
+                    <th>تاريخ الإصدار</th>
+                    <th>تاريخ الاستحقاق</th>
+                    <th>المبلغ</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in subscriptions %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><span class="badge bg-secondary">{{ sub.invoice_number or 'غير محدد' }}</span></td>
+                    <td>{{ sub.start_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ sub.end_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ sub.amount }} {{ sub.currency }}</td>
+                    <td>
+                        <span class="badge-status {{ 'active' if sub.status == 'active' else 'inactive' }}">
+                            {{ 'مدفوع' if sub.status == 'active' else 'منتهي' }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="action-btn" title="تحميل الفاتورة">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        <i class="fas fa-file-invoice fa-3x mb-3"></i>
+                        <p>لا توجد فواتير سابقة</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function upgradePlan() {
+    Swal.fire({
+        title: 'ترقية الباقة',
+        text: 'سيتم توجيهك إلى صفحة الدفع الآمن',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'متابعة',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // TODO: توجيه إلى صفحة الدفع
+            Swal.fire('تم', 'جاري تحويلك إلى بوابة الدفع...', 'success');
+        }
+    });
+}
+
+function manageSubscription() {
+    // TODO: فتح صفحة إدارة الاشتراك
+}
+
+function renewSubscription() {
+    // TODO: تجديد الاشتراك
+}
+</script>
+{% endblock %}

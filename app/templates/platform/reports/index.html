@@ -1,0 +1,226 @@
+{# templates/platform/reports/index.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('reports.title') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title">{{ _('reports.title') }}</h1>
+            <p class="text-muted mb-0">{{ _('reports.description') }}</p>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-gradient dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-download me-2"></i>{{ _('reports.export') }}
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="exportReport('companies', 'excel')">
+                    <i class="fas fa-building me-2"></i>{{ _('companies.title') }} - Excel
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="exportReport('companies', 'csv')">
+                    <i class="fas fa-building me-2"></i>{{ _('companies.title') }} - CSV
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" onclick="exportReport('subscriptions', 'excel')">
+                    <i class="fas fa-credit-card me-2"></i>{{ _('subscriptions.title') }} - Excel
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="exportReport('subscriptions', 'csv')">
+                    <i class="fas fa-credit-card me-2"></i>{{ _('subscriptions.title') }} - CSV
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" onclick="exportReport('users', 'excel')">
+                    <i class="fas fa-users me-2"></i>{{ _('users.title') }} - Excel
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="exportReport('users', 'csv')">
+                    <i class="fas fa-users me-2"></i>{{ _('users.title') }} - CSV
+                </a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- Company Growth Chart -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-3">
+                    <h5 class="card-title"><i class="fas fa-chart-line me-2"></i>{{ _('reports.companies_growth') }}</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="companiesGrowthChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Users Growth Chart -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-3">
+                    <h5 class="card-title"><i class="fas fa-chart-line me-2"></i>{{ _('reports.users_growth') }}</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="usersGrowthChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Companies by Plan -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-3">
+                    <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>{{ _('reports.companies_by_plan') }}</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="companiesByPlanChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Users by Role -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-3">
+                    <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>{{ _('reports.users_by_role') }}</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="usersByRoleChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Companies by Size -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-3">
+                    <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i></h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="companiesBySizeChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Companies Growth Chart
+    const companiesCtx = document.getElementById('companiesGrowthChart').getContext('2d');
+    new Chart(companiesCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ companies_by_month|map(attribute='month')|list|tojson }},
+            datasets: [{
+                label: '{{ _("reports.companies_growth") }}',
+                data: {{ companies_by_month|map(attribute='new')|list|tojson }},
+                backgroundColor: 'rgba(67, 97, 238, 0.8)',
+                borderColor: '#4361ee',
+                borderWidth: 1,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+    
+    // Users Growth Chart
+    const usersCtx = document.getElementById('usersGrowthChart').getContext('2d');
+    new Chart(usersCtx, {
+        type: 'line',
+        data: {
+            labels: {{ users_by_month|map(attribute='month')|list|tojson }},
+            datasets: [{
+                label: '{{ _("reports.users_growth") }}',
+                data: {{ users_by_month|map(attribute='new')|list|tojson }},
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true
+        }
+    });
+    
+    // Companies by Plan Chart
+    const planCtx = document.getElementById('companiesByPlanChart').getContext('2d');
+    new Chart(planCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ companies_by_plan|map(attribute=0)|map('replace', 'active', _('subscriptions.active'))|map('replace', 'trial', _('subscriptions.trial'))|map('replace', 'expired', _('subscriptions.expired'))|list|tojson }},
+            datasets: [{
+                data: {{ companies_by_plan|map(attribute=1)|list|tojson }},
+                backgroundColor: ['#4361ee', '#f59e0b', '#ef4444', '#10b981'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+    
+    // Users by Role Chart
+    const roleCtx = document.getElementById('usersByRoleChart').getContext('2d');
+    new Chart(roleCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ users_by_role|map(attribute=0)|list|tojson }},
+            datasets: [{
+                data: {{ users_by_role|map(attribute=1)|list|tojson }},
+                backgroundColor: ['#4361ee', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+    
+    // Companies by Size Chart
+    const sizeCtx = document.getElementById('companiesBySizeChart').getContext('2d');
+    new Chart(sizeCtx, {
+        type: 'bar',
+        data: {
+            labels: ['{{ _("reports.size_small") }}', '{{ _("reports.size_medium") }}', '{{ _("reports.size_large") }}'],
+            datasets: [{
+                data: [{{ companies_by_size.small }}, {{ companies_by_size.medium }}, {{ companies_by_size.large }}],
+                backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+});
+
+// Export Report Function
+function exportReport(reportType, format) {
+    const url = "{{ url_for('platform.export_report', report_type='') }}" + reportType + "?format=" + format;
+    window.location.href = url;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,493 @@
+<div class="card">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-chart-line text-primary me-2"></i>Spending Plan</h6>
+        <button class="btn btn-primary btn-sm" onclick="showAddSpendingModal()">
+            <i class="fas fa-plus me-1"></i>Add Spending Item
+        </button>
+    </div>
+    <div class="card-body">
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <small class="text-muted">Total Spending Plan</small>
+                        <h4 class="mb-0 text-primary" id="total_spending">
+                            {{ total_spending_plan|format_currency(project.base_currency) if  total_spending_plan else '0'|format_currency(project.base_currency) }}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <small class="text-muted">Total Benefit Plan</small>
+                        <h4 class="mb-0 text-success" id="total_benefit">
+                            {{ total_benefit_plan|format_currency(project.base_currency) if  total_benefit_plan else '0'|format_currency(project.base_currency) }}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <small class="text-muted">Undistributed Variance</small>
+                        <h4 class="mb-0 text-warning" id="undistributed_variance">
+                            {{ undistributed_variance|format_currency(project.base_currency) if  undistributed_variance else '0'|format_currency(project.base_currency) }}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <small class="text-muted">Benefit Variance</small>
+                        <h4 class="mb-0 text-danger" id="benefit_variance">
+                            {{ benefit_variance|format_currency(project.base_currency) if  benefit_variance else '0'|format_currency(project.base_currency) }}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spending Plan Table -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Spending Plan</th>
+                        <th>Spending Plan Tally</th>
+                        <th>Undistributed Variance</th>
+                        <th>Benefit Plan</th>
+                        <th>Benefit Plan Tally</th>
+                        <th>Benefit Variance</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="spending_plan_table">
+                    {% for item in spending_plan %}
+                    <tr data-id="{{ item.id }}">
+                        <td>{{ item.date.strftime('%Y-%m-%d') }}</td>
+                        <td class="fw-bold">
+                            {{ item.planned_amount|format_currency(project.base_currency) if  item.planned_amount else '0'|format_currency(project.base_currency) }}
+                        </td>
+                        <td>
+                            {{ item.spending_tally|format_currency(project.base_currency) if  item.spending_tally else '0'|format_currency(project.base_currency) }}
+                        </td>
+                        <td class="{% if item.undistributed_variance < 0 %}text-danger{% else %}text-success{% endif %}">
+                            {{ item.undistributed_variance|format_currency(project.base_currency) if  item.undistributed_variance else '0'|format_currency(project.base_currency) }}
+                        </td>
+                        <td>
+                            {{ item.benefit_amount|format_currency(project.base_currency) if  item.benefit_amount else '0'|format_currency(project.base_currency) }}
+                        </td>
+                        <td>
+                            {{ item.benefit_tally|format_currency(project.base_currency) if  item.benefit_tally else '0'|format_currency(project.base_currency) }}
+                        </td>
+                        <td class="{% if item.benefit_variance < 0 %}text-danger{% else %}text-success{% endif %}">
+                            {{ item.benefit_variance|format_currency(project.base_currency) if  item.benefit_variance else '0'|format_currency(project.base_currency) }}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editSpendingItem({{ item.id }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteSpendingItem({{ item.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No spending plan items yet</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Spending Plan Chart -->
+        <div class="mt-4">
+            <canvas id="spendingChart" height="100"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Add Spending Item Modal -->
+<div class="modal fade" id="addSpendingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Spending Plan Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="spendingForm">
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" id="spending_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Spending Plan Amount</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="spending_amount" step="0.01" required>
+                            <span class="input-group-text">project.base_currency
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Benefit Plan Amount</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="benefit_amount" step="0.01" required>
+                            <span class="input-group-text">project.base_currency
+                            </span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addSpendingItem()">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Spending Item Modal -->
+<div class="modal fade" id="editSpendingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Spending Plan Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editSpendingForm">
+                    <input type="hidden" id="edit_item_id">
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" id="edit_spending_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Spending Plan Amount</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="edit_spending_amount" step="0.01" required>
+                            <span class="input-group-text">project.base_currency
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Benefit Plan Amount</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="edit_benefit_amount" step="0.01" required>
+                            <span class="input-group-text">project.base_currency
+                            </span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateSpendingItem()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteSpendingModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <h6>Confirm Delete</h6>
+                <p class="text-muted small">Are you sure you want to delete this spending item?</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteSpendingBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let spendingChart = null;
+let deleteItemId = null;
+
+// Initialize chart when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initSpendingChart();
+});
+
+function initSpendingChart() {
+    const ctx = document.getElementById('spendingChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    // Collect data from table
+    const rows = document.querySelectorAll('#spending_plan_table tr[data-id]');
+    const dates = [];
+    const spendingData = [];
+    const benefitData = [];
+    
+    rows.forEach(row => {
+        const cells = row.cells;
+        dates.push(cells[0].textContent);
+        spendingData.push(parseFloat(cells[1].textContent.replace(/[^0-9.-]+/g, '')));
+        benefitData.push(parseFloat(cells[4].textContent.replace(/[^0-9.-]+/g, '')));
+    });
+    
+    if (spendingChart) {
+        spendingChart.destroy();
+    }
+    
+    spendingChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Spending Plan',
+                data: spendingData,
+                borderColor: '#4361ee',
+                backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                tension: 0.4,
+                fill: false
+            }, {
+                label: 'Benefit Plan',
+                data: benefitData,
+                borderColor: '#4caf50',
+                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                tension: 0.4,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Spending vs Benefit Plan Over Time'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString() + {{project.base_currency}};
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function showAddSpendingModal() {
+    // Set default date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('spending_date').value = today;
+    document.getElementById('spending_amount').value = '';
+    document.getElementById('benefit_amount').value = '';
+    
+    new bootstrap.Modal(document.getElementById('addSpendingModal')).show();
+}
+
+function addSpendingItem() {
+    const date = document.getElementById('spending_date').value;
+    const planned = document.getElementById('spending_amount').value;
+    const benefit = document.getElementById('benefit_amount').value;
+    
+    if (!date || !planned || !benefit) {
+        showWarning('Please fill all fields');
+        return;
+    }
+    
+    const data = {
+        date: date,
+        planned_amount: parseFloat(planned),
+        benefit_amount: parseFloat(benefit)
+    };
+    
+    fetch(`/projects/api/{{ project.id }}/spending-item`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Spending item added successfully');
+            bootstrap.Modal.getInstance(document.getElementById('addSpendingModal')).hide();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'Error adding spending item');
+        }
+    });
+}
+
+function editSpendingItem(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (!row) return;
+    
+    const cells = row.cells;
+    document.getElementById('edit_item_id').value = id;
+    document.getElementById('edit_spending_date').value = cells[0].textContent;
+    document.getElementById('edit_spending_amount').value = parseFloat(cells[1].textContent.replace(/[^0-9.-]+/g, ''));
+    document.getElementById('edit_benefit_amount').value = parseFloat(cells[4].textContent.replace(/[^0-9.-]+/g, ''));
+    
+    new bootstrap.Modal(document.getElementById('editSpendingModal')).show();
+}
+
+function updateSpendingItem() {
+    const id = document.getElementById('edit_item_id').value;
+    const date = document.getElementById('edit_spending_date').value;
+    const planned = document.getElementById('edit_spending_amount').value;
+    const benefit = document.getElementById('edit_benefit_amount').value;
+    
+    if (!date || !planned || !benefit) {
+        showWarning('Please fill all fields');
+        return;
+    }
+    
+    const data = {
+        date: date,
+        planned_amount: parseFloat(planned),
+        benefit_amount: parseFloat(benefit)
+    };
+    
+    fetch(`/projects/api/spending-item/${id}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Spending item updated successfully');
+            bootstrap.Modal.getInstance(document.getElementById('editSpendingModal')).hide();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'Error updating spending item');
+        }
+    });
+}
+
+function deleteSpendingItem(id) {
+    deleteItemId = id;
+    new bootstrap.Modal(document.getElementById('deleteSpendingModal')).show();
+}
+
+document.getElementById('confirmDeleteSpendingBtn').addEventListener('click', function() {
+    if (!deleteItemId) return;
+    
+    fetch(`/projects/api/spending-item/${deleteItemId}/delete`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Spending item deleted successfully');
+            bootstrap.Modal.getInstance(document.getElementById('deleteSpendingModal')).hide();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'Error deleting spending item');
+        }
+    });
+});
+
+// Helper functions
+function showSuccess(message) {
+    Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: message,
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
+
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: message
+    });
+}
+
+function showWarning(message) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Warning',
+        text: message
+    });
+}
+</script>
+
+<style>
+/* Additional styles for spending plan */
+.table td {
+    vertical-align: middle;
+}
+
+.table .fw-bold {
+    font-weight: 600;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.btn-outline-primary, .btn-outline-danger {
+    margin: 0 2px;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+}
+
+.modal-footer {
+    background: #f8f9fa;
+}
+
+/* Chart container */
+#spendingChart {
+    max-height: 300px;
+    width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .table {
+        font-size: 0.85rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.7rem;
+    }
+}
+</style>

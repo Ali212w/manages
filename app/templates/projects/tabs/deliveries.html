@@ -1,0 +1,71 @@
+<!-- templates/projects/tabs/deliveries.html - تبويب جديد للتسليمات -->
+
+<div class="tab-pane fade" id="deliveries-tab" role="tabpanel">
+    <div class="card">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-truck text-primary me-2"></i>
+                طلبات التوريد والتسليمات
+            </h5>
+            <button class="btn btn-sm btn-primary" onclick="createNewDeliveryRequest()">
+                <i class="fas fa-plus me-1"></i> طلب توريد جديد
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>رقم الطلب</th>
+                            <th>المورد</th>
+                            <th>المواد المطلوبة</th>
+                            <th>تاريخ الاستلام</th>
+                            <th>الحالة</th>
+                            <th>التسليمات</th>
+                            <th>الإجراءات</th>
+                        </thead>
+                        <tbody>
+                            {% for request in resource_requests %}
+                            <tr>
+                                <td>{{ request.delivery_number or request.id }}</td>
+                                <td>{{ request.supplier_name }}</td>
+                                <td>
+                                    {% for item in request.resources[:2] %}
+                                    <span class="badge bg-light text-dark">{{ item.name }}: {{ item.quantity }}</span>
+                                    {% endfor %}
+                                    {% if request.resources|length > 2 %}
+                                    <span class="badge bg-secondary">+{{ request.resources|length - 2 }}</span>
+                                    {% endif %}
+                                 </td>
+                                <td class="{% if request.required_date < now.date() %}text-danger{% endif %}">
+                                    {{ request.required_date }}
+                                 </td>
+                                <td>
+                                    <span class="badge bg-{{ 'warning' if request.status == 'pending' else 'info' if request.status == 'started' else 'success' }}">
+                                        {{ request.status }}
+                                    </span>
+                                 </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewDeliveries({{ request.id }})">
+                                        <i class="fas fa-box"></i> عرض التسليمات
+                                    </button>
+                                 </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="viewRequestDetails({{ request.id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    {% if request.status == 'pending' %}
+                                    <button class="btn btn-sm btn-outline-warning" onclick="remindSupplier({{ request.id }})">
+                                        <i class="fas fa-bell"></i>
+                                    </button>
+                                    {% endif %}
+                                 </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

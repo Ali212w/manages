@@ -1,0 +1,486 @@
+{% extends "company/base.html" %}
+
+{% block title %}نظرة عامة - {{ project.name }}{% endblock %}
+
+{% block page_title %}نظرة عامة على المشروع{% endblock %}
+{% block page_subtitle %}تتبع تقدم المشروع وتحليل الأداء{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .stat-icon.total { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .stat-icon.completed { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .stat-icon.progress { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .stat-icon.delayed { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        margin: 0;
+    }
+    
+    /* Progress Timeline */
+    .progress-timeline {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .timeline-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .timeline-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+    }
+    
+    .progress-comparison {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+    
+    .progress-item {
+        flex: 1;
+    }
+    
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+    }
+    
+    .progress-bar-container {
+        height: 10px;
+        background: #eef2f7;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 5px;
+        transition: width 0.3s;
+    }
+    
+    .progress-bar-fill.planned { background: #6c757d; }
+    .progress-bar-fill.actual { background: var(--primary); }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.3rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-badge.ahead { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .status-badge.on_track { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .status-badge.behind { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+    
+    /* Sections */
+    .section-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    /* Delayed Tasks */
+    .delayed-task {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #fff8f8;
+        border-right: 4px solid var(--danger);
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .delayed-task:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 5px 15px rgba(249, 65, 68, 0.1);
+    }
+    
+    .task-info {
+        flex: 1;
+    }
+    
+    .task-name {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.25rem;
+    }
+    
+    .task-meta {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+    
+    .delay-badge {
+        background: var(--danger);
+        color: white;
+        padding: 0.3rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    /* Critical Path */
+    .path-item {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .path-status {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-left: 1rem;
+    }
+    
+    .path-status.completed { background: var(--success); }
+    .path-status.in_progress { background: var(--primary); }
+    .path-status.pending { background: #6c757d; }
+    .path-status.delayed { background: var(--danger); }
+    
+    .path-name {
+        flex: 1;
+        font-weight: 500;
+    }
+    
+    .path-date {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+    
+    /* Employee Performance */
+    .employee-card {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+    
+    .employee-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-left: 1rem;
+    }
+    
+    .employee-info {
+        flex: 1;
+    }
+    
+    .employee-name {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .employee-stats {
+        display: flex;
+        gap: 1rem;
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+    
+    .rating {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .rating i {
+        color: #ffc107;
+    }
+    
+    /* Responsive */
+    @media (max-width: 992px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-icon total">
+                <i class="fas fa-tasks"></i>
+            </span>
+            <span class="badge bg-primary">إجمالي</span>
+        </div>
+        <h3 class="stat-value">{{ task_stats.total }}</h3>
+        <p class="stat-label">إجمالي المهام</p>
+        <div class="mt-2 small text-muted">
+            <span class="text-success">{{ task_stats.completed }} مكتمل</span> •
+            <span class="text-primary">{{ task_stats.in_progress }} قيد التنفيذ</span> •
+            <span class="text-warning">{{ task_stats.pending }} معلق</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-icon completed">
+                <i class="fas fa-check-circle"></i>
+            </span>
+            <span class="badge bg-success">الإنجاز</span>
+        </div>
+        <h3 class="stat-value">{{ (task_stats.completed / task_stats.total * 100)|round if task_stats.total > 0 else 0 }}%</h3>
+        <p class="stat-label">نسبة الإنجاز</p>
+        <div class="progress mt-2" style="height: 5px;">
+            <div class="progress-bar bg-success" style="width: {{ (task_stats.completed / task_stats.total * 100) if task_stats.total > 0 else 0 }}%"></div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-icon progress">
+                <i class="fas fa-clock"></i>
+            </span>
+            <span class="badge bg-warning">التقدم</span>
+        </div>
+        <h3 class="stat-value">{{ task_stats.in_progress }}</h3>
+        <p class="stat-label">مهام قيد التنفيذ</p>
+        <div class="mt-2 small text-muted">
+            <i class="fas fa-users me-1"></i> {{ employee_performance|length }} موظف يعملون
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-icon delayed">
+                <i class="fas fa-exclamation-triangle"></i>
+            </span>
+            <span class="badge bg-danger">التأخيرات</span>
+        </div>
+        <h3 class="stat-value">{{ task_stats.delayed }}</h3>
+        <p class="stat-label">مهام متأخرة</p>
+        <div class="mt-2 small text-danger">
+            <i class="fas fa-calendar-times me-1"></i> تأخير {{ delayed_tasks|sum(attribute='delay_days') }} يوم
+        </div>
+    </div>
+</div>
+
+<!-- Progress Timeline -->
+<div class="progress-timeline">
+    <div class="timeline-header">
+        <h5 class="timeline-title"><i class="fas fa-chart-line me-2 text-primary"></i>تقدم المشروع</h5>
+        <span class="status-badge {{ time_progress.status }}">
+            {% if time_progress.status == 'ahead' %}متقدم عن الجدول
+            {% elif time_progress.status == 'on_track' %}ضمن الجدول
+            {% else %}متأخر عن الجدول{% endif %}
+        </span>
+    </div>
+    
+    <div class="progress-comparison">
+        <div class="progress-item">
+            <div class="progress-label">
+                <span>المخطط</span>
+                <span>{{ time_progress.planned|round }}%</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill planned" style="width: {{ time_progress.planned }}%"></div>
+            </div>
+        </div>
+        
+        <div class="progress-item">
+            <div class="progress-label">
+                <span>الفعلي</span>
+                <span>{{ time_progress.actual|round }}%</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill actual" style="width: {{ time_progress.actual }}%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Delayed Tasks -->
+    <div class="col-lg-6">
+        <div class="section-card">
+            <h5 class="section-title"><i class="fas fa-exclamation-triangle text-danger me-2"></i>المهام المتأخرة</h5>
+            
+            {% if delayed_tasks %}
+                {% for task in delayed_tasks %}
+                <div class="delayed-task">
+                    <div class="task-info">
+                        <div class="task-name">{{ task.name }}</div>
+                        <div class="task-meta">
+                            <i class="fas fa-user me-1"></i> {{ task.responsible }} •
+                            <i class="fas fa-calendar me-1"></i> مستحقة: {{ task.planned_end.strftime('%Y-%m-%d') }} •
+                            <span class="text-primary">{{ task.progress }}%</span>
+                        </div>
+                    </div>
+                    <div class="delay-badge">
+                        <i class="fas fa-clock me-1"></i> {{ task.delay_days }} يوم
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="text-muted">لا توجد مهام متأخرة - أحسنت!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Critical Path -->
+    <div class="col-lg-6">
+        <div class="section-card">
+            <h5 class="section-title"><i class="fas fa-link text-primary me-2"></i>المسار الحرج</h5>
+            
+            {% if critical_path %}
+                {% for task in critical_path %}
+                <div class="path-item">
+                    <div class="path-status 
+                        {% if task.is_delayed %}delayed
+                        {% elif task.status == 'completed' %}completed
+                        {% elif task.status == 'in_progress' %}in_progress
+                        {% else %}pending{% endif %}">
+                    </div>
+                    <div class="path-name">{{ task.name }}</div>
+                    <div class="path-date">
+                        {% if task.is_delayed %}
+                        <span class="text-danger">متأخرة</span>
+                        {% elif task.status == 'completed' %}
+                        <span class="text-success">{{ task.actual_end.strftime('%Y-%m-%d') }}</span>
+                        {% elif task.status == 'in_progress' %}
+                        <span class="text-primary">قيد التنفيذ</span>
+                        {% else %}
+                        <span class="text-muted">{{ task.planned_end.strftime('%Y-%m-%d') if task.planned_end }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted text-center py-4">لا يوجد مسار حرج محدد</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Employee Performance -->
+<div class="section-card mt-4">
+    <h5 class="section-title"><i class="fas fa-star text-warning me-2"></i>أداء الموظفين</h5>
+    
+    <div class="row">
+        {% for emp in employee_performance %}
+        <div class="col-md-6">
+            <div class="employee-card">
+                <div class="employee-avatar">{{ emp.name[0] }}</div>
+                <div class="employee-info">
+                    <div class="employee-name">{{ emp.name }}</div>
+                    <div class="employee-stats">
+                        <span><i class="fas fa-tasks me-1"></i> {{ emp.completed_tasks }}/{{ emp.total_tasks }}</span>
+                        <span><i class="fas fa-percent me-1"></i> {{ emp.completion_rate|round }}%</span>
+                        <div class="rating">
+                            <i class="fas fa-star"></i> {{ emp.avg_quality|round(1) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-4">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <p class="text-muted">لا توجد بيانات أداء</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// تحديث تلقائي كل 30 ثانية
+setInterval(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

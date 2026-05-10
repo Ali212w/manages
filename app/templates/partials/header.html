@@ -1,0 +1,104 @@
+{# Top bar for authenticated app shell layout #}
+<header class="app-header">
+    <button class="icon-button" data-sidebar-toggle aria-label="{{ _('toggle_sidebar') }}" id="sidebarToggleBtn">
+        <i class="fas fa-bars"></i>
+    </button>
+    {% raw %}<style>
+      #sidebarToggleBtn{display: none;}
+      @media (max-width: 1024px){#sidebarToggleBtn{display: inline-flex;}}
+    </style>{% endraw %}
+
+    <div class="header-search">
+        <i class="fas fa-search header-search-icon"></i>
+        <input type="search" id="globalSearch" placeholder="{{ _('search_placeholder') }}">
+    </div>
+
+    <div class="header-actions">
+        <button class="icon-button" data-theme-toggle title="{{ _('toggle_theme') }}">
+            <i class="fas fa-moon" data-theme-icon></i>
+        </button>
+
+        {% if current_user.is_authenticated %}
+        <a href="{% if current_user.__class__.__name__ in ['PlatformOwner', 'PlatformAdmin'] %}{{ url_for('platform.dashboard') }}{% else %}{{ url_for('role_dashboard.my_dashboard') }}{% endif %}"
+           class="btn btn-primary btn-sm hidden md:inline-flex">
+            <i class="fas fa-chart-pie"></i><span>{{ _('dashboard') }}</span>
+        </a>
+        {% endif %}
+
+        <div class="dropdown">
+            <button class="icon-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
+                <i class="fas fa-language"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item {% if current_lang == 'ar' %}active{% endif %}" href="{{ url_for('change_language', lang='ar') }}"><i class="fas fa-flag"></i> العربية</a></li>
+                <li><a class="dropdown-item {% if current_lang == 'en' %}active{% endif %}" href="{{ url_for('change_language', lang='en') }}"><i class="fas fa-flag"></i> English</a></li>
+            </ul>
+        </div>
+
+        {% if current_user.is_authenticated %}
+        <div class="dropdown">
+            <button class="icon-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('notifications') }}">
+                <i class="fas fa-bell"></i>
+                {% if notifications_count and notifications_count > 0 %}
+                <span class="badge-count">{{ notifications_count if notifications_count < 10 else '9+' }}</span>
+                {% endif %}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end" style="min-width: 340px; max-width: 360px; padding: 0;">
+                <div style="padding: 0.875rem 1rem; border-bottom: 1px solid hsl(var(--border)); display: flex; justify-content: space-between; align-items: center;">
+                    <strong class="text-sm">{{ _('notifications') }}</strong>
+                    {% if notifications_count and notifications_count > 0 %}
+                    <a href="#" class="text-xs" id="markAllRead">{{ _('mark_all_read') }}</a>
+                    {% endif %}
+                </div>
+                <div style="max-height: 380px; overflow-y: auto;" id="notificationsList">
+                    {% for notification in (recent_notifications or [])[:8] %}
+                    <a href="{{ notification.get_primary_link() }}" class="dropdown-item" style="padding: 0.75rem 1rem; border-bottom: 1px solid hsl(var(--border)); white-space: normal; {% if not notification.is_read %}background: hsl(var(--accent));{% endif %}">
+                        <div class="flex gap-3 items-start" style="width: 100%;">
+                            <div style="flex-shrink: 0;">{{ notification.get_icon_html()|safe }}</div>
+                            <div class="flex-1" style="min-width: 0;">
+                                <div class="text-sm font-semibold" style="color: hsl(var(--foreground));">{{ notification.title }}</div>
+                                <div class="text-xs text-muted-foreground" style="margin-top: 2px;">{{ notification.message|truncate(70) }}</div>
+                                <div class="text-xs text-muted-foreground" style="margin-top: 4px;"><i class="fas fa-clock"></i> {{ time_ago(notification.created_at) }}</div>
+                            </div>
+                        </div>
+                    </a>
+                    {% else %}
+                    <div class="empty-state" style="padding: 2rem 1rem;">
+                        <div class="empty-state-icon"><i class="fas fa-bell-slash"></i></div>
+                        <div class="text-sm text-muted-foreground">{{ _('no_notifications') }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if notifications_count and notifications_count > 0 %}
+                <div style="padding: 0.625rem; text-align: center; border-top: 1px solid hsl(var(--border));">
+                    <a href="{{ url_for('notifications.index') }}" class="text-sm text-primary">{{ _('view_all') }}</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <button class="user-menu-trigger" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                {% if current_user.profile_image and current_user.profile_image != 'default.jpg' %}
+                <img class="user-avatar" src="{{ url_for('static', filename='uploads/avatars/' + current_user.profile_image) }}" alt="{{ current_user.full_name }}">
+                {% else %}
+                <span class="user-avatar">{{ (current_user.full_name or 'U')[0]|upper }}</span>
+                {% endif %}
+                <div class="user-menu-info">
+                    <span class="user-menu-name">{{ current_user.full_name|truncate(20) }}</span>
+                    <span class="user-menu-role">{{ _(current_user.role) }}</span>
+                </div>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" style="min-width: 220px;">
+                <li><a class="dropdown-item" href="{{ url_for('company.profile') }}"><i class="fas fa-user"></i> {{ _('profile') }}</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('company.settings') }}"><i class="fas fa-cog"></i> {{ _('settings') }}</a></li>
+                <li><a class="dropdown-item" href="{% if current_user.__class__.__name__ in ['PlatformOwner', 'PlatformAdmin'] %}{{ url_for('platform.dashboard') }}{% else %}{{ url_for('role_dashboard.my_dashboard') }}{% endif %}"><i class="fas fa-chart-pie"></i> {{ _('dashboard') }}</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}" style="color: hsl(var(--destructive));"><i class="fas fa-sign-out-alt"></i> {{ _('logout') }}</a></li>
+            </ul>
+        </div>
+        {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm"><i class="fas fa-sign-in-alt"></i><span>{{ _('login') }}</span></a>
+        {% endif %}
+    </div>
+</header>

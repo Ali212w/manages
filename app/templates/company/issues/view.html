@@ -1,0 +1,451 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ issue.title }} - {{ _('issue_details') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Priority Colors */
+    .priority-critical { background-color: #dc3545; color: white; }
+    .priority-high { background-color: #fd7e14; color: white; }
+    .priority-medium { background-color: #ffc107; color: #2c3e50; }
+    .priority-low { background-color: #28a745; color: white; }
+    
+    /* Status Colors */
+    .status-open { background-color: #dc3545; color: white; }
+    .status-in-progress { background-color: #ffc107; color: #2c3e50; }
+    .status-resolved { background-color: #17a2b8; color: white; }
+    .status-closed { background-color: #6c757d; color: white; }
+    
+    /* Issue Header */
+    .issue-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        border-radius: 20px;
+        padding: 25px;
+        color: white;
+        margin-bottom: 30px;
+    }
+    
+    /* Info Cards */
+    .info-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .info-value {
+        color: #2b2d42;
+    }
+    
+    /* Timeline */
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-right: 30px;
+        padding-bottom: 25px;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        right: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+    }
+    
+    .timeline-item:last-child::before {
+        display: none;
+    }
+    
+    .timeline-dot {
+        position: absolute;
+        right: 5px;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        border: 2px solid white;
+    }
+    
+    .timeline-content {
+        background: #f8f9fa;
+        padding: 12px 15px;
+        border-radius: 10px;
+    }
+    
+    .timeline-date {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        position: sticky;
+        top: 20px;
+    }
+    
+    /* Print Styles */
+    @media print {
+        .sidebar, .top-navbar, .action-buttons, .btn {
+            display: none !important;
+        }
+        .issue-header {
+            background: #2c3e50 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .main-content {
+            margin-right: 0 !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Issue Header -->
+        <div class="issue-header">
+            <div class="d-flex justify-content-between align-items-start flex-wrap">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                        <span class="badge bg-light text-dark">{{ issue.issue_code }}</span>
+                        <span class="badge priority-{{ issue.priority }}">{{ _(issue.priority) }}</span>
+                        <span class="badge status-{{ issue.status }}">{{ _(issue.status) }}</span>
+                        <span class="badge bg-secondary">{{ issue.category or _('general') }}</span>
+                    </div>
+                    <h2 class="mb-2">{{ issue.title }}</h2>
+                    {% if issue.title_ar %}
+                    <p class="mb-2 opacity-75">{{ issue.title_ar }}</p>
+                    {% endif %}
+                    <p class="mb-0 opacity-75">{{ issue.description }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Issue Details -->
+        <div class="info-card">
+            <h6 class="mb-3"><i class="fas fa-info-circle me-2 text-primary"></i> {{ _('issue_details') }}</h6>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span class="info-label">{{ _('project') }}:</span>
+                        <span class="info-value">
+                            <a href="{{ url_for('company.view_project', project_id=issue.project_id) }}" class="text-decoration-none">
+                                {{ issue.project.name if issue.project else '-' }}
+                            </a>
+                        </span>
+                    </div>
+                    {% if issue.task_id %}
+                    <div class="info-row">
+                        <span class="info-label">{{ _('related_task') }}:</span>
+                        <span class="info-value">
+                            <a href="{{ url_for('company.view_task', task_id=issue.task_id) }}" class="text-decoration-none">
+                                {{ issue.task.task_name if issue.task else '-' }}
+                            </a>
+                        </span>
+                    </div>
+                    {% endif %}
+                    <div class="info-row">
+                        <span class="info-label">{{ _('reported_by') }}:</span>
+                        <span class="info-value">{{ issue.reporter.full_name if issue.reporter else '-' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">{{ _('reported_date') }}:</span>
+                        <span class="info-value">{{ issue.reported_date.strftime('%Y-%m-%d %H:%M') if issue.reported_date else '-' }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span class="info-label">{{ _('assigned_to') }}:</span>
+                        <span class="info-value">
+                            {% if issue.assigned_to %}
+                            {{ issue.assignee.full_name if issue.assignee else '-' }}
+                            <button class="btn btn-sm btn-link text-primary reassign-btn" data-id="{{ issue.id }}">
+                                <i class="fas fa-exchange-alt"></i>
+                            </button>
+                            {% else %}
+                            <span class="text-muted">{{ _('unassigned') }}</span>
+                            <button class="btn btn-sm btn-link text-primary assign-btn" data-id="{{ issue.id }}">
+                                <i class="fas fa-user-plus"></i> {{ _('assign') }}
+                            </button>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">{{ _('due_date') }}:</span>
+                        <span class="info-value {% if issue.due_date and issue.due_date < now.date() and issue.status not in ['resolved', 'closed'] %}text-danger fw-bold{% endif %}">
+                            {{ issue.due_date.strftime('%Y-%m-%d') if issue.due_date else '-' }}
+                            {% if issue.due_date and issue.due_date < now.date() and issue.status not in ['resolved', 'closed'] %}
+                            <i class="fas fa-exclamation-triangle ms-1" title="{{ _('overdue') }}"></i>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">{{ _('resolution') }}:</span>
+                        <span class="info-value">{{ issue.resolution or '-' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">{{ _('resolution_date') }}:</span>
+                        <span class="info-value">{{ issue.resolution_date.strftime('%Y-%m-%d') if issue.resolution_date else '-' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Update Timeline -->
+        <div class="info-card">
+            <h6 class="mb-3"><i class="fas fa-history me-2 text-primary"></i> {{ _('status_history') }}</h6>
+            
+            {% if updates %}
+            <div class="timeline">
+                {% for update in updates %}
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-date">{{ update.updated_at.strftime('%Y-%m-%d %H:%M') if update.updated_at else '-' }}</div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-secondary">{{ update.old_status or _('created') }}</span>
+                            <i class="fas fa-arrow-right"></i>
+                            <span class="badge bg-primary">{{ update.new_status }}</span>
+                        </div>
+                        <p class="mb-0 small">{{ update.notes or '-' }}</p>
+                        <small class="text-muted">{{ _('by') }}: {{ update.updater.full_name if update.updater else '-' }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">{{ _('no_status_history') }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <div class="info-card">
+                <h6 class="mb-3"><i class="fas fa-cog me-2 text-primary"></i> {{ _('actions') }}</h6>
+                
+                <div class="d-grid gap-2">
+                    {% if issue.status != 'closed' %}
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
+                        <i class="fas fa-check-circle me-2"></i> {{ _('update_status') }}
+                    </button>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('company.edit_issue', issue_id=issue.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-2"></i> {{ _('edit_issue') }}
+                    </a>
+                    
+                    <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="fas fa-trash me-2"></i> {{ _('delete_issue') }}
+                    </button>
+                    
+                    <button onclick="window.print()" class="btn btn-outline-secondary">
+                        <i class="fas fa-print me-2"></i> {{ _('print') }}
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Assign User Modal Trigger -->
+            <div class="info-card">
+                <h6 class="mb-3"><i class="fas fa-users me-2 text-primary"></i> {{ _('team_members') }}</h6>
+                <div class="list-group list-group-flush">
+                    {% for member in issue.project.team_members[:5] if issue.project %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-user-circle me-2"></i>
+                            {{ member.full_name }}
+                        </div>
+                        {% if issue.assigned_to != member.id %}
+                        <button class="btn btn-sm btn-outline-primary assign-to-user" data-user-id="{{ member.id }}">
+                            {{ _('assign') }}
+                        </button>
+                        {% else %}
+                        <span class="badge bg-primary">{{ _('assigned') }}</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i> {{ _('update_issue_status') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ _('new_status') }}</label>
+                    <select id="newStatus" class="form-select">
+                        <option value="open" {% if issue.status == 'open' %}selected{% endif %}>{{ _('open') }}</option>
+                        <option value="in_progress" {% if issue.status == 'in_progress' %}selected{% endif %}>{{ _('in_progress') }}</option>
+                        <option value="resolved" {% if issue.status == 'resolved' %}selected{% endif %}>{{ _('resolved') }}</option>
+                        <option value="closed" {% if issue.status == 'closed' %}selected{% endif %}>{{ _('closed') }}</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('resolution_notes') }}</label>
+                    <textarea id="resolutionNotes" class="form-control" rows="4" 
+                              placeholder="{{ _('enter_resolution_notes') }}"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                <button type="button" class="btn btn-primary" id="confirmUpdateStatus">{{ _('update') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i> {{ _('delete_issue') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>{{ _('confirm_delete_issue') }}</p>
+                <p class="text-muted small mb-0">{{ _('delete_issue_warning') }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">{{ _('delete') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign User Modal -->
+<div class="modal fade" id="assignModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i> {{ _('assign_issue') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ _('select_user') }}</label>
+                    <select id="assignUserId" class="form-select">
+                        <option value="">{{ _('select_user') }}</option>
+                        {% for user in issue.project.team_members if issue.project %}
+                        <option value="{{ user.id }}" {% if issue.assigned_to == user.id %}selected{% endif %}>
+                            {{ user.full_name }} ({{ user.job_title or user.role }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                <button type="button" class="btn btn-primary" id="confirmAssign">{{ _('assign') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update Status
+$('#confirmUpdateStatus').click(function() {
+    const newStatus = $('#newStatus').val();
+    const resolution = $('#resolutionNotes').val();
+    
+    $.ajax({
+        url: `/company/issues/{{ issue.id }}/update-status`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ status: newStatus, resolution: resolution }),
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('{{ _("error_occurred") }}');
+            }
+        },
+        error: function() {
+            alert('{{ _("error_occurred") }}');
+        }
+    });
+});
+
+// Delete Issue
+$('#confirmDelete').click(function() {
+    $.ajax({
+        url: `/company/issues/{{ issue.id }}/delete`,
+        method: 'POST',
+        success: function(response) {
+            if (response.success) {
+                window.location.href = '{{ url_for("company.issues_list") }}';
+            } else {
+                alert('{{ _("error_occurred") }}');
+            }
+        },
+        error: function() {
+            alert('{{ _("error_occurred") }}');
+        }
+    });
+});
+
+// Assign Issue
+$('.assign-btn, .reassign-btn, .assign-to-user').click(function() {
+    $('#assignModal').modal('show');
+});
+
+$('#confirmAssign').click(function() {
+    const userId = $('#assignUserId').val();
+    
+    $.ajax({
+        url: `/company/issues/{{ issue.id }}/assign`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ user_id: userId }),
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('{{ _("error_occurred") }}');
+            }
+        },
+        error: function() {
+            alert('{{ _("error_occurred") }}');
+        }
+    });
+});
+</script>
+{% endblock %}

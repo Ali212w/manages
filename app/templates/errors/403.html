@@ -1,0 +1,18 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}غير مصرح{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <i class="fas fa-lock"></i>
+        <h1>403</h1>
+        <h2>غير مصرح بالوصول</h2>
+        <p>عذراً، لا تملك الصلاحية للوصول إلى هذه الصفحة.</p>
+        <a href="{{ url_for('index') }}" class="btn-primary">
+            <i class="fas fa-home"></i>
+            العودة للرئيسية
+        </a>
+    </div>
+</div>
+{% endblock %}

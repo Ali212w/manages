@@ -1,0 +1,121 @@
+<!-- templates/primavera/tabs/project/settings.html -->
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-cog text-primary"></i>
+        Project Settings
+    </h6>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Last Summarized On</div>
+            <input type="date" class="field-input" id="lastSummarized" 
+                   value="{{ project.last_summarized.strftime('%Y-%m-%d') if project.last_summarized }}">
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Summarize to WBS Level</div>
+            <select class="field-input" id="summarizeLevel">
+                <option value="1" {% if project.summarize_level == 1 %}selected{% endif %}>Level 1</option>
+                <option value="2" {% if project.summarize_level == 2 %}selected{% endif %}>Level 2</option>
+                <option value="3" {% if project.summarize_level == 3 %}selected{% endif %}>Level 3</option>
+                <option value="4" {% if project.summarize_level == 4 %}selected{% endif %}>Level 4</option>
+                <option value="5" {% if project.summarize_level == 5 %}selected{% endif %}>Level 5</option>
+            </select>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Fiscal Year Begins</div>
+            <input type="text" class="field-input" id="fiscalYearStart" 
+                   value="{{ project.fiscal_year_start or '01-01' }}" placeholder="MM-DD">
+        </div>
+    </div>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Baseline for Earned Value</div>
+            <select class="field-input" id="baselineEV">
+                <option value="">Current Project</option>
+                {% for baseline in baselines %}
+                <option value="{{ baseline.id }}" {% if project.baseline_ev_id == baseline.id %}selected{% endif %}>
+                    {{ baseline.name }} (v{{ baseline.version }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Define Critical Activities</div>
+            <select class="field-input" id="criticalDefinition">
+                <option value="Total Float <= 0" {% if project.critical_definition == 'Total Float <= 0' %}selected{% endif %}>
+                    Total Float <= 0
+                </option>
+                <option value="Longest Path" {% if project.critical_definition == 'Longest Path' %}selected{% endif %}>
+                    Longest Path
+                </option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- إعدادات التقارير -->
+<div class="field-group mt-4">
+    <h6 class="field-group-title">
+        <i class="fas fa-file-alt text-primary"></i>
+        Reporting Settings
+    </h6>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Default Report Format</div>
+            <select class="field-input" id="reportFormat">
+                <option value="PDF">PDF</option>
+                <option value="Excel">Excel</option>
+                <option value="HTML">HTML</option>
+            </select>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Report Frequency</div>
+            <select class="field-input" id="reportFrequency">
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Quarterly">Quarterly</option>
+            </select>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Auto Generate</div>
+            <input type="checkbox" class="form-check-input" id="autoGenerate" style="margin-top: 0.75rem;">
+        </div>
+    </div>
+</div>
+
+<!-- إعدادات الإشعارات -->
+<div class="field-group mt-4">
+    <h6 class="field-group-title">
+        <i class="fas fa-bell text-primary"></i>
+        Notification Settings
+    </h6>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="notifyDelay" checked>
+                <label class="form-check-label">Notify on Delay</label>
+            </div>
+        </div>
+        <div class="field-col">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="notifyMilestone" checked>
+                <label class="form-check-label">Notify on Milestone</label>
+            </div>
+        </div>
+        <div class="field-col">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="notifyRisk">
+                <label class="form-check-label">Notify on Risk</label>
+            </div>
+        </div>
+    </div>
+</div>

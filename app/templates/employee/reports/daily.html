@@ -1,0 +1,84 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ _('emp.daily_reports') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-header {
+        background: linear-gradient(135deg, #00b894 0%, #019874 100%);
+        border-radius: var(--radius-lg);
+        padding: 25px;
+        color: white;
+        margin-bottom: 25px;
+    }
+    
+    .report-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        margin-bottom: 15px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        border: 1px solid #e0e0e0;
+        cursor: pointer;
+    }
+    
+    .report-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="report-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-2"><i class="fas fa-calendar-day me-2"></i> {{ _('emp.daily_reports') }}</h2>
+            <p class="mb-0 text-white-50">{{ _('emp.track_your_daily_work') }}</p>
+        </div>
+        <a href="{{ url_for('employee.create_daily_report') }}" class="btn btn-light">
+            <i class="fas fa-plus me-2"></i> {{ _('emp.new_report') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% for report in reports %}
+        <div class="report-card" onclick="window.location.href='{{ url_for('employee.view_daily_report', report_id=report.id) }}'">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1 fw-bold">{{ report.report_number }}</h6>
+                    <div class="d-flex gap-3">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i> {{ format_date(report.report_date) }}
+                        </small>
+                        <small class="text-muted">
+                            <i class="fas fa-project-diagram me-1"></i> {{ report.project.name if report.project else '-' }}
+                        </small>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-{{ 'success' if report.review_status == 'approved' else 'warning' if report.review_status == 'pending' else 'danger' }}">
+                        {{ report.review_status }}
+                    </span>
+                </div>
+            </div>
+            {% if report.work_summary %}
+            <div class="mt-2">
+                <p class="small text-muted mb-0">{{ report.work_summary[:100] }}{% if report.work_summary|length > 100 %}...{% endif %}</p>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-day fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">{{ _('emp.no_daily_reports') }}</h4>
+            <a href="{{ url_for('employee.create_daily_report') }}" class="btn btn-primary mt-3">
+                <i class="fas fa-plus me-2"></i> {{ _('emp.create_first_report') }}
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

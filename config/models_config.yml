@@ -1,0 +1,61 @@
+# config/models_config.yml - تكوين النماذج المحددة
+
+models:
+  # نموذج اللغة العربية
+  arabic_llm:
+    name: aubmindlab/bert-base-arabertv02
+    type: sequence
+    max_length: 512
+    batch_size: 8
+    
+  # نموذج تحليل الجداول
+  table_transformer:
+    name: microsoft/table-transformer-structure-recognition
+    type: vision
+    confidence_threshold: 0.7
+    
+  # نموذج استخراج النصوص من PDF
+  document_parser:
+    name: ibm-granite/granite-docling-258m
+    type: multimodal
+    max_pages: 100
+    extract_tables: true
+    extract_images: false
+    
+  # نموذج التصنيف
+  classifier:
+    name: CAMeL-Lab/bert-base-arabic-camelbert-da
+    type: classification
+    labels:
+      - project
+      - task
+      - resource
+      - user
+      - report
+      
+  # نموذج تلخيص النصوص
+  summarizer:
+    name: google/flan-t5-large
+    type: generation
+    max_input_length: 1024
+    max_output_length: 200
+
+# إعدادات التكامل
+integration:
+  database:
+    connection_pool: 10
+    batch_size: 100
+    timeout: 30
+    
+  file_processing:
+    max_file_size: 52428800  # 50MB
+    supported_formats:
+      - pdf
+      - xlsx
+      - xls
+      - docx
+      - doc
+      - txt
+      - jpg
+      - jpeg
+      - png

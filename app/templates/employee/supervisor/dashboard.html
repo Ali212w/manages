@@ -1,0 +1,259 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ _('emp.team_dashboard') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .team-header {
+        background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+        border-radius: var(--radius-lg);
+        padding: 25px;
+        color: white;
+        margin-bottom: 25px;
+    }
+    
+    .delegate-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        margin-bottom: 20px;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .delegate-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .delegate-avatar {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 28px;
+        font-weight: bold;
+        color: white;
+    }
+    
+    .performance-indicator {
+        height: 4px;
+        background: #e0e0e0;
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+    
+    .pending-card {
+        background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+        border-radius: var(--radius-lg);
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.2s ease;
+    }
+    
+    .pending-card:hover {
+        transform: translateX(-5px);
+    }
+    
+    .review-card {
+        background: linear-gradient(135deg, #74b9ff, #0984e3);
+        color: white;
+        border-radius: var(--radius-lg);
+        padding: 15px;
+        margin-bottom: 15px;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="team-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-2"><i class="fas fa-users me-2"></i> {{ _('emp.team_dashboard') }}</h2>
+            <p class="mb-0 text-white-50">{{ _('emp.monitor_team_performance_and_tasks') }}</p>
+        </div>
+        <div>
+            <button class="btn btn-light" onclick="exportTeamReport()">
+                <i class="fas fa-file-excel me-2"></i> {{ _('emp.export_report') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- إحصائيات الفريق -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card primary">
+            <div class="stat-value">{{ stats.total_tasks }}</div>
+            <div class="stat-label">{{ _('emp.total_tasks') }}</div>
+            <i class="stat-icon fas fa-tasks"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card success">
+            <div class="stat-value">{{ stats.completed_tasks }}</div>
+            <div class="stat-label">{{ _('emp.completed') }}</div>
+            <i class="stat-icon fas fa-check-circle"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card warning">
+            <div class="stat-value">{{ stats.in_progress_tasks }}</div>
+            <div class="stat-label">{{ _('emp.in_progress') }}</div>
+            <i class="stat-icon fas fa-play-circle"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card danger">
+            <div class="stat-value">{{ stats.overdue_tasks }}</div>
+            <div class="stat-label">{{ _('emp.overdue') }}</div>
+            <i class="stat-icon fas fa-exclamation-triangle"></i>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- أداء المناديب -->
+    <div class="col-lg-6">
+        <div class="card-modern">
+            <div class="card-header">
+                <i class="fas fa-user-friends me-2"></i> {{ _('emp.delegates_performance') }}
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for delegate in delegate_performance %}
+                    <div class="col-md-6">
+                        <div class="delegate-card" onclick="window.location.href='{{ url_for('company.view_employee', user_id=delegate.id) }}'">
+                            <div class="delegate-avatar">
+                                {{ delegate.name[0] }}
+                            </div>
+                            <h6 class="mb-1">{{ delegate.name }}</h6>
+                            <div class="small text-muted">{{ delegate.total_tasks }} {{ _('emp.tasks') }}</div>
+                            <div class="performance-indicator">
+                                <div class="bg-success" style="width: {{ delegate.completion_rate }}%; height: 100%;"></div>
+                            </div>
+                            <div class="mt-2 fw-bold">{{ "%.0f"|format(delegate.completion_rate) }}%</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- الأنشطة تحت الإشراف -->
+        <div class="card-modern mt-4">
+            <div class="card-header" style="background: linear-gradient(135deg, #00b894, #019874);">
+                <i class="fas fa-microchip me-2"></i> {{ _('emp.supervised_activities') }}
+            </div>
+            <div class="card-body p-0">
+                {% for activity in supervised_activities[:5] %}
+                <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                    <div>
+                        <h6 class="mb-0 fw-bold">{{ activity.activity_name }}</h6>
+                        <small class="text-muted">{{ activity.project.name if activity.project else '-' }}</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="progress" style="width: 100px; height: 4px;">
+                            <div class="progress-bar bg-success" style="width: {{ activity.progress_percentage }}%"></div>
+                        </div>
+                        <small class="text-muted">{{ "%.0f"|format(activity.progress_percentage) }}%</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-microchip fa-2x text-muted mb-2"></i>
+                    <p class="mb-0 text-muted">{{ _('emp.no_supervised_activities') }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <!-- طلبات التحقق المعلقة -->
+        <div class="card-modern">
+            <div class="card-header" style="background: linear-gradient(135deg, #f72585, #b5179e);">
+                <i class="fas fa-clipboard-check me-2"></i> {{ _('emp.pending_verifications') }}
+                <span class="badge bg-light text-dark ms-2">{{ stats.pending_verifications }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% for verification in pending_verifications %}
+                <div class="pending-card" onclick="viewVerification({{ verification.id }})">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="fw-bold">{{ verification.task.task_name if verification.task else '-' }}</div>
+                            <small class="text-muted">
+                                {{ _('emp.from') }}: {{ verification.user.full_name if verification.user else '-' }}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">{{ time_ago(verification.submitted_at) }}</small>
+                            <div class="mt-1">
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-clock me-1"></i> {{ _('emp.pending') }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small>{{ verification.requirement.description if verification.requirement else '-' }}</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <p class="mb-0 text-muted">{{ _('emp.no_pending_verifications') }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- مهام بحاجة مراجعة -->
+        <div class="card-modern mt-4">
+            <div class="card-header" style="background: linear-gradient(135deg, #f9c74f, #f8961e);">
+                <i class="fas fa-star-of-life me-2"></i> {{ _('emp.tasks_need_review') }}
+            </div>
+            <div class="card-body p-0">
+                {% for task in tasks_need_review %}
+                <div class="review-card" onclick="window.location.href='{{ url_for('employee.view_task', task_id=task.id) }}'">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">{{ task.task_name }}</div>
+                            <small>{{ task.delegate.full_name if task.delegate else '-' }}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="badge bg-white text-dark">
+                                {{ get_task_progress(task)|round|int }}% {{ _('emp.complete') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-double fa-2x text-success mb-2"></i>
+                    <p class="mb-0 text-muted">{{ _('emp.no_tasks_need_review') }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function viewVerification(verificationId) {
+        window.location.href = `{{ url_for('employee.supervisor_verifications') }}?id=${verificationId}`;
+    }
+    
+    function exportTeamReport() {
+        window.location.href = '{{ url_for("employee.export_team_report") }}';
+    }
+</script>
+{% endblock %}

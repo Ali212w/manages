@@ -1,0 +1,147 @@
+{% extends "consultant/base.html" %}
+
+{% block title %}{{ _('progress_reports') }} - {{ _('consultant_portal') }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-chart-line me-2"></i> {{ _('progress_reports') }}</h4>
+            <a href="{{ url_for('consultant.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> {{ _('back_to_dashboard') }}
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-filter me-2"></i> {{ _('filter_reports') }}</h6>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">{{ _('project') }}</label>
+                <select name="project_id" class="form-select">
+                    <option value="">{{ _('all_projects') }}</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" {% if request.args.get('project_id')|int == project.id %}selected{% endif %}>
+                        {{ project.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">{{ _('from_date') }}</label>
+                <input type="date" name="from_date" class="form-control" value="{{ request.args.get('from_date', '') }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">{{ _('to_date') }}</label>
+                <input type="date" name="to_date" class="form-control" value="{{ request.args.get('to_date', '') }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">{{ _('apply_filter') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reports List -->
+{% if reports %}
+<div class="row g-4">
+    {% for report in reports %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">{{ report.project.name }}</h6>
+                    <span class="badge bg-primary">{{ "%.1f"|format(report.completion_rate) }}%</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>{{ _('project_progress') }}</small>
+                        <small class="fw-bold">{{ "%.1f"|format(report.project.progress.progress_percentage if report.project.progress else 0) }}%</small>
+                    </div>
+                    <div class="progress progress-custom">
+                        <div class="progress-bar bg-success" style="width: {{ report.project.progress.progress_percentage if report.project.progress else 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="border rounded p-2 text-center">
+                            <small class="text-muted d-block">{{ _('total_tasks') }}</small>
+                            <h5 class="mb-0">{{ report.total_tasks }}</h5>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2 text-center">
+                            <small class="text-muted d-block">{{ _('completed_tasks') }}</small>
+                            <h5 class="mb-0 text-success">{{ report.completed_tasks }}</h5>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>{{ _('task_completion') }}</small>
+                        <small class="fw-bold">{{ "%.1f"|format(report.completion_rate) }}%</small>
+                    </div>
+                    <div class="progress progress-custom">
+                        <div class="progress-bar bg-info" style="width: {{ report.completion_rate }}%"></div>
+                    </div>
+                </div>
+                
+                {% if report.delayed_tasks > 0 %}
+                <div class="alert alert-warning py-2 mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {{ _('delayed_tasks_count', count=report.delayed_tasks) }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white">
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('consultant.project_detail', project_id=report.project.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i> {{ _('view_details') }}
+                    </a>
+                    <button class="btn btn-sm btn-outline-success export-report" data-project-id="{{ report.project.id }}">
+                        <i class="fas fa-download me-1"></i> {{ _('export') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+        <h5 class="text-muted">{{ _('no_reports_available') }}</h5>
+        <p class="text-muted">{{ _('no_reports_message') }}</p>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.progress-custom {
+    height: 8px;
+    border-radius: 4px;
+    background-color: #e9ecef;
+}
+
+.progress-custom .progress-bar {
+    border-radius: 4px;
+}
+</style>
+
+<script>
+$('.export-report').click(function() {
+    const projectId = $(this).data('project-id');
+    window.location.href = `/consultant/api/projects/${projectId}/export-report`;
+});
+</script>
+{% endblock %}

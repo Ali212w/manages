@@ -1,0 +1,166 @@
+{% extends "client/base.html" %}
+
+{% block title %}تعديل الملف الشخصي - {{ user.full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .form-section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .form-section-title i {
+        color: #4361ee;
+        margin-right: 10px;
+    }
+    
+    .preview-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #4361ee;
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-user-edit me-2"></i> تعديل الملف الشخصي</h4>
+            <a href="{{ url_for('client.profile') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right me-2"></i> العودة للملف الشخصي
+            </a>
+        </div>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('client.edit_profile') }}">
+    <!-- المعلومات الشخصية -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-user"></i> المعلومات الشخصية</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الاسم الكامل (عربي)</label>
+                <input type="text" name="full_name" class="form-control" value="{{ user.full_name }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الاسم الكامل (إنجليزي)</label>
+                <input type="text" name="full_name_en" class="form-control" value="{{ user.full_name_en or '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">البريد الإلكتروني</label>
+                <input type="email" class="form-control" value="{{ user.email }}" disabled>
+                <small class="text-muted">لا يمكن تغيير البريد الإلكتروني</small>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">رقم الجوال</label>
+                <input type="tel" name="mobile" class="form-control" value="{{ user.mobile or '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">رقم الهاتف</label>
+                <input type="tel" name="phone" class="form-control" value="{{ user.phone or '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">المسمى الوظيفي</label>
+                <input type="text" name="job_title" class="form-control" value="{{ user.job_title or '' }}">
+            </div>
+        </div>
+    </div>
+
+    <!-- العنوان والموقع -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-map-marker-alt"></i> العنوان والموقع</h5>
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label class="form-label">العنوان</label>
+                <input type="text" name="address" class="form-control" value="{{ user.address or '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">المدينة</label>
+                <input type="text" name="city" class="form-control" value="{{ user.city or '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الدولة</label>
+                <select name="country" class="form-select">
+                    <option value="السعودية" {% if user.country == 'السعودية' %}selected{% endif %}>السعودية</option>
+                    <option value="الإمارات" {% if user.country == 'الإمارات' %}selected{% endif %}>الإمارات</option>
+                    <option value="الكويت" {% if user.country == 'الكويت' %}selected{% endif %}>الكويت</option>
+                    <option value="قطر" {% if user.country == 'قطر' %}selected{% endif %}>قطر</option>
+                    <option value="عمان" {% if user.country == 'عمان' %}selected{% endif %}>عمان</option>
+                    <option value="البحرين" {% if user.country == 'البحرين' %}selected{% endif %}>البحرين</option>
+                    <option value="مصر" {% if user.country == 'مصر' %}selected{% endif %}>مصر</option>
+                    <option value="الأردن" {% if user.country == 'الأردن' %}selected{% endif %}>الأردن</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- إعدادات الإشعارات -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-bell"></i> إعدادات الإشعارات</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="notification_email" 
+                           id="notificationEmail" {% if user.settings and user.settings.get('notifications_email') %}checked{% endif %}>
+                    <label class="form-check-label" for="notificationEmail">إشعارات البريد الإلكتروني</label>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="notification_push" 
+                           id="notificationPush" {% if user.settings and user.settings.get('notifications_push') %}checked{% endif %}>
+                    <label class="form-check-label" for="notificationPush">إشعارات فورية</label>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">اللغة المفضلة</label>
+                <select name="language" class="form-select">
+                    <option value="ar" {% if user.settings and user.settings.get('language') == 'ar' %}selected{% endif %}>العربية</option>
+                    <option value="en" {% if user.settings and user.settings.get('language') == 'en' %}selected{% endif %}>English</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">صيغة التاريخ</label>
+                <select name="date_format" class="form-select">
+                    <option value="dd/MM/yyyy" {% if user.settings and user.settings.get('date_format') == 'dd/MM/yyyy' %}selected{% endif %}>dd/MM/yyyy</option>
+                    <option value="yyyy-MM-dd" {% if user.settings and user.settings.get('date_format') == 'yyyy-MM-dd' %}selected{% endif %}>yyyy-MM-dd</option>
+                    <option value="MM/dd/yyyy" {% if user.settings and user.settings.get('date_format') == 'MM/dd/yyyy' %}selected{% endif %}>MM/dd/yyyy</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- نبذة عني -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-align-left"></i> نبذة عني</h5>
+        <div class="mb-3">
+            <textarea name="bio" class="form-control" rows="5" placeholder="اكتب نبذة عن نفسك...">{{ user.bio or '' }}</textarea>
+        </div>
+    </div>
+
+    <!-- أزرار الإجراء -->
+    <div class="d-flex gap-3">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i> حفظ التغييرات
+        </button>
+        <a href="{{ url_for('client.profile') }}" class="btn btn-secondary">
+            <i class="fas fa-times me-2"></i> إلغاء
+        </a>
+    </div>
+</form>
+{% endblock %}

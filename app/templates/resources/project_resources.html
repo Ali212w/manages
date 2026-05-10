@@ -1,0 +1,609 @@
+{% extends "company/base.html" %}
+
+{% block title %}موارد المشروع - {{ project.name }}{% endblock %}
+
+{% block page_title %}موارد المشروع{% endblock %}
+{% block page_subtitle %}{{ project.name }} - {{ project.project_code }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<style>
+    .resources-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+    }
+    
+    .resource-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .resource-card:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        border-color: var(--primary);
+    }
+    
+    .resource-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .resource-name {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    
+    .resource-type {
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .type-labor { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .type-equipment { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .type-material { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .type-non_labor { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+    
+    .resource-details {
+        display: flex;
+        gap: 1.5rem;
+        margin: 0.8rem 0;
+        font-size: 0.85rem;
+        color: #6c757d;
+        flex-wrap: wrap;
+    }
+    
+    .resource-details i {
+        width: 20px;
+        color: var(--primary);
+    }
+    
+    .progress-sm {
+        height: 6px;
+        background: #eef2f7;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+    
+    .progress-sm .progress-bar {
+        height: 100%;
+        border-radius: 3px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    }
+    
+    .btn-icon:hover {
+        transform: translateY(-2px);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem;
+        background: white;
+        border-radius: 20px;
+        border: 1px solid #eef2f7;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: #6c757d;
+        opacity: 0.3;
+        margin-bottom: 1rem;
+    }
+    
+    .upload-area {
+        border: 2px dashed #eef2f7;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: #f8fafc;
+    }
+    
+    .upload-area:hover {
+        border-color: var(--primary);
+        background: rgba(67, 97, 238, 0.02);
+    }
+    
+    .upload-area i {
+        font-size: 2.5rem;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .resource-details {
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="resources-container">
+    <!-- رأس الصفحة -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="fas fa-tools text-primary me-2"></i>
+                موارد المشروع
+            </h2>
+            <p class="text-muted">{{ project.name }} - {{ project.project_code }}</p>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="showAssignResourceModal()">
+                <i class="fas fa-plus me-2"></i>تخصيص مورد
+            </button>
+            <button class="btn btn-outline-primary" onclick="showBulkImportModal()">
+                <i class="fas fa-file-excel me-2"></i>استيراد موارد
+            </button>
+        </div>
+    </div>
+    
+    <!-- إحصائيات سريعة -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <i class="fas fa-tools fa-2x text-primary mb-2"></i>
+            <div class="stat-number">{{ resources|length }}</div>
+            <div class="stat-label">إجمالي الموارد</div>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-users fa-2x text-primary mb-2"></i>
+            <div class="stat-number">{{ resources|selectattr('resource_type', 'equalto', 'labor')|list|length }}</div>
+            <div class="stat-label">موارد بشرية</div>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-tractor fa-2x text-primary mb-2"></i>
+            <div class="stat-number">{{ resources|selectattr('resource_type', 'equalto', 'equipment')|list|length }}</div>
+            <div class="stat-label">معدات</div>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-cube fa-2x text-primary mb-2"></i>
+            <div class="stat-number">{{ resources|selectattr('resource_type', 'equalto', 'material')|list|length }}</div>
+            <div class="stat-label">مواد</div>
+        </div>
+    </div>
+    
+    <!-- قائمة الموارد -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2 text-primary"></i>
+                الموارد المخصصة للمشروع
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if resources %}
+                {% for resource in resources %}
+                <div class="resource-card" data-resource-id="{{ resource.id }}">
+                    <div class="resource-header">
+                        <div>
+                            <span class="resource-name">{{ resource.resource_name }}</span>
+                            <span class="resource-type type-{{ resource.resource_type }} ms-2">
+                                {% if resource.resource_type == 'labor' %}موارد بشرية
+                                {% elif resource.resource_type == 'equipment' %}معدات
+                                {% elif resource.resource_type == 'material' %}مواد
+                                {% else %}أخرى{% endif %}
+                            </span>
+                            {% if resource.activity_name %}
+                            <span class="badge bg-info ms-2">
+                                <i class="fas fa-tasks me-1"></i>{{ resource.activity_name }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn-icon btn-outline-info" onclick="viewResourceDetails({{ resource.resource_id }})" title="عرض التفاصيل">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon btn-outline-warning" onclick="editResourceAssignment({{ resource.assignment_id }})" title="تعديل الكمية">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon btn-outline-danger" onclick="removeResourceAssignment({{ resource.assignment_id }}, '{{ resource.resource_name }}')" title="إزالة">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="resource-details">
+                        <span><i class="fas fa-barcode"></i> الكود: {{ resource.resource_code or '-' }}</span>
+                        <span><i class="fas fa-ruler"></i> الوحدة: {{ resource.unit or '-' }}</span>
+                        <span><i class="fas fa-money-bill"></i> التكلفة: {{ "{:,.2f}".format(resource.cost_per_unit) }} {{ resource.currency or 'ر.س' }}/{{ resource.unit }}</span>
+                        <span><i class="fas fa-box"></i> الكمية: {{ resource.planned_quantity }} {{ resource.unit }}</span>
+                        <span><i class="fas fa-chart-line"></i> التكلفة الإجمالية: {{ "{:,.2f}".format(resource.total_cost) }} {{ resource.currency or 'ر.س' }}</span>
+                    </div>
+                    
+                    <div class="progress-sm">
+                        {% set percent = (resource.actual_quantity / resource.planned_quantity * 100) if resource.planned_quantity > 0 else 0 %}
+                        <div class="progress-bar bg-{{ 'success' if percent >= 100 else 'warning' if percent >= 50 else 'primary' }}" 
+                             style="width: {{ percent }}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>المستهلك: {{ resource.actual_quantity }} {{ resource.unit }}</span>
+                        <span>المتبقي: {{ resource.planned_quantity - resource.actual_quantity }} {{ resource.unit }}</span>
+                        <span>نسبة الإنجاز: {{ "%.1f"|format(percent) }}%</span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-tools"></i>
+                    <h5 class="mt-3">لا توجد موارد مخصصة</h5>
+                    <p class="text-muted">لم يتم تخصيص أي موارد لهذا المشروع بعد</p>
+                    <button class="btn btn-primary mt-3" onclick="showAssignResourceModal()">
+                        <i class="fas fa-plus me-2"></i>تخصيص مورد
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- مودال تخصيص مورد -->
+<div class="modal fade" id="assignResourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-tools me-2"></i>
+                    تخصيص مورد للمشروع
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignResourceForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">المورد <span class="text-danger">*</span></label>
+                        <select class="form-select" id="resourceSelect" required>
+                            <option value="">-- اختر المورد --</option>
+                            {% for res in available_resources %}
+                            <option value="{{ res.id }}" data-unit="{{ res.unit }}" data-available="{{ res.available_quantity - res.total_allocated }}">
+                                {{ res.name }} ({{ res.resource_id }}) - متاح: {{ res.available_quantity - res.total_allocated }} {{ res.unit }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">الكمية <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="resourceQuantity" step="0.01" min="0" required>
+                        <small class="text-muted">الوحدة: <span id="resourceUnit">-</span> | الحد الأقصى: <span id="resourceMax">-</span></small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">النشاط (اختياري)</label>
+                        <select class="form-select" id="activitySelect">
+                            <option value="">-- بدون نشاط (للمشروع مباشرة) --</option>
+                        </select>
+                        <small class="text-muted">اختر نشاطاً لتخصيص المورد له</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="assignResource()">تخصيص</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال استيراد موارد متعددة -->
+<div class="modal fade" id="bulkImportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-excel me-2"></i>
+                    استيراد موارد متعددة
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-area" onclick="document.getElementById('importFile').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h6>اسحب ملف Excel هنا أو انقر للاختيار</h6>
+                    <p class="text-muted small">يدعم ملفات .xlsx, .xls, .csv</p>
+                    <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display: none;">
+                </div>
+                
+                <div class="text-center mt-2">
+                    <a href="#" onclick="downloadImportTemplate()" class="text-primary">
+                        <i class="fas fa-download me-1"></i>تحميل قالب الاستيراد
+                    </a>
+                </div>
+                
+                <div id="importPreview" style="display: none;" class="mt-4">
+                    <h6 class="mb-3">معاينة البيانات</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>الكود</th>
+                                    <th>الاسم</th>
+                                    <th>النشاط</th>
+                                    <th>الكمية</th>
+                                    <th>الوحدة</th>
+                                    <th>الحالة</th>
+                                </thead>
+                                <tbody id="previewTableBody"></tbody>
+                            </thead>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-success" id="importBtn" onclick="executeBulkImport()" disabled>استيراد</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script>
+let projectId = {{ project.id }};
+let currentFile = null;
+
+// تحديث معلومات المورد عند الاختيار
+document.getElementById('resourceSelect').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    const unit = selected.dataset.unit;
+    const maxAvailable = selected.dataset.available;
+    
+    document.getElementById('resourceUnit').textContent = unit || '-';
+    document.getElementById('resourceMax').textContent = maxAvailable || '0';
+    document.getElementById('resourceQuantity').max = maxAvailable || 0;
+});
+
+// تحميل الأنشطة
+function loadActivities() {
+    fetch(`/projects/api/{{ project.id }}/activities`)
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('activitySelect');
+            if (data.success && data.activities) {
+                data.activities.forEach(activity => {
+                    const option = document.createElement('option');
+                    option.value = activity.id;
+                    option.textContent = activity.name;
+                    select.appendChild(option);
+                });
+            }
+        });
+}
+
+// عرض مودال تخصيص مورد
+function showAssignResourceModal() {
+    document.getElementById('assignResourceForm').reset();
+    document.getElementById('resourceUnit').textContent = '-';
+    document.getElementById('resourceMax').textContent = '-';
+    loadActivities();
+    new bootstrap.Modal(document.getElementById('assignResourceModal')).show();
+}
+
+// تخصيص مورد
+function assignResource() {
+    const resourceId = document.getElementById('resourceSelect').value;
+    const quantity = document.getElementById('resourceQuantity').value;
+    const activityId = document.getElementById('activitySelect').value;
+    
+    if (!resourceId) {
+        Swal.fire('تنبيه', 'الرجاء اختيار المورد', 'warning');
+        return;
+    }
+    if (!quantity || quantity <= 0) {
+        Swal.fire('تنبيه', 'الرجاء إدخال كمية صحيحة', 'warning');
+        return;
+    }
+    
+    const url = activityId ? `/resources/api/activity/${activityId}/assign` : `/resources/api/project/${projectId}/assign`;
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ resource_id: resourceId, quantity: parseFloat(quantity) })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire('تم', 'تم تخصيص المورد بنجاح', 'success').then(() => location.reload());
+        } else {
+            Swal.fire('خطأ', data.error, 'error');
+        }
+    });
+}
+
+// عرض مودال استيراد موارد
+function showBulkImportModal() {
+    document.getElementById('importFile').value = '';
+    document.getElementById('importPreview').style.display = 'none';
+    document.getElementById('importBtn').disabled = true;
+    new bootstrap.Modal(document.getElementById('bulkImportModal')).show();
+}
+
+// معالجة ملف الاستيراد
+document.getElementById('importFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    currentFile = file;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    Swal.fire({ title: 'جاري المعالجة...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    fetch(`/resources/api/project/${projectId}/bulk-import-preview`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.close();
+        if (data.success) {
+            displayPreview(data.data);
+        } else {
+            Swal.fire('خطأ', data.error, 'error');
+        }
+    });
+});
+
+// عرض معاينة البيانات
+function displayPreview(data) {
+    const tbody = document.getElementById('previewTableBody');
+    tbody.innerHTML = '';
+    
+    data.slice(0, 10).forEach(row => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${row.code || '-'}</td>
+                <td>${row.name}</td>
+                <td>${row.activity || '-'}</td>
+                <td>${row.quantity || 0}</td>
+                <td>${row.unit || '-'}</td>
+                <td><span class="badge bg-${row.status === 'valid' ? 'success' : 'danger'}">${row.status === 'valid' ? 'صالح' : 'غير صالح'}</span></td>
+            </tr>
+        `;
+    });
+    
+    const validCount = data.filter(r => r.status === 'valid').length;
+    document.getElementById('validCount').textContent = validCount;
+    document.getElementById('invalidCount').textContent = data.length - validCount;
+    document.getElementById('importBtn').disabled = validCount === 0;
+    document.getElementById('importPreview').style.display = 'block';
+}
+
+// تنفيذ الاستيراد
+function executeBulkImport() {
+    if (!currentFile) return;
+    const formData = new FormData();
+    formData.append('file', currentFile);
+    
+    Swal.fire({ title: 'جاري الاستيراد...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    fetch(`/resources/api/project/${projectId}/bulk-import`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.close();
+        if (data.success) {
+            Swal.fire('تم', `تم استيراد ${data.summary.success} مورد بنجاح`, 'success').then(() => location.reload());
+        } else {
+            Swal.fire('خطأ', data.error, 'error');
+        }
+    });
+}
+
+// تحميل قالب الاستيراد
+function downloadImportTemplate() {
+    window.location.href = `/resources/project/${projectId}/import-template`;
+}
+
+// عرض تفاصيل المورد
+function viewResourceDetails(resourceId) {
+    window.location.href = `/resources/${resourceId}`;
+}
+
+// تعديل تخصيص مورد
+function editResourceAssignment(assignmentId) {
+    const quantity = prompt('الكمية الجديدة:');
+    if (quantity && quantity > 0) {
+        fetch(`/resources/api/activity-resource/${assignmentId}/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ quantity: parseFloat(quantity) })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) location.reload();
+            else Swal.fire('خطأ', data.error, 'error');
+        });
+    }
+}
+
+// إزالة تخصيص مورد
+function removeResourceAssignment(assignmentId, resourceName) {
+    Swal.fire({
+        title: 'تأكيد الإزالة',
+        text: `هل أنت متأكد من إزالة المورد "${resourceName}" من المشروع؟`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، إزالة',
+        cancelButtonText: 'إلغاء'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch(`/resources/api/activity-resource/${assignmentId}/remove`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) location.reload();
+                else Swal.fire('خطأ', data.error, 'error');
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

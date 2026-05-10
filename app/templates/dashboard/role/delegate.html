@@ -1,0 +1,49 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('dashboard') }} — {{ _('delegate') }}{% endblock %}
+{% block content %}
+<div class="role-dash" id="role-dashboard-delegate">
+  <div class="rd-header mb-4">
+    <h1 class="rd-title"><span class="rd-badge badge-del"><i class="fas fa-user-tag me-1"></i></span> {{ _('welcome_back') }}, {{ current_user.full_name or current_user.username }}</h1>
+    <p class="rd-subtitle text-muted">{{ _('delegate') }}</p>
+  </div>
+
+  <div class="row g-3 mb-4">
+    {% set mt = kpis.my_tasks %}
+    {% for icon, cls, val, label in [
+      ('fa-list-check',  'kpi-indigo', mt.total,       _('total_tasks')),
+      ('fa-circle-check','kpi-emerald',mt.completed,   _('completed_tasks')),
+      ('fa-spinner',     'kpi-blue',   mt.in_progress, _('in_progress_tasks')),
+      ('fa-clock',       'kpi-red',    mt.overdue,     _('delayed_tasks')),
+    ] %}
+    <div class="col-6 col-md-3">
+      <div class="rd-kpi {{ cls }}">
+        <div class="rd-kpi-icon"><i class="fas {{ icon }}"></i></div>
+        <div class="rd-kpi-body">
+          <div class="rd-kpi-value">{{ val }}</div>
+          <div class="rd-kpi-label">{{ label }}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="rd-card mb-3">
+    <div class="rd-card-header"><span><i class="fas fa-tasks me-2 text-primary"></i>{{ _('total_tasks') }}</span></div>
+    <div class="table-responsive">
+      <table class="rd-table">
+        <thead><tr><th>{{ _('name') }}</th><th>{{ _('status') }}</th><th>{{ _('project') }}</th><th>{{ _('due_date') }}</th></tr></thead>
+        <tbody>
+          {% for t in tasks %}
+          <tr>
+            <td><a href="{{ url_for('tasks.task_detail',task_id=t.id) }}" class="rd-link">{{ t.task_name }}</a></td>
+            <td>{% set sc={'completed':'emerald','in_progress':'indigo','pending':'amber'} %}<span class="rd-status-badge {{ sc.get(t.status,'slate') }}">{{ _(t.status) }}</span></td>
+            <td class="small text-muted">{{ t.project.name if t.project else '—' }}</td>
+            <td class="small text-muted">{{ t.end_date.strftime('%Y-%m-%d') if t.end_date else '—' }}</td>
+          </tr>
+          {% else %}<tr><td colspan="4" class="text-center py-3 text-muted">{{ _('no_data') }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,266 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ _('emp.advanced_search') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-header {
+        background: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
+        border-radius: var(--radius-lg);
+        padding: 25px;
+        color: white;
+        margin-bottom: 25px;
+    }
+    
+    .search-box {
+        background: white;
+        border-radius: 60px;
+        padding: 5px;
+        display: flex;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .search-box input {
+        flex: 1;
+        border: none;
+        padding: 15px 25px;
+        border-radius: 60px;
+        outline: none;
+    }
+    
+    .search-box button {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        border-radius: 60px;
+        padding: 10px 30px;
+        color: white;
+        font-weight: 500;
+    }
+    
+    .filter-sidebar {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .result-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+        border: 1px solid #e0e0e0;
+        cursor: pointer;
+    }
+    
+    .result-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .result-type {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    
+    .result-type.task { background: #e3f2fd; color: #1976d2; }
+    .result-type.activity { background: #e8f5e9; color: #388e3c; }
+    .result-type.project { background: #fff3e0; color: #f57c00; }
+    .result-type.document { background: #fce4ec; color: #c2185b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-header">
+    <div class="text-center">
+        <h2 class="mb-2"><i class="fas fa-search me-2"></i> {{ _('emp.advanced_search') }}</h2>
+        <p class="mb-3 text-white-50">{{ _('emp.search_across_all_content') }}</p>
+        
+        <div class="search-box">
+            <input type="text" id="searchQuery" placeholder="{{ _('emp.search_for_tasks_activities_projects') }}..." value="{{ query }}">
+            <button onclick="performSearch()">
+                <i class="fas fa-search me-2"></i> {{ _('emp.search') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-3">
+        <div class="filter-sidebar">
+            <h6 class="mb-3"><i class="fas fa-filter me-2"></i> {{ _('emp.filters') }}</h6>
+            
+            <div class="mb-3">
+                <label class="form-label">{{ _('emp.type') }}</label>
+                <select id="typeFilter" class="form-select">
+                    <option value="all">{{ _('emp.all') }}</option>
+                    <option value="task">{{ _('emp.tasks') }}</option>
+                    <option value="activity">{{ _('emp.activities') }}</option>
+                    <option value="project">{{ _('emp.projects') }}</option>
+                    <option value="document">{{ _('emp.documents') }}</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">{{ _('emp.status') }}</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="all">{{ _('emp.all') }}</option>
+                    <option value="pending">{{ _('emp.pending') }}</option>
+                    <option value="in_progress">{{ _('emp.in_progress') }}</option>
+                    <option value="completed">{{ _('emp.completed') }}</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">{{ _('emp.date_from') }}</label>
+                <input type="date" id="dateFrom" class="form-control">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">{{ _('emp.date_to') }}</label>
+                <input type="date" id="dateTo" class="form-control">
+            </div>
+            
+            <button class="btn btn-primary w-100" onclick="applyFilters()">
+                <i class="fas fa-filter me-2"></i> {{ _('emp.apply_filters') }}
+            </button>
+        </div>
+    </div>
+    
+    <div class="col-lg-9">
+        <div id="searchResults">
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">{{ _('emp.enter_search_term') }}</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentResults = [];
+    
+    function performSearch() {
+        const query = document.getElementById('searchQuery').value;
+        if (!query.trim()) {
+            showToast('{{ _("enter_search_term") }}', 'warning');
+            return;
+        }
+        
+        showLoading();
+        
+        $.ajax({
+            url: '{{ url_for("employee.api_advanced_search") }}',
+            method: 'GET',
+            data: {
+                q: query,
+                type: document.getElementById('typeFilter').value,
+                status: document.getElementById('statusFilter').value,
+                date_from: document.getElementById('dateFrom').value,
+                date_to: document.getElementById('dateTo').value
+            },
+            success: function(response) {
+                if (response.success) {
+                    currentResults = response.results;
+                    displayResults(currentResults);
+                } else {
+                    showToast(response.error, 'danger');
+                }
+            },
+            error: function() { showToast('{{ _("server_error") }}', 'danger'); },
+            complete: function() { hideLoading(); }
+        });
+    }
+    
+    function applyFilters() {
+        if (document.getElementById('searchQuery').value.trim()) {
+            performSearch();
+        }
+    }
+    
+    function displayResults(results) {
+        const container = document.getElementById('searchResults');
+        
+        if (!results || results.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">{{ _('emp.no_results_found') }}</h5>
+                    <p class="text-muted">{{ _('emp.try_different_keywords') }}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = `<div class="mb-3"><small class="text-muted">{{ _('emp.found') }} ${results.length} {{ _('emp.results') }}</small></div>`;
+        
+        results.forEach(result => {
+            let typeClass = '';
+            let typeText = '';
+            
+            switch(result.type) {
+                case 'task':
+                    typeClass = 'task';
+                    typeText = '{{ _("task") }}';
+                    break;
+                case 'activity':
+                    typeClass = 'activity';
+                    typeText = '{{ _("activity") }}';
+                    break;
+                case 'project':
+                    typeClass = 'project';
+                    typeText = '{{ _("project") }}';
+                    break;
+                case 'document':
+                    typeClass = 'document';
+                    typeText = '{{ _("document") }}';
+                    break;
+            }
+            
+            html += `
+                <div class="result-card" onclick="window.location.href='${result.url}'">
+                    <span class="result-type ${typeClass}">${typeText}</span>
+                    <h6 class="mb-2 fw-bold">${escapeHtml(result.title)}</h6>
+                    <p class="small text-muted mb-2">${escapeHtml(result.description || '')}</p>
+                    <div class="d-flex gap-3">
+                        ${result.project_name ? `<small class="text-muted"><i class="fas fa-project-diagram me-1"></i> ${escapeHtml(result.project_name)}</small>` : ''}
+                        ${result.status ? `<small>${getStatusBadge(result.status)}</small>` : ''}
+                        ${result.date ? `<small class="text-muted"><i class="fas fa-calendar me-1"></i> ${result.date}</small>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function getStatusBadge(status) {
+        const badges = {
+            'pending': '<span class="badge bg-warning">{{ _("pending") }}</span>',
+            'in_progress': '<span class="badge bg-info">{{ _("in_progress") }}</span>',
+            'completed': '<span class="badge bg-success">{{ _("completed") }}</span>',
+            'delayed': '<span class="badge bg-danger">{{ _("delayed") }}</span>'
+        };
+        return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+    }
+    
+    // Enter key search
+    document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+</script>
+{% endblock %}

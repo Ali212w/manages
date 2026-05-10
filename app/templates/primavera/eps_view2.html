@@ -1,0 +1,674 @@
+{% extends "company/base.html" %}
+
+{% block title %}هيكل المؤسسة (EPS){% endblock %}
+
+{% block page_title %}هيكل المؤسسة{% endblock %}
+{% block page_subtitle %}Enterprise Project Structure - EPS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.bootstrap5.min.css">
+<style>
+    /* ===== التبويبات ===== */
+    .view-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        background: white;
+        padding: 0.5rem;
+        border-radius: 50px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        width: fit-content;
+    }
+    
+    .view-tab {
+        padding: 0.7rem 1.5rem;
+        border-radius: 30px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .view-tab:hover {
+        background: rgba(67, 97, 238, 0.05);
+        color: var(--primary);
+    }
+    
+    .view-tab.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .view-tab.active i {
+        color: white;
+    }
+    
+    /* ===== بطاقات الإحصائيات ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+        border: 1px solid #eef2f7;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-icon.primary { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .stat-icon.success { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .stat-icon.warning { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .stat-icon.info { background: rgba(72, 149, 239, 0.1); color: var(--info); }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        margin: 0;
+    }
+    
+    /* ===== Tree View Styles ===== */
+    .tree-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .tree {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .tree li {
+        list-style-type: none;
+        margin: 0;
+        padding: 0.5rem 0;
+        position: relative;
+    }
+    
+    .tree details {
+        margin-top: 0.5rem;
+    }
+    
+    .tree summary {
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 10px;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+    
+    .tree summary:hover {
+        background: rgba(67, 97, 238, 0.05);
+    }
+    
+    .tree summary::-webkit-details-marker {
+        display: none;
+    }
+    
+    .tree .tree-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.5rem 1rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 0.3rem;
+        transition: all 0.3s;
+        border-right: 3px solid transparent;
+    }
+    
+    .tree .tree-item:hover {
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateX(-5px);
+        border-right-color: var(--primary);
+    }
+    
+    .tree .item-icon {
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    
+    .tree .item-content {
+        flex: 1;
+    }
+    
+    .tree .item-title {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .tree .item-code {
+        font-size: 0.8rem;
+        color: #6c757d;
+        background: #eef2f7;
+        padding: 0.2rem 0.5rem;
+        border-radius: 30px;
+    }
+    
+    .tree .item-stats {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .tree .expand-btn {
+        width: 25px;
+        height: 25px;
+        border-radius: 5px;
+        background: #eef2f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        color: #6c757d;
+    }
+    
+    .tree .expand-btn:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    /* ===== Table View Styles ===== */
+    .table-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .eps-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .eps-table th {
+        background: var(--primary);
+        color: white;
+        padding: 1rem;
+        font-weight: 600;
+        text-align: center;
+    }
+    
+    .eps-table th:first-child {
+        border-top-right-radius: 15px;
+    }
+    
+    .eps-table th:last-child {
+        border-top-left-radius: 15px;
+    }
+    
+    .eps-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #eef2f7;
+        vertical-align: middle;
+    }
+    
+    .eps-table tbody tr:hover {
+        background: rgba(67, 97, 238, 0.02);
+    }
+    
+    .level-1 { background: rgba(67, 97, 238, 0.05); }
+    .level-2 { background: rgba(67, 97, 238, 0.03); }
+    .level-3 { background: rgba(67, 97, 238, 0.02); }
+    
+    .badge-level {
+        display: inline-block;
+        padding: 0.2rem 0.5rem;
+        background: #eef2f7;
+        border-radius: 30px;
+        font-size: 0.8rem;
+    }
+    
+    .action-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        background: #eef2f7;
+        border: none;
+        color: #6c757d;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .action-btn:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    /* ===== Toolbar ===== */
+    .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .btn-primary-gradient {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.7rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-primary-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+    }
+    
+    .btn-outline {
+        background: transparent;
+        border: 2px solid #eef2f7;
+        padding: 0.6rem 1.2rem;
+        border-radius: 10px;
+        color: #6c757d;
+        transition: all 0.3s;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-outline:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .search-box {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        width: 300px;
+        transition: all 0.3s;
+    }
+    
+    .search-box:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    /* ===== Responsive ===== */
+    @media (max-width: 992px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .toolbar {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .search-box {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- إحصائيات سريعة -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-sitemap"></i>
+        </div>
+        <h3 class="stat-value">{{ stats.total_eps }}</h3>
+        <p class="stat-label">إجمالي EPS</p>
+        <small class="text-muted">{{ stats.root_nodes }} عقدة جذرية</small>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fas fa-project-diagram"></i>
+        </div>
+        <h3 class="stat-value">{{ stats.total_projects }}</h3>
+        <p class="stat-label">إجمالي المشاريع</p>
+        <small class="text-muted">{{ stats.avg_projects_per_eps }} مشروع/EPS</small>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fas fa-coins"></i>
+        </div>
+        <h3 class="stat-value">{{ "{:,.0f}".format(stats.total_budget) }}</h3>
+        <p class="stat-label">الميزانية الإجمالية</p>
+        <small class="text-muted">ر.س</small>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon info">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <h3 class="stat-value">{{ eps_data|length }}</h3>
+        <p class="stat-label">إجمالي العقد</p>
+        <small class="text-muted">{{ eps_data|selectattr('is_active')|list|length }} نشط</small>
+    </div>
+</div>
+
+<!-- شريط الأدوات -->
+<div class="toolbar">
+    <div class="d-flex gap-2">
+        <button class="btn-primary-gradient" onclick="window.location.href='{{ url_for('primavera.eps_create') }}'">
+            <i class="fas fa-plus"></i>
+            إضافة EPS جديد
+        </button>
+        <button class="btn-outline" onclick="exportData()">
+            <i class="fas fa-download"></i>
+            تصدير
+        </button>
+        <button class="btn-outline" onclick="printView()">
+            <i class="fas fa-print"></i>
+            طباعة
+        </button>
+    </div>
+    
+    <div class="view-tabs">
+        <div class="view-tab active" onclick="switchView('tree')" id="tabTree">
+            <i class="fas fa-tree"></i>
+            عرض الشجرة
+        </div>
+        <div class="view-tab" onclick="switchView('table')" id="tabTable">
+            <i class="fas fa-table"></i>
+            عرض الجدول
+        </div>
+    </div>
+    
+    <input type="text" class="search-box" id="searchInput" placeholder="🔍 بحث في EPS...">
+</div>
+
+<!-- Tree View -->
+<div id="treeView" class="tree-container">
+    <ul class="tree">
+        {% for node in tree_data %}
+            {% include 'primavera/eps_tree_node.html' with context %}
+        {% else %}
+        <li class="text-center text-muted py-5">
+            <i class="fas fa-folder-open fa-3x mb-3" style="opacity: 0.3;"></i>
+            <h5>لا توجد عناصر EPS</h5>
+            <p>لم يتم إضافة أي عناصر EPS بعد</p>
+            <button class="btn-primary-gradient mt-3" onclick="window.location.href='{{ url_for('primavera.eps_create') }}'">
+                <i class="fas fa-plus"></i>
+                إضافة EPS جديد
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- Table View (مخفي افتراضياً) -->
+<div id="tableView" style="display: none;">
+    <div class="table-container">
+        <table class="eps-table" id="epsTable">
+            <thead>
+                <tr>
+                    <th>الكود</th>
+                    <th>الاسم</th>
+                    <th>المستوى</th>
+                    <th>المسار</th>
+                    <th>المشاريع</th>
+                    <th>الميزانية</th>
+                    <th>المدير</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for node in eps_data %}
+                <tr class="level-{{ node.level }}">
+                    <td><strong>{{ node.eps_code }}</strong></td>
+                    <td>{{ node.name }}</td>
+                    <td><span class="badge-level">المستوى {{ node.level }}</span></td>
+                    <td><small class="text-muted">{{ node.full_path }}</small></td>
+                    <td class="text-center">
+                        <span class="badge bg-primary">{{ node.projects_count }}</span>
+                    </td>
+                    <td>{{ "{:,.0f}".format(node.total_budget) }} ر.س</td>
+                    <td>{{ node.manager_name }}</td>
+                    <td>
+                        {% if node.is_active %}
+                        <span class="badge bg-success">نشط</span>
+                        {% else %}
+                        <span class="badge bg-secondary">غير نشط</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <button class="action-btn" onclick="viewEPS({{ node.id }})" title="عرض">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn" onclick="editEPS({{ node.id }})" title="تعديل">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn" onclick="showProjects({{ node.id }})" title="المشاريع">
+                                <i class="fas fa-project-diagram"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- نموذج EPS -->
+{% include 'primavera/eps_modal.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// تهيئة DataTable
+$(document).ready(function() {
+    $('#epsTable').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/ar.json'
+        },
+        order: [[2, 'asc']],
+        pageLength: 25,
+        responsive: true
+    });
+});
+
+// التبديل بين طرق العرض
+function switchView(view) {
+    if (view === 'tree') {
+        document.getElementById('treeView').style.display = 'block';
+        document.getElementById('tableView').style.display = 'none';
+        document.getElementById('tabTree').classList.add('active');
+        document.getElementById('tabTable').classList.remove('active');
+    } else {
+        document.getElementById('treeView').style.display = 'none';
+        document.getElementById('tableView').style.display = 'block';
+        document.getElementById('tabTable').classList.add('active');
+        document.getElementById('tabTree').classList.remove('active');
+    }
+}
+
+// البحث في عرض الشجرة
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase().trim();
+    filterTree(searchTerm);
+});
+
+function filterTree(term) {
+    const items = document.querySelectorAll('.tree-item');
+    
+    items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if (term === '') {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = text.includes(term) ? 'flex' : 'none';
+        }
+    });
+}
+
+// توسيع/طي جميع العقد
+function expandAll() {
+    document.querySelectorAll('details').forEach(details => {
+        details.open = true;
+    });
+}
+
+function collapseAll() {
+    document.querySelectorAll('details').forEach(details => {
+        details.open = false;
+    });
+}
+
+// الإجراءات
+function viewEPS(id) {
+    window.location.href = `/primavera/eps/${id}`;
+}
+
+function editEPS(id) {
+    window.location.href = `/primavera/eps/${id}/edit`;
+}
+
+function showProjects(id) {
+    window.location.href = `/primavera/eps/${id}/projects`;
+}
+
+// تصدير البيانات
+function exportData() {
+    const data = {{ eps_data|tojson }};
+    
+    // تحويل إلى CSV
+    const headers = ['الكود', 'الاسم', 'المستوى', 'المسار', 'المشاريع', 'الميزانية', 'المدير'];
+    const csvRows = [];
+    
+    csvRows.push(headers.join(','));
+    
+    data.forEach(node => {
+        const row = [
+            node.eps_code,
+            `"${node.name}"`,
+            node.level,
+            `"${node.full_path}"`,
+            node.projects_count,
+            node.total_budget,
+            `"${node.manager_name}"`
+        ];
+        csvRows.push(row.join(','));
+    });
+    
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'eps_structure.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+// طباعة
+function printView() {
+    window.print();
+}
+
+// عرض إحصائيات بيانية
+function showChart() {
+    const ctx = document.getElementById('epsChart').getContext('2d');
+    
+    const levels = {};
+    {{ eps_data|tojson }}.forEach(node => {
+        levels[`المستوى ${node.level}`] = (levels[`المستوى ${node.level}`] || 0) + 1;
+    });
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(levels),
+            datasets: [{
+                label: 'عدد العقد',
+                data: Object.values(levels),
+                backgroundColor: '#4361ee',
+                borderRadius: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

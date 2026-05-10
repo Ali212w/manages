@@ -1,0 +1,167 @@
+<!-- Quick Task Modal -->
+<div class="modal fade" id="quickTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة مهمة سريعة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="quickTaskForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="taskTitle" class="form-label">عنوان المهمة</label>
+                        <input type="text" class="form-control" id="taskTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskProject" class="form-label">المشروع</label>
+                        <select class="form-select" id="taskProject" required>
+                            <option value="">اختر مشروع</option>
+                            {% for project in current_user.managed_projects %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskPriority" class="form-label">الأولوية</label>
+                        <select class="form-select" id="taskPriority">
+                            <option value="low">منخفضة</option>
+                            <option value="medium" selected>متوسطة</option>
+                            <option value="high">عالية</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskDeadline" class="form-label">الموعد النهائي</label>
+                        <input type="date" class="form-control" id="taskDeadline">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">إضافة المهمة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Report Modal -->
+<div class="modal fade" id="quickReportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تقرير سريع</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="quickReportForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="reportType" class="form-label">نوع التقرير</label>
+                            <select class="form-select" id="reportType">
+                                <option value="daily">يومي</option>
+                                <option value="weekly">أسبوعي</option>
+                                <option value="monthly">شهري</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="reportDate" class="form-label">التاريخ</label>
+                            <input type="date" class="form-control" id="reportDate" value="{{ now().strftime('%Y-%m-%d') }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportSummary" class="form-label">ملخص اليوم</label>
+                        <textarea class="form-control" id="reportSummary" rows="3" placeholder="ما الذي تم إنجازه اليوم؟"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportChallenges" class="form-label">التحديات</label>
+                        <textarea class="form-control" id="reportChallenges" rows="2" placeholder="ما هي التحديات التي واجهتها؟"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">إنشاء التقرير</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Settings Modal -->
+<div class="modal fade" id="notificationSettingsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إعدادات الإشعارات</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="notificationSettingsForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                            <label class="form-check-label" for="emailNotifications">
+                                إشعارات البريد الإلكتروني
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="pushNotifications" checked>
+                            <label class="form-check-label" for="pushNotifications">
+                                إشعارات Push
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="taskNotifications" checked>
+                            <label class="form-check-label" for="taskNotifications">
+                                إشعارات المهام
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="projectNotifications" checked>
+                            <label class="form-check-label" for="projectNotifications">
+                                إشعارات المشاريع
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="reminderNotifications" checked>
+                            <label class="form-check-label" for="reminderNotifications">
+                                تذكيرات المواعيد
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الإعدادات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Image Viewer Modal -->
+<div class="modal fade" id="imageViewerModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">عرض الصورة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImageView" src="" class="img-fluid" alt="صورة">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <a href="#" id="downloadImage" class="btn btn-primary" download>
+                    <i class="fas fa-download me-1"></i> تحميل
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

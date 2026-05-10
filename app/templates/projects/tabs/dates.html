@@ -1,0 +1,213 @@
+<div class="card">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-calendar-alt text-primary me-2"></i>Project Dates</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Schedule Dates -->
+            <div class="col-md-6">
+                <div class="card bg-light mb-3">
+                    <div class="card-header bg-transparent">
+                        <h6 class="mb-0">Schedule Dates</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th>Project Planned Start:</th>
+                                <td>
+                                    <input type="date" class="form-control" id="planned_start" 
+                                           value="{{ project.dates.planned_start.strftime('%Y-%m-%d') if project.dates and project.dates.planned_start }}">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Must Finish By:</th>
+                                <td>
+                                    <input type="date" class="form-control" id="must_finish_by" 
+                                           value="{{ project.dates.must_finish_by.strftime('%Y-%m-%d') if project.dates and project.dates.must_finish_by }}">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Data Date:</th>
+                                <td>
+                                    <input type="date" class="form-control" id="data_date" 
+                                           value="{{ project.dates.data_date.strftime('%Y-%m-%d') if project.dates and project.dates.data_date }}">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Finish:</th>
+                                <td>
+                                    <input type="date" class="form-control" id="finish" 
+                                           value="{{ project.dates.planned_finish.strftime('%Y-%m-%d') if project.dates and project.dates.planned_finish }}" readonly>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anticipated Dates -->
+            <div class="col-md-6">
+                <div class="card bg-light mb-3">
+                    <div class="card-header bg-transparent">
+                        <h6 class="mb-0">Anticipated Dates</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th>Anticipated Start:</th>
+                                <td>
+                                    <input type="date" class="form-control" id="anticipated_start" 
+                                           value="{{ project.dates.anticipated_start.strftime('%Y-%m-%d') if project.dates and project.dates.anticipated_start }}">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Anticipated Finish:</th>
+                                <td>
+                                    <input type="date" class="form-control" id="anticipated_finish" 
+                                           value="{{ project.dates.anticipated_finish.strftime('%Y-%m-%d') if project.dates and project.dates.anticipated_finish }}">
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Actual Dates -->
+            <div class="col-md-6">
+                <div class="card bg-light mb-3">
+                    <div class="card-header bg-transparent">
+                        <h6 class="mb-0">Actual Dates</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th>Actual Start:</th>
+                                <td>
+                                    <input type="date" class="form-control" id="actual_start" 
+                                           value="{{ project.dates.actual_start.strftime('%Y-%m-%d') if project.dates and project.dates.actual_start }}">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Actual Finish:</th>
+                                <td>
+                                    <input type="date" class="form-control" id="actual_finish" 
+                                           value="{{ project.dates.actual_finish.strftime('%Y-%m-%d') if project.dates and project.dates.actual_finish }}">
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Baseline Dates -->
+            <div class="col-md-6">
+                <div class="card bg-light mb-3">
+                    <div class="card-header bg-transparent">
+                        <h6 class="mb-0">Baseline Dates</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th>Baseline Start:</th>
+                                <td>
+                                    <input type="date" class="form-control" id="baseline_start" 
+                                           value="{{ project.dates.baseline_start.strftime('%Y-%m-%d') if project.dates and project.dates.baseline_start }}">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Baseline Finish:</th>
+                                <td>
+                                    <input type="date" class="form-control" id="baseline_finish" 
+                                           value="{{ project.dates.baseline_finish.strftime('%Y-%m-%d') if project.dates and project.dates.baseline_finish }}">
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Summary -->
+        <div class="card bg-light mt-3">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <small class="text-muted">Planned Duration</small>
+                        <h6 class="mb-0">
+                            {% if project.dates and project.dates.planned_start and project.dates.planned_finish %}
+                                {{ (project.dates.planned_finish - project.dates.planned_start).days }} days
+                            {% else %}
+                                -
+                            {% endif %}
+                        </h6>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Remaining Days</small>
+                        <h6 class="mb-0 {% if project.remaining_days < 0 %}text-danger{% endif %}">
+                            {{ project.remaining_days }} days
+                        </h6>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">% Complete</small>
+                        <h6 class="mb-0">{{ project.progress.progress_percentage }}%</h6>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Schedule Status</small>
+                        <h6 class="mb-0 {% if project.is_overdue %}text-danger{% else %}text-success{% endif %}">
+                            {% if project.is_overdue %}Overdue{% else %}On Track{% endif %}
+                        </h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <button class="btn btn-outline-secondary btn-sm" onclick="resetDates()">
+                <i class="fas fa-undo me-1"></i>Reset
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="saveDates()">
+                <i class="fas fa-save me-1"></i>Apply
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function resetDates() {
+    location.reload();
+}
+
+function saveDates() {
+    const data = {
+        planned_start: document.getElementById('planned_start').value,
+        must_finish_by: document.getElementById('must_finish_by').value,
+        data_date: document.getElementById('data_date').value,
+        anticipated_start: document.getElementById('anticipated_start').value,
+        anticipated_finish: document.getElementById('anticipated_finish').value,
+        actual_start: document.getElementById('actual_start').value,
+        actual_finish: document.getElementById('actual_finish').value,
+        baseline_start: document.getElementById('baseline_start').value,
+        baseline_finish: document.getElementById('baseline_finish').value
+    };
+    
+    fetch(`/projects/api/{{ project.id }}/update-dates`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Dates updated successfully');
+        } else {
+            showError(data.error || 'Error updating dates');
+        }
+    });
+}
+</script>

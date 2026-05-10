@@ -1,0 +1,98 @@
+{% extends "company/base.html" %}
+
+{% block title %}تقرير المستخدمين - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}تقرير المستخدمين{% endblock %}
+{% block page_subtitle %}تحليلات أداء المستخدمين{% endblock %}
+
+{% block content %}
+<!-- إحصائيات المستخدمين -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h2 class="stat-value">{{ report_data|length }}</h2>
+            <p class="stat-label">إجمالي المستخدمين</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h2 class="stat-value">{{ report_data|selectattr('is_active', 'equalto', 'نعم')|list|length }}</h2>
+            <p class="stat-label">مستخدمين نشطين</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h2 class="stat-value">{{ report_data|map(attribute='login_count')|sum }}</h2>
+            <p class="stat-label">إجمالي الدخول</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h2 class="stat-value">{{ report_data|selectattr('last_login', 'ne', None)|list|length }}</h2>
+            <p class="stat-label">دخلوا اليوم</p>
+        </div>
+    </div>
+</div>
+
+<!-- جدول المستخدمين -->
+<div class="table-card">
+    <div class="table-header">
+        <h5 class="table-title"><i class="fas fa-users me-2 text-primary"></i>تفاصيل المستخدمين</h5>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>المستخدم</th>
+                    <th>البريد</th>
+                    <th>الدور</th>
+                    <th>القسم</th>
+                    <th>الحالة</th>
+                    <th>آخر دخول</th>
+                    <th>عدد الدخول</th>
+                    <th>تاريخ التسجيل</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in report_data %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="user-avatar me-2" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                                {{ user.name[0] }}
+                            </div>
+                            <strong>{{ user.name }}</strong>
+                        </div>
+                    </td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        <span class="badge bg-{{ 'primary' if user.role == 'org_admin' else 'success' if user.role == 'project_manager' else 'warning' if user.role == 'supervisor' else 'info' if user.role == 'delegate' else 'secondary' }}">
+                            {{ user.role }}
+                        </span>
+                    </td>
+                    <td>{{ user.department }}</td>
+                    <td>
+                        <span class="badge-status {{ 'active' if user.is_active == 'نعم' else 'inactive' }}">
+                            {{ user.is_active }}
+                        </span>
+                    </td>
+                    <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'لم يسجل' }}</td>
+                    <td>{{ user.login_count }}</td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center py-4 text-muted">
+                        <i class="fas fa-user-slash fa-3x mb-3"></i>
+                        <p>لا يوجد مستخدمين</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

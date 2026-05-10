@@ -1,0 +1,717 @@
+<!-- templates/eps/hierarchy.html -->
+
+{% extends "company/base.html" %}
+
+{% block title %}هيكل المؤسسة - EPS{% endblock %}
+
+{% block page_title %}هيكل المؤسسة (EPS){% endblock %}
+{% block page_subtitle %}Enterprise Project Structure - عرض هيكل المشاريع والأنشطة مثل Primavera{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ============================================
+   تصميم هيكل المؤسسة - التفاصيل أسفل الشجرة
+============================================ */
+
+* {
+    user-select: none;
+}
+
+.eps-container {
+    background: #f5f5f5;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 180px);
+}
+
+/* القسم العلوي - الشجرة */
+.tree-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+    overflow: hidden;
+}
+
+/* القسم السفلي - التفاصيل */
+.details-section {
+    border-top: 2px solid #d0d0d0;
+    background: #f8fafc;
+    min-height: 400px;
+    max-height: 50%;
+    overflow-y: auto;
+}
+
+.details-header {
+    background: #e8e8e8;
+    padding: 10px 16px;
+    border-bottom: 1px solid #c0c0c0;
+    font-weight: 600;
+    color: #333;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.details-content {
+    padding: 16px;
+    min-height: 350px;
+}
+
+.empty-details {
+    text-align: center;
+    padding: 50px;
+    color: #999;
+}
+
+.empty-details i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #ccc;
+}
+
+/* تنسيق الشجرة */
+.eps-header {
+    background: #e8e8e8;
+    padding: 8px 12px;
+    border-bottom: 1px solid #c0c0c0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.eps-header h5 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+}
+
+.toolbar {
+    padding: 6px 10px;
+    background: #f0f0f0;
+    border-bottom: 1px solid #d0d0d0;
+    display: flex;
+    gap: 8px;
+}
+
+.toolbar-btn {
+    background: white;
+    border: 1px solid #c0c0c0;
+    border-radius: 3px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #444;
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.toolbar-btn:hover {
+    background: #e0e0e0;
+}
+
+.tree-container {
+    flex: 1;
+    overflow: auto;
+    padding: 8px 0;
+    min-height: 300px;
+}
+
+/* تنسيق عناصر الشجرة */
+.tree-node {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tree-node ul {
+    padding-right: 20px;
+    margin: 0;
+    list-style: none;
+}
+
+.tree-node li {
+    position: relative;
+    margin: 0;
+    padding: 2px 0;
+    list-style: none;
+}
+
+.tree-node .node-content {
+    display: flex;
+    align-items: center;
+    padding: 2px 4px;
+    cursor: pointer;
+    border-radius: 2px;
+    font-size: 12px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.tree-node .node-content:hover {
+    background: #e8f0fe;
+}
+
+.tree-node .node-content.selected {
+    background: #e0e8f0;
+}
+
+.tree-node .toggle-icon {
+    width: 18px;
+    text-align: center;
+    cursor: pointer;
+    color: #666;
+    font-size: 10px;
+}
+
+.tree-node .node-icon {
+    width: 20px;
+    text-align: center;
+    margin-left: 4px;
+}
+
+.tree-node .node-text {
+    flex: 1;
+    white-space: nowrap;
+}
+
+/* أيقونات العناصر */
+.icon-eps { color: #ff8c00; }
+.icon-project { color: #2c6e2c; }
+.icon-wbs { color: #0066cc; }
+.icon-activity { color: #9933cc; }
+.icon-task { color: #cc6600; }
+
+/* حالة التحميل */
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.spinner {
+    width: 30px;
+    height: 30px;
+    border: 2px solid #e0e0e0;
+    border-top-color: #0066cc;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* شريط التمرير */
+.tree-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tree-container::-webkit-scrollbar-track {
+    background: #f0f0f0;
+}
+
+.tree-container::-webkit-scrollbar-thumb {
+    background: #c0c0c0;
+    border-radius: 4px;
+}
+
+.error-message {
+    color: #dc3545;
+    text-align: center;
+    padding: 20px;
+}
+
+/* iframe للتفاصيل */
+.details-iframe {
+    width: 100%;
+    height: 500px;
+    border: none;
+    background: white;
+    border-radius: 8px;
+}
+
+/* تفاصيل سريعة للـ WBS والمهام */
+.quick-details {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.detail-row {
+    display: flex;
+    padding: 8px 0;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.detail-label {
+    width: 120px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.detail-value {
+    flex: 1;
+    color: #1e293b;
+}
+
+/* تجاوب مع الشاشات الصغيرة */
+@media (max-width: 768px) {
+    .eps-container {
+        height: auto;
+    }
+    
+    .details-iframe {
+        height: 400px;
+    }
+    
+    .detail-label {
+        width: 100px;
+        font-size: 12px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="eps-container">
+    <!-- القسم العلوي: الشجرة -->
+    <div class="tree-section">
+        <div class="eps-header">
+            <h5>
+                <i class="fas fa-sitemap me-2"></i>
+                Enterprise Project Structure (EPS)
+            </h5>
+            <small>هيكل المؤسسة</small>
+        </div>
+        
+        <div class="toolbar">
+            <button class="toolbar-btn" onclick="expandAll()">
+                <i class="fas fa-plus"></i> توسيع الكل
+            </button>
+            <button class="toolbar-btn" onclick="collapseAll()">
+                <i class="fas fa-minus"></i> طي الكل
+            </button>
+            <button class="toolbar-btn" onclick="refreshTree()">
+                <i class="fas fa-sync-alt"></i> تحديث
+            </button>
+        </div>
+        
+        <div id="treeContainer" class="tree-container">
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <span>جاري تحميل البيانات...</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- القسم السفلي: عرض التفاصيل -->
+    <div class="details-section">
+        <div class="details-header">
+            <i class="fas fa-info-circle me-2"></i>
+            <span id="detailsTitle">تفاصيل العنصر</span>
+        </div>
+        <div id="detailsContent" class="details-content">
+            <div class="empty-details">
+                <i class="fas fa-hand-pointer"></i>
+                <p>انقر على أي عنصر في الشجرة لعرض التفاصيل</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+// ============================================
+// هيكل المؤسسة مع عرض التفاصيل أسفل الشجرة
+// ============================================
+
+let treeData = null;
+let expandedNodes = new Set();
+let currentSelectedId = null;
+
+// تحميل البيانات من الخادم
+async function loadTreeData() {
+    try {
+        const response = await fetch('/company/api/tree');
+        const data = await response.json();
+        
+        if (data.success) {
+            treeData = data.tree;
+            renderTree();
+        } else {
+            showError(data.error || 'فشل تحميل البيانات');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('حدث خطأ في الاتصال بالخادم');
+    }
+}
+
+// عرض الشجرة
+function renderTree() {
+    const container = document.getElementById('treeContainer');
+    if (!treeData || treeData.length === 0) {
+        container.innerHTML = '<div class="loading-container"><span>لا توجد بيانات</span></div>';
+        return;
+    }
+    
+    const html = buildTreeHTML(treeData);
+    container.innerHTML = `<ul class="tree-node">${html}</ul>`;
+}
+
+// بناء HTML الشجرة
+function buildTreeHTML(nodes, level = 0) {
+    let html = '';
+    
+    for (const node of nodes) {
+        const hasChildren = node.children && node.children.length > 0;
+        const nodeId = node.id;
+        const isExpanded = expandedNodes.has(nodeId);
+        const isSelected = currentSelectedId === nodeId;
+        
+        html += `<li data-id="${nodeId}" data-type="${node.type}" data-name="${escapeHtml(node.text)}">`;
+        html += `<div class="node-content ${isSelected ? 'selected' : ''}" onclick="selectNode('${nodeId}', '${node.type}', '${escapeHtml(node.text)}')">`;
+        
+        // أيقونة التوسيع/الطي
+        if (hasChildren) {
+            html += `<span class="toggle-icon" onclick="event.stopPropagation(); toggleNode('${nodeId}')">
+                        <i class="fas fa-chevron-${isExpanded ? 'down' : 'left'}"></i>
+                     </span>`;
+        } else {
+            html += `<span class="toggle-icon"></span>`;
+        }
+        
+        // أيقونة العنصر
+        const iconClass = getIconClass(node.type);
+        html += `<span class="node-icon"><i class="fas ${iconClass}"></i></span>`;
+        
+        // نص العنصر
+        html += `<span class="node-text">${escapeHtml(node.text)}</span>`;
+        html += `</div>`;
+        
+        // الأطفال
+        if (hasChildren && isExpanded) {
+            html += `<ul>${buildTreeHTML(node.children, level + 1)}</ul>`;
+        }
+        
+        html += `</li>`;
+    }
+    
+    return html;
+}
+
+// الحصول على أيقونة العنصر
+function getIconClass(type) {
+    const icons = {
+        'eps': 'fa-folder-open',
+        'project': 'fa-folder',
+        'wbs': 'fa-folder',
+        'activity': 'fa-file-alt',
+        'task': 'fa-check-square'
+    };
+    return icons[type] || 'fa-file';
+}
+
+// تبديل حالة العقدة (توسيع/طي)
+function toggleNode(nodeId) {
+    if (expandedNodes.has(nodeId)) {
+        expandedNodes.delete(nodeId);
+    } else {
+        expandedNodes.add(nodeId);
+    }
+    renderTree();
+}
+
+// اختيار عنصر وعرض تفاصيله
+async function selectNode(nodeId, nodeType, nodeName) {
+    // تحديث التحديد في الشجرة
+    currentSelectedId = nodeId;
+    renderTree();
+    
+    // تحديث عنوان التفاصيل
+    document.getElementById('detailsTitle').innerHTML = `<i class="fas ${getIconClass(nodeType)} me-2"></i>${escapeHtml(nodeName)}`;
+    
+    // عرض مؤشر تحميل
+    const detailsContent = document.getElementById('detailsContent');
+    detailsContent.innerHTML = `
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <span>جاري تحميل التفاصيل...</span>
+        </div>
+    `;
+    
+    // جلب وعرض التفاصيل حسب النوع
+    if (nodeType === 'project') {
+        // عرض نافذة المشروع
+        const projectId = nodeId.replace('project_', '');
+        detailsContent.innerHTML = `
+            <iframe src="/projects/apis/${projectId}" class="details-iframe" style="height: 500px;"></iframe>
+        `;
+    } 
+    else if (nodeType === 'activity') {
+        // عرض نافذة النشاط
+        const activityId = nodeId.replace('activity_', '');
+        detailsContent.innerHTML = `
+            <iframe src="/primavera/apis/activity/${activityId}" class="details-iframe" style="height: 500px;"></iframe>
+        `;
+    }
+    else if (nodeType === 'wbs') {
+        // عرض تفاصيل WBS
+        const wbsId = nodeId.replace('wbs_', '');
+        detailsContent.innerHTML = `
+            <iframe src="/primavera/apis/wbs/${wbsId}" class="details-iframe" style="height: 500px;"></iframe>
+        `;
+    }
+    else if (nodeType === 'task') {
+        // عرض تفاصيل المهمة
+        const taskId = nodeId.replace('task_', '');
+        detailsContent.innerHTML = `
+            <iframe src="/tasks/${taskId}" class="details-iframe" style="height: 500px;"></iframe>
+        `;
+    }
+    else {
+        // EPS أو أنواع أخرى
+        detailsContent.innerHTML = `
+            <div class="quick-details">
+                <h5><i class="fas ${getIconClass(nodeType)} me-2"></i>${escapeHtml(nodeName)}</h5>
+                <div class="detail-row">
+                    <div class="detail-label">النوع</div>
+                    <div class="detail-value">${nodeType.toUpperCase()}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">المعرف</div>
+                    <div class="detail-value">${escapeHtml(nodeId)}</div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// تحميل تفاصيل WBS
+async function loadWBSDetails(wbsId, nodeName) {
+    try {
+        const response = await fetch(`/eps/api/wbs/${wbsId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const wbs = data.data;
+            const detailsContent = document.getElementById('detailsContent');
+            detailsContent.innerHTML = `
+                <div class="quick-details">
+                    <h5><i class="fas fa-folder-tree me-2"></i>${escapeHtml(nodeName)}</h5>
+                    <div class="detail-row">
+                        <div class="detail-label">الكود</div>
+                        <div class="detail-value">${escapeHtml(wbs.wbs_code || '-')}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">الوصف</div>
+                        <div class="detail-value">${escapeHtml(wbs.description || '-')}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">المستوى</div>
+                        <div class="detail-value">${wbs.level || 1}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">نسبة الإنجاز</div>
+                        <div class="detail-value">
+                            <div class="progress" style="height: 6px; width: 150px;">
+                                <div class="progress-bar bg-success" style="width: ${wbs.progress_percentage || 0}%"></div>
+                            </div>
+                            <span class="ms-2">${wbs.progress_percentage || 0}%</span>
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">التكلفة المخططة</div>
+                        <div class="detail-value">${formatCurrency(wbs.planned_cost || 0)}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">التكلفة الفعلية</div>
+                        <div class="detail-value">${formatCurrency(wbs.actual_cost || 0)}</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            showDetailsError('فشل تحميل تفاصيل WBS');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showDetailsError('حدث خطأ في تحميل التفاصيل');
+    }
+}
+
+// تحميل تفاصيل المهمة
+async function loadTaskDetails(taskId, nodeName) {
+    try {
+        const response = await fetch(`/eps/api/task/${taskId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const task = data.data;
+            const detailsContent = document.getElementById('detailsContent');
+            detailsContent.innerHTML = `
+                <div class="quick-details">
+                    <h5><i class="fas fa-check-square me-2"></i>${escapeHtml(nodeName)}</h5>
+                    <div class="detail-row">
+                        <div class="detail-label">الكود</div>
+                        <div class="detail-value">${escapeHtml(task.task_code || '-')}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">الوصف</div>
+                        <div class="detail-value">${escapeHtml(task.description || '-')}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">الحالة</div>
+                        <div class="detail-value">
+                            <span class="badge bg-${getTaskStatusColor(task.status)}">${getTaskStatusText(task.status)}</span>
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">نسبة الإنجاز</div>
+                        <div class="detail-value">
+                            <div class="progress" style="height: 6px; width: 150px;">
+                                <div class="progress-bar bg-success" style="width: ${task.progress_percentage || 0}%"></div>
+                            </div>
+                            <span class="ms-2">${task.progress_percentage || 0}%</span>
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">الأولوية</div>
+                        <div class="detail-value">${getPriorityText(task.priority)}</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            showDetailsError('فشل تحميل تفاصيل المهمة');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showDetailsError('حدث خطأ في تحميل التفاصيل');
+    }
+}
+
+function showDetailsError(message) {
+    const detailsContent = document.getElementById('detailsContent');
+    detailsContent.innerHTML = `
+        <div class="empty-details">
+            <i class="fas fa-exclamation-triangle text-danger"></i>
+            <p class="text-danger">${escapeHtml(message)}</p>
+            <button class="toolbar-btn" onclick="refreshTree()">إعادة المحاولة</button>
+        </div>
+    `;
+}
+
+function getTaskStatusColor(status) {
+    const colors = {
+        'pending': 'warning',
+        'in_progress': 'primary',
+        'completed': 'success',
+        'on_hold': 'secondary'
+    };
+    return colors[status] || 'secondary';
+}
+
+function getTaskStatusText(status) {
+    const texts = {
+        'pending': 'معلق',
+        'in_progress': 'قيد التنفيذ',
+        'completed': 'مكتمل',
+        'on_hold': 'متوقف'
+    };
+    return texts[status] || status;
+}
+
+function getPriorityText(priority) {
+    const priorities = {
+        1: 'منخفضة',
+        2: 'متوسطة',
+        3: 'عادية',
+        4: 'عالية',
+        5: 'حرجة'
+    };
+    return priorities[priority] || 'عادية';
+}
+
+function formatCurrency(value) {
+    return new Intl.NumberFormat('ar-SA', {
+        style: 'currency',
+        currency: 'SAR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(value || 0);
+}
+
+// توسيع جميع الفروع
+function expandAll() {
+    function collectAllIds(nodes) {
+        let ids = [];
+        for (const node of nodes) {
+            ids.push(node.id);
+            if (node.children && node.children.length > 0) {
+                ids = ids.concat(collectAllIds(node.children));
+            }
+        }
+        return ids;
+    }
+    
+    const allIds = collectAllIds(treeData);
+    expandedNodes = new Set(allIds);
+    renderTree();
+}
+
+// طي جميع الفروع
+function collapseAll() {
+    expandedNodes.clear();
+    renderTree();
+}
+
+// تحديث الشجرة
+function refreshTree() {
+    currentSelectedId = null;
+    document.getElementById('detailsContent').innerHTML = `
+        <div class="empty-details">
+            <i class="fas fa-hand-pointer"></i>
+            <p>انقر على أي عنصر في الشجرة لعرض التفاصيل</p>
+        </div>
+    `;
+    document.getElementById('detailsTitle').innerHTML = 'تفاصيل العنصر';
+    loadTreeData();
+}
+
+// عرض رسالة خطأ
+function showError(message) {
+    const container = document.getElementById('treeContainer');
+    container.innerHTML = `<div class="error-message">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>${escapeHtml(message)}</p>
+        <button class="toolbar-btn" onclick="refreshTree()">إعادة المحاولة</button>
+    </div>`;
+}
+
+// تنسيق النص
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// تهيئة الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    loadTreeData();
+});
+
+// جعل الدوال متاحة عالمياً
+window.expandAll = expandAll;
+window.collapseAll = collapseAll;
+window.refreshTree = refreshTree;
+window.toggleNode = toggleNode;
+window.selectNode = selectNode;
+</script>
+{% endblock %}

@@ -1,0 +1,600 @@
+{% extends "company/base.html" %}
+
+{% block title %}مصفوفة الصلاحيات EPS-OBS{% endblock %}
+
+{% block page_title %}مصفوفة الصلاحيات{% endblock %}
+{% block page_subtitle %}تحديد صلاحيات الوصول للمشاريع بين EPS و OBS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .matrix-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        overflow-x: auto;
+    }
+    
+    .matrix-table {
+        min-width: 800px;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    
+    .matrix-table th {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 1rem;
+        text-align: center;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .matrix-table th:first-child {
+        border-top-right-radius: 15px;
+    }
+    
+    .matrix-table th:last-child {
+        border-top-left-radius: 15px;
+    }
+    
+    .matrix-table td {
+        border: 1px solid #eef2f7;
+        padding: 0.75rem;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .matrix-table tr:hover td {
+        background-color: rgba(67, 97, 238, 0.02);
+    }
+    
+    .eps-cell {
+        background: rgba(67, 97, 238, 0.05);
+        font-weight: 600;
+        position: sticky;
+        right: 0;
+        z-index: 5;
+    }
+    
+    .obs-cell {
+        background: rgba(76, 201, 240, 0.05);
+        font-weight: 600;
+    }
+    
+    .permission-select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 2px solid #eef2f7;
+        border-radius: 10px;
+        background: white;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.3s;
+    }
+    
+    .permission-select:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 3px 10px rgba(67, 97, 238, 0.1);
+    }
+    
+    .permission-select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .permission-none { 
+        background: #eef2f7; 
+        color: #6c757d;
+    }
+    
+    .permission-read { 
+        background: rgba(76, 201, 240, 0.15); 
+        color: var(--info);
+        border-color: var(--info);
+    }
+    
+    .permission-write { 
+        background: rgba(248, 150, 30, 0.15); 
+        color: var(--warning);
+        border-color: var(--warning);
+    }
+    
+    .permission-admin { 
+        background: rgba(67, 97, 238, 0.15); 
+        color: var(--primary);
+        border-color: var(--primary);
+    }
+    
+    .save-all-btn {
+        padding: 0.8rem 2rem;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .save-all-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+    }
+    
+    .save-all-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .filter-section {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stats-badge {
+        display: inline-block;
+        padding: 0.3rem 1rem;
+        background: #eef2f7;
+        border-radius: 30px;
+        color: #6c757d;
+        margin: 0 0.25rem;
+        font-size: 0.8rem;
+    }
+    
+    .stats-badge i {
+        color: var(--primary);
+        margin-left: 0.3rem;
+    }
+    
+    .search-box {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        width: 250px;
+        transition: all 0.3s;
+    }
+    
+    .search-box:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .tooltip-info {
+        cursor: help;
+        margin-right: 0.3rem;
+        color: #6c757d;
+    }
+    
+    .tooltip-info:hover {
+        color: var(--primary);
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .no-data {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .no-data i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="matrix-container">
+    <!-- رأس الصفحة مع الإحصائيات -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h5 class="mb-2"><i class="fas fa-th me-2 text-primary"></i>مصفوفة الصلاحيات</h5>
+            <div>
+                <span class="stats-badge">
+                    <i class="fas fa-sitemap"></i> {{ eps_nodes|length }} EPS
+                </span>
+                <span class="stats-badge">
+                    <i class="fas fa-users"></i> {{ obs_nodes|length }} OBS
+                </span>
+                <span class="stats-badge">
+                    <i class="fas fa-link"></i> {{ total_assignments }} صلاحية
+                </span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <input type="text" id="searchMatrix" class="search-box" placeholder="🔍 بحث في EPS أو OBS...">
+            <button class="save-all-btn" onclick="saveAllPermissions()" id="saveAllBtn">
+                <i class="fas fa-save me-2"></i> حفظ الكل
+            </button>
+        </div>
+    </div>
+    
+    {% if eps_nodes and obs_nodes %}
+    <!-- جدول المصفوفة -->
+    <div style="max-height: 600px; overflow-y: auto; border-radius: 15px;">
+        <table class="matrix-table" id="matrixTable">
+            <thead>
+                <tr>
+                    <th class="sticky-col">EPS / OBS</th>
+                    {% for obs in obs_nodes %}
+                    <th>
+                        <div class="d-flex align-items-center justify-content-center">
+                            {{ obs.name }}
+                            <i class="fas fa-info-circle tooltip-info" 
+                               title="الكود: {{ obs.obs_code }}"></i>
+                        </div>
+                        <small>{{ obs.obs_code }}</small>
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for eps in eps_nodes %}
+                <tr class="eps-row" data-eps-id="{{ eps.id }}" data-eps-name="{{ eps.name }}" data-eps-code="{{ eps.eps_code }}">
+                    <td class="eps-cell">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-sitemap ms-2" style="color: var(--primary);"></i>
+                            <div>
+                                <strong>{{ eps.name }}</strong>
+                                <br><small>{{ eps.eps_code }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    {% for obs in obs_nodes %}
+                    <td class="obs-cell-{{ obs.id }}">
+                        <select class="permission-select" 
+                                data-eps="{{ eps.id }}" 
+                                data-obs="{{ obs.id }}" 
+                                onchange="updatePermission(this)"
+                                id="perm-{{ eps.id }}-{{ obs.id }}">
+                            <option value="none">-- لا شيء --</option>
+                            <option value="read">قراءة فقط</option>
+                            <option value="write">قراءة وكتابة</option>
+                            <option value="admin">تحكم كامل</option>
+                        </select>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <!-- حالة عدم وجود بيانات -->
+    <div class="no-data">
+        <i class="fas fa-database"></i>
+        <h5>لا توجد بيانات</h5>
+        <p class="text-muted">لم يتم إضافة أي عناصر EPS أو OBS بعد</p>
+        <a href="{{ url_for('enterprise.eps_create') }}" class="btn btn-primary mt-3">
+            <i class="fas fa-plus me-2"></i>إضافة EPS جديد
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<script>
+// تخزين الصلاحيات الحالية
+let currentPermissions = {};
+
+// تحميل الصلاحيات عند فتح الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    loadPermissions();
+    setupSearch();
+});
+
+// تحميل الصلاحيات من قاعدة البيانات
+function loadPermissions() {
+    showLoading();
+    
+    fetch('/enterprise/api/eps-obs-permissions', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // تعبئة الصلاحيات في الجدول
+            data.permissions.forEach(perm => {
+                const select = document.getElementById(`perm-${perm.eps_id}-${perm.obs_id}`);
+                if (select) {
+                    select.value = perm.permission_level || 'none';
+                    updatePermission(select);
+                    // تخزين القيمة الحالية
+                    const key = `${perm.eps_id}-${perm.obs_id}`;
+                    currentPermissions[key] = perm.permission_level || 'none';
+                }
+            });
+        }
+        hideLoading();
+    })
+    .catch(error => {
+        console.error('Error loading permissions:', error);
+        hideLoading();
+        showNotification('error', 'خطأ', 'فشل تحميل الصلاحيات');
+    });
+}
+
+// تحديث واجهة المستخدم عند تغيير الصلاحية
+function updatePermission(select) {
+    const value = select.value;
+    
+    // تغيير لون الخلفية حسب الصلاحية
+    select.className = 'permission-select';
+    select.classList.add(`permission-${value}`);
+    
+    // تمييز الخلية التي تم تغييرها
+    const cell = select.closest('td');
+    cell.style.backgroundColor = 'rgba(255, 193, 7, 0.1)';
+    
+    // إزالة التمييز بعد 2 ثانية
+    setTimeout(() => {
+        cell.style.backgroundColor = '';
+    }, 2000);
+    
+    // تمييز زر الحفظ
+    document.getElementById('saveAllBtn').style.animation = 'pulse 1s';
+    setTimeout(() => {
+        document.getElementById('saveAllBtn').style.animation = '';
+    }, 1000);
+}
+
+// حفظ جميع الصلاحيات
+function saveAllPermissions() {
+    const permissions = [];
+    let hasChanges = false;
+    
+    document.querySelectorAll('.permission-select').forEach(select => {
+        const epsId = select.dataset.eps;
+        const obsId = select.dataset.obs;
+        const value = select.value;
+        const key = `${epsId}-${obsId}`;
+        
+        // تحقق مما إذا كانت القيمة تغيرت
+        if (currentPermissions[key] !== value) {
+            hasChanges = true;
+        }
+        
+        permissions.push({
+            eps_id: parseInt(epsId),
+            obs_id: parseInt(obsId),
+            permission_level: value
+        });
+    });
+    
+    if (!hasChanges) {
+        Swal.fire({
+            icon: 'info',
+            title: 'لا توجد تغييرات',
+            text: 'لم يتم تعديل أي صلاحية',
+            timer: 2000,
+            showConfirmButton: false
+        });
+        return;
+    }
+    
+    // تأكيد الحفظ
+    Swal.fire({
+        title: 'تأكيد الحفظ',
+        text: 'هل أنت متأكد من حفظ جميع الصلاحيات؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، حفظ',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            showLoading();
+            
+            fetch('/enterprise/api/save-permissions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ permissions: permissions })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    // تحديث currentPermissions
+                    permissions.forEach(perm => {
+                        const key = `${perm.eps_id}-${perm.obs_id}`;
+                        currentPermissions[key] = perm.permission_level;
+                    });
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الحفظ',
+                        text: 'تم حفظ الصلاحيات بنجاح',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    
+                    // إزالة التمييز من الخلايا
+                    document.querySelectorAll('td').forEach(cell => {
+                        cell.style.backgroundColor = '';
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error || 'حدث خطأ أثناء الحفظ'
+                    });
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ',
+                    text: 'فشل الاتصال بالخادم'
+                });
+            });
+        }
+    });
+}
+
+// إعداد البحث
+function setupSearch() {
+    const searchInput = document.getElementById('searchMatrix');
+    
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('.eps-row');
+        
+        rows.forEach(row => {
+            const epsName = row.dataset.epsName.toLowerCase();
+            const epsCode = row.dataset.epsCode.toLowerCase();
+            const matches = epsName.includes(searchTerm) || epsCode.includes(searchTerm);
+            
+            if (searchTerm === '') {
+                row.style.display = '';
+            } else {
+                row.style.display = matches ? '' : 'none';
+            }
+        });
+    });
+}
+
+// عرض مؤشر التحميل
+function showLoading() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('saveAllBtn').disabled = true;
+}
+
+// إخفاء مؤشر التحميل
+function hideLoading() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('saveAllBtn').disabled = false;
+}
+
+// عرض إشعار
+function showNotification(type, title, message) {
+    Swal.fire({
+        icon: type,
+        title: title,
+        text: message,
+        timer: 3000,
+        showConfirmButton: false
+    });
+}
+
+// تصفية حسب نوع الصلاحية
+function filterByPermission(permission) {
+    const selects = document.querySelectorAll('.permission-select');
+    
+    selects.forEach(select => {
+        const cell = select.closest('td');
+        if (permission === 'all') {
+            cell.style.opacity = '1';
+        } else {
+            if (select.value === permission) {
+                cell.style.opacity = '1';
+                cell.style.border = '2px solid var(--primary)';
+            } else {
+                cell.style.opacity = '0.3';
+                cell.style.border = 'none';
+            }
+        }
+    });
+}
+
+// إعادة تعيين جميع الصلاحيات
+function resetAllPermissions() {
+    Swal.fire({
+        title: 'تأكيد إعادة التعيين',
+        text: 'سيتم إعادة تعيين جميع الصلاحيات إلى "لا شيء". هل أنت متأكد؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، إعادة تعيين',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.querySelectorAll('.permission-select').forEach(select => {
+                select.value = 'none';
+                updatePermission(select);
+            });
+        }
+    });
+}
+
+// تصدير المصفوفة
+function exportMatrix() {
+    showLoading();
+    
+    fetch('/enterprise/api/export-permissions', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        hideLoading();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'eps_obs_matrix.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error exporting matrix:', error);
+        showNotification('error', 'خطأ', 'فشل تصدير المصفوفة');
+    });
+}
+</script>
+
+<!-- إضافة SweetAlert2 للإشعارات -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}

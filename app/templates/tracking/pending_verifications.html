@@ -1,0 +1,133 @@
+{% extends "company/base.html" %}
+
+{% block title %}طلبات التحقق المعلقة{% endblock %}
+
+{% block page_title %}طلبات التحقق{% endblock %}
+{% block page_subtitle %}مراجعة طلبات التحقق من المتطلبات{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-clipboard-check me-2 text-warning"></i>طلبات التحقق المعلقة</h5>
+            </div>
+            <div class="card-body">
+                {% if pending_verifications %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>المشروع</th>
+                                <th>المهمة</th>
+                                <th>المتطلب</th>
+                                <th>مقدم من</th>
+                                <th>تاريخ التقديم</th>
+                                <th>المرفقات</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ver in pending_verifications %}
+                            <tr>
+                                <td>{{ ver.requirement.task.project.name }}</td>
+                                <td>
+                                    <strong>{{ ver.requirement.task.task_name }}</strong>
+                                    <br><small>{{ ver.requirement.task.task_code }}</small>
+                                </td>
+                                <td>
+                                    {{ ver.requirement.description }}
+                                    <br><small class="text-muted">{{ ver.requirement.requirement_type }}</small>
+                                </td>
+                                <td>{{ ver.user.full_name }}</td>
+                                <td>{{ ver.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    {% if ver.file_url %}
+                                    <a href="{{ ver.file_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-file"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if ver.photo_url %}
+                                    <a href="#" onclick="viewPhoto('{{ ver.photo_url }}')" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-image"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-success" onclick="verifyRequest({{ ver.id }},{{ ver.requirement.task_id }}, true)">
+                                        <i class="fas fa-check"></i> قبول
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="verifyRequest({{ ver.id }},{{ ver.requirement.task_id }}, false)">
+                                        <i class="fas fa-times"></i> رفض
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h5 class="text-muted">لا توجد طلبات تحقق معلقة</h5>
+                    <p class="text-muted">جميع الطلبات تمت معالجتها</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function verifyRequest(verId,task_id,approve) {
+    Swal.fire({
+        title: approve ? 'قبول الطلب' : 'رفض الطلب',
+        text: approve ? 'هل أنت متأكد من قبول هذا الطلب؟' : 'هل أنت متأكد من رفض هذا الطلب؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: approve ? 'var(--success)' : 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: approve ? 'نعم، قبول' : 'نعم، رفض',
+        cancelButtonText: 'إلغاء',
+        input: 'textarea',
+        inputPlaceholder: 'أضف ملاحظات (اختياري)...'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/tracking/api/task/${ task_id }/verify-requirement/${verId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    approve: approve,
+                    notes: result.value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم',
+                        text: 'تم تحديث حالة الطلب',
+                        timer: 2000
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            });
+        }
+    });
+}
+
+function viewPhoto(url) {
+    Swal.fire({
+        imageUrl: url,
+        imageHeight: 400,
+        showConfirmButton: false,
+        showCloseButton: true
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,295 @@
+{% extends "company/base.html" %}
+
+{% block title %}إدارة المستخدمين - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}إدارة المستخدمين{% endblock %}
+{% block page_subtitle %}عرض وإدارة جميع مستخدمي الشركة{% endblock %}
+
+{% block content %}
+<!-- إحصائيات سريعة -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="fas fa-users"></i>
+            </div>
+            <h2 class="stat-value">{{ user_stats.total }}</h2>
+            <p class="stat-label">إجمالي المستخدمين</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <h2 class="stat-value">{{ user_stats.active }}</h2>
+            <p class="stat-label">مستخدمين نشطين</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <h2 class="stat-value">{{ user_stats.managers }}</h2>
+            <p class="stat-label">مدراء مشاريع</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon info">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <h2 class="stat-value">{{ user_stats.supervisors }}</h2>
+            <p class="stat-label">مشرفين</p>
+        </div>
+    </div>
+</div>
+
+<!-- قسم الفلاتر -->
+<div class="filter-section">
+    <form method="GET" action="{{ url_for('company.users') }}" id="filterForm">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="filter-label">الدور</label>
+                <select name="role" class="filter-input" onchange="this.form.submit()">
+                    <option value="all" {% if filters.role == 'all' %}selected{% endif %}>الكل</option>
+                    <option value="org_admin" {% if filters.role == 'org_admin' %}selected{% endif %}>مدير شركة</option>
+                    <option value="project_manager" {% if filters.role == 'project_manager' %}selected{% endif %}>مدير مشروع</option>
+                    <option value="supervisor" {% if filters.role == 'supervisor' %}selected{% endif %}>مشرف</option>
+                    <option value="delegate" {% if filters.role == 'delegate' %}selected{% endif %}>مندوب</option>
+                    <option value="delegate" {% if filters.role == 'client' %}selected{% endif %}>مالك</option>
+                    <option value="employee" {% if filters.role == 'consultant' %}selected{% endif %}>إستشاري</option>
+                    <option value="employee" {% if filters.role == 'employee' %}selected{% endif %}>موظف</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="filter-label">الحالة</label>
+                <select name="status" class="filter-input" onchange="this.form.submit()">
+                    <option value="all" {% if filters.status == 'all' %}selected{% endif %}>الكل</option>
+                    <option value="active" {% if filters.status == 'active' %}selected{% endif %}>نشط</option>
+                    <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>غير نشط</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="filter-label">القسم</label>
+                <select name="dept_id" class="filter-input" onchange="this.form.submit()">
+                    <option value="all" {% if filters.dept_id == 'all' %}selected{% endif %}>الكل</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if filters.dept_id == dept.id|string %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="filter-label">بحث</label>
+                <div class="d-flex gap-2">
+                    <input type="text" name="search" class="filter-input" placeholder="اسم المستخدم أو البريد" value="{{ filters.search }}">
+                    <button type="submit" class="btn-primary-gradient" style="padding: 10px 20px;">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- قائمة المستخدمين -->
+<div class="table-card">
+    <div class="table-header">
+        <h5 class="table-title"><i class="fas fa-users me-2 text-primary"></i>قائمة المستخدمين</h5>
+        <a href="{{ url_for('company.create_user') }}" class="btn-primary-gradient">
+            <i class="fas fa-plus-circle me-2"></i>إضافة مستخدم جديد
+        </a>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>المستخدم</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>رقم الهاتف</th>
+                    <th>الدور</th>
+                    <th>القسم</th>
+                    <th>تاريخ الإنشاء</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="user-avatar me-2" style="width: 40px; height: 40px;">
+                                {{ user.full_name[0] }}
+                            </div>
+                            <div>
+                                <strong>{{ user.full_name }}</strong>
+                                {% if user.full_name_ar %}
+                                <small class="d-block text-muted">{{ user.full_name_ar }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ user.email }}</td>
+                    <td dir="ltr">{{ user.phone or '-' }}</td>
+                    <td>
+                        {% if user.role == 'org_admin' %}
+                            <span class="badge bg-primary">مدير شركة</span>
+                        {% elif user.role == 'project_manager' %}
+                            <span class="badge bg-success">مدير مشروع</span>
+                        {% elif user.role == 'supervisor' %}
+                            <span class="badge bg-warning">مشرف</span>
+                        {% elif user.role == 'delegate' %}
+                            <span class="badge bg-info">مندوب</span>
+                        {% elif user.role == 'client' %}
+                            <span class="badge bg-info">مالك</span>
+                        {% elif user.role == 'supplier' %}
+                            <span class="badge bg-info">مورد</span>
+                        {% elif user.role == 'consultant' %}
+                            <span class="badge bg-info">إستشاري</span>
+                        {% else %}
+                            <span class="badge bg-secondary">موظف</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.department.name if user.department else 'غير محدد' }}</td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        <span class="badge-status {{ 'active' if user.is_user_active else 'inactive' }}">
+                            {{ 'نشط' if user.is_user_active else 'غير نشط' }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('company.view_user', user_id=user.id) }}" class="action-btn" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ url_for('company.edit_user', user_id=user.id) }}" class="action-btn" title="تعديل">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button class="action-btn" onclick="toggleUserStatus({{ user.id }})" title="تفعيل/تعطيل">
+                            <i class="fas {% if user.is_user_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                        </button>
+                        {% if user.id != current_user.id %}
+                        <button class="action-btn danger" onclick="confirmDeleteUser({{ user.id }})" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center py-5">
+                        <i class="fas fa-users-slash fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">لا يوجد مستخدمين</h5>
+                        <p class="text-muted">لم يتم إضافة أي مستخدمين بعد</p>
+                        <a href="{{ url_for('company.create_user') }}" class="btn-primary-gradient mt-3">
+                            <i class="fas fa-plus-circle me-2"></i>إضافة مستخدم جديد
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>المستخدم</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>رقم الهاتف</th>
+  
+                </tr>
+            </thead>
+            <tbody>
+                {% for admin in admins %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="user-avatar me-2" style="width: 40px; height: 40px;">
+                                {{ admin.full_name[0] }}
+                            </div>
+                            <div>
+                                <strong>{{ admin.full_name }}</strong>
+                             
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ admin.email }}</td>
+                    <td dir="ltr">{{ admin.phone or '-' }}</td>
+                  
+                  
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center py-5">
+                        <i class="fas fa-users-slash fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">لا يوجد مستخدمين</h5>
+                        <p class="text-muted">لم يتم إضافة أي مستخدمين بعد</p>
+                        <a href="{{ url_for('company.create_user') }}" class="btn-primary-gradient mt-3">
+                            <i class="fas fa-plus-circle me-2"></i>إضافة مستخدم جديد
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function toggleUserStatus(userId) {
+    fetch(`/company/users/${userId}/toggle-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess(data.message);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error);
+        }
+    });
+}
+
+function confirmDeleteUser(userId) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع عن هذا الإجراء!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#f94144',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/company/users/${userId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess(data.message);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showError(data.error);
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

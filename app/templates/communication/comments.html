@@ -1,0 +1,322 @@
+{% extends "employee/base.html" %}
+
+{% block title %}التعليقات - {{ task.task_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comments-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .comment-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .comment-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .comment-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-left: 15px;
+    }
+    
+    .comment-author {
+        flex: 1;
+    }
+    
+    .comment-author h6 {
+        margin: 0;
+        font-weight: 600;
+    }
+    
+    .comment-author small {
+        color: #6c757d;
+    }
+    
+    .comment-time {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+    
+    .comment-content {
+        margin-bottom: 15px;
+        line-height: 1.6;
+    }
+    
+    .comment-actions {
+        display: flex;
+        gap: 15px;
+        border-top: 1px solid #eef2f7;
+        padding-top: 15px;
+    }
+    
+    .action-btn {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .action-btn:hover {
+        color: var(--primary);
+    }
+    
+    .reply-btn {
+        margin-right: auto;
+    }
+    
+    /* ردود */
+    .replies {
+        margin-right: 50px;
+        margin-top: 20px;
+    }
+    
+    .reply {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .reply-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .reply-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6c757d, #495057);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-left: 10px;
+        font-size: 0.9rem;
+    }
+    
+    /* نموذج إضافة تعليق */
+    .new-comment {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-top: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .new-comment textarea {
+        width: 100%;
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 15px;
+        resize: none;
+        margin-bottom: 15px;
+        font-size: 0.95rem;
+    }
+    
+    .new-comment textarea:focus {
+        border-color: var(--primary);
+        outline: none;
+    }
+    
+    .comment-btn {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .comment-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="comments-container">
+    <!-- رأس الصفحة -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">التعليقات</h2>
+            <p class="text-muted">
+                <a href="{{ url_for('employee.view_task', task_id=task.id) }}" class="text-decoration-none">
+                    <i class="fas fa-arrow-right me-1"></i>العودة للمهمة
+                </a>
+                <span class="mx-2">|</span>
+                {{ task.task_name }}
+            </p>
+        </div>
+    </div>
+    
+    <!-- نموذج إضافة تعليق جديد -->
+    <div class="new-comment">
+        <textarea id="commentContent" rows="3" placeholder="أضف تعليقك..."></textarea>
+        <div class="text-start">
+            <button class="comment-btn" onclick="addComment()">
+                <i class="fas fa-paper-plane me-2"></i>إضافة تعليق
+            </button>
+        </div>
+    </div>
+    
+    <!-- قائمة التعليقات -->
+    <div class="comments-list mt-4" id="commentsList">
+        {% for comment in comments %}
+        <div class="comment-card" id="comment-{{ comment.id }}">
+            <div class="comment-header">
+                <div class="comment-avatar">{{ comment.user.full_name[0] }}</div>
+                <div class="comment-author">
+                    <h6>{{ comment.user.full_name }}</h6>
+                    <small>{{ comment.user.job_title or 'موظف' }}</small>
+                </div>
+                <div class="comment-time">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+            </div>
+            
+            <div class="comment-content">
+                {{ comment.content }}
+            </div>
+            
+            <div class="comment-actions">
+                <button class="action-btn" onclick="showReplyForm({{ comment.id }})">
+                    <i class="far fa-comment"></i>
+                    <span>رد</span>
+                </button>
+                {% if comment.user_id == current_user.id %}
+                <button class="action-btn" onclick="deleteComment({{ comment.id }})">
+                    <i class="far fa-trash-alt"></i>
+                </button>
+                {% endif %}
+            </div>
+            
+            <!-- الردود -->
+            {% if comment.replies %}
+            <div class="replies">
+                {% for reply in comment.replies %}
+                <div class="reply" id="reply-{{ reply.id }}">
+                    <div class="reply-header">
+                        <div class="reply-avatar">{{ reply.user.full_name[0] }}</div>
+                        <div class="comment-author">
+                            <h6>{{ reply.user.full_name }}</h6>
+                            <small>{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                    </div>
+                    <div class="comment-content">
+                        {{ reply.content }}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- نموذج رد مخفي -->
+                <div class="reply-form" id="replyForm-{{ comment.id }}" style="display: none;">
+                    <textarea id="replyContent-{{ comment.id }}" rows="2" placeholder="اكتب ردك..." 
+                              style="width: 100%; border: 1px solid #eef2f7; border-radius: 8px; padding: 10px; margin-top: 10px;"></textarea>
+                    <div class="text-start mt-2">
+                        <button class="btn btn-sm btn-primary" onclick="addReply({{ comment.id }})">إرسال</button>
+                        <button class="btn btn-sm btn-secondary" onclick="hideReplyForm({{ comment.id }})">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="far fa-comments fa-4x mb-3"></i>
+            <h5>لا توجد تعليقات بعد</h5>
+            <p>كن أول من يعلق على هذه المهمة</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function addComment() {
+    const content = document.getElementById('commentContent').value.trim();
+    if (!content) return;
+    
+    fetch('/communication/task/{{ task.id }}/comments', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function showReplyForm(commentId) {
+    document.getElementById(`replyForm-${commentId}`).style.display = 'block';
+}
+
+function hideReplyForm(commentId) {
+    document.getElementById(`replyForm-${commentId}`).style.display = 'none';
+}
+
+function addReply(commentId) {
+    const content = document.getElementById(`replyContent-${commentId}`).value.trim();
+    if (!content) return;
+    
+    fetch('/communication/task/{{ task.id }}/comments', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            content: content,
+            parent_id: commentId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function deleteComment(commentId) {
+    if (!confirm('هل أنت متأكد من حذف هذا التعليق؟')) return;
+    
+    fetch(`/communication/comments/${commentId}/delete`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById(`comment-${commentId}`).remove();
+        }
+    });
+}
+</script>
+{% endblock %}

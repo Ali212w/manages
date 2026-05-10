@@ -1,0 +1,111 @@
+{% extends "company/base.html" %}
+
+{% block title %}إنشاء دور جديد{% endblock %}
+
+{% block page_title %}إنشاء دور جديد{% endblock %}
+{% block page_subtitle %}إضافة دور وظيفي جديد{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <form method="POST" action="{{ url_for('enterprise.role_create') }}">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">رمز الدور</label>
+                    <input type="text" name="role_code" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">الاسم</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">الوصف</label>
+                <textarea name="description" class="form-control" rows="2"></textarea>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">التكلفة الافتراضية/ساعة</label>
+                    <input type="number" name="default_cost_per_hour" class="form-control" value="0" step="0.01">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">العملة</label>
+                    <select name="currency" class="form-select">
+                        <option value="SAR">ريال سعودي</option>
+                        <option value="USD">دولار أمريكي</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">المهارات المطلوبة</label>
+                <div id="skills-container">
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" id="newSkill" placeholder="أدخل المهارة">
+                        <button class="btn btn-outline-primary" type="button" onclick="addSkillFromInput()">
+                            <i class="fas fa-plus"></i> إضافة
+                        </button>
+                    </div>
+                </div>
+                <div id="skills-tags-container" class="skills-list mt-2"></div>
+                <input type="hidden" name="skills" id="skills-input" value="[]">
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('enterprise.roles_list') }}" class="btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-2"></i> العودة
+                </a>
+                <button type="submit" class="btn-primary-gradient">
+                    <i class="fas fa-save me-2"></i> إنشاء الدور
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let skills = [];
+
+function addSkillFromInput() {
+    const input = document.getElementById('newSkill');
+    const skill = input.value.trim();
+    
+    if (skill) {
+        skills.push(skill);
+        document.getElementById('skills-input').value = JSON.stringify(skills);
+        displaySkillTags();
+        input.value = '';
+    }
+}
+
+function displaySkillTags() {
+    const container = document.getElementById('skills-tags-container');
+    container.innerHTML = '';
+    
+    skills.forEach((skill, index) => {
+        const tag = document.createElement('span');
+        tag.className = 'skill-tag';
+        tag.innerHTML = `
+            ${skill}
+            <i class="fas fa-times" onclick="removeSkill(${index})"></i>
+        `;
+        container.appendChild(tag);
+    });
+}
+
+function removeSkill(index) {
+    skills.splice(index, 1);
+    document.getElementById('skills-input').value = JSON.stringify(skills);
+    displaySkillTags();
+}
+
+document.getElementById('newSkill').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addSkillFromInput();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1257 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('project_dashboard') }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css" rel="stylesheet">
+<style>
+    /* ============================================ */
+    /* Dashboard Premium Variables */
+    /* ============================================ */
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        --danger-gradient: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+        --dark-gradient: linear-gradient(135deg, #2b2d42 0%, #1a1a2e 100%);
+        
+        --primary: #667eea;
+        --primary-dark: #5a67d8;
+        --secondary: #764ba2;
+        --success: #4facfe;
+        --warning: #fa709a;
+        --danger: #f5576c;
+        --info: #00f2fe;
+        --dark: #2b2d42;
+        --light: #f8f9fa;
+        
+        --card-radius: 24px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* ============================================ */
+    /* Dashboard Wrapper */
+    /* ============================================ */
+    .dashboard-wrapper {
+        display: flex;
+        gap: 25px;
+        min-height: calc(100vh - 100px);
+    }
+    
+    /* ============================================ */
+    /* Premium Filters Sidebar */
+    /* ============================================ */
+    .filters-sidebar {
+        width: 340px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: var(--card-radius);
+        padding: 25px;
+        position: sticky;
+        top: 90px;
+        height: calc(100vh - 110px);
+        overflow-y: auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    [data-theme="dark"] .filters-sidebar {
+        background: rgba(26, 26, 46, 0.95);
+    }
+    
+    .filters-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+    }
+    
+    .filters-header h5 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin: 0;
+    }
+    
+    .reset-all-btn {
+        background: rgba(245, 87, 108, 0.1);
+        border: none;
+        padding: 8px 16px;
+        border-radius: 30px;
+        color: var(--danger);
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: var(--transition);
+    }
+    
+    .reset-all-btn:hover {
+        background: var(--danger);
+        color: white;
+        transform: scale(0.95);
+    }
+    
+    /* Filter Sections */
+    .filter-section {
+        margin-bottom: 28px;
+    }
+    
+    .filter-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--dark);
+        letter-spacing: 0.5px;
+    }
+    
+    .filter-title i {
+        width: 28px;
+        height: 28px;
+        background: var(--primary-gradient);
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.8rem;
+    }
+    
+    /* Premium Dropdown */
+    .filter-dropdown {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid rgba(102, 126, 234, 0.2);
+        border-radius: 16px;
+        background: white;
+        font-size: 0.9rem;
+        transition: var(--transition);
+    }
+    
+    [data-theme="dark"] .filter-dropdown {
+        background: var(--gray-100);
+        color: white;
+    }
+    
+    .filter-dropdown:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+    
+    /* Premium Checkbox Group */
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 8px 12px;
+        border-radius: 12px;
+        transition: var(--transition);
+    }
+    
+    .checkbox-item:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .checkbox-item input {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: var(--primary);
+    }
+    
+    /* Premium Slider */
+    .slider-container {
+        padding: 15px 0;
+    }
+    
+    .noUi-connect {
+        background: var(--primary-gradient);
+    }
+    
+    .noUi-handle {
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: 2px solid var(--primary);
+        cursor: pointer;
+    }
+    
+    .slider-values {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 12px;
+        font-size: 0.75rem;
+        color: var(--gray);
+    }
+    
+    /* Search Filter */
+    .filter-search {
+        position: relative;
+    }
+    
+    .filter-search input {
+        width: 100%;
+        padding: 12px 16px;
+        padding-right: 45px;
+        border: 2px solid rgba(102, 126, 234, 0.2);
+        border-radius: 16px;
+        transition: var(--transition);
+    }
+    
+    .filter-search input:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+    
+    .filter-search i {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--primary);
+    }
+    
+    /* ============================================ */
+    /* Main Content Area */
+    /* ============================================ */
+    .dashboard-main {
+        flex: 1;
+    }
+    
+    /* Active Filters Bar */
+    .active-filters-bar {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border-radius: 60px;
+        padding: 12px 20px;
+        margin-bottom: 25px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+    
+    .active-filters-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--gray);
+    }
+    
+    .filter-tag {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 40px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+    
+    .filter-tag i {
+        cursor: pointer;
+        opacity: 0.8;
+        transition: var(--transition);
+    }
+    
+    .filter-tag i:hover {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+    
+    /* ============================================ */
+    /* Premium KPI Cards */
+    /* ============================================ */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .kpi-card {
+        background: white;
+        border-radius: var(--card-radius);
+        padding: 20px;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    }
+    
+    [data-theme="dark"] .kpi-card {
+        background: var(--gray-100);
+    }
+    
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--primary-gradient);
+    }
+    
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.15);
+    }
+    
+    .kpi-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+    
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 5px;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    
+    .kpi-label {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 500;
+    }
+    
+    .kpi-trend {
+        font-size: 0.7rem;
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    /* ============================================ */
+    /* Premium Chart Cards */
+    /* ============================================ */
+    .chart-card {
+        background: white;
+        border-radius: var(--card-radius);
+        padding: 20px;
+        margin-bottom: 25px;
+        transition: var(--transition);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    }
+    
+    [data-theme="dark"] .chart-card {
+        background: var(--gray-100);
+    }
+    
+    .chart-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+    }
+    
+    .chart-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .chart-title i {
+        width: 32px;
+        height: 32px;
+        background: var(--primary-gradient);
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.9rem;
+    }
+    
+    /* Chart Grid */
+    .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+        margin-bottom: 25px;
+    }
+    
+    /* Gantt Chart */
+    .gantt-container {
+        overflow-x: auto;
+    }
+    
+    .gantt-chart {
+        min-width: 800px;
+    }
+    
+    .gantt-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 8px;
+        background: rgba(102, 126, 234, 0.05);
+        border-radius: 12px;
+        transition: var(--transition);
+    }
+    
+    .gantt-row:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .gantt-label {
+        width: 200px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding-left: 15px;
+    }
+    
+    .gantt-bar-container {
+        flex: 1;
+        position: relative;
+        height: 40px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .gantt-bar {
+        position: absolute;
+        height: 100%;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: white;
+        transition: width 0.5s ease;
+    }
+    
+    /* Resource Items */
+    .resource-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 12px;
+        transition: var(--transition);
+    }
+    
+    .resource-item:hover {
+        background: rgba(102, 126, 234, 0.05);
+    }
+    
+    .resource-name {
+        width: 130px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .resource-bar {
+        flex: 1;
+        height: 10px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 0 15px;
+    }
+    
+    .resource-fill {
+        height: 100%;
+        background: var(--primary-gradient);
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+    
+    .resource-percent {
+        width: 50px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-align: right;
+    }
+    
+    /* ============================================ */
+    /* Responsive Design */
+    /* ============================================ */
+    @media (max-width: 1200px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .chart-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    @media (max-width: 992px) {
+        .dashboard-wrapper {
+            flex-direction: column;
+        }
+        .filters-sidebar {
+            width: 100%;
+            position: static;
+            height: auto;
+            margin-bottom: 25px;
+        }
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+        .gantt-label {
+            width: 120px;
+            font-size: 0.7rem;
+        }
+        .active-filters-bar {
+            border-radius: 20px;
+        }
+    }
+    
+    /* ============================================ */
+    /* Dark Theme Adjustments */
+    /* ============================================ */
+    [data-theme="dark"] .kpi-card,
+    [data-theme="dark"] .chart-card,
+    [data-theme="dark"] .active-filters-bar {
+        background: var(--gray-100);
+    }
+    
+    /* ============================================ */
+    /* Animations */
+    /* ============================================ */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .dashboard-section {
+        animation: slideIn 0.4s ease forwards;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    
+    .kpi-card:hover .kpi-value {
+        animation: pulse 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <!-- ============================================ -->
+    <!-- Premium Filters Sidebar -->
+    <!-- ============================================ -->
+    <div class="filters-sidebar">
+        <div class="filters-header">
+            <h5><i class="fas fa-sliders-h me-2"></i> {{ _('smart_filters') }}</h5>
+            <button class="reset-all-btn" id="resetAllFilters">
+                <i class="fas fa-undo-alt me-1"></i> {{ _('reset_all') }}
+            </button>
+        </div>
+        
+        <!-- Project Filter -->
+        <div class="filter-section">
+            <div class="filter-title"><i class="fas fa-project-diagram"></i> {{ _('project') }}</div>
+            <select id="projectFilter" class="filter-dropdown" onchange="applyFilters()">
+                <option value="all">📊 {{ _('all_projects') }}</option>
+                {% for project in projects %}
+                <option value="{{ project.id }}">🏗️ {{ project.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Department Filter -->
+        <div class="filter-section">
+            <div class="filter-title"><i class="fas fa-building"></i> {{ _('department') }}</div>
+            <select id="departmentFilter" class="filter-dropdown" onchange="applyFilters()">
+                <option value="all">🏢 {{ _('all_departments') }}</option>
+                <option value="engineering">🔧 {{ _('engineering') }}</option>
+                <option value="procurement">📦 {{ _('procurement') }}</option>
+                <option value="construction">🏗️ {{ _('construction') }}</option>
+                <option value="quality">✅ {{ _('quality') }}</option>
+                <option value="safety">🛡️ {{ _('safety') }}</option>
+            </select>
+        </div>
+        
+        <!-- Resource Filter with Search -->
+        <div class="filter-section">
+            <div class="filter-title"><i class="fas fa-users"></i> {{ _('resources') }}</div>
+            <div class="filter-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="resourceSearch" placeholder="{{ _('search_resource') }}" onkeyup="filterResourceList()">
+            </div>
+            <div class="checkbox-group mt-3" id="resourceList" style="max-height: 200px; overflow-y: auto;">
+                {% for user in users %}
+                <label class="checkbox-item">
+                    <input type="checkbox" value="{{ user.id }}" class="resource-checkbox" onchange="applyFilters()">
+                    <span>👤 {{ user.full_name }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Status Filter -->
+        <div class="filter-section">
+            <div class="filter-title"><i class="fas fa-chart-simple"></i> {{ _('status') }}</div>
+            <div class="checkbox-group">
+                <label class="checkbox-item">
+                    <input type="checkbox" value="completed" class="status-checkbox" onchange="applyFilters()">
+                    <span>✅ {{ _('completed') }}</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" value="in_progress" class="status-checkbox" onchange="applyFilters()">
+                    <span>🔄 {{ _('in_progress') }}</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" value="pending" class="status-checkbox" onchange="applyFilters()">
+                    <span>⏳ {{ _('pending') }}</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" value="delayed" class="status-checkbox" onchange="applyFilters()">
+                    <span>⚠️ {{ _('delayed') }}</span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Priority Filter -->
+        <div class="filter-section">
+            <div class="filter-title"><i class="fas fa-flag"></i> {{ _('priority') }}</div>
+            <div class="checkbox-group">
+                <label class="checkbox-item">
+                    <input type="checkbox" value="high" class="priority-checkbox" onchange="applyFilters()">
+                    <span>🔴 {{ _('high') }}</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" value="medium" class="priority-checkbox" onchange="applyFilters()">
+                    <span>🟡 {{ _('medium') }}</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" value="low" class="priority-checkbox" onchange="applyFilters()">
+                    <span>🟢 {{ _('low') }}</span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Progress Range Slider -->
+        <div class="filter-section">
+            <div class="filter-title"><i class="fas fa-chart-line"></i> {{ _('progress_range') }}</div>
+            <div class="slider-container">
+                <div id="progressSlider"></div>
+                <div class="slider-values">
+                    <span id="progressMin">0%</span>
+                    <span>——</span>
+                    <span id="progressMax">100%</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Budget Range Slider -->
+        <div class="filter-section">
+            <div class="filter-title"><i class="fas fa-coins"></i> {{ _('budget_range') }}</div>
+            <div class="slider-container">
+                <div id="budgetSlider"></div>
+                <div class="slider-values">
+                    <span id="budgetMin">0</span>
+                    <span>——</span>
+                    <span id="budgetMax">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================ -->
+    <!-- Main Dashboard Content -->
+    <!-- ============================================ -->
+    <div class="dashboard-main">
+        <!-- Active Filters Bar -->
+        <div class="active-filters-bar" id="activeFiltersBar" style="display: none;">
+            <span class="active-filters-label"><i class="fas fa-filter me-1"></i> {{ _('active_filters') }}:</span>
+            <div id="activeFiltersContainer" class="d-flex flex-wrap gap-2"></div>
+        </div>
+        
+        <!-- KPI Cards -->
+        <div class="kpi-grid dashboard-section">
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #667eea20, #764ba220); color: #667eea;">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="kpi-value" id="totalProjects">0</div>
+                <div class="kpi-label">{{ _('total_projects') }}</div>
+                <div class="kpi-trend text-success" id="activeProjectsTrend">
+                    <i class="fas fa-arrow-up"></i> <span id="activeProjects">0</span> {{ _('active') }}
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #4facfe20, #00f2fe20); color: #4facfe;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="kpi-value" id="completedTasks">0</div>
+                <div class="kpi-label">{{ _('completed_tasks') }}</div>
+                <div class="kpi-trend text-success" id="completionRate">0% {{ _('completion_rate') }}</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #fa709a20, #fee14020); color: #fa709a;">
+                    <i class="fas fa-spinner"></i>
+                </div>
+                <div class="kpi-value" id="inProgressTasks">0</div>
+                <div class="kpi-label">{{ _('in_progress_tasks') }}</div>
+                <div class="kpi-trend text-warning">
+                    <i class="fas fa-clock"></i> {{ _('currently_working') }}
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #f5576c20, #f093fb20); color: #f5576c;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="kpi-value" id="delayedTasks">0</div>
+                <div class="kpi-label">{{ _('delayed_tasks') }}</div>
+                <div class="kpi-trend text-danger" id="delayRate">0% {{ _('delayed') }}</div>
+            </div>
+        </div>
+        
+        <!-- Gantt Chart -->
+        <div class="chart-card dashboard-section">
+            <div class="chart-header">
+                <h5 class="chart-title"><i class="fas fa-chart-gantt"></i> {{ _('project_timeline_gantt') }}</h5>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary active" data-zoom="week" onclick="zoomGantt('week')">{{ _('week') }}</button>
+                    <button class="btn btn-outline-secondary" data-zoom="month" onclick="zoomGantt('month')">{{ _('month') }}</button>
+                    <button class="btn btn-outline-secondary" data-zoom="quarter" onclick="zoomGantt('quarter')">{{ _('quarter') }}</button>
+                </div>
+            </div>
+            <div class="gantt-container">
+                <div class="gantt-chart" id="ganttChart"></div>
+            </div>
+        </div>
+        
+        <!-- Charts Row 1 -->
+        <div class="chart-grid dashboard-section">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h5 class="chart-title"><i class="fas fa-chart-pie"></i> {{ _('task_status_distribution') }}</h5>
+                </div>
+                <div id="statusDonutChart" style="height: 320px;"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h5 class="chart-title"><i class="fas fa-chart-line"></i> {{ _('progress_timeline') }}</h5>
+                </div>
+                <div id="progressLineChart" style="height: 320px;"></div>
+            </div>
+        </div>
+        
+        <!-- Charts Row 2 -->
+        <div class="chart-grid dashboard-section">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h5 class="chart-title"><i class="fas fa-users"></i> {{ _('resource_workload') }}</h5>
+                </div>
+                <div id="resourceBarChart" style="height: 320px;"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h5 class="chart-title"><i class="fas fa-chart-bar"></i> {{ _('priority_distribution') }}</h5>
+                </div>
+                <div id="priorityBarChart" style="height: 320px;"></div>
+            </div>
+        </div>
+        
+        <!-- Budget vs Actual Chart -->
+        <div class="chart-card dashboard-section">
+            <div class="chart-header">
+                <h5 class="chart-title"><i class="fas fa-coins"></i> {{ _('budget_vs_actual_analysis') }}</h5>
+            </div>
+            <div id="budgetChart" style="height: 380px;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
+<script>
+// ============================================
+// Dashboard State
+// ============================================
+let dashboardState = {
+    filters: {
+        project: 'all',
+        department: 'all',
+        resources: [],
+        status: [],
+        priority: [],
+        progressRange: { min: 0, max: 100 },
+        budgetRange: { min: 0, max: 1000000 }
+    },
+    charts: {},
+    data: null,
+    loading: false
+};
+
+// ============================================
+// Initialize Sliders with Auto-Apply
+// ============================================
+function initSliders() {
+    // Progress Slider
+    const progressSlider = document.getElementById('progressSlider');
+    if (progressSlider) {
+        noUiSlider.create(progressSlider, {
+            start: [0, 100],
+            connect: true,
+            range: { min: 0, max: 100 },
+            format: { to: (v) => Math.round(v), from: (v) => Number(v) }
+        });
+        progressSlider.noUiSlider.on('update', (values) => {
+            document.getElementById('progressMin').innerHTML = values[0] + '%';
+            document.getElementById('progressMax').innerHTML = values[1] + '%';
+            dashboardState.filters.progressRange = { min: parseInt(values[0]), max: parseInt(values[1]) };
+            applyFilters();
+        });
+    }
+    
+    // Budget Slider
+    const budgetSlider = document.getElementById('budgetSlider');
+    if (budgetSlider) {
+        noUiSlider.create(budgetSlider, {
+            start: [0, 1000000],
+            connect: true,
+            range: { min: 0, max: 1000000 },
+            format: { to: (v) => Math.round(v).toLocaleString(), from: (v) => Number(v.replace(/,/g, '')) }
+        });
+        budgetSlider.noUiSlider.on('update', (values) => {
+            document.getElementById('budgetMin').innerHTML = values[0];
+            document.getElementById('budgetMax').innerHTML = values[1];
+            dashboardState.filters.budgetRange = { 
+                min: parseInt(values[0].replace(/,/g, '')), 
+                max: parseInt(values[1].replace(/,/g, '')) 
+            };
+            applyFilters();
+        });
+    }
+}
+
+// ============================================
+// Apply Filters Immediately
+// ============================================
+function applyFilters() {
+    if (dashboardState.loading) return;
+    
+    // Collect all filter values
+    dashboardState.filters.project = $('#projectFilter').val();
+    dashboardState.filters.department = $('#departmentFilter').val();
+    
+    dashboardState.filters.resources = [];
+    $('.resource-checkbox:checked').each(function() {
+        dashboardState.filters.resources.push($(this).val());
+    });
+    
+    dashboardState.filters.status = [];
+    $('.status-checkbox:checked').each(function() {
+        dashboardState.filters.status.push($(this).val());
+    });
+    
+    dashboardState.filters.priority = [];
+    $('.priority-checkbox:checked').each(function() {
+        dashboardState.filters.priority.push($(this).val());
+    });
+    
+    updateActiveFiltersDisplay();
+    loadDashboardData();
+}
+
+// ============================================
+// Reset All Filters
+// ============================================
+function resetAllFilters() {
+    $('#projectFilter').val('all');
+    $('#departmentFilter').val('all');
+    $('.resource-checkbox').prop('checked', false);
+    $('.status-checkbox').prop('checked', false);
+    $('.priority-checkbox').prop('checked', false);
+    
+    const progressSlider = document.getElementById('progressSlider');
+    if (progressSlider && progressSlider.noUiSlider) {
+        progressSlider.noUiSlider.set([0, 100]);
+    }
+    
+    dashboardState.filters = {
+        project: 'all',
+        department: 'all',
+        resources: [],
+        status: [],
+        priority: [],
+        progressRange: { min: 0, max: 100 },
+        budgetRange: { min: 0, max: 1000000 }
+    };
+    
+    updateActiveFiltersDisplay();
+    loadDashboardData();
+}
+
+// ============================================
+// Update Active Filters Display
+// ============================================
+function updateActiveFiltersDisplay() {
+    const container = $('#activeFiltersContainer');
+    container.empty();
+    let hasActiveFilters = false;
+    
+    if (dashboardState.filters.project !== 'all') {
+        const projectName = $('#projectFilter option:selected').text();
+        container.append(`<div class="filter-tag"><i class="fas fa-project-diagram"></i> ${projectName} <i class="fas fa-times" onclick="removeFilter('project')"></i></div>`);
+        hasActiveFilters = true;
+    }
+    
+    if (dashboardState.filters.department !== 'all') {
+        const deptName = $('#departmentFilter option:selected').text();
+        container.append(`<div class="filter-tag"><i class="fas fa-building"></i> ${deptName} <i class="fas fa-times" onclick="removeFilter('department')"></i></div>`);
+        hasActiveFilters = true;
+    }
+    
+    dashboardState.filters.status.forEach(status => {
+        const statusText = { 'completed': '✅ مكتمل', 'in_progress': '🔄 قيد التنفيذ', 'pending': '⏳ معلق', 'delayed': '⚠️ متأخر' }[status] || status;
+        container.append(`<div class="filter-tag"><i class="fas fa-chart-simple"></i> ${statusText} <i class="fas fa-times" onclick="removeFilter('status', '${status}')"></i></div>`);
+        hasActiveFilters = true;
+    });
+    
+    dashboardState.filters.priority.forEach(priority => {
+        const priorityText = { 'high': '🔴 عالية', 'medium': '🟡 متوسطة', 'low': '🟢 منخفضة' }[priority] || priority;
+        container.append(`<div class="filter-tag"><i class="fas fa-flag"></i> ${priorityText} <i class="fas fa-times" onclick="removeFilter('priority', '${priority}')"></i></div>`);
+        hasActiveFilters = true;
+    });
+    
+    if (dashboardState.filters.progressRange.min > 0 || dashboardState.filters.progressRange.max < 100) {
+        container.append(`<div class="filter-tag"><i class="fas fa-chart-line"></i> التقدم: ${dashboardState.filters.progressRange.min}% - ${dashboardState.filters.progressRange.max}% <i class="fas fa-times" onclick="resetProgressFilter()"></i></div>`);
+        hasActiveFilters = true;
+    }
+    
+    if (hasActiveFilters) {
+        $('#activeFiltersBar').show();
+    } else {
+        $('#activeFiltersBar').hide();
+    }
+}
+
+// ============================================
+// Remove Single Filter
+// ============================================
+function removeFilter(filterType, value = null) {
+    if (filterType === 'project') {
+        $('#projectFilter').val('all');
+        dashboardState.filters.project = 'all';
+    } else if (filterType === 'department') {
+        $('#departmentFilter').val('all');
+        dashboardState.filters.department = 'all';
+    } else if (filterType === 'status' && value) {
+        $(`.status-checkbox[value="${value}"]`).prop('checked', false);
+        dashboardState.filters.status = dashboardState.filters.status.filter(s => s !== value);
+    } else if (filterType === 'priority' && value) {
+        $(`.priority-checkbox[value="${value}"]`).prop('checked', false);
+        dashboardState.filters.priority = dashboardState.filters.priority.filter(p => p !== value);
+    }
+    
+    updateActiveFiltersDisplay();
+    loadDashboardData();
+}
+
+function resetProgressFilter() {
+    const progressSlider = document.getElementById('progressSlider');
+    if (progressSlider && progressSlider.noUiSlider) {
+        progressSlider.noUiSlider.set([0, 100]);
+    }
+}
+
+// ============================================
+// Resource Search
+// ============================================
+function filterResourceList() {
+    const searchTerm = $('#resourceSearch').val().toLowerCase();
+    $('#resourceList .checkbox-item').each(function() {
+        const text = $(this).text().toLowerCase();
+        if (text.includes(searchTerm)) {
+            $(this).show();
+        } else {
+            $(this).hide();
+        }
+    });
+}
+
+// ============================================
+// Load Dashboard Data via AJAX
+// ============================================
+function loadDashboardData() {
+    if (dashboardState.loading) return;
+    dashboardState.loading = true;
+    showLoading();
+    
+    $.ajax({
+        url: '{{ url_for("dashboard.api_dashboard_data") }}',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(dashboardState.filters),
+        success: function(response) {
+            if (response.success) {
+                dashboardState.data = response.data;
+                updateDashboardUI();
+            }
+        },
+        error: function() {
+            toastr.error('{{ _("error_loading_data") }}');
+        },
+        complete: function() {
+            dashboardState.loading = false;
+            hideLoading();
+        }
+    });
+}
+
+// ============================================
+// Update Dashboard UI
+// ============================================
+function updateDashboardUI() {
+    const data = dashboardState.data;
+    if (!data) return;
+    
+    // Update KPI values with animation
+    animateValue('totalProjects', 0, data.general_stats?.total_projects || 0, 500);
+    animateValue('activeProjects', 0, data.general_stats?.active_projects || 0, 500);
+    animateValue('completedTasks', 0, data.general_stats?.completed_tasks || 0, 500);
+    animateValue('inProgressTasks', 0, (data.general_stats?.total_tasks - data.general_stats?.completed_tasks) || 0, 500);
+    animateValue('delayedTasks', 0, data.delay_analysis?.total_delay_days || 0, 500);
+    
+    $('#completionRate').html(`${data.general_stats?.task_completion_rate || 0}% {{ _('completion_rate') }}`);
+    $('#delayRate').html(`${data.delay_analysis?.net_contractor_delay || 0}% {{ _('delayed') }}`);
+    
+    // Render charts
+    renderStatusDonut(data);
+    renderProgressLine(data);
+    renderResourceBar(data);
+    renderPriorityBar(data);
+    renderBudgetChart(data);
+    renderGanttChart(data);
+}
+
+// ============================================
+// Number Animation
+// ============================================
+function animateValue(elementId, start, end, duration) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const range = end - start;
+    const increment = range / (duration / 16);
+    let current = start;
+    
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= end) {
+            element.innerText = Math.round(end);
+            clearInterval(timer);
+        } else {
+            element.innerText = Math.round(current);
+        }
+    }, 16);
+}
+
+// ============================================
+// Chart Rendering Functions
+// ============================================
+function renderStatusDonut(data) {
+    const options = {
+        series: [data.general_stats?.completed_tasks || 0, data.general_stats?.in_progress_tasks || 0, data.general_stats?.pending_tasks || 0],
+        chart: { type: 'donut', height: 320, animations: { enabled: true, speed: 800 } },
+        labels: ['✅ {{ _("completed") }}', '🔄 {{ _("in_progress") }}', '⏳ {{ _("pending") }}'],
+        colors: ['#4facfe', '#fa709a', '#fee140'],
+        legend: { position: 'bottom', fontSize: '12px' },
+        dataLabels: { enabled: false },
+        plotOptions: { pie: { donut: { size: '60%' } } },
+        tooltip: { y: { formatter: (val) => val + ' {{ _("tasks") }}' } }
+    };
+    
+    if (dashboardState.charts.statusDonut) {
+        dashboardState.charts.statusDonut.updateOptions(options);
+    } else {
+        dashboardState.charts.statusDonut = new ApexCharts(document.querySelector("#statusDonutChart"), options);
+        dashboardState.charts.statusDonut.render();
+    }
+}
+
+function renderProgressLine(data) {
+    const options = {
+        series: [{ name: '{{ _("progress") }}', data: [10, 25, 45, 65, 80, 95] }],
+        chart: { type: 'line', height: 320, toolbar: { show: false }, animations: { enabled: true, speed: 800 } },
+        colors: ['#667eea'],
+        stroke: { curve: 'smooth', width: 3 },
+        markers: { size: 5, colors: ['#667eea'], strokeColors: '#fff', strokeWidth: 2 },
+        xaxis: { categories: ['يناير', 'فبراير', 'مارس', 'إبريل', 'مايو', 'يونيو'] },
+        yaxis: { title: { text: '{{ _("progress_percentage") }} (%)' }, min: 0, max: 100 },
+        fill: { type: 'gradient', gradient: { shade: 'light', type: 'vertical', shadeIntensity: 0.5 } }
+    };
+    
+    if (dashboardState.charts.progressLine) {
+        dashboardState.charts.progressLine.updateOptions(options);
+    } else {
+        dashboardState.charts.progressLine = new ApexCharts(document.querySelector("#progressLineChart"), options);
+        dashboardState.charts.progressLine.render();
+    }
+}
+
+function renderResourceBar(data) {
+    const options = {
+        series: [{ name: '{{ _("tasks_assigned") }}', data: [12, 8, 15, 6, 10] }],
+        chart: { type: 'bar', height: 320, toolbar: { show: false }, animations: { enabled: true, speed: 800 } },
+        plotOptions: { bar: { horizontal: true, borderRadius: 8, barHeight: '50%' } },
+        colors: ['#4facfe'],
+        xaxis: { categories: ['أحمد', 'محمد', 'سارة', 'فاطمة', 'علي'] },
+        dataLabels: { enabled: true, formatter: (val) => val + ' {{ _("tasks") }}' }
+    };
+    
+    if (dashboardState.charts.resourceBar) {
+        dashboardState.charts.resourceBar.updateOptions(options);
+    } else {
+        dashboardState.charts.resourceBar = new ApexCharts(document.querySelector("#resourceBarChart"), options);
+        dashboardState.charts.resourceBar.render();
+    }
+}
+
+function renderPriorityBar(data) {
+    const options = {
+        series: [{ name: '{{ _("tasks") }}', data: [5, 12, 8] }],
+        chart: { type: 'bar', height: 320, toolbar: { show: false }, animations: { enabled: true, speed: 800 } },
+        plotOptions: { bar: { borderRadius: 8, columnWidth: '50%' } },
+        colors: ['#f5576c', '#fa709a', '#4facfe'],
+        xaxis: { categories: ['🔴 {{ _("high") }}', '🟡 {{ _("medium") }}', '🟢 {{ _("low") }}'] },
+        dataLabels: { enabled: true }
+    };
+    
+    if (dashboardState.charts.priorityBar) {
+        dashboardState.charts.priorityBar.updateOptions(options);
+    } else {
+        dashboardState.charts.priorityBar = new ApexCharts(document.querySelector("#priorityBarChart"), options);
+        dashboardState.charts.priorityBar.render();
+    }
+}
+
+function renderBudgetChart(data) {
+    const options = {
+        series: [
+            { name: '📊 {{ _("budget") }}', data: [50000, 75000, 100000, 80000, 120000] },
+            { name: '💰 {{ _("actual_cost") }}', data: [45000, 70000, 95000, 85000, 115000] }
+        ],
+        chart: { type: 'bar', height: 380, toolbar: { show: false }, animations: { enabled: true, speed: 800 } },
+        plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 8 } },
+        colors: ['#667eea', '#f5576c'],
+        xaxis: { categories: ['مشروع 1', 'مشروع 2', 'مشروع 3', 'مشروع 4', 'مشروع 5'] },
+        yaxis: { title: { text: '{{ _("amount") }} ({{ _("sar") }})' } },
+        dataLabels: { enabled: true, formatter: (val) => val.toLocaleString() }
+    };
+    
+    if (dashboardState.charts.budget) {
+        dashboardState.charts.budget.updateOptions(options);
+    } else {
+        dashboardState.charts.budget = new ApexCharts(document.querySelector("#budgetChart"), options);
+        dashboardState.charts.budget.render();
+    }
+}
+
+function renderGanttChart(data) {
+    const ganttData = data?.gantt_data || [
+        { name: '🎨 مرحلة التصميم', start: '2024-01-01', end: '2024-02-15', progress: 100 },
+        { name: '📦 مرحلة المشتريات', start: '2024-02-01', end: '2024-03-15', progress: 75 },
+        { name: '🏗️ مرحلة التنفيذ', start: '2024-03-01', end: '2024-05-30', progress: 40 },
+        { name: '✨ مرحلة التشطيب', start: '2024-05-15', end: '2024-06-30', progress: 10 },
+        { name: '🎯 مرحلة التسليم', start: '2024-06-15', end: '2024-07-15', progress: 0 }
+    ];
+    
+    let html = '<div class="gantt-header d-flex" style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid rgba(102,126,234,0.2);">';
+    html += '<div class="gantt-label fw-bold" style="color: var(--primary);">{{ _("phase") }}</div>';
+    html += '<div class="flex-grow-1 fw-bold" style="color: var(--primary);">{{ _("timeline") }}</div>';
+    html += '</div>';
+    
+    ganttData.forEach(item => {
+        const color = item.progress >= 75 ? '#4facfe' : (item.progress >= 40 ? '#fa709a' : '#fee140');
+        html += `<div class="gantt-row">`;
+        html += `<div class="gantt-label">${item.name}</div>`;
+        html += `<div class="gantt-bar-container"><div class="gantt-bar" style="width: ${item.progress}%; background: linear-gradient(90deg, ${color}, ${color}dd);">${item.progress}%</div></div>`;
+        html += `</div>`;
+    });
+    
+    $('#ganttChart').html(html);
+}
+
+function zoomGantt(zoom) {
+    $('[data-zoom]').removeClass('active');
+    $(`[data-zoom="${zoom}"]`).addClass('active');
+    // Implement zoom logic here
+    toastr.info(`{{ _("zoom_changed_to") }} ${zoom}`);
+}
+
+// ============================================
+// Helper Functions
+// ============================================
+function showLoading() {
+    $('#loadingOverlay').fadeIn(200);
+}
+
+function hideLoading() {
+    $('#loadingOverlay').fadeOut(200);
+}
+
+// ============================================
+// Initialize Dashboard
+// ============================================
+$(document).ready(function() {
+    initSliders();
+    loadDashboardData();
+    
+    $('#resetAllFilters').click(resetAllFilters);
+});
+</script>
+{% endblock %}

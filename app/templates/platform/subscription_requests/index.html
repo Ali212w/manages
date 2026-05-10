@@ -1,0 +1,394 @@
+{# templates/platform/subscription_requests/index.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('platform.subscription_requests') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title">{{ _('platform.subscription_requests') }}</h1>
+            <p class="text-muted">{{ _('platform.manage_subscription_requests') }}</p>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-warning">{{ stats.pending }}</h3>
+                <small>{{ _('platform.pending_requests') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-info">{{ stats.pending_payment }}</h3>
+                <small>{{ _('platform.pending_payment') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-success">{{ stats.approved }}</h3>
+                <small>{{ _('platform.approved_requests') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-primary">{{ format_currency(stats.total_revenue) }}</h3>
+                <small>{{ _('platform.total_revenue') }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="requestTabs">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pending">
+                <i class="fas fa-clock me-1"></i> {{ _('platform.pending') }}
+                {% if stats.pending > 0 %}<span class="badge bg-warning ms-1">{{ stats.pending }}</span>{% endif %}
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#payment-pending">
+                <i class="fas fa-credit-card me-1"></i> {{ _('platform.waiting_payment') }}
+                {% if stats.pending_payment > 0 %}<span class="badge bg-info ms-1">{{ stats.pending_payment }}</span>{% endif %}
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#approved">
+                <i class="fas fa-check-circle me-1"></i> {{ _('platform.approved') }}
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#rejected">
+                <i class="fas fa-times-circle me-1"></i> {{ _('platform.rejected') }}
+            </button>
+        </li>
+    </ul>
+    
+    <div class="tab-content">
+        <!-- Pending Requests Tab -->
+        <div class="tab-pane fade show active" id="pending">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ _('companies.name') }}</th>
+                                    <th>{{ _('plans.plan') }}</th>
+                                    <th>{{ _('subscriptions.duration_months') }}</th>
+                                    <th>{{ _('plans.amount') }}</th>
+                                    <th>{{ _('plans.payment_method') }}</th>
+                                    <th>{{ _('plans.request_date') }}</th>
+                                    <th>{{ _('common.actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in pending_requests %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                                {{ request.organization.name[0]|upper }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ request.organization.name }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ request.organization.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-primary">{{ request.plan_name }}</span></td>
+                                    <td>{{ request.duration_months }} {{ _('subscriptions.months') }}</td>
+                                    <td>{{ format_currency(request.total_amount, request.currency) }}</td>
+                                    <td>
+                                        {% if request.payment_method == 'credit_card' %}
+                                        <i class="fab fa-cc-visa text-primary"></i> {{ _('plans.credit_card') }}
+                                        {% else %}
+                                        <i class="fas fa-university text-success"></i> {{ _('plans.bank_transfer') }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ format_datetime(request.requested_at) }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-success approve-request" data-id="{{ request.id }}" data-company="{{ request.organization.name }}">
+                                                <i class="fas fa-check"></i> {{ _('common.approve') }}
+                                            </button>
+                                            <button class="btn btn-sm btn-danger reject-request" data-id="{{ request.id }}" data-company="{{ request.organization.name }}">
+                                                <i class="fas fa-times"></i> {{ _('common.reject') }}
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+                                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                        <p>{{ _('platform.no_pending_requests') }}</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment Pending Tab -->
+        <div class="tab-pane fade" id="payment-pending">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ _('companies.name') }}</th>
+                                    <th>{{ _('plans.plan') }}</th>
+                                    <th>{{ _('plans.amount') }}</th>
+                                    <th>{{ _('plans.payment_proof') }}</th>
+                                    <th>{{ _('plans.request_date') }}</th>
+                                    <th>{{ _('common.actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in pending_payment %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>{{ request.organization.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ request.organization.email }}</small>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-primary">{{ request.plan_name }}</span></td>
+                                    <td>{{ format_currency(request.total_amount, request.currency) }}</td>
+                                    <td>
+                                        {% if request.payment_proof %}
+                                        <a href="{{ request.payment_proof }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-file-image"></i> {{ _('platform.view_proof') }}
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">{{ _('platform.not_uploaded') }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ format_datetime(request.requested_at) }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-success confirm-payment" data-id="{{ request.id }}" data-company="{{ request.organization.name }}">
+                                            <i class="fas fa-check-double"></i> {{ _('platform.confirm_payment') }}
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                        <p>{{ _('platform.no_pending_payment') }}</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Approved Tab -->
+        <div class="tab-pane fade" id="approved">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ _('companies.name') }}</th>
+                                    <th>{{ _('plans.plan') }}</th>
+                                    <th>{{ _('plans.amount') }}</th>
+                                    <th>{{ _('plans.approved_by') }}</th>
+                                    <th>{{ _('plans.approved_at') }}</th>
+                                    <th>{{ _('plans.status') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in approved_requests %}
+                                <tr>
+                                    <td><strong>{{ request.organization.name }}</strong></td>
+                                    <td><span class="badge bg-primary">{{ request.plan_name }}</span></td>
+                                    <td>{{ format_currency(request.total_amount, request.currency) }}</td>
+                                    <td>{{ request.approver.full_name if request.approver else '-' }}</td>
+                                    <td>{{ format_datetime(request.approved_at) }}</td>
+                                    <td>
+                                        {% if request.status == 'active' %}
+                                        <span class="badge bg-success">{{ _('subscriptions.active') }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ request.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                        <p>{{ _('platform.no_approved_requests') }}</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rejected Tab -->
+        <div class="tab-pane fade" id="rejected">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ _('companies.name') }}</th>
+                                    <th>{{ _('plans.plan') }}</th>
+                                    <th>{{ _('plans.amount') }}</th>
+                                    <th>{{ _('plans.rejection_reason') }}</th>
+                                    <th>{{ _('plans.rejected_at') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in rejected_requests %}
+                                <tr>
+                                    <td><strong>{{ request.organization.name }}</strong></td>
+                                    <td><span class="badge bg-primary">{{ request.plan_name }}</span></td>
+                                    <td>{{ format_currency(request.total_amount, request.currency) }}</td>
+                                    <td class="text-danger">{{ request.rejection_reason or '-' }}</td>
+                                    <td>{{ format_datetime(request.updated_at) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5">
+                                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                        <p>{{ _('platform.no_rejected_requests') }}</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">{{ _('platform.reject_subscription') }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="rejectCompanyName"></p>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('platform.rejection_reason') }}</label>
+                    <textarea id="rejectionReason" class="form-control" rows="3" placeholder="{{ _('platform.rejection_reason_placeholder') }}"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('common.cancel') }}</button>
+                <button type="button" id="confirmRejectBtn" class="btn btn-danger">{{ _('common.reject') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    let currentRequestId = null;
+    
+    // Approve Request
+    $('.approve-request').click(function() {
+        const requestId = $(this).data('id');
+        const companyName = $(this).data('company');
+        
+        if (confirm('{{ _("platform.confirm_approve") }} ' + companyName + '?')) {
+            $.ajax({
+                url: "{{ url_for('platform.approve_subscription_request', request_id=0) }}".replace('0', requestId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+    
+    // Reject Request - Show Modal
+    $('.reject-request').click(function() {
+        currentRequestId = $(this).data('id');
+        const companyName = $(this).data('company');
+        $('#rejectCompanyName').html('{{ _("platform.reject_subscription_for") }} <strong>' + companyName + '</strong>?');
+        $('#rejectModal').modal('show');
+    });
+    
+    // Confirm Reject
+    $('#confirmRejectBtn').click(function() {
+        const reason = $('#rejectionReason').val();
+        
+        $.ajax({
+            url: "{{ url_for('platform.reject_subscription_request', request_id=0) }}".replace('0', currentRequestId),
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({reason: reason}),
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    $('#rejectModal').modal('hide');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    toastr.error(response.error);
+                }
+            },
+            error: function() {
+                toastr.error('{{ _("common.error") }}');
+            }
+        });
+    });
+    
+    // Confirm Payment
+    $('.confirm-payment').click(function() {
+        const requestId = $(this).data('id');
+        const companyName = $(this).data('company');
+        
+        if (confirm('{{ _("platform.confirm_payment_for") }} ' + companyName + '?')) {
+            $.ajax({
+                url: "{{ url_for('platform.confirm_payment', request_id=0) }}".replace('0', requestId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

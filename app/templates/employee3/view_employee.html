@@ -1,0 +1,583 @@
+<!-- templates/employee/view_employee.html -->
+{% extends "company/base.html" %}
+
+{% block title %}ملف الموظف - {{ basic_info.full_name }}{% endblock %}
+
+{% block page_title %}ملف الموظف{% endblock %}
+{% block page_subtitle %}{{ basic_info.full_name }} - {{ basic_info.job_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* أنماط CSS المخصصة للملف الشخصي */
+    .profile-header {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 20px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 4px solid white;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: var(--primary);
+    }
+    
+    .stat-card-sm {
+        background: white;
+        border-radius: 15px;
+        padding: 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+    }
+    
+    .stat-card-sm:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .info-row {
+        display: flex;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .info-label {
+        width: 120px;
+        color: #6c757d;
+    }
+    
+    .info-value {
+        flex: 1;
+        font-weight: 500;
+    }
+    
+    .badge-role {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        padding: 0.3rem 1rem;
+        border-radius: 30px;
+        font-weight: 600;
+    }
+    
+    .task-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 0.8rem;
+        border-right: 4px solid transparent;
+        transition: all 0.3s;
+    }
+    
+    .task-card:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .task-card.high { border-right-color: var(--danger); }
+    .task-card.medium { border-right-color: var(--warning); }
+    .task-card.low { border-right-color: var(--success); }
+    
+    .skill-badge {
+        background: #eef2f7;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        margin-left: 0.5rem;
+        margin-bottom: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .skill-level {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-left: 0.5rem;
+    }
+    
+    .skill-level.advanced { background: var(--success); }
+    .skill-level.intermediate { background: var(--warning); }
+    .skill-level.beginner { background: var(--danger); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- رأس الملف الشخصي -->
+<div class="profile-header">
+    <div class="d-flex align-items-center">
+        <div class="profile-avatar me-4">
+            {% if basic_info.profile_image %}
+            <img src="{{ basic_info.profile_image }}" class="w-100 h-100 rounded-circle" alt="profile">
+            {% else %}
+            {{ basic_info.full_name[0] }}
+            {% endif %}
+        </div>
+        <div>
+            <h2 class="mb-1">{{ basic_info.full_name }}</h2>
+            <p class="mb-2">{{ basic_info.job_title }} • {{ basic_info.department.name if basic_info.department else 'بدون قسم' }}</p>
+            <span class="badge-role">{{ basic_info.role }}</span>
+            {% if not basic_info.is_active %}
+            <span class="badge bg-danger ms-2">غير نشط</span>
+            {% endif %}
+        </div>
+        <div class="me-auto">
+            {% if permissions.can_edit %}
+            <a href="{{ url_for('employee_bp.edit_employee', user_id=employee.id) }}" class="btn btn-light">
+                <i class="fas fa-edit me-2"></i>تعديل الملف
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- إحصائيات سريعة -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card-sm">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6 class="text-muted">مهام مشرف</h6>
+                    <h3>{{ task_stats.supervised.total }}</h3>
+                </div>
+                <div class="stat-icon primary">
+                    <i class="fas fa-eye"></i>
+                </div>
+            </div>
+            <div class="mt-2 small">
+                <span class="text-success">{{ task_stats.supervised.completed }} مكتمل</span>
+                <span class="text-danger me-2">{{ task_stats.supervised.delayed }} متأخر</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card-sm">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6 class="text-muted">مهام منفذ</h6>
+                    <h3>{{ task_stats.delegated.total }}</h3>
+                </div>
+                <div class="stat-icon success">
+                    <i class="fas fa-tasks"></i>
+                </div>
+            </div>
+            <div class="mt-2 small">
+                <span class="text-success">{{ task_stats.delegated.completed }} مكتمل</span>
+                <span class="text-warning me-2">{{ task_stats.delegated.in_progress }} جاري</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card-sm">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6 class="text-muted">الكفاءة</h6>
+                    <h3>{{ performance_stats.efficiency }}%</h3>
+                </div>
+                <div class="stat-icon warning">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+            <div class="mt-2 small">
+                <span class="text-{{ 'success' if performance_stats.performance_trend == 'improving' else 'danger' if performance_stats.performance_trend == 'declining' else 'info' }}">
+                    <i class="fas fa-arrow-{{ 'up' if performance_stats.performance_trend == 'improving' else 'down' if performance_stats.performance_trend == 'declining' else 'right' }}"></i>
+                    {{ {'improving':'تحسن', 'declining':'تراجع', 'stable':'مستقر'}[performance_stats.performance_trend] }}
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card-sm">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6 class="text-muted">جودة العمل</h6>
+                    <h3>{{ "%.1f"|format(performance_stats.avg_quality or 0) }}/5</h3>
+                </div>
+                <div class="stat-icon info">
+                    <i class="fas fa-star"></i>
+                </div>
+            </div>
+            <div class="mt-2 small">
+                <span>{{ performance_stats.completion_rate|round }}% إنجاز</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- العمود الأيمن - المعلومات الشخصية والمهارات -->
+    <div class="col-lg-4">
+        <!-- المعلومات الشخصية -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user me-2"></i>المعلومات الشخصية
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-label">البريد</span>
+                    <span class="info-value">{{ basic_info.email }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">الهاتف</span>
+                    <span class="info-value">{{ basic_info.phone or 'غير محدد' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">الجوال</span>
+                    <span class="info-value">{{ basic_info.mobile or 'غير محدد' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">الرقم الوظيفي</span>
+                    <span class="info-value">{{ basic_info.employee_id or 'غير محدد' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">تاريخ التعيين</span>
+                    <span class="info-value">{{ basic_info.hire_date or 'غير محدد' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">آخر دخول</span>
+                    <span class="info-value">{{ basic_info.last_login or 'لم يدخل بعد' }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- المهارات -->
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-certificate me-2"></i>المهارات
+                </h5>
+                {% if permissions.can_manage_skills %}
+                <button class="btn btn-sm btn-primary" onclick="addSkill()">
+                    <i class="fas fa-plus"></i>
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if skills %}
+                    {% for skill in skills %}
+                    <div class="skill-badge">
+                        <span class="skill-level 
+                            {% if skill.level >= 4 %}advanced
+                            {% elif skill.level >= 3 %}intermediate
+                            {% else %}beginner{% endif %}">
+                        </span>
+                        {{ skill.name }}
+                        <small class="text-muted me-2">{{ skill.level }}/5</small>
+                        {% if skill.is_verified %}
+                        <i class="fas fa-check-circle text-success ms-1" title="موثق"></i>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center py-3">لا توجد مهارات مسجلة</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- نشاط اليوم -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-day me-2"></i>نشاط اليوم
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h4 class="text-primary">{{ today_activity.tasks_started }}</h4>
+                        <small class="text-muted">مهام بدأت</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-success">{{ today_activity.tasks_completed }}</h4>
+                        <small class="text-muted">مهام اكتملت</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-warning">{{ today_activity.notifications_received }}</h4>
+                        <small class="text-muted">إشعارات</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- العمود الأوسط - المهام والمشاريع -->
+    <div class="col-lg-5">
+        <!-- المهام الحالية -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tasks me-2"></i>المهام الحالية
+                </h5>
+                <span class="badge bg-primary">{{ current_tasks|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if current_tasks %}
+                    {% for task in current_tasks %}
+                    <div class="task-card {{ 'high' if task.is_delayed else 'medium' if task.priority >= 3 else 'low' }}">
+                        <div class="d-flex justify-content-between">
+                            <h6>{{ task.name }}</h6>
+                            <small class="text-muted">{{ task.project }}</small>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <div>
+                                <span class="badge bg-{{ 'danger' if task.is_delayed else 'primary' if task.status == 'in_progress' else 'secondary' }}">
+                                    {{ 'متأخرة' if task.is_delayed else 'جاري' if task.status == 'in_progress' else 'معلقة' }}
+                                </span>
+                                <small class="text-muted me-2">
+                                    <i class="fas fa-user me-1"></i>{{ task.role }}
+                                </small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <small class="text-muted ms-3">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {{ task.planned_finish }}
+                                </small>
+                                {% if task.is_delayed %}
+                                <span class="badge bg-danger ms-2">+{{ task.delay_days }} يوم</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar bg-{{ 'danger' if task.is_delayed else 'primary' }}" 
+                                 style="width: {{ task.progress }}%"></div>
+                        </div>
+                        <div class="mt-2 text-end">
+                            <a href="{{ url_for('task_bp.task_detail', task_id=task.id) }}" class="btn btn-sm btn-link">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center py-3">لا توجد مهام حالية</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- المشاريع -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-project-diagram me-2"></i>المشاريع
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if projects %}
+                    {% for project in projects %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="mb-1">{{ project.name }}</h6>
+                            <small class="text-muted">{{ project.role }}</small>
+                        </div>
+                        <div class="text-center" style="width: 100px;">
+                            <small>{{ project.completion_rate|round }}%</small>
+                            <div class="progress" style="height: 5px;">
+                                <div class="progress-bar bg-primary" style="width: {{ project.completion_rate }}%"></div>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('project_bp.project_details', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center py-3">لا يشارك في أي مشاريع</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- المهام المكتملة مؤخراً -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-check-circle me-2 text-success"></i>آخر المهام المكتملة
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_completed %}
+                    {% for task in recent_completed %}
+                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                        <div>
+                            <h6 class="mb-1">{{ task.name }}</h6>
+                            <small class="text-muted">{{ task.project }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success">{{ task.completed_at }}</span>
+                            {% if task.quality %}
+                            <span class="badge bg-info ms-1">{{ task.quality }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center py-3">لا توجد مهام مكتملة</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- العمود الأيسر - الإشعارات والإحصائيات -->
+    <div class="col-lg-3">
+        <!-- الإشعارات -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bell me-2"></i>آخر الإشعارات
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if notifications %}
+                    {% for notif in notifications %}
+                    <div class="border-bottom p-3">
+                        <small class="text-muted d-block mb-1">{{ notif.created_at }}</small>
+                        <h6 class="mb-1">{{ notif.title }}</h6>
+                        <p class="mb-0 small text-muted">{{ notif.message[:50] }}...</p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center py-3">لا توجد إشعارات</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- إحصائيات المهام -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>توزيع المهام
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>مكتمل</span>
+                        <span>{{ task_stats.supervised.completed + task_stats.delegated.completed }}</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" 
+                             style="width: {{ ((task_stats.supervised.completed + task_stats.delegated.completed) / (task_stats.supervised.total + task_stats.delegated.total) * 100) if (task_stats.supervised.total + task_stats.delegated.total) > 0 else 0 }}%">
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>قيد التنفيذ</span>
+                        <span>{{ task_stats.supervised.in_progress + task_stats.delegated.in_progress }}</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-primary" 
+                             style="width: {{ ((task_stats.supervised.in_progress + task_stats.delegated.in_progress) / (task_stats.supervised.total + task_stats.delegated.total) * 100) if (task_stats.supervised.total + task_stats.delegated.total) > 0 else 0 }}%">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>متأخر</span>
+                        <span>{{ task_stats.supervised.delayed + task_stats.delegated.delayed }}</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-danger" 
+                             style="width: {{ ((task_stats.supervised.delayed + task_stats.delegated.delayed) / (task_stats.supervised.total + task_stats.delegated.total) * 100) if (task_stats.supervised.total + task_stats.delegated.total) > 0 else 0 }}%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- إجراءات سريعة -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>إجراءات سريعة
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if permissions.can_assign_tasks %}
+                <a href="{{ url_for('task_bp.create_task', assigned_to=employee.id) }}" class="btn btn-primary w-100 mb-2">
+                    <i class="fas fa-plus me-2"></i>تعيين مهمة جديدة
+                </a>
+                {% endif %}
+                <a href="{{ url_for('communication_bp.start_chat', user_id=employee.id) }}" class="btn btn-outline-primary w-100 mb-2">
+                    <i class="fas fa-comment me-2"></i>إرسال رسالة
+                </a>
+                <a href="{{ url_for('employee_bp.api_employee_performance', user_id=employee.id) }}" class="btn btn-outline-info w-100">
+                    <i class="fas fa-chart-line me-2"></i>تقرير الأداء
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for adding skill -->
+{% if permissions.can_manage_skills %}
+<div class="modal fade" id="addSkillModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة مهارة جديدة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="skillForm">
+                    <div class="mb-3">
+                        <label class="form-label">اسم المهارة</label>
+                        <input type="text" class="form-control" name="skill_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">المستوى (1-5)</label>
+                        <input type="number" class="form-control" name="level" min="1" max="5" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">سنوات الخبرة</label>
+                        <input type="number" class="form-control" name="experience" step="0.5" min="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="saveSkill()">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addSkill() {
+    new bootstrap.Modal(document.getElementById('addSkillModal')).show();
+}
+
+function saveSkill() {
+    const form = document.getElementById('skillForm');
+    const formData = new FormData(form);
+    
+    fetch('/api/employee/{{ employee.id }}/skills', {
+        method: 'POST',
+        body: JSON.stringify(Object.fromEntries(formData)),
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('حدث خطأ: ' + data.error);
+        }
+    });
+}
+</script>
+{% endblock %}

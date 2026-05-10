@@ -1,0 +1,407 @@
+{% extends "company/base.html" %}
+
+{% block title %}موارد النشاط - {{ activity.activity_name }}{% endblock %}
+
+{% block page_title %}موارد النشاط{% endblock %}
+{% block page_subtitle %}{{ activity.activity_name }} - {{ activity.activity_id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .resources-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    .resource-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .resource-card:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        border-color: var(--primary);
+    }
+    
+    .resource-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .resource-name {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    
+    .resource-type {
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .type-labor { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .type-equipment { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .type-material { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    
+    .resource-details {
+        display: flex;
+        gap: 1.5rem;
+        margin: 1rem 0;
+        padding: 1rem 0;
+        border-top: 1px solid #eef2f7;
+        border-bottom: 1px solid #eef2f7;
+        flex-wrap: wrap;
+    }
+    
+    .detail-item {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+    }
+    
+    .detail-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .detail-value {
+        font-weight: 600;
+    }
+    
+    .progress-sm {
+        height: 6px;
+        background: #eef2f7;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+    
+    .progress-sm .progress-bar {
+        height: 100%;
+        border-radius: 3px;
+    }
+    
+    .assign-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        border: 1px solid #eef2f7;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem;
+        background: white;
+        border-radius: 20px;
+        border: 1px solid #eef2f7;
+    }
+    
+    .btn-assign {
+        background: linear-gradient(135deg, var(--success), #3aa85a);
+        color: white;
+        border: none;
+        padding: 0.5rem 1.2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-assign:hover {
+        transform: translateY(-2px);
+    }
+    
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #eef2f7;
+        border: none;
+        transition: all 0.3s;
+    }
+    
+    .action-btn:hover {
+        background: var(--primary);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="resources-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="fas fa-tools text-primary me-2"></i>
+                موارد النشاط
+            </h2>
+            <p class="text-muted">{{ activity.activity_name }} - {{ activity.activity_id }}</p>
+        </div>
+        <button class="btn-assign" onclick="showAssignModal()">
+            <i class="fas fa-plus me-2"></i>تخصيص مورد
+        </button>
+    </div>
+    
+    <!-- قائمة الموارد -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2 text-primary"></i>
+                الموارد المخصصة للنشاط
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if resources %}
+                {% for resource in resources %}
+                <div class="resource-card">
+                    <div class="resource-header">
+                        <div>
+                            <span class="resource-name">{{ resource.resource_name }}</span>
+                            <span class="resource-type type-{{ resource.resource_type }} ms-2">
+                                {% if resource.resource_type == 'labor' %}موارد بشرية
+                                {% elif resource.resource_type == 'equipment' %}معدات
+                                {% elif resource.resource_type == 'material' %}مواد
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div>
+                            <button class="action-btn" onclick="editAssignment({{ resource.id }}, '{{ resource.resource_name }}', {{ resource.planned_quantity }})" title="تعديل">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn" onclick="removeAssignment({{ resource.id }}, '{{ resource.resource_name }}')" title="إزالة">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="resource-details">
+                        <div class="detail-item">
+                            <span class="detail-label">الكود:</span>
+                            <span class="detail-value">{{ resource.resource_code }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">الوحدة:</span>
+                            <span class="detail-value">{{ resource.unit }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">التكلفة:</span>
+                            <span class="detail-value">{{ "{:,.2f}".format(resource.cost_per_unit) }} / {{ resource.unit }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">الكمية المخططة:</span>
+                            <span class="detail-value fw-bold">{{ resource.planned_quantity }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">المستهلك:</span>
+                            <span class="detail-value">{{ resource.actual_quantity }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">المتبقي:</span>
+                            <span class="detail-value {% if resource.remaining_quantity <= 0 %}text-success{% else %}text-warning{% endif %}">
+                                {{ resource.remaining_quantity }}
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">التكلفة الإجمالية:</span>
+                            <span class="detail-value">{{ "{:,.2f}".format(resource.planned_cost) }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-sm">
+                        {% set percent = (resource.actual_quantity / resource.planned_quantity * 100) if resource.planned_quantity > 0 else 0 %}
+                        <div class="progress-bar bg-{{ 'success' if percent >= 100 else 'warning' if percent >= 50 else 'primary' }}" 
+                             style="width: {{ percent }}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>نسبة الإنجاز: {{ "%.1f"|format(percent) }}%</span>
+                        <span>التكلفة الفعلية: {{ "{:,.2f}".format(resource.actual_cost) }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">لا توجد موارد مخصصة</h5>
+                    <p class="text-muted">لم يتم تخصيص أي موارد لهذا النشاط بعد</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- نموذج تخصيص مورد -->
+    <div class="assign-card">
+        <h5 class="mb-3">
+            <i class="fas fa-plus-circle text-success me-2"></i>
+            تخصيص مورد جديد
+        </h5>
+        <form id="assignForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">المورد</label>
+                    <select class="form-select" id="resourceSelect" required>
+                        <option value="">اختر المورد</option>
+                        {% for res in all_resources %}
+                        <option value="{{ res.id }}" data-unit="{{ res.unit }}" data-available="{{ res.available_quantity - res.total_allocated }}">
+                            {{ res.name }} ({{ res.resource_id }}) - متاح: {{ res.available_quantity - res.total_allocated }} {{ res.unit }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">الكمية</label>
+                    <input type="number" class="form-control" id="quantity" step="0.01" min="0" required>
+                    <small class="text-muted">الوحدة: <span id="unit">-</span> | الحد الأقصى: <span id="maxAvailable">-</span></small>
+                </div>
+            </div>
+            <div class="text-end">
+                <button type="button" class="btn btn-primary" onclick="assignResource()">
+                    <i class="fas fa-save me-2"></i>تخصيص
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let activityId = {{ activity.id }};
+
+// تحديث معلومات المورد
+document.getElementById('resourceSelect').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    const unit = selected.dataset.unit;
+    const maxAvailable = selected.dataset.available;
+    
+    document.getElementById('unit').textContent = unit || '-';
+    document.getElementById('maxAvailable').textContent = maxAvailable || '0';
+    document.getElementById('quantity').max = maxAvailable || 0;
+});
+
+// تخصيص مورد
+function assignResource() {
+    const resourceId = document.getElementById('resourceSelect').value;
+    const quantity = document.getElementById('quantity').value;
+    
+    if (!resourceId) {
+        Swal.fire('تنبيه', 'الرجاء اختيار المورد', 'warning');
+        return;
+    }
+    if (!quantity || quantity <= 0) {
+        Swal.fire('تنبيه', 'الرجاء إدخال كمية صحيحة', 'warning');
+        return;
+    }
+    
+    Swal.fire({
+        title: 'تأكيد التخصيص',
+        text: 'هل أنت متأكد من تخصيص هذا المورد للنشاط؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، تخصيص',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/resources/api/activity/${activityId}/allocate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    resource_id: resourceId,
+                    quantity: parseFloat(quantity)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('تم', 'تم تخصيص المورد بنجاح', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('خطأ', data.error, 'error');
+                }
+            });
+        }
+    });
+}
+
+// تعديل كمية المورد
+function editAssignment(assignmentId, resourceName, currentQuantity) {
+    Swal.fire({
+        title: 'تعديل الكمية',
+        html: `
+            <input type="number" id="newQuantity" class="swal2-input" 
+                   placeholder="الكمية الجديدة" value="${currentQuantity}" step="0.01" min="0">
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'تحديث',
+        cancelButtonText: 'إلغاء',
+        preConfirm: () => {
+            const quantity = document.getElementById('newQuantity').value;
+            if (!quantity || quantity <= 0) {
+                Swal.showValidationMessage('الرجاء إدخال كمية صحيحة');
+                return false;
+            }
+            return quantity;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/resources/api/activity-resource/${assignmentId}/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ quantity: parseFloat(result.value) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('تم', 'تم تحديث الكمية بنجاح', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('خطأ', data.error, 'error');
+                }
+            });
+        }
+    });
+}
+
+// إزالة مورد
+function removeAssignment(assignmentId, resourceName) {
+    Swal.fire({
+        title: 'تأكيد الإزالة',
+        text: `هل أنت متأكد من إزالة المورد "${resourceName}" من هذا النشاط؟`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، إزالة',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/resources/api/activity-resource/${assignmentId}/remove`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('تم', 'تم إزالة المورد بنجاح', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('خطأ', data.error, 'error');
+                }
+            });
+        }
+    });
+}
+
+function showAssignModal() {
+    document.getElementById('assignForm').reset();
+    document.getElementById('unit').textContent = '-';
+    document.getElementById('maxAvailable').textContent = '-';
+}
+</script>
+{% endblock %}

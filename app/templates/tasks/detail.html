@@ -1,0 +1,931 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ task.task_name }} - تفاصيل المهمة{% endblock %}
+
+{% block page_title %}{{ task.task_code }}: {{ task.task_name }}{% endblock %}
+{% block page_subtitle %}
+    المشروع: {{ task.project.name }}
+    {% if task.activity %}
+    | النشاط: {{ task.activity.activity_code }}
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== شريط المعلومات السريعة ===== */
+    .task-quick-info {
+        background: white;
+        border-radius: 20px;
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        border: 1px solid #eef2f7;
+    }
+
+    .quick-item {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .quick-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .quick-content {
+        flex: 1;
+    }
+
+    .quick-label {
+        font-size: 0.7rem;
+        color: #6c757d;
+        margin-bottom: 0.2rem;
+    }
+
+    .quick-value {
+        font-weight: 600;
+        color: var(--dark);
+        font-size: 1rem;
+    }
+
+    .status-badge-large {
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-in_progress { background: #cce5ff; color: #004085; }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-on_hold { background: #fff3cd; color: #856404; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+
+    .priority-badge-large {
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .priority-5 { background: #f8d7da; color: #721c24; }
+    .priority-4 { background: #fff3cd; color: #856404; }
+    .priority-3 { background: #d4edda; color: #155724; }
+    .priority-2 { background: #cce5ff; color: #004085; }
+    .priority-1 { background: #e2e3e5; color: #383d41; }
+
+    /* ===== شريط التقدم ===== */
+    .progress-large {
+        height: 10px;
+        background: #eef2f7;
+        border-radius: 5px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+
+    .progress-fill-large {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary), var(--info));
+        border-radius: 5px;
+        transition: width 0.3s;
+    }
+
+    /* ===== أزرار التحكم ===== */
+    .action-bar {
+        background: white;
+        border-radius: 20px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        border: 1px solid #eef2f7;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-action {
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        border: 2px solid #eef2f7;
+        background: white;
+        color: #6c757d;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-action.start:hover {
+        border-color: #28a745;
+        color: #28a745;
+    }
+
+    .btn-action.pause:hover {
+        border-color: #ffc107;
+        color: #ffc107;
+    }
+
+    .btn-action.complete:hover {
+        border-color: #17a2b8;
+        color: #17a2b8;
+    }
+
+    .btn-action.cancel:hover {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+
+    .btn-action.edit:hover {
+        border-color: #6f42c1;
+        color: #6f42c1;
+    }
+
+    /* ===== تبويبات المهمة ===== */
+    .task-tabs {
+        background: white;
+        border-radius: 15px 15px 0 0;
+        padding: 0 1rem;
+        border-bottom: 2px solid #eef2f7;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .task-tabs .nav-tabs {
+        border-bottom: none;
+        flex-wrap: nowrap;
+    }
+
+    .task-tabs .nav-link {
+        border: none;
+        color: #6c757d;
+        font-weight: 600;
+        padding: 0.8rem 1.2rem;
+        margin: 0 0.2rem;
+        border-radius: 8px 8px 0 0;
+        transition: all 0.3s;
+        position: relative;
+        font-size: 0.9rem;
+    }
+
+    .task-tabs .nav-link:hover {
+        color: var(--primary);
+        background: #f8fafc;
+    }
+
+    .task-tabs .nav-link.active {
+        color: var(--primary);
+        background: transparent;
+    }
+
+    .task-tabs .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--primary);
+        border-radius: 3px 3px 0 0;
+    }
+
+    .task-tabs .nav-link i {
+        margin-left: 0.3rem;
+    }
+
+    .tab-badge {
+        background: var(--primary);
+        color: white;
+        padding: 0.1rem 0.4rem;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        margin-right: 0.3rem;
+    }
+
+    /* ===== محتوى التبويبات ===== */
+    .tab-content-container {
+        background: white;
+        border-radius: 0 0 15px 15px;
+        padding: 1.5rem;
+        min-height: 500px;
+        border: 1px solid #eef2f7;
+        border-top: none;
+    }
+
+    /* ===== بطاقات المعلومات ===== */
+    .info-card {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        border: 1px solid #eef2f7;
+    }
+
+    .info-card-title {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px dashed #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.95rem;
+    }
+
+    .info-card-title i {
+        color: var(--primary);
+    }
+
+    .info-table {
+        width: 100%;
+    }
+
+    .info-table td {
+        padding: 0.5rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .info-table td:first-child {
+        font-weight: 600;
+        color: #6c757d;
+        width: 150px;
+    }
+
+    .info-table td:last-child {
+        color: var(--dark);
+    }
+
+    /* ===== جداول المهام ===== */
+    .detail-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .detail-table thead th {
+        background: #f8fafc;
+        padding: 0.8rem;
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.8rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+
+    .detail-table tbody td {
+        padding: 0.8rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .badge {
+        padding: 0.3rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .badge-success { background: #d4edda; color: #155724; }
+    .badge-warning { background: #fff3cd; color: #856404; }
+    .badge-danger { background: #f8d7da; color: #721c24; }
+    .badge-info { background: #cce5ff; color: #004085; }
+    .badge-secondary { background: #e2e3e5; color: #383d41; }
+
+    .requirement-item {
+        background: white;
+        border: 2px solid #eef2f7;
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .requirement-item.verified {
+        border-color: #28a745;
+        background: #f0fff4;
+    }
+
+    .requirement-item.pending {
+        border-color: #ffc107;
+        background: #fff9e6;
+    }
+
+    .verification-btn {
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        border: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .verification-btn.verify {
+        background: #28a745;
+        color: white;
+    }
+
+    .verification-btn.view {
+        background: var(--primary);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- شريط المعلومات السريعة -->
+<div class="task-quick-info">
+    <div class="quick-item">
+        <div class="quick-icon">
+            <i class="fas fa-tag"></i>
+        </div>
+        <div class="quick-content">
+            <div class="quick-label">كود المهمة</div>
+            <div class="quick-value">{{ task.task_code }}</div>
+        </div>
+    </div>
+    
+    <div class="quick-item">
+        <div class="quick-icon">
+            <i class="fas fa-project-diagram"></i>
+        </div>
+        <div class="quick-content">
+            <div class="quick-label">المشروع</div>
+            <div class="quick-value">{{ task.project.name }}</div>
+        </div>
+    </div>
+    
+    <div class="quick-item">
+        <div class="quick-icon">
+            <i class="fas fa-calendar"></i>
+        </div>
+        <div class="quick-content">
+            <div class="quick-label">تاريخ النهاية</div>
+            <div class="quick-value {% if task.is_delayed %}text-danger fw-bold{% endif %}">
+                {{ task.planning.planned_finish.strftime('%Y-%m-%d') if task.planning and task.planning.planned_finish else '-' }}
+                {% if task.is_delayed %}
+                <span class="badge bg-danger">متأخرة {{ task.get_delay_days }} يوم</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="quick-item">
+        <div class="quick-icon">
+            <i class="fas fa-user-tie"></i>
+        </div>
+        <div class="quick-content">
+            <div class="quick-label">المشرف</div>
+            <div class="quick-value">{{ task.supervisor.full_name if task.supervisor else '-' }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- شريط الإجراءات -->
+<div class="action-bar">
+    <div class="d-flex align-items-center gap-3">
+        <span class="status-badge-large status-{{ task.status }}">
+            {% if task.status == 'pending' %}
+            <i class="fas fa-clock me-1"></i> معلقة
+            {% elif task.status == 'in_progress' %}
+            <i class="fas fa-play-circle me-1"></i> قيد التنفيذ
+            {% elif task.status == 'completed' %}
+            <i class="fas fa-check-circle me-1"></i> مكتملة
+            {% elif task.status == 'on_hold' %}
+            <i class="fas fa-pause-circle me-1"></i> مؤجلة
+            {% elif task.status == 'cancelled' %}
+            <i class="fas fa-times-circle me-1"></i> ملغاة
+            {% endif %}
+        </span>
+        
+        <span class="priority-badge-large priority-{{ task.priority }}">
+            الأولوية: {{ task.priority }}
+        </span>
+        
+        <div style="width: 150px;">
+            <div class="d-flex justify-content-between mb-1">
+                <small class="text-muted">التقدم</small>
+                <small class="fw-bold">{{ task.progress.progress_percentage }}%</small>
+            </div>
+            <div class="progress-large">
+                <div class="progress-fill-large" style="width: {{ task.progress.progress_percentage }}%"></div>
+            </div>
+        </div>
+        <!-- إضافة زر الدردشة في تفاصيل المهمة -->
+        <div class="btn-group me-2">
+            <button class="btn btn-outline-info" onclick="openTaskChat({{ task.id }})">
+                <i class="fas fa-comments me-1"></i> {{ _('chat') }}
+            </button>
+            <button class="btn btn-outline-info dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{{ url_for('communication.task_chat', task_id=task.id) }}">
+                    <i class="fas fa-comments me-2"></i> {{ _('open_task_chat') }}
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="inviteToTaskChat({{ task.id }})">
+                    <i class="fas fa-user-plus me-2"></i> {{ _('invite_to_chat') }}
+                </a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="action-buttons">
+        {% if task.status == 'pending' %}
+        <button class="btn-action start" onclick="startTask()">
+            <i class="fas fa-play"></i> بدء
+        </button>
+        {% endif %}
+        
+        {% if task.status == 'in_progress' %}
+        <button class="btn-action pause" onclick="pauseTask()">
+            <i class="fas fa-pause"></i> إيقاف
+        </button>
+        <button class="btn-action complete" onclick="completeTask()">
+            <i class="fas fa-check"></i> إكمال
+        </button>
+        {% endif %}
+        
+        {% if task.status == 'on_hold' %}
+        <button class="btn-action start" onclick="resumeTask()">
+            <i class="fas fa-play"></i> استئناف
+        </button>
+        {% endif %}
+        
+        {% if task.status not in ['completed', 'cancelled'] %}
+        <button class="btn-action cancel" onclick="cancelTask()">
+            <i class="fas fa-times"></i> إلغاء
+        </button>
+        {% endif %}
+        
+        <a href="{{ url_for('tasks.edit_task', task_id=task.id) }}" class="btn-action edit">
+            <i class="fas fa-edit"></i> تعديل
+        </a>
+    </div>
+</div>
+
+<!-- تبويبات المهمة -->
+<div class="task-tabs">
+    <ul class="nav nav-tabs" id="taskTabs">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#general">
+                <i class="fas fa-info-circle"></i> عام
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#planning">
+                <i class="fas fa-calendar"></i> التخطيط
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#execution">
+                <i class="fas fa-play-circle"></i> التنفيذ
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#assignments">
+                <i class="fas fa-users"></i> التعيينات
+                <span class="tab-badge">{{ assignments|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#resources">
+                <i class="fas fa-tools"></i> الموارد
+                <span class="tab-badge">{{ task_resources|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#dependencies">
+                <i class="fas fa-link"></i> التبعيات
+                <span class="tab-badge">{{ predecessors|length + successors|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#requirements">
+                <i class="fas fa-clipboard-list"></i> المتطلبات
+                <span class="tab-badge">{{ requirements|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#safety">
+                <i class="fas fa-shield-alt"></i> السلامة
+                <span class="tab-badge">{{ safety_checks|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#progress">
+                <i class="fas fa-chart-line"></i> التقدم
+                <span class="tab-badge">{{ progress_updates|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#issues">
+                <i class="fas fa-exclamation-triangle"></i> القضايا
+                <span class="tab-badge">{{ issues|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#quality">
+                <i class="fas fa-check-double"></i> الجودة
+                <span class="tab-badge">{{ quality_checks|length }}</span>
+            </button>
+        </li>
+    </ul>
+</div>
+
+<!-- محتوى التبويبات -->
+<div class="tab-content-container">
+    <div class="tab-content">
+        <!-- تبويب عام -->
+        <div class="tab-pane fade show active" id="general">
+            {% include 'tasks/tabs/general.html' %}
+        </div>
+        
+        <!-- تبويب التخطيط -->
+        <div class="tab-pane fade" id="planning">
+            {% include 'tasks/tabs/planning.html' %}
+        </div>
+        
+        <!-- تبويب التنفيذ -->
+        <div class="tab-pane fade" id="execution">
+            {% include 'tasks/tabs/execution.html' %}
+        </div>
+        
+        <!-- تبويب التعيينات -->
+        <div class="tab-pane fade" id="assignments">
+            {% include 'tasks/tabs/assignments.html' %}
+        </div>
+        
+        <!-- تبويب الموارد -->
+        <div class="tab-pane fade" id="resources">
+            {% include 'tasks/tabs/resources.html' %}
+        </div>
+        
+        <!-- تبويب التبعيات -->
+        <div class="tab-pane fade" id="dependencies">
+            {% include 'tasks/tabs/dependencies.html' %}
+        </div>
+        
+        <!-- تبويب المتطلبات -->
+        <div class="tab-pane fade" id="requirements">
+            {% include 'tasks/tabs/requirements.html' %}
+        </div>
+        
+        <!-- تبويب السلامة -->
+        <div class="tab-pane fade" id="safety">
+            {% include 'tasks/tabs/safety.html' %}
+        </div>
+        
+        <!-- تبويب التقدم -->
+        <div class="tab-pane fade" id="progress">
+            {% include 'tasks/tabs/progress.html' %}
+        </div>
+        
+        <!-- تبويب القضايا -->
+        <div class="tab-pane fade" id="issues">
+            {% include 'tasks/tabs/issues.html' %}
+        </div>
+        
+        <!-- تبويب الجودة -->
+        <div class="tab-pane fade" id="quality">
+            {% include 'tasks/tabs/quality.html' %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal تحديث التقدم -->
+<div class="modal fade" id="progressModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تحديث التقدم</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="progressForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نسبة التقدم (%)</label>
+                        <input type="range" class="form-range" id="progressRange" min="0" max="100" value="{{ task.progress.progress_percentage }}" step="1"
+                               oninput="document.getElementById('progressValue').textContent = this.value + '%'">
+                        <div class="text-center">
+                            <span id="progressValue" class="fw-bold">{{ task.progress.progress_percentage }}%</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ملاحظات</label>
+                        <textarea class="form-control" id="progressNotes" rows="3" placeholder="أضف ملاحظات حول التقدم..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="updateProgress()">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إكمال المهمة -->
+<div class="modal fade" id="completeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إكمال المهمة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="completeForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">جودة الإنجاز</label>
+                        <select class="form-select" id="completeQuality">
+                            <option value="excellent">ممتاز</option>
+                            <option value="good" selected>جيد</option>
+                            <option value="fair">مقبول</option>
+                            <option value="poor">ضعيف</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ملاحظات</label>
+                        <textarea class="form-control" id="completeNotes" rows="3" placeholder="أضف ملاحظات حول الإنجاز..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-success" onclick="confirmComplete()">إكمال</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openTaskChat(taskId) {
+    window.location.href = `/communication/task/${taskId}/chat`;
+}
+
+function inviteToTaskChat(taskId) {
+    // فتح نافذة اختيار المستخدمين
+    Swal.fire({
+        title: '{{ _("invite_to_chat") }}',
+        html: `
+            <select id="inviteUsers" class="form-select" multiple size="5">
+                <!-- سيتم تحميل المستخدمين ديناميكياً -->
+            </select>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '{{ _("invite") }}',
+        preConfirm: () => {
+            const selected = $('#inviteUsers').val();
+            if (!selected || selected.length === 0) {
+                Swal.showValidationMessage('{{ _("select_users_to_invite") }}');
+            }
+            return selected;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/communication/task/${taskId}/invite`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ user_ids: result.value })
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      Swal.fire('{{ _("success") }}', '{{ _("users_invited") }}', 'success');
+                  }
+              });
+        }
+    });
+}
+// دوال التحكم في المهمة
+function startTask() {
+    Swal.fire({
+        title: 'بدء المهمة',
+        text: 'هل أنت متأكد من بدء هذه المهمة؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، ابدأ',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/tasks/api/{{ task.id }}/start`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('تم بدء المهمة بنجاح');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showError(data.error || 'حدث خطأ');
+                }
+            });
+        }
+    });
+}
+
+function pauseTask() {
+    Swal.fire({
+        title: 'إيقاف المهمة',
+        text: 'هل أنت متأكد من إيقاف هذه المهمة مؤقتاً؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، أوقف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/tasks/api/{{ task.id }}/pause`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('تم إيقاف المهمة مؤقتاً');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showError(data.error || 'حدث خطأ');
+                }
+            });
+        }
+    });
+}
+
+function resumeTask() {
+    Swal.fire({
+        title: 'استئناف المهمة',
+        text: 'هل أنت متأكد من استئناف هذه المهمة؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، استأنف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/tasks/api/{{ task.id }}/resume`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('تم استئناف المهمة');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showError(data.error || 'حدث خطأ');
+                }
+            });
+        }
+    });
+}
+
+function completeTask() {
+    new bootstrap.Modal(document.getElementById('completeModal')).show();
+}
+
+function confirmComplete() {
+    const quality = document.getElementById('completeQuality').value;
+    const notes = document.getElementById('completeNotes').value;
+    
+    fetch(`/tasks/api/{{ task.id }}/complete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            quality: quality,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('completeModal')).hide();
+            showSuccess('تم إكمال المهمة بنجاح');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'حدث خطأ');
+        }
+    });
+}
+
+function cancelTask() {
+    Swal.fire({
+        title: 'إلغاء المهمة',
+        text: 'هل أنت متأكد من إلغاء هذه المهمة؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'نعم، ألغ',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/tasks/api/{{ task.id }}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('تم إلغاء المهمة');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showError(data.error || 'حدث خطأ');
+                }
+            });
+        }
+    });
+}
+
+function showProgressModal() {
+    new bootstrap.Modal(document.getElementById('progressModal')).show();
+}
+
+function updateProgress() {
+    const progress = document.getElementById('progressRange').value;
+    const notes = document.getElementById('progressNotes').value;
+    
+    fetch(`/tasks/api/{{ task.id }}/progress-update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            progress: progress,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('progressModal')).hide();
+            showSuccess('تم تحديث التقدم');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'حدث خطأ');
+        }
+    });
+}
+
+// تحديث شريط التقدم ديناميكياً
+document.getElementById('progressRange')?.addEventListener('input', function() {
+    document.getElementById('progressValue').textContent = this.value + '%';
+});
+
+// دوال مساعدة
+function showSuccess(message) {
+    Swal.fire({
+        icon: 'success',
+        title: 'تم بنجاح',
+        text: message,
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
+
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'خطأ',
+        text: message
+    });
+}
+</script>
+{% endblock %}

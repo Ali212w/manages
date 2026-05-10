@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}خطط الاشتراك{% endblock %}
+
+{% block extra_css %}
+<style>
+    .plan-card {
+        transition: transform 0.3s;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .plan-card:hover {
+        transform: translateY(-5px);
+    }
+    .plan-card.popular {
+        border: 2px solid #ffc107;
+        transform: scale(1.02);
+    }
+    .price {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    .price small {
+        font-size: 1rem;
+        color: #6c757d;
+    }
+    .feature-list {
+        list-style: none;
+        padding: 0;
+    }
+    .feature-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .feature-list li:last-child {
+        border-bottom: none;
+    }
+    .feature-list i {
+        margin-left: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-5">
+    <div class="col-12 text-center">
+        <h2 class="mb-3">اختر خطة الاشتراك المناسبة</h2>
+        <p class="lead text-muted">استمتع بميزات متقدمة لإدارة مشاريعك بذكاء</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Basic Plan -->
+    <div class="col-lg-4 mb-4">
+        <div class="card plan-card h-100">
+            <div class="card-header bg-primary text-white text-center py-4">
+                <h4 class="mb-0">Basic</h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="price mb-3">
+                    $29 <small>/شهر</small>
+                </div>
+                <p class="text-muted mb-4">مناسب للشركات الناشئة والمشاريع الصغيرة</p>
+                
+                <ul class="feature-list text-start">
+                    <li><i class="fas fa-check text-success"></i> 5 مشاريع</li>
+                    <li><i class="fas fa-check text-success"></i> 10 مستخدمين</li>
+                    <li><i class="fas fa-check text-success"></i> تخزين 10 جيجابايت</li>
+                    <li><i class="fas fa-check text-success"></i> دعم أساسي عبر البريد الإلكتروني</li>
+                    <li><i class="fas fa-check text-success"></i> تقارير أساسية</li>
+                    <li class="text-muted"><i class="fas fa-times text-danger"></i> تقارير متقدمة</li>
+                    <li class="text-muted"><i class="fas fa-times text-danger"></i> API مخصص</li>
+                </ul>
+            </div>
+            <div class="card-footer text-center bg-transparent">
+                <form action="{{ url_for('create_checkout_session') }}" method="POST">
+                    <input type="hidden" name="plan_id" value="basic">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-crown"></i> اشترك الآن
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pro Plan -->
+    <div class="col-lg-4 mb-4">
+        <div class="card plan-card popular h-100">
+            <div class="card-header bg-warning text-dark text-center py-4 position-relative">
+                <span class="badge bg-danger position-absolute top-0 start-50 translate-middle">الأكثر مبيعاً</span>
+                <h4 class="mb-0">Pro</h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="price mb-3">
+                    $79 <small>/شهر</small>
+                </div>
+                <p class="text-muted mb-4">مثالي للشركات المتوسطة والفرق العاملة</p>
+                
+                <ul class="feature-list text-start">
+                    <li><i class="fas fa-check text-success"></i> مشاريع غير محدودة</li>
+                    <li><i class="fas fa-check text-success"></i> 50 مستخدمين</li>
+                    <li><i class="fas fa-check text-success"></i> تخزين 50 جيجابايت</li>
+                    <li><i class="fas fa-check text-success"></i> دعم priorit عبر البريد والهاتف</li>
+                    <li><i class="fas fa-check text-success"></i> تقارير أساسية</li>
+                    <li><i class="fas fa-check text-success"></i> تقارير متقدمة وتحليلات</li>
+                    <li><i class="fas fa-check text-success"></i> تصدير البيانات</li>
+                    <li class="text-muted"><i class="fas fa-times text-danger"></i> API مخصص</li>
+                </ul>
+            </div>
+            <div class="card-footer text-center bg-transparent">
+                <form action="{{ url_for('create_checkout_session') }}" method="POST">
+                    <input type="hidden" name="plan_id" value="pro">
+                    <button type="submit" class="btn btn-warning btn-lg w-100">
+                        <i class="fas fa-crown"></i> اشترك الآن
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Enterprise Plan -->
+    <div class="col-lg-4 mb-4">
+        <div class="card plan-card h-100">
+            <div class="card-header bg-success text-white text-center py-4">
+                <h4 class="mb-0">Enterprise</h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="price mb-3">
+                    $199 <small>/شهر</small>
+                </div>
+                <p class="text-muted mb-4">للشركات الكبيرة والمؤسسات</p>
+                
+                <ul class="feature-list text-start">
+                    <li><i class="fas fa-check text-success"></i> مشاريع غير محدودة</li>
+                    <li><i class="fas fa-check text-success"></i> مستخدمين غير محدودين</li>
+                    <li><i class="fas fa-check text-success"></i> تخزين 200 جيجابايت</li>
+                    <li><i class="fas fa-check text-success"></i> دعم VIP 24/7</li>
+                    <li><i class="fas fa-check text-success"></i> تقارير متقدمة وتحليلات</li>
+                    <li><i class="fas fa-check text-success"></i> API مخصص</li>
+                    <li><i class="fas fa-check text-success"></i> تكامل مع أنظمة خارجية</li>
+                    <li><i class="fas fa-check text-success"></i> مدير حساب مخصص</li>
+                </ul>
+            </div>
+            <div class="card-footer text-center bg-transparent">
+                <form action="{{ url_for('create_checkout_session') }}" method="POST">
+                    <input type="hidden" name="plan_id" value="enterprise">
+                    <button type="submit" class="btn btn-success btn-lg w-100">
+                        <i class="fas fa-crown"></i> اشترك الآن
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مقارنة الميزات -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> مقارنة الميزات</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40%;">الميزة</th>
+                                <th>Basic</th>
+                                <th>Pro</th>
+                                <th>Enterprise</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-start">عدد المشاريع</td>
+                                <td>5</td>
+                                <td>غير محدود</td>
+                                <td>غير محدود</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start">عدد المستخدمين</td>
+                                <td>10</td>
+                                <td>50</td>
+                                <td>غير محدود</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start">مساحة التخزين</td>
+                                <td>10 جيجابايت</td>
+                                <td>50 جيجابايت</td>
+                                <td>200 جيجابايت</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start">الذكاء الاصطناعي لاستخراج البيانات</td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td class="text-start">إشعارات فورية</td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td class="text-start">تقارير متقدمة</td>
+                                <td><i class="fas fa-times text-danger"></i></td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td class="text-start">API مخصص</td>
+                                <td><i class="fas fa-times text-danger"></i></td>
+                                <td><i class="fas fa-times text-danger"></i></td>
+                                <td><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td class="text-start">دعم فني</td>
+                                <td>بريد إلكتروني</td>
+                                <td>بريد + هاتف</td>
+                                <td>VIP 24/7</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- الأسئلة الشائعة -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-question-circle"></i> الأسئلة الشائعة</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                هل يمكنني الترقية من خطة إلى أخرى لاحقاً؟
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                نعم، يمكنك الترقية إلى خطة أعلى في أي وقت. سيتم احتساب الفرق пропорциональاً للفترة المتبقية من اشتراكك الحالي.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                ماذا يحدث بعد انتهاء الفترة التجريبية؟
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                بعد انتهاء الفترة التجريبية، يمكنك الاشتراك في إحدى الخطط المدفوعة للاستمرار في استخدام المنصة. إذا لم تقم بالاشتراك، سيتحول حسابك إلى وضع القراءة فقط.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                هل يمكنني إلغاء الاشتراك في أي وقت؟
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                نعم، يمكنك إلغاء اشتراكك في أي وقت من لوحة التحكم. لن يتم تحصيل أي رسوم إضافية بعد الإلغاء، وستبقى الخدمة متاحة حتى نهاية الفترة المدفوعة.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                ما هي وسائل الدفع المتاحة؟
+                            </button>
+                        </h2>
+                        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                نقبل جميع بطاقات الائتمان الرئيسية (Visa, MasterCard, American Express) بالإضافة إلى PayPal.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+// يمكن إضافة كود Stripe هنا إذا أردت استخدام Checkout مباشرة من الصفحة
+</script>
+{% endblock %}

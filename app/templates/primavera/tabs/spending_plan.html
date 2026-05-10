@@ -1,0 +1,176 @@
+<!-- templates/primavera/tabs/project/spending_plan.html -->
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-chart-line text-primary"></i>
+        Spending Plan
+    </h6>
+    
+    <!-- ملخص خطة الصرف -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="bg-light p-3 rounded">
+                <small class="text-muted d-block">Total Spending Plan</small>
+                <h4 class="mb-0 text-primary">{{ "%.2f"|format(total_spending_plan or 0) }} ر.س</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="bg-light p-3 rounded">
+                <small class="text-muted d-block">Total Benefit Plan</small>
+                <h4 class="mb-0 text-success">{{ "%.2f"|format(total_benefit_plan or 0) }} ر.س</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="bg-light p-3 rounded">
+                <small class="text-muted d-block">Undistributed Variance</small>
+                <h4 class="mb-0 text-warning">{{ "%.2f"|format(undistributed_variance or 0) }} ر.س</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="bg-light p-3 rounded">
+                <small class="text-muted d-block">Benefit Variance</small>
+                <h4 class="mb-0 text-danger">{{ "%.2f"|format(benefit_variance or 0) }} ر.س</h4>
+            </div>
+        </div>
+    </div>
+    
+    <!-- جدول خطة الصرف -->
+    <div class="table-responsive">
+        <table class="primavera-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Spending Plan</th>
+                    <th>Spending Plan Tally</th>
+                    <th>Undistributed Variance</th>
+                    <th>Benefit Plan</th>
+                    <th>Benefit Plan Tally</th>
+                    <th>Benefit Variance</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="spendingPlanTable">
+                {% for item in spending_plan %}
+                <tr>
+                    <td>{{ item.date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ "%.2f"|format(item.planned_amount) }} ر.س</td>
+                    <td>{{ "%.2f"|format(item.spending_tally) }} ر.س</td>
+                    <td>{{ "%.2f"|format(item.undistributed_variance) }} ر.س</td>
+                    <td>{{ "%.2f"|format(item.benefit_amount) }} ر.س</td>
+                    <td>{{ "%.2f"|format(item.benefit_tally) }} ر.س</td>
+                    <td class="{% if item.benefit_variance < 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ "%.2f"|format(item.benefit_variance) }} ر.س
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-link" onclick="editSpendingItem({{ item.id }})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- زر إضافة بند جديد -->
+    <div class="mt-3">
+        <button class="btn-primavera" onclick="showAddSpendingModal()">
+            <i class="fas fa-plus me-2"></i>Add Spending Item
+        </button>
+    </div>
+</div>
+
+<!-- Modal إضافة بند صرف -->
+<div class="modal fade" id="spendingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Spending Plan Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="spendingForm">
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" id="spendingDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Spending Plan Amount</label>
+                        <input type="number" class="form-control" id="spendingAmount" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Benefit Plan Amount</label>
+                        <input type="number" class="form-control" id="benefitAmount" step="0.01" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveSpendingItem()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let spendingChart = null;
+
+function showAddSpendingModal() {
+    document.getElementById('spendingForm').reset();
+    new bootstrap.Modal(document.getElementById('spendingModal')).show();
+}
+
+function saveSpendingItem() {
+    const data = {
+        date: document.getElementById('spendingDate').value,
+        planned_amount: document.getElementById('spendingAmount').value,
+        benefit_amount: document.getElementById('benefitAmount').value
+    };
+    
+    fetch(`/primavera/api/project/{{ project.id }}/spending-plan`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire('تم', 'تم إضافة بند الصرف', 'success');
+            location.reload();
+        }
+    });
+}
+
+// رسم بياني لخطة الصرف
+function initSpendingChart() {
+    const ctx = document.getElementById('spendingChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    const items = {{ spending_plan|tojson|safe if spending_plan else '[]'  }};
+    const dates = items.map(i => i.date);
+    const planned = items.map(i => i.planned_amount);
+    const benefit = items.map(i => i.benefit_amount);
+    
+    spendingChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Spending Plan',
+                data: planned,
+                borderColor: '#2563eb',
+                tension: 0.1
+            }, {
+                label: 'Benefit Plan',
+                data: benefit,
+                borderColor: '#10b981',
+                tension: 0.1
+            }]
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initSpendingChart);
+</script>

@@ -1,0 +1,298 @@
+{% extends "company/base.html" %}
+
+{% block title %}تأكيد التسليم - {{ request.project.name }}{% endblock %}
+
+{% block page_title %}تأكيد استلام المواد{% endblock %}
+{% block page_subtitle %}{{ request.project.name }} - {{ request.project_code }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .confirm-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .delivery-summary {
+        background: linear-gradient(135deg, #f8fafc, white);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #eef2f7;
+    }
+    
+    .delivery-number {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .items-list {
+        margin-top: 1rem;
+    }
+    
+    .item-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .item-name {
+        font-weight: 600;
+    }
+    
+    .item-quantity {
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .btn-confirm {
+        background: linear-gradient(135deg, var(--success), #3aa85a);
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 201, 240, 0.4);
+    }
+    
+    .btn-reject {
+        background: linear-gradient(135deg, var(--danger), #d32f2f);
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-reject:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(249, 65, 68, 0.4);
+    }
+    
+    .photo-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .photo-gallery img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid #eef2f7;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .photo-gallery img:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="confirm-container">
+    <!-- تفاصيل التسليم -->
+    <div class="delivery-summary">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+                <i class="fas fa-truck text-primary me-2"></i>
+                تسليم مواد
+            </h5>
+            <span class="delivery-number">{{ delivery.delivery_number }}</span>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <small class="text-muted">تاريخ التسليم</small>
+                <p class="mb-0">{{ delivery.delivery_date.strftime('%Y-%m-%d %H:%M') if delivery.delivery_date }}</p>
+            </div>
+            <div class="col-md-6">
+                <small class="text-muted">موقع التسليم</small>
+                <p class="mb-0">{{ delivery.delivery_location or 'غير محدد' }}</p>
+                {% if delivery.coordinates %}
+                <small class="text-muted">الإحداثيات: {{ delivery.coordinates }}</small>
+                {% endif %}
+            </div>
+        </div>
+        
+        <h6 class="mb-2">المواد المسلمة</h6>
+        <div class="items-list">
+            {% for item in delivery.delivered_items %}
+            <div class="item-row">
+                <span class="item-name">{{ item.name }}</span>
+                <span class="item-quantity">{{ item.quantity }} {{ item.unit }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if delivery.photos %}
+        <div class="mt-3">
+            <small class="text-muted">صور التسليم</small>
+            <div class="photo-gallery">
+                {% for photo in delivery.photos %}
+                <img src="{{ photo }}" alt="صورة التسليم" onclick="viewImage('{{ photo }}')">
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if delivery.notes %}
+        <div class="mt-3">
+            <small class="text-muted">ملاحظات المورد</small>
+            <p class="mb-0 bg-light p-2 rounded">{{ delivery.notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- حالة الطلب الحالية -->
+    <div class="delivery-summary">
+        <h6 class="mb-3">
+            <i class="fas fa-chart-line text-primary me-2"></i>
+            حالة الطلب الحالية
+        </h6>
+        
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>المادة</th>
+                        <th>المطلوب</th>
+                        <th>المستلم</th>
+                        <th>المتبقي</th>
+                        <th>نسبة الإنجاز</th>
+                    </thead>
+                    <tbody>
+                        {% for item in request_items %}
+                        <tr>
+                            <td>{{ item.resource_name }}<br><small>{{ item.resource_code }}</small>\(
+                            <td class="text-center">{{ item.required_quantity }}\(
+                            <td class="text-success text-center">{{ item.delivered_quantity }}\(
+                            <td class="{% if item.remaining_quantity > 0 %}text-danger{% endif %} text-center">
+                                {{ item.remaining_quantity }}
+                            </td>
+                            <td style="width: 120px;">
+                                {% set percent = (item.delivered_quantity / item.required_quantity * 100) if item.required_quantity > 0 else 0 %}
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar bg-{{ 'success' if percent >= 100 else 'primary' }}" 
+                                         style="width: {{ percent }}%"></div>
+                                </div>
+                                <small>{{ "%.0f"|format(percent) }}%</small>
+                            </td>
+                         </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- نموذج التأكيد -->
+        <div class="delivery-summary">
+            <h6 class="mb-3">
+                <i class="fas fa-clipboard-check text-primary me-2"></i>
+                تأكيد الاستلام
+            </h6>
+            
+            <form id="confirmForm">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">ملاحظات التأكيد</label>
+                    <textarea id="confirmationNotes" class="form-control" rows="3" 
+                              placeholder="أضف ملاحظاتك هنا (مطلوب للرفض)..."></textarea>
+                </div>
+                
+                <div class="d-flex gap-3">
+                    <button type="button" class="btn-confirm" onclick="confirmDelivery('confirm')">
+                        <i class="fas fa-check-circle me-2"></i> تأكيد الاستلام
+                    </button>
+                    <button type="button" class="btn-reject" onclick="confirmDelivery('reject')">
+                        <i class="fas fa-times-circle me-2"></i> رفض التسليم
+                    </button>
+                    <a href="{{ url_for('project.project_resource_requests', project_id=request.project.id) }}" 
+                       class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i> إلغاء
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+    function confirmDelivery(action) {
+        const notes = document.getElementById('confirmationNotes').value;
+        
+        if (action === 'reject' && !notes) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'تنبيه',
+                text: 'الرجاء إدخال سبب الرفض'
+            });
+            return;
+        }
+        
+        Swal.fire({
+            title: action === 'confirm' ? 'تأكيد الاستلام' : 'رفض التسليم',
+            text: action === 'confirm' ? 'هل أنت متأكد من تأكيد استلام هذه المواد؟' : 'هل أنت متأكد من رفض هذا التسليم؟',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'نعم',
+            cancelButtonText: 'إلغاء'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/delivery/{{ delivery.id }}/confirm`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        notes: notes
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: action === 'confirm' ? 'تم التأكيد' : 'تم الرفض',
+                            text: action === 'confirm' ? 'تم تأكيد استلام المواد بنجاح' : 'تم رفض التسليم بنجاح',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.href = "{{ url_for('project.project_resource_requests', project_id=request.project.id) }}";
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ',
+                            text: data.error
+                        });
+                    }
+                });
+            }
+        });
+    }
+    
+    function viewImage(url) {
+        Swal.fire({
+            imageUrl: url,
+            imageAlt: 'صورة التسليم',
+            showCloseButton: true,
+            showConfirmButton: false,
+            width: 'auto',
+            imageWidth: '80%',
+            imageHeight: 'auto'
+        });
+    }
+    </script>
+    {% endblock %}

@@ -1,0 +1,179 @@
+{% extends "company/base.html" %}
+
+{% block title %}EPS - هيكل المؤسسة{% endblock %}
+
+{% block page_title %}EPS - هيكل المؤسسة{% endblock %}
+{% block page_subtitle %}Enterprise Project Structure - تنظيم المشاريع{% endblock %}
+
+{% block extra_css %}
+<style>
+    .eps-tree {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .eps-node {
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+    
+    .eps-node:hover {
+        background: #f8f9fa;
+    }
+    
+    .eps-node.level-1 { margin-right: 0; }
+    .eps-node.level-2 { margin-right: 2rem; }
+    .eps-node.level-3 { margin-right: 4rem; }
+    .eps-node.level-4 { margin-right: 6rem; }
+    .eps-node.level-5 { margin-right: 8rem; }
+    
+    .eps-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 0.5rem;
+    }
+    
+    .eps-code {
+        font-family: monospace;
+        background: #eef2f7;
+        padding: 0.2rem 0.5rem;
+        border-radius: 5px;
+        font-size: 0.8rem;
+    }
+    
+    .create-btn {
+        position: fixed;
+        bottom: 2rem;
+        left: 2rem;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
+        cursor: pointer;
+        transition: all 0.3s;
+        z-index: 100;
+        border: none;
+    }
+    
+    .create-btn:hover {
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-end mb-4">
+            <a class="btn-primary-gradient" href="{{ url_for('primavera.eps_create') }}">
+                <i class="fas fa-plus me-2"></i>إضافة عنصر EPS
+            </a>
+            <a class="btn-primary-gradient" href="{{ url_for('primavera.eps_view_alternative') }}">
+                <i class="fas fa-plus me-2"></i> عرض هيكل EPS 
+            </a>
+          
+        </div>
+        
+        <div class="eps-tree">
+            <h5 class="mb-4"><i class="fas fa-sitemap me-2 text-primary"></i>هيكل المؤسسة</h5>
+            
+            {% for node in root_nodes %}
+                {% with node=node %}
+                    {% include 'primavera/eps_node.html' %}
+                {% endwith %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-sitemap fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">لا توجد عناصر EPS</h5>
+                    <p class="text-muted">قم بإضافة عنصر EPS لبدء تنظيم المشاريع</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal إنشاء EPS -->
+<div class="modal fade" id="createEPSModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus-circle me-2 text-primary"></i>إضافة عنصر EPS</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('primavera.eps_create') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label required-field">رمز EPS</label>
+                        <input type="text" name="eps_code" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label required-field">الاسم (عربي)</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">الاسم (إنجليزي)</label>
+                        <input type="text" name="name_ar" class="form-control" dir="ltr">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">الوصف</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">العنصر الأب</label>
+                        <select name="parent_id" class="form-select">
+                            <option value="">-- عنصر رئيسي --</option>
+                            {% for parent in parents %}
+                            <option value="{{ parent.id }}">{{ parent.name }} ({{ parent.eps_code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">المدير المسؤول</label>
+                        <select name="manager_id" class="form-select">
+                            <option value="">-- اختر مدير --</option>
+                            {% for manager in managers %}
+                            <option value="{{ manager.id }}">{{ manager.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn-primary-gradient">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<button class="create-btn" onclick="showCreateModal()">
+    <i class="fas fa-plus"></i>
+</button>
+
+<script>
+function showCreateModal() {
+    new bootstrap.Modal(document.getElementById('createEPSModal')).show();
+}
+</script>
+{% endblock %}

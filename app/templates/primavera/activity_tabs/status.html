@@ -1,0 +1,703 @@
+<!-- templates/primavera/tabs/activity/status.html -->
+<div class="status-container">
+    <!-- رأس الحالة مع شريط التقدم -->
+    <div class="status-header">
+        <div class="status-title-section">
+            <h6 class="status-main-title">
+                <i class="fas fa-chart-line text-primary me-2"></i>
+                Status
+            </h6>
+            <div class="status-badge-group">
+                <span class="status-badge" id="activityStatusBadge">
+                    {{ activity.status|replace('_', ' ')|title }}
+                </span>
+                {% if activity.is_critical %}
+                <span class="status-badge critical">Critical</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- شريط التقدم -->
+        <div class="progress-section">
+            <div class="progress-header">
+                <span class="progress-label">Duration % Complete</span>
+                <span class="progress-value" id="durationPercent">{{ activity.progress_percentage }}%</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progressBarFill" style="width: {{ activity.progress_percentage }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- الصف الأول: Duration - Status - Labor Units -->
+    <div class="status-row">
+        <!-- عمود Duration -->
+        <div class="status-column">
+            <div class="column-header">Duration</div>
+            <div class="column-content">
+                <div class="data-row">
+                    <span class="data-label">Original:</span>
+                    <input type="number" class="data-input" id="originalDuration" 
+                           value="{{ activity.original_duration }}" step="0.1" min="0">
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Actual:</span>
+                    <input type="number" class="data-input" id="actualDuration" 
+                           value="{{ activity.actual_duration }}" step="0.1" min="0" readonly>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Remaining:</span>
+                    <input type="number" class="data-input" id="remainingDuration" 
+                           value="{{ activity.remaining_duration }}" step="0.1" min="0">
+                </div>
+                <div class="data-row">
+                    <span class="data-label">At Complete:</span>
+                    <input type="number" class="data-input" id="atCompleteDuration" 
+                           value="{{ activity.at_complete_duration }}" step="0.1" min="0" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- عمود Status -->
+        <div class="status-column">
+            <div class="column-header">Status</div>
+            <div class="column-content">
+                <div class="data-row">
+                    <span class="data-label">Started:</span>
+                    <input type="date" class="data-input" id="startedDate" 
+                           value="{{ activity.actual_start.strftime('%Y-%m-%d') if activity.actual_start }}">
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Finished:</span>
+                    <input type="date" class="data-input" id="finishedDate" 
+                           value="{{ activity.actual_finish.strftime('%Y-%m-%d') if activity.actual_finish }}">
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Suspend:</span>
+                    <input type="date" class="data-input" id="suspendDate" 
+                           value="{{ activity.suspend_date.strftime('%Y-%m-%d') if activity.suspend_date }}">
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Resume:</span>
+                    <input type="date" class="data-input" id="resumeDate" 
+                           value="{{ activity.resume_date.strftime('%Y-%m-%d') if activity.resume_date }}">
+                </div>
+            </div>
+        </div>
+
+        <!-- عمود Labor Units -->
+        <div class="status-column">
+            <div class="column-header">Labor Units</div>
+            <div class="column-content">
+                <div class="data-row">
+                    <span class="data-label">Budgeted:</span>
+                    <input type="number" class="data-input" id="budgetedUnits" 
+                           value="{{ activity.budgeted_units }}" step="0.1" min="0">
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Actual:</span>
+                    <input type="number" class="data-input" id="actualUnits" 
+                           value="{{ activity.actual_units }}" step="0.1" min="0">
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Remaining:</span>
+                    <input type="number" class="data-input" id="remainingUnits" 
+                           value="{{ activity.remaining_units }}" step="0.1" min="0" readonly>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">At Complete:</span>
+                    <input type="number" class="data-input" id="atCompleteUnits" 
+                           value="{{ activity.at_complete_units }}" step="0.1" min="0" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- الصف الثاني: Float & Dates -->
+    <div class="status-row">
+        <!-- عمود Float -->
+        <div class="status-column">
+            <div class="column-header">Float</div>
+            <div class="column-content">
+                <div class="data-row">
+                    <span class="data-label">Total Float:</span>
+                    <input type="number" class="data-input" id="totalFloat" 
+                           value="{{ activity.total_float }}" step="0.1" readonly>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Free Float:</span>
+                    <input type="number" class="data-input" id="freeFloat" 
+                           value="{{ activity.free_float }}" step="0.1" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- عمود Dates -->
+        <div class="status-column">
+            <div class="column-header">Dates</div>
+            <div class="column-content">
+                <div class="data-row">
+                    <span class="data-label">Started:</span>
+                    <span class="data-value" id="startedDisplay">
+                        {{ activity.actual_start.strftime('%d-%b-%y') if activity.actual_start else 'Not Started' }}
+                    </span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Duration %:</span>
+                    <span class="data-value" id="durationPercentDisplay">{{ activity.progress_percentage }}%</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Finished:</span>
+                    <span class="data-value" id="finishedDisplay">
+                        {{ activity.actual_finish.strftime('%d-%b-%y') if activity.actual_finish else 'Not Finished' }}
+                    </span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Suspend:</span>
+                    <span class="data-value" id="suspendDisplay">
+                        {{ activity.suspend_date.strftime('%d-%b-%y') if activity.suspend_date else '—' }}
+                    </span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Exp Finish:</span>
+                    <input type="date" class="data-input" id="expectedFinish" 
+                           value="{{ activity.expected_finish.strftime('%Y-%m-%d') if activity.expected_finish }}">
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Resume:</span>
+                    <span class="data-value" id="resumeDisplay">
+                        {{ activity.resume_date.strftime('%d-%b-%y') if activity.resume_date else '—' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- الصف الثالث: Constraints -->
+    <div class="status-row">
+        <div class="status-column full-width">
+            <div class="column-header">Constraints</div>
+            <div class="constraints-grid">
+                <!-- Primary Constraint -->
+                <div class="constraint-item">
+                    <div class="constraint-type">
+                        <span class="data-label">Primary:</span>
+                        <select class="constraint-select" id="primaryConstraint">
+                            <option value="">None</option>
+                            <option value="Start On" {% if activity.primary_constraint == 'Start On' %}selected{% endif %}>Start On</option>
+                            <option value="Finish On" {% if activity.primary_constraint == 'Finish On' %}selected{% endif %}>Finish On</option>
+                            <option value="Start On or After" {% if activity.primary_constraint == 'Start On or After' %}selected{% endif %}>Start On or After</option>
+                            <option value="Start On or Before" {% if activity.primary_constraint == 'Start On or Before' %}selected{% endif %}>Start On or Before</option>
+                            <option value="Finish On or After" {% if activity.primary_constraint == 'Finish On or After' %}selected{% endif %}>Finish On or After</option>
+                            <option value="Finish On or Before" {% if activity.primary_constraint == 'Finish On or Before' %}selected{% endif %}>Finish On or Before</option>
+                            <option value="As Late As Possible" {% if activity.primary_constraint == 'As Late As Possible' %}selected{% endif %}>As Late As Possible</option>
+                            <option value="As Soon As Possible" {% if activity.primary_constraint == 'As Soon As Possible' %}selected{% endif %}>As Soon As Possible</option>
+                        </select>
+                    </div>
+                    <div class="constraint-date">
+                        <span class="data-label">Date:</span>
+                        <input type="date" class="date-input" id="primaryConstraintDate" 
+                               value="{{ activity.primary_constraint_date.strftime('%Y-%m-%d') if activity.primary_constraint_date }}">
+                    </div>
+                </div>
+
+                <!-- Secondary Constraint -->
+                <div class="constraint-item">
+                    <div class="constraint-type">
+                        <span class="data-label">Secondary:</span>
+                        <select class="constraint-select" id="secondaryConstraint">
+                            <option value="">None</option>
+                            <option value="Start On" {% if activity.secondary_constraint == 'Start On' %}selected{% endif %}>Start On</option>
+                            <option value="Finish On" {% if activity.secondary_constraint == 'Finish On' %}selected{% endif %}>Finish On</option>
+                            <option value="Start On or After" {% if activity.secondary_constraint == 'Start On or After' %}selected{% endif %}>Start On or After</option>
+                            <option value="Start On or Before" {% if activity.secondary_constraint == 'Start On or Before' %}selected{% endif %}>Start On or Before</option>
+                            <option value="Finish On or After" {% if activity.secondary_constraint == 'Finish On or After' %}selected{% endif %}>Finish On or After</option>
+                            <option value="Finish On or Before" {% if activity.secondary_constraint == 'Finish On or Before' %}selected{% endif %}>Finish On or Before</option>
+                        </select>
+                    </div>
+                    <div class="constraint-date">
+                        <span class="data-label">Date:</span>
+                        <input type="date" class="date-input" id="secondaryConstraintDate" 
+                               value="{{ activity.secondary_constraint_date.strftime('%Y-%m-%d') if activity.secondary_constraint_date }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- أزرار التحكم -->
+    <div class="status-footer">
+        <button class="btn btn-outline-secondary" onclick="resetStatus()">
+            <i class="fas fa-undo me-1"></i>Reset
+        </button>
+        <button class="btn btn-primary" onclick="saveStatus()">
+            <i class="fas fa-save me-1"></i>Apply
+        </button>
+    </div>
+</div>
+
+<style>
+/* ===== تنسيقات شبيهة ببرنامج Primavera P6 ===== */
+.status-container {
+    background: #f5f7fa;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* رأس الحالة */
+.status-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #cbd5e0;
+}
+
+.status-title-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.status-main-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: #e2e8f0;
+    color: #2d3748;
+    border: 1px solid #cbd5e0;
+}
+
+.status-badge.critical {
+    background: #fed7d7;
+    color: #c53030;
+    border-color: #fc8181;
+}
+
+/* شريط التقدم */
+.progress-section {
+    background: #edf2f7;
+    padding: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #cbd5e0;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.progress-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.progress-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #2b6cb0;
+}
+
+.progress-bar-container {
+    height: 20px;
+    background: #fff;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4299e1, #2b6cb0);
+    transition: width 0.3s ease;
+}
+
+/* الصفوف والأعمدة */
+.status-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 992px) {
+    .status-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .status-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* الأعمدة */
+.status-column {
+    background: #fff;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.status-column.full-width {
+    grid-column: 1 / -1;
+}
+
+.column-header {
+    background: #e2e8f0;
+    padding: 0.5rem 1rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #2d3748;
+    border-bottom: 2px solid #cbd5e0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.column-content {
+    padding: 1rem;
+}
+
+/* صفوف البيانات */
+.data-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.data-row:last-child {
+    margin-bottom: 0;
+}
+
+.data-label {
+    width: 100px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.data-input {
+    flex: 1;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    background: #fff;
+    transition: all 0.2s;
+}
+
+.data-input:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+}
+
+.data-input[readonly] {
+    background: #f7fafc;
+    color: #718096;
+    cursor: not-allowed;
+}
+
+.data-value {
+    flex: 1;
+    font-size: 0.85rem;
+    color: #2d3748;
+    padding: 0.4rem 0;
+}
+
+/* شبكة القيود */
+.constraints-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    padding: 1rem;
+}
+
+@media (max-width: 768px) {
+    .constraints-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.constraint-item {
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    padding: 0.75rem;
+    background: #f7fafc;
+}
+
+.constraint-type {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.constraint-select {
+    flex: 1;
+    margin-left: 0.5rem;
+    padding: 0.3rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.constraint-date {
+    display: flex;
+    align-items: center;
+}
+
+.date-input {
+    flex: 1;
+    margin-left: 0.5rem;
+    padding: 0.3rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+/* تذييل الصفحة */
+.status-footer {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid #cbd5e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* أزرار */
+.btn {
+    padding: 0.5rem 1.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.btn-outline-secondary {
+    background: #fff;
+    border-color: #cbd5e0;
+    color: #4a5568;
+}
+
+.btn-outline-secondary:hover {
+    background: #e2e8f0;
+}
+
+.btn-primary {
+    background: #4299e1;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #2b6cb0;
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 576px) {
+    .status-container {
+        padding: 1rem;
+    }
+    
+    .data-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .data-label {
+        width: 100%;
+        margin-bottom: 0.25rem;
+    }
+    
+    .data-input {
+        width: 100%;
+    }
+    
+    .constraint-type, .constraint-date {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .constraint-select, .date-input {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 0.25rem;
+    }
+    
+    .status-footer {
+        flex-direction: column;
+    }
+    
+    .status-footer .btn {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+// تحديث القيم المحسوبة
+document.addEventListener('DOMContentLoaded', function() {
+    const originalDuration = document.getElementById('originalDuration');
+    const actualDuration = document.getElementById('actualDuration');
+    const remainingDuration = document.getElementById('remainingDuration');
+    const atCompleteDuration = document.getElementById('atCompleteDuration');
+    const progressBarFill = document.getElementById('progressBarFill');
+    const durationPercent = document.getElementById('durationPercent');
+    const durationPercentDisplay = document.getElementById('durationPercentDisplay');
+    
+    // تحديث المدة عند الإكمال
+    function updateAtComplete() {
+        const original = parseFloat(originalDuration.value) || 0;
+        const actual = parseFloat(actualDuration.value) || 0;
+        const remaining = parseFloat(remainingDuration.value) || 0;
+        
+        // At Complete = Actual + Remaining
+        const atComplete = actual + remaining;
+        atCompleteDuration.value = atComplete.toFixed(1);
+        
+        // تحديث نسبة التقدم
+        const progress = original > 0 ? (actual / original * 100) : 0;
+        progressBarFill.style.width = progress + '%';
+        durationPercent.textContent = progress.toFixed(1) + '%';
+        durationPercentDisplay.textContent = progress.toFixed(1) + '%';
+        
+        // تحديث شارة الحالة
+        updateStatusBadge(actual, remaining);
+    }
+    
+    // تحديث شارة الحالة
+    function updateStatusBadge(actual, remaining) {
+        const badge = document.getElementById('activityStatusBadge');
+        if (actual > 0 && remaining === 0) {
+            badge.textContent = 'Completed';
+            badge.className = 'status-badge';
+        } else if (actual > 0) {
+            badge.textContent = 'In Progress';
+            badge.className = 'status-badge';
+        } else {
+            badge.textContent = 'Not Started';
+            badge.className = 'status-badge';
+        }
+    }
+    
+    // تحديث وحدة العمل المتبقية
+    function updateRemainingUnits() {
+        const budgeted = parseFloat(document.getElementById('budgetedUnits').value) || 0;
+        const actual = parseFloat(document.getElementById('actualUnits').value) || 0;
+        const remaining = document.getElementById('remainingUnits');
+        const atComplete = document.getElementById('atCompleteUnits');
+        
+        const remainingValue = Math.max(0, budgeted - actual);
+        remaining.value = remainingValue.toFixed(1);
+        atComplete.value = (actual + remainingValue).toFixed(1);
+    }
+    
+    // إضافة مستمعي الأحداث
+    if (originalDuration && actualDuration && remainingDuration) {
+        [originalDuration, actualDuration, remainingDuration].forEach(input => {
+            input.addEventListener('input', updateAtComplete);
+        });
+    }
+    
+    if (document.getElementById('budgetedUnits') && document.getElementById('actualUnits')) {
+        document.getElementById('budgetedUnits').addEventListener('input', updateRemainingUnits);
+        document.getElementById('actualUnits').addEventListener('input', updateRemainingUnits);
+    }
+    
+    // تحديث أولي
+    updateAtComplete();
+    updateRemainingUnits();
+});
+
+// حفظ التغييرات
+function saveStatus() {
+    const statusData = {
+        original_duration: document.getElementById('originalDuration').value,
+        actual_duration: document.getElementById('actualDuration').value,
+        remaining_duration: document.getElementById('remainingDuration').value,
+        started_date: document.getElementById('startedDate').value,
+        finished_date: document.getElementById('finishedDate').value,
+        suspend_date: document.getElementById('suspendDate').value,
+        resume_date: document.getElementById('resumeDate').value,
+        budgeted_units: document.getElementById('budgetedUnits').value,
+        actual_units: document.getElementById('actualUnits').value,
+        expected_finish: document.getElementById('expectedFinish').value,
+        primary_constraint: document.getElementById('primaryConstraint').value,
+        primary_constraint_date: document.getElementById('primaryConstraintDate').value,
+        secondary_constraint: document.getElementById('secondaryConstraint').value,
+        secondary_constraint_date: document.getElementById('secondaryConstraintDate').value
+    };
+    
+    // إظهار مؤشر التحميل
+    Swal.fire({
+        title: 'Saving...',
+        text: 'Please wait',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch(`/primavera/api/activity/{{ activity.id }}/status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(statusData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.close();
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: 'Status updated successfully',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error || 'Failed to update status'
+            });
+        }
+    })
+    .catch(error => {
+        Swal.close();
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Network error occurred'
+        });
+    });
+}
+
+// إعادة تعيين القيم
+function resetStatus() {
+    location.saveStatus();
+}
+</script>

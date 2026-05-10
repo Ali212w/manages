@@ -1,0 +1,514 @@
+{% extends "company/base.html" %}
+
+{% block title %}إنشاء تقويم جديد{% endblock %}
+
+{% block page_title %}إنشاء تقويم جديد{% endblock %}
+{% block page_subtitle %}تحديد أيام العمل والإجازات للمشاريع{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .form-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .section-title i {
+        color: var(--primary);
+    }
+    
+    .work-days-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem;
+        margin: 1rem 0;
+    }
+    
+    .day-card {
+        background: #f8f9fa;
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .day-card:hover {
+        border-color: var(--primary);
+        background: rgba(67, 97, 238, 0.05);
+    }
+    
+    .day-card.selected {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+    
+    .day-name {
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+    }
+    
+    .day-number {
+        font-size: 0.8rem;
+        opacity: 0.8;
+    }
+    
+    .time-input-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .time-input {
+        flex: 1;
+    }
+    
+    .holidays-container {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .holiday-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: white;
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid #eef2f7;
+    }
+    
+    .holiday-date {
+        font-family: monospace;
+        font-weight: 600;
+    }
+    
+    .holiday-name {
+        color: #6c757d;
+    }
+    
+    .remove-holiday {
+        color: var(--danger);
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .remove-holiday:hover {
+        transform: scale(1.2);
+    }
+    
+    .add-holiday-form {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .preview-card {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 15px;
+        padding: 1.5rem;
+        color: white;
+        margin-top: 2rem;
+    }
+    
+    .preview-calendar {
+        background: rgba(255,255,255,0.1);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .preview-days {
+        display: flex;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+    }
+    
+    .preview-day {
+        width: 30px;
+        height: 30px;
+        border-radius: 5px;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+    }
+    
+    .preview-day.work {
+        background: var(--success);
+    }
+    
+    .preview-day.off {
+        background: rgba(0,0,0,0.2);
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid #eef2f7;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <!-- معلومات مساعدة -->
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>التقويم الزمني:</strong> يحدد أيام العمل وساعات العمل والإجازات. يستخدم لحساب مدد المشاريع والأنشطة.
+        </div>
+        
+        <form method="POST" action="{{ url_for('primavera.calendar_create') }}" id="calendarForm">
+            <!-- معلومات أساسية -->
+            <div class="mb-4">
+                <h5 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    المعلومات الأساسية
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label required-field">اسم التقويم</label>
+                        <input type="text" name="name" class="form-control" required placeholder="مثال: التقويم الافتراضي">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">نوع التقويم</label>
+                        <select name="calendar_type" class="form-select">
+                            <option value="project">مشروع (Project Calendar)</option>
+                            <option value="resource">مورد (Resource Calendar)</option>
+                            <option value="global">عام (Global Calendar)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" name="is_default" id="isDefault">
+                            <label class="form-check-label" for="isDefault">تعيين كتقويم افتراضي</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- أيام العمل -->
+            <div class="mb-4">
+                <h5 class="section-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    أيام العمل
+                </h5>
+                
+                <div class="work-days-grid" id="workDays">
+                    <div class="day-card" data-day="1" onclick="toggleDay(1)">
+                        <div class="day-name">الأحد</div>
+                        <div class="day-number">1</div>
+                    </div>
+                    <div class="day-card" data-day="2" onclick="toggleDay(2)">
+                        <div class="day-name">الإثنين</div>
+                        <div class="day-number">2</div>
+                    </div>
+                    <div class="day-card" data-day="3" onclick="toggleDay(3)">
+                        <div class="day-name">الثلاثاء</div>
+                        <div class="day-number">3</div>
+                    </div>
+                    <div class="day-card" data-day="4" onclick="toggleDay(4)">
+                        <div class="day-name">الأربعاء</div>
+                        <div class="day-number">4</div>
+                    </div>
+                    <div class="day-card" data-day="5" onclick="toggleDay(5)">
+                        <div class="day-name">الخميس</div>
+                        <div class="day-number">5</div>
+                    </div>
+                    <div class="day-card" data-day="6" onclick="toggleDay(6)">
+                        <div class="day-name">الجمعة</div>
+                        <div class="day-number">6</div>
+                    </div>
+                    <div class="day-card" data-day="7" onclick="toggleDay(7)">
+                        <div class="day-name">السبت</div>
+                        <div class="day-number">7</div>
+                    </div>
+                </div>
+                
+                <!-- تخزين أيام العمل المختارة -->
+                <input type="hidden" name="work_days" id="workDaysInput" value="1,2,3,4,5,6">
+                
+                <div class="form-text mt-2">
+                    <i class="fas fa-info-circle me-1"></i>
+                    اختر أيام العمل. الأيام غير المختارة تعتبر إجازة أسبوعية.
+                </div>
+            </div>
+            
+            <!-- ساعات العمل -->
+            <div class="mb-4">
+                <h5 class="section-title">
+                    <i class="fas fa-clock"></i>
+                    ساعات العمل
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">ساعات العمل اليومية</label>
+                        <input type="number" name="work_hours_per_day" class="form-control" value="8" min="1" max="24" step="0.5">
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">وقت البدء</label>
+                        <input type="time" name="work_start" class="form-control" value="08:00">
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">وقت الانتهاء</label>
+                        <input type="time" name="work_end" class="form-control" value="17:00">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- الإجازات -->
+            <div class="mb-4">
+                <h5 class="section-title">
+                    <i class="fas fa-umbrella-beach"></i>
+                    الإجازات
+                </h5>
+                
+                <div class="holidays-container">
+                    <div id="holidaysList">
+                        <!-- سيتم إضافة الإجازات هنا ديناميكياً -->
+                    </div>
+                    
+                    <div class="add-holiday-form">
+                        <input type="date" class="form-control" id="holidayDate" style="flex: 2;">
+                        <input type="text" class="form-control" id="holidayName" placeholder="اسم الإجازة" style="flex: 3;">
+                        <button type="button" class="btn-primary-gradient" onclick="addHoliday()">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    
+                    <input type="hidden" name="holidays" id="holidaysInput" value="">
+                </div>
+            </div>
+            
+            <!-- معاينة سريعة -->
+            <div class="preview-card">
+                <h6 class="fw-bold mb-3"><i class="fas fa-eye me-2"></i>معاينة التقويم</h6>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="d-block mb-2">أيام العمل:</small>
+                        <div class="preview-days" id="previewDays"></div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <small class="d-block mb-2">ساعات العمل:</small>
+                        <div class="preview-calendar">
+                            <span id="previewHours">08:00 - 17:00</span>
+                            <br>
+                            <small id="previewDailyHours">8 ساعات/يوم</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <small class="d-block mb-2">الإجازات المضافة: <span id="previewHolidaysCount">0</span></small>
+                </div>
+            </div>
+            
+            <!-- أزرار الإجراءات -->
+            <div class="form-actions">
+                <a href="{{ url_for('primavera.calendar_list') }}" class="btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    العودة للقائمة
+                </a>
+                <button type="submit" class="btn-primary-gradient">
+                    <i class="fas fa-save me-2"></i>
+                    إنشاء التقويم
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- قالب الإجازة -->
+<template id="holidayTemplate">
+    <div class="holiday-item">
+        <div>
+            <span class="holiday-date"></span>
+            <span class="holiday-name ms-2"></span>
+        </div>
+        <i class="fas fa-times remove-holiday" onclick="removeHoliday(this)"></i>
+    </div>
+</template>
+
+<script>
+let selectedDays = [1, 2, 3, 4, 5, 6];
+let holidays = [];
+
+// ============================================
+// إدارة أيام العمل
+// ============================================
+function toggleDay(day) {
+    const index = selectedDays.indexOf(day);
+    const dayCard = document.querySelector(`.day-card[data-day="${day}"]`);
+    
+    if (index === -1) {
+        selectedDays.push(day);
+        dayCard.classList.add('selected');
+    } else {
+        selectedDays.splice(index, 1);
+        dayCard.classList.remove('selected');
+    }
+    
+    // ترتيب الأيام
+    selectedDays.sort((a, b) => a - b);
+    
+    // تحديث الحقل المخفي
+    document.getElementById('workDaysInput').value = selectedDays.join(',');
+    
+    // تحديث المعاينة
+    updatePreview();
+}
+
+// تهيئة أيام العمل
+document.addEventListener('DOMContentLoaded', function() {
+    selectedDays.forEach(day => {
+        const dayCard = document.querySelector(`.day-card[data-day="${day}"]`);
+        if (dayCard) dayCard.classList.add('selected');
+    });
+    updatePreview();
+});
+
+// ============================================
+// إدارة الإجازات
+// ============================================
+function addHoliday() {
+    const dateInput = document.getElementById('holidayDate');
+    const nameInput = document.getElementById('holidayName');
+    
+    if (!dateInput.value) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'الرجاء اختيار تاريخ الإجازة'
+        });
+        return;
+    }
+    
+    const holiday = {
+        date: dateInput.value,
+        name: nameInput.value || 'إجازة'
+    };
+    
+    holidays.push(holiday);
+    renderHolidays();
+    
+    // مسح الحقول
+    dateInput.value = '';
+    nameInput.value = '';
+    
+    // تحديث المعاينة
+    updatePreview();
+}
+
+function renderHolidays() {
+    const list = document.getElementById('holidaysList');
+    const template = document.getElementById('holidayTemplate');
+    
+    list.innerHTML = '';
+    
+    holidays.forEach((holiday, index) => {
+        const clone = template.content.cloneNode(true);
+        const item = clone.querySelector('.holiday-item');
+        item.querySelector('.holiday-date').textContent = holiday.date;
+        item.querySelector('.holiday-name').textContent = holiday.name;
+        item.querySelector('.remove-holiday').onclick = () => removeHoliday(index);
+        list.appendChild(clone);
+    });
+    
+    // تحديث الحقل المخفي
+    document.getElementById('holidaysInput').value = JSON.stringify(holidays.map(h => h.date));
+}
+
+function removeHoliday(index) {
+    holidays.splice(index, 1);
+    renderHolidays();
+    updatePreview();
+}
+
+// ============================================
+// تحديث المعاينة
+// ============================================
+function updatePreview() {
+    // أيام العمل
+    const previewDays = document.getElementById('previewDays');
+    previewDays.innerHTML = '';
+    
+    for (let i = 1; i <= 7; i++) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = `preview-day ${selectedDays.includes(i) ? 'work' : 'off'}`;
+        
+        const dayNames = ['أحد', 'إثن', 'ثلث', 'أرب', 'خمس', 'جمع', 'سبت'];
+        dayDiv.textContent = dayNames[i-1];
+        previewDays.appendChild(dayDiv);
+    }
+    
+    // ساعات العمل
+    const workStart = document.querySelector('input[name="work_start"]').value;
+    const workEnd = document.querySelector('input[name="work_end"]').value;
+    const hoursPerDay = document.querySelector('input[name="work_hours_per_day"]').value;
+    
+    document.getElementById('previewHours').textContent = `${workStart} - ${workEnd}`;
+    document.getElementById('previewDailyHours').textContent = `${hoursPerDay} ساعات/يوم`;
+    
+    // عدد الإجازات
+    document.getElementById('previewHolidaysCount').textContent = holidays.length;
+}
+
+// الاستماع للتغييرات
+document.querySelectorAll('input[name="work_start"], input[name="work_end"], input[name="work_hours_per_day"]').forEach(input => {
+    input.addEventListener('change', updatePreview);
+});
+
+// ============================================
+// التحقق من صحة النموذج
+// ============================================
+document.getElementById('calendarForm').addEventListener('submit', function(e) {
+    if (selectedDays.length === 0) {
+        e.preventDefault();
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'يجب تحديد يوم عمل واحد على الأقل'
+        });
+        return;
+    }
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>جاري الإنشاء...';
+    submitBtn.disabled = true;
+});
+</script>
+{% endblock %}

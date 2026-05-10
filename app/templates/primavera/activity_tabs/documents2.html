@@ -1,0 +1,757 @@
+<!-- templates/primavera/tabs/activity/documents.html -->
+
+<div class="field-group">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h6 class="field-group-title mb-0">
+            <i class="fas fa-file-alt text-primary"></i>
+            المستندات المرتبطة
+            <span class="badge bg-primary ms-2" id="documentsCount">0</span>
+        </h6>
+        <div>
+            <button class="btn btn-sm btn-outline-primary me-2" onclick="showUploadModal()">
+                <i class="fas fa-upload me-1"></i> رفع مستندات
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="toggleView()">
+                <i class="fas fa-th-large me-1"></i> عرض
+            </button>
+        </div>
+    </div>
+    
+    <!-- عرض المستندات -->
+    <div id="documentsContainer">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">جاري التحميل...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal رفع المستندات -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-cloud-upload-alt text-primary me-2"></i>
+                    رفع مستندات جديدة
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- اختيار نوع الرفع -->
+                <div class="upload-type-selector mb-3">
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="uploadType" id="uploadToActivity" value="activity" checked>
+                        <label class="btn btn-outline-primary" for="uploadToActivity">
+                            <i class="fas fa-tasks me-1"></i> رفع للنشاط
+                        </label>
+                        <input type="radio" class="btn-check" name="uploadType" id="uploadToTask" value="task">
+                        <label class="btn btn-outline-primary" for="uploadToTask">
+                            <i class="fas fa-list-check me-1"></i> رفع لمهمة
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- اختيار المهمة (تظهر فقط عند اختيار رفع لمهمة) -->
+                <div id="taskSelector" class="mb-3" style="display: none;">
+                    <label class="form-label fw-bold">اختر المهمة</label>
+                    <select id="taskSelect" class="form-select">
+                        <option value="">-- اختر المهمة --</option>
+                        {% for task in activity.tasks %}
+                        <option value="{{ task.id }}">{{ task.task_name }} ({{ task.task_code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- منطقة السحب والإفلات -->
+                <div class="dropzone-area" id="dropzoneArea">
+                    <div class="dropzone-content">
+                        <i class="fas fa-cloud-upload-alt fa-4x text-primary mb-3"></i>
+                        <p class="mb-2">اسحب الملفات到这里 أو <a href="#" onclick="document.getElementById('fileInput').click()">انقر للاختيار</a></p>
+                        <small class="text-muted">يدعم جميع أنواع الملفات (PDF, DOC, XLS, JPG, PNG, MP4, MP3, ...)</small>
+                        <small class="text-muted d-block mt-1">الحد الأقصى: 10 ميجابايت للملف الواحد</small>
+                        <input type="file" id="fileInput" multiple style="display: none;" accept="*/*">
+                    </div>
+                </div>
+                
+                <!-- قائمة الملفات المختارة -->
+                <div id="filesListContainer" class="mt-4" style="display: none;">
+                    <h6 class="mb-3 fw-bold">
+                        <i class="fas fa-list me-2 text-primary"></i>
+                        الملفات المختارة
+                    </h6>
+                    <div id="filesList" class="files-list"></div>
+                    <div class="upload-progress mt-3" id="uploadProgressContainer" style="display: none;">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small>تقدم الرفع</small>
+                            <small id="uploadPercent">0%</small>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div id="mainProgressBar" class="progress-bar bg-primary" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> إلغاء
+                </button>
+                <button type="button" class="btn btn-primary" id="startUploadBtn" disabled onclick="startUpload()">
+                    <i class="fas fa-upload me-1"></i> رفع الملفات
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal معاينة المستند -->
+<div class="modal fade" id="previewModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewTitle">
+                    <i class="fas fa-eye me-2"></i>
+                    معاينة المستند
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="preview-container" id="previewContainer">
+                    <div class="text-center p-5" id="previewLoading">
+                        <div class="spinner-border text-primary mb-3"></div>
+                        <p>جاري تحميل المستند...</p>
+                    </div>
+                    <div id="previewContent" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> إغلاق
+                </button>
+                <a href="#" id="downloadLink" class="btn btn-primary" download>
+                    <i class="fas fa-download me-1"></i> تحميل
+                </a>
+                {% if current_user.role in ['org_admin', 'project_manager'] %}
+                <button class="btn btn-success" onclick="approveDocument()" id="approveBtn">اعتماد</button>
+                <button class="btn btn-danger" onclick="rejectDocument()" id="rejectBtn">رفض</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تعديل معلومات المستند -->
+<div class="modal fade" id="editDocumentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit text-primary me-2"></i>
+                    تعديل معلومات المستند
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editDocumentId">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">العنوان</label>
+                    <input type="text" class="form-control" id="editDocumentTitle" placeholder="أدخل عنوان المستند">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">الوصف</label>
+                    <textarea class="form-control" id="editDocumentDescription" rows="3" placeholder="أدخل وصف المستند"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> إلغاء
+                </button>
+                <button type="button" class="btn btn-primary" onclick="updateDocumentInfo()">
+                    <i class="fas fa-save me-1"></i> حفظ التغييرات
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* تنسيقات المستندات */
+.document-item {
+    background: white;
+    border: 1px solid #eef2f7;
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.document-item:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.document-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+}
+
+.document-info {
+    text-align: center;
+}
+
+.document-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.document-description {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.document-meta {
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+.document-actions {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.document-item:hover .document-actions {
+    opacity: 1;
+}
+
+/* تنسيقات منطقة السحب */
+.dropzone-area {
+    border: 2px dashed #e2e8f0;
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    background: #f8fafc;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.dropzone-area.drag-over {
+    border-color: var(--primary);
+    background: #eff6ff;
+}
+
+/* تنسيقات قائمة الملفات */
+.files-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.file-card {
+    background: #f8fafc;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid #eef2f7;
+    transition: all 0.3s;
+}
+
+.file-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.file-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.file-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.file-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.file-size {
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+.file-remove {
+    color: #dc2626;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.file-remove:hover {
+    transform: scale(1.2);
+}
+
+.file-details {
+    padding-right: 3rem;
+}
+
+.file-details input,
+.file-details textarea {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    width: 100%;
+}
+
+.file-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding-right: 3rem;
+}
+
+.status-icon.pending { color: #ff9800; }
+.status-icon.success { color: #4caf50; }
+.status-icon.error { color: #f44336; }
+
+/* تنسيقات المعاينة */
+.preview-container {
+    background: #f8fafc;
+    min-height: 400px;
+    max-height: 70vh;
+    overflow: auto;
+}
+
+.image-preview {
+    text-align: center;
+    padding: 1rem;
+    background: #1e293b;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 60vh;
+    object-fit: contain;
+}
+
+.pdf-preview {
+    width: 100%;
+    height: 70vh;
+    border: none;
+}
+
+.video-preview {
+    max-width: 100%;
+    max-height: 60vh;
+    margin: 0 auto;
+    display: block;
+}
+
+.audio-preview {
+    width: 100%;
+    padding: 2rem;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .file-header { flex-wrap: wrap; }
+    .file-details, .file-status { padding-right: 0; }
+}
+</style>
+
+<script>
+(function() {
+    'use strict';
+    
+    const activityId = {{ activity.id }};
+    const csrfToken = '{{ csrf_token() }}';
+    let currentView = 'grid';
+    let filesData = [];
+    let currentDocumentId = null;
+    
+    // ============================================
+    // تحميل المستندات
+    // ============================================
+    
+    function loadDocuments() {
+        const container = document.getElementById('documentsContainer');
+        container.innerHTML = `<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>`;
+        
+        fetch(`/attachments/activity/${activityId}/documents`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderDocuments(data.documents);
+                    document.getElementById('documentsCount').textContent = data.documents.length;
+                } else {
+                    showError(data.error || 'فشل تحميل المستندات');
+                }
+            })
+            .catch(() => showError('حدث خطأ في الاتصال بالخادم'));
+    }
+    
+    function renderDocuments(documents) {
+        const container = document.getElementById('documentsContainer');
+        
+        if (!documents || documents.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-file-alt fa-4x text-muted mb-3"></i>
+                    <p class="text-muted">لا توجد مستندات مرفقة</p>
+                    <button class="btn btn-outline-primary btn-sm mt-2" onclick="showUploadModal()">
+                        <i class="fas fa-upload me-1"></i> رفع مستندات
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<div class="row">';
+        documents.forEach(doc => {
+            const iconClass = getFileIconClass(doc.file_extension);
+            const iconColor = getFileIconColor(doc.file_extension);
+            const approvalBadge = doc.approval_status === 'approved' ? '<span class="badge bg-success mt-1">معتمد</span>' : 
+                                   (doc.approval_status === 'rejected' ? '<span class="badge bg-danger mt-1">مرفوض</span>' : 
+                                   '<span class="badge bg-warning mt-1">قيد المراجعة</span>');
+            
+            html += `
+                <div class="col-md-4 mb-3">
+                    <div class="document-item">
+                        <div class="document-actions">
+                            <button class="btn btn-sm btn-link" onclick="editDocumentInfo(${doc.id}, '${escapeHtml(doc.title || '')}', '${escapeHtml(doc.description || '')}')" title="تعديل">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-link" onclick="previewDocument(${doc.id}, '${doc.url}', '${doc.filename}')" title="معاينة">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <a href="${doc.url}" class="btn btn-sm btn-link" download title="تحميل">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            <button class="btn btn-sm btn-link text-danger" onclick="deleteDocument(${doc.id})" title="حذف">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <div class="document-icon">
+                            <i class="fas ${iconClass}" style="color: ${iconColor};"></i>
+                        </div>
+                        <div class="document-info">
+                            <div class="document-title" title="${escapeHtml(doc.title || doc.filename)}">
+                                ${escapeHtml((doc.title || doc.filename).substring(0, 30))}
+                            </div>
+                            ${doc.description ? `<div class="document-description">${escapeHtml(doc.description.substring(0, 50))}</div>` : ''}
+                            <div class="document-meta">
+                                ${doc.file_size} KB | ${formatDate(doc.uploaded_at)}
+                            </div>
+                            ${approvalBadge}
+                            ${doc.source_task ? `<div class="small text-muted mt-1">من مهمة: ${doc.source_task}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+    
+    // ============================================
+    // رفع الملفات
+    // ============================================
+    
+    window.showUploadModal = function() {
+        filesData = [];
+        document.getElementById('fileInput').value = '';
+        document.getElementById('filesListContainer').style.display = 'none';
+        document.getElementById('startUploadBtn').disabled = true;
+        document.getElementById('uploadToActivity').checked = true;
+        document.getElementById('taskSelector').style.display = 'none';
+        new bootstrap.Modal(document.getElementById('uploadModal')).show();
+    };
+    
+    // إظهار/إخفاء اختيار المهمة
+    document.querySelectorAll('input[name="uploadType"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const taskSelector = document.getElementById('taskSelector');
+            taskSelector.style.display = this.value === 'task' ? 'block' : 'none';
+            if (this.value === 'task') {
+                loadTasksForSelect();
+            }
+        });
+    });
+    
+    function loadTasksForSelect() {
+        const select = document.getElementById('taskSelect');
+        if (select.children.length > 1) return;
+        fetch(`/api/activity/${activityId}/tasks`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    data.tasks.forEach(task => {
+                        select.innerHTML += `<option value="${task.id}">${task.name} (${task.code})</option>`;
+                    });
+                }
+            });
+    }
+    
+    function handleFiles(files) {
+        const newFiles = Array.from(files);
+        newFiles.forEach(file => {
+            if (file.size > 10 * 1024 * 1024) {
+                showWarning(`الملف ${file.name} يتجاوز الحد الأقصى 10 ميجابايت`);
+                return;
+            }
+            filesData.push({
+                file: file,
+                title: file.name.split('.').slice(0, -1).join('.'),
+                description: '',
+                status: 'pending'
+            });
+        });
+        renderFilesList();
+        if (filesData.length) {
+            document.getElementById('filesListContainer').style.display = 'block';
+            document.getElementById('startUploadBtn').disabled = false;
+        }
+    }
+    
+    function renderFilesList() {
+        const container = document.getElementById('filesList');
+        if (filesData.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+        let html = '';
+        filesData.forEach((item, index) => {
+            const iconClass = getFileIconClass(item.file.name.split('.').pop());
+            const iconColor = getFileIconColor(item.file.name.split('.').pop());
+            const statusIcon = item.status === 'pending' ? 'fa-clock text-warning' :
+                              item.status === 'uploading' ? 'fa-spinner fa-spin text-primary' :
+                              item.status === 'success' ? 'fa-check-circle text-success' : 'fa-exclamation-circle text-danger';
+            
+            html += `
+                <div class="file-card" data-index="${index}">
+                    <div class="file-header">
+                        <div class="file-icon"><i class="fas ${iconClass}" style="color: ${iconColor};"></i></div>
+                        <div class="file-name">${escapeHtml(item.file.name)}</div>
+                        <div class="file-size">${(item.file.size / 1024).toFixed(2)} KB</div>
+                        <div class="file-remove" onclick="removeFile(${index})"><i class="fas fa-times-circle"></i></div>
+                    </div>
+                    <div class="file-details">
+                        <div class="mb-2">
+                            <input type="text" class="form-control" placeholder="العنوان" value="${escapeHtml(item.title)}" onchange="updateFileTitle(${index}, this.value)">
+                        </div>
+                        <div>
+                            <textarea class="form-control" rows="2" placeholder="الوصف" onchange="updateFileDescription(${index}, this.value)">${escapeHtml(item.description)}</textarea>
+                        </div>
+                    </div>
+                    <div class="file-status">
+                        <div class="status-icon"><i class="fas ${statusIcon}"></i></div>
+                        <div class="status-text">${item.status === 'pending' ? 'في انتظار الرفع' : (item.status === 'uploading' ? 'جاري الرفع...' : (item.status === 'success' ? 'تم الرفع' : item.error))}</div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+    
+    window.removeFile = function(index) { filesData.splice(index, 1); renderFilesList(); };
+    window.updateFileTitle = function(index, value) { if (filesData[index]) filesData[index].title = value; };
+    window.updateFileDescription = function(index, value) { if (filesData[index]) filesData[index].description = value; };
+    
+    window.startUpload = async function() {
+        if (!filesData.length) return;
+        
+        const uploadType = document.querySelector('input[name="uploadType"]:checked').value;
+        const taskId = document.getElementById('taskSelect').value;
+        
+        if (uploadType === 'task' && !taskId) {
+            showWarning('الرجاء اختيار المهمة');
+            return;
+        }
+        
+        document.getElementById('startUploadBtn').disabled = true;
+        document.getElementById('uploadProgressContainer').style.display = 'block';
+        
+        let completed = 0;
+        let hasError = false;
+        
+        for (let i = 0; i < filesData.length; i++) {
+            const item = filesData[i];
+            if (item.status === 'success') continue;
+            
+            item.status = 'uploading';
+            renderFilesList();
+            
+            const formData = new FormData();
+            formData.append('file', item.file);
+            formData.append('title', item.title);
+            formData.append('description', item.description);
+            if (uploadType === 'task') formData.append('task_id', taskId);
+            
+            const url = uploadType === 'task' ? `/attachments/task/${taskId}/upload` : `/attachments/activity/${activityId}/upload`;
+            
+            try {
+                const response = await fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData });
+                const data = await response.json();
+                if (data.success) { item.status = 'success'; completed++; }
+                else { item.status = 'error'; item.error = data.error; hasError = true; }
+            } catch { item.status = 'error'; item.error = 'خطأ في الاتصال'; hasError = true; }
+            
+            renderFilesList();
+            document.getElementById('mainProgressBar').style.width = Math.round((completed / filesData.length) * 100) + '%';
+            document.getElementById('uploadPercent').textContent = Math.round((completed / filesData.length) * 100) + '%';
+        }
+        
+        if (!hasError) {
+            setTimeout(() => {
+                bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+                showSuccess(`تم رفع ${completed} ملف بنجاح`);
+                loadDocuments();
+            }, 1000);
+        } else {
+            document.getElementById('startUploadBtn').disabled = false;
+            showWarning('تم رفع بعض الملفات بنجاح، ولكن حدثت أخطاء في ملفات أخرى');
+        }
+    };
+    
+    // ============================================
+    // دوال أخرى
+    // ============================================
+    
+    window.previewDocument = function(id, url, filename) {
+        currentDocumentId = id;
+        const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+        const title = document.getElementById('previewTitle');
+        const content = document.getElementById('previewContent');
+        const downloadLink = document.getElementById('downloadLink');
+        
+        title.innerHTML = `<i class="fas ${getFileIconClass(filename.split('.').pop())} me-2"></i>${escapeHtml(filename)}`;
+        downloadLink.href = url;
+        
+        const ext = filename.split('.').pop().toLowerCase();
+        if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+            content.innerHTML = `<div class="image-preview"><img src="${url}" alt="${filename}"></div>`;
+        } else if (['mp4','avi','mov','mkv'].includes(ext)) {
+            content.innerHTML = `<div class="video-preview"><video controls><source src="${url}"></video></div>`;
+        } else if (ext === 'pdf') {
+            content.innerHTML = `<iframe src="${url}#toolbar=0" class="pdf-preview"></iframe>`;
+        } else {
+            content.innerHTML = `<div class="text-center p-5"><i class="fas fa-file-alt fa-5x text-muted mb-3"></i><p>لا يمكن معاينة هذا الملف مباشرة</p><a href="${url}" class="btn btn-primary" download>تحميل الملف</a></div>`;
+        }
+        
+        document.getElementById('previewLoading').style.display = 'none';
+        content.style.display = 'block';
+        modal.show();
+    };
+    
+    window.editDocumentInfo = function(id, title, desc) {
+        document.getElementById('editDocumentId').value = id;
+        document.getElementById('editDocumentTitle').value = title;
+        document.getElementById('editDocumentDescription').value = desc;
+        new bootstrap.Modal(document.getElementById('editDocumentModal')).show();
+    };
+    
+    window.updateDocumentInfo = function() {
+        const id = document.getElementById('editDocumentId').value;
+        const title = document.getElementById('editDocumentTitle').value;
+        const desc = document.getElementById('editDocumentDescription').value;
+        fetch(`/attachments/document/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ title, description: desc })
+        }).then(r => r.json()).then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('editDocumentModal')).hide();
+                showSuccess('تم تحديث المعلومات');
+                loadDocuments();
+            }
+        });
+    };
+    
+    window.deleteDocument = function(id) {
+        Swal.fire({ title: 'حذف المستند', text: 'هل أنت متأكد؟', icon: 'warning', showCancelButton: true, confirmButtonText: 'نعم، حذف' }).then(result => {
+            if (result.isConfirmed) {
+                fetch(`/attachments/document/${id}`, { method: 'DELETE', headers: { 'X-CSRFToken': csrfToken } })
+                    .then(r => r.json()).then(data => { if (data.success) { showSuccess('تم الحذف'); loadDocuments(); } });
+            }
+        });
+    };
+    
+    window.approveDocument = function() {
+        if (!currentDocumentId) return;
+        Swal.fire({ title: 'اعتماد المستند', text: 'هل أنت متأكد؟', icon: 'question', showCancelButton: true, confirmButtonText: 'نعم، اعتماد' }).then(result => {
+            if (result.isConfirmed) {
+                fetch(`/attachments/document/${currentDocumentId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify({ action: 'approve', notes: '' }) })
+                    .then(r => r.json()).then(data => { if (data.success) { showSuccess('تم الاعتماد'); loadDocuments(); bootstrap.Modal.getInstance(document.getElementById('previewModal')).hide(); } });
+            }
+        });
+    };
+    
+    window.rejectDocument = function() {
+        if (!currentDocumentId) return;
+        Swal.fire({ title: 'رفض المستند', input: 'textarea', inputLabel: 'سبب الرفض', showCancelButton: true, confirmButtonText: 'نعم، رفض' }).then(result => {
+            if (result.isConfirmed && result.value) {
+                fetch(`/attachments/document/${currentDocumentId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify({ action: 'reject', notes: result.value }) })
+                    .then(r => r.json()).then(data => { if (data.success) { showSuccess('تم الرفض'); loadDocuments(); bootstrap.Modal.getInstance(document.getElementById('previewModal')).hide(); } });
+            }
+        });
+    };
+    
+    // دوال مساعدة
+    function getFileIconClass(ext) {
+        const icons = { 'pdf':'fa-file-pdf', 'doc':'fa-file-word', 'docx':'fa-file-word', 'xls':'fa-file-excel', 'xlsx':'fa-file-excel',
+            'jpg':'fa-file-image', 'jpeg':'fa-file-image', 'png':'fa-file-image', 'gif':'fa-file-image', 'mp4':'fa-file-video',
+            'mp3':'fa-file-audio', 'txt':'fa-file-alt', 'zip':'fa-file-archive' };
+        return icons[ext] || 'fa-file';
+    }
+    function getFileIconColor(ext) {
+        const colors = { 'pdf':'#d32f2f', 'doc':'#2a5699', 'docx':'#2a5699', 'xls':'#1e6f3f', 'xlsx':'#1e6f3f',
+            'jpg':'#f59e0b', 'jpeg':'#f59e0b', 'png':'#f59e0b', 'mp4':'#8b5cf6', 'mp3':'#ec489a' };
+        return colors[ext] || '#6b7280';
+    }
+    function formatDate(ts) { return new Date(ts).toLocaleDateString('ar-SA'); }
+    function escapeHtml(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+    function showSuccess(m) { Swal.fire({ icon: 'success', title: 'تم', text: m, timer: 1500, showConfirmButton: false, toast: true, position: 'top-end' }); }
+    function showError(m) { Swal.fire({ icon: 'error', title: 'خطأ', text: m, confirmButtonColor: '#f94144' }); }
+    function showWarning(m) { Swal.fire({ icon: 'warning', title: 'تنبيه', text: m, confirmButtonColor: '#f8961e' }); }
+    function toggleView() { currentView = currentView === 'grid' ? 'list' : 'grid'; loadDocuments(); }
+    
+    // تهيئة
+    document.getElementById('fileInput')?.addEventListener('change', e => { if (e.target.files.length) handleFiles(e.target.files); });
+    const dropzone = document.getElementById('dropzoneArea');
+    if (dropzone) {
+        dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+        dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag-over'); if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
+    }
+    document.addEventListener('DOMContentLoaded', loadDocuments);
+})();
+</script>

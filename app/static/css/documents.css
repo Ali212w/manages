@@ -1,0 +1,267 @@
+/* documents.css - أنماط خاصة بالمستندات */
+
+/* تحسينات عامة */
+.document-type-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.document-type-badge.bill_of_quantities {
+    background-color: rgba(52, 152, 219, 0.1);
+    color: #2980b9;
+    border: 1px solid #3498db;
+}
+
+.document-type-badge.contract {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #27ae60;
+    border: 1px solid #2ecc71;
+}
+
+.document-type-badge.drawing {
+    background-color: rgba(155, 89, 182, 0.1);
+    color: #8e44ad;
+    border: 1px solid #9b59b6;
+}
+
+.document-type-badge.specification {
+    background-color: rgba(243, 156, 18, 0.1);
+    color: #d35400;
+    border: 1px solid #f39c12;
+}
+
+.document-type-badge.report {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: #c0392b;
+    border: 1px solid #e74c3c;
+}
+
+.document-type-badge.invoice {
+    background-color: rgba(26, 188, 156, 0.1);
+    color: #16a085;
+    border: 1px solid #1abc9c;
+}
+
+/* تحسينات معاينة الملفات */
+.preview-toolbar {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-input {
+    width: 60px;
+    text-align: center;
+}
+
+.rotation-controls {
+    display: flex;
+    gap: 5px;
+}
+
+/* تحسينات قائمة الملفات */
+.file-item.selected {
+    background-color: rgba(52, 152, 219, 0.1);
+    border-right: 3px solid var(--primary-color);
+}
+
+.file-item.dragging {
+    opacity: 0.5;
+    border: 2px dashed var(--primary-color);
+}
+
+/* تحسينات الرفع */
+.upload-progress-card {
+    background-color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 2px solid #f0f0f0;
+    transition: all 0.3s;
+}
+
+.upload-progress-card.completed {
+    border-color: var(--success-color);
+    background-color: rgba(46, 204, 113, 0.05);
+}
+
+.upload-progress-card.failed {
+    border-color: var(--danger-color);
+    background-color: rgba(231, 76, 60, 0.05);
+}
+
+.progress-details {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+/* تحسينات البحث */
+.search-highlight {
+    background-color: #fff3cd;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: 500;
+}
+
+/* تحسينات الجدول */
+.documents-table th {
+    position: sticky;
+    top: 0;
+    background-color: var(--primary-color);
+    z-index: 10;
+}
+
+.documents-table td {
+    vertical-align: middle;
+}
+
+/* تحسينات الوسائط المتعددة */
+@media print {
+    .document-actions-bar,
+    .document-footer,
+    .no-print {
+        display: none !important;
+    }
+    
+    .document-content {
+        display: block !important;
+    }
+    
+    .document-preview-section {
+        break-inside: avoid;
+    }
+}
+
+@media (max-width: 768px) {
+    .document-type-badge {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+    }
+    
+    .preview-toolbar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .upload-progress-card {
+        padding: 1rem;
+    }
+}
+
+/* تحسينات الرسوم المتحركة */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.document-card {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* تحسينات التحميل */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    border-radius: inherit;
+}
+
+/* تحسينات التنبيهات */
+.document-alert {
+    border-right: 4px solid;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.document-alert.info {
+    background-color: rgba(52, 152, 219, 0.1);
+    border-right-color: var(--info-color);
+}
+
+.document-alert.warning {
+    background-color: rgba(243, 156, 18, 0.1);
+    border-right-color: var(--warning-color);
+}
+
+.document-alert.success {
+    background-color: rgba(46, 204, 113, 0.1);
+    border-right-color: var(--success-color);
+}
+
+.document-alert.danger {
+    background-color: rgba(231, 76, 60, 0.1);
+    border-right-color: var(--danger-color);
+}
+
+/* تحسينات الأيقونات */
+.document-icon.large {
+    width: 80px;
+    height: 80px;
+    border-radius: 15px;
+    font-size: 2rem;
+}
+
+.document-icon.small {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+/* تحسينات التنقل */
+.document-nav {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.document-nav-item {
+    padding: 10px 20px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    text-decoration: none;
+    color: #666;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.document-nav-item:hover {
+    background-color: #e9ecef;
+    color: var(--primary-color);
+}
+
+.document-nav-item.active {
+    background-color: var(--primary-color);
+    color: white;
+}

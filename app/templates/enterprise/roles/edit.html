@@ -1,0 +1,93 @@
+{% extends "company/base.html" %}
+
+{% block title %}تعديل الدور - {{ role.name }}{% endblock %}
+
+{% block page_title %}تعديل الدور{% endblock %}
+{% block page_subtitle %}{{ role.role_code }} - {{ role.name }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <form method="POST" action="{{ url_for('enterprise.role_edit', role_id=role.id) }}">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">رمز الدور</label>
+                    <input type="text" class="form-control readonly-field" value="{{ role.role_code }}" readonly>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">الاسم</label>
+                    <input type="text" name="name" class="form-control" value="{{ role.name }}" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الوصف</label>
+                    <input type="text" name="description" class="form-control" value="{{ role.description or '' }}">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">التكلفة الافتراضية/ساعة</label>
+                    <input type="number" name="default_cost_per_hour" class="form-control" value="{{ role.default_cost_per_hour }}" step="0.01">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">العملة</label>
+                    <select name="currency" class="form-select">
+                        <option value="SAR" {% if role.currency == 'SAR' %}selected{% endif %}>ريال سعودي</option>
+                        <option value="USD" {% if role.currency == 'USD' %}selected{% endif %}>دولار أمريكي</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">المهارات المطلوبة</label>
+                <div id="skills-container">
+                    {% for skill in role.required_skills %}
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" name="skills[]" value="{{ skill }}">
+                        <button class="btn btn-outline-danger" type="button" onclick="removeSkill(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSkill()">
+                    <i class="fas fa-plus me-1"></i> إضافة مهارة
+                </button>
+            </div>
+            
+            <hr>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('enterprise.roles_list') }}" class="btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-2"></i> إلغاء
+                </a>
+                <button type="submit" class="btn-primary-gradient">
+                    <i class="fas fa-save me-2"></i> حفظ التغييرات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function addSkill() {
+    const container = document.getElementById('skills-container');
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input type="text" class="form-control" name="skills[]" placeholder="أدخل المهارة">
+        <button class="btn btn-outline-danger" type="button" onclick="removeSkill(this)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    container.appendChild(div);
+}
+
+function removeSkill(btn) {
+    btn.closest('.input-group').remove();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,58 @@
+<!-- templates/company/departments/partials/department_tree.html -->
+{% macro render_department(department, level=0) %}
+    <div class="department-node mb-2" style="margin-right: {{ level * 30 }}px;">
+        <div class="d-flex align-items-center p-2 bg-light rounded" 
+             style="border-right: 3px solid 
+                    {% if level == 0 %}var(--primary)
+                    {% elif level == 1 %}var(--success)
+                    {% elif level == 2 %}var(--warning)
+                    {% else %}var(--info){% endif %};">
+            
+            <div class="me-2">
+                <i class="fas 
+                    {% if department.sub_departments %}fa-folder-open
+                    {% else %}fa-folder{% endif %} 
+                    {% if level == 0 %}text-primary
+                    {% elif level == 1 %}text-success
+                    {% elif level == 2 %}text-warning
+                    {% else %}text-info{% endif %}">
+                </i>
+            </div>
+            
+            <div class="flex-grow-1">
+                <strong>{{ department.name }}</strong>
+                <small class="text-muted me-2">
+                    ({{ department.employees|length }} موظف)
+                </small>
+                
+                {% if department.manager %}
+                <small class="text-success">
+                    <i class="fas fa-user-tie me-1"></i>
+                    {{ department.manager.full_name }}
+                </small>
+                {% endif %}
+                
+                {% if not department.is_active %}
+                <span class="badge bg-danger ms-2">غير نشط</span>
+                {% endif %}
+            </div>
+            
+            <div>
+                <span class="badge bg-info">
+                    {{ department.sub_departments|length }} أقسام
+                </span>
+                <a href="{{ url_for('company.view_department', dept_id=department.id) }}" 
+                   class="btn btn-sm btn-link ms-2">
+                    <i class="fas fa-eye"></i>
+                </a>
+            </div>
+        </div>
+        
+        <!-- الأقسام الفرعية -->
+        {% if department.sub_departments %}
+            {% for sub_dept in department.sub_departments %}
+                {{ render_department(sub_dept, level + 1) }}
+            {% endfor %}
+        {% endif %}
+    </div>
+{% endmacro %}

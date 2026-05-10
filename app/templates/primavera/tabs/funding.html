@@ -1,0 +1,178 @@
+<!-- templates/primavera/tabs/project/funding.html -->
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-hand-holding-usd text-primary"></i>
+        Funding Sources
+    </h6>
+    
+    <!-- ملخص التمويل -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="bg-light p-3 rounded">
+                <small class="text-muted d-block">Total Funding</small>
+                <h4 class="mb-0">{{ "%.2f"|format(total_funding or 0) }} ر.س</h4>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="bg-light p-3 rounded">
+                <small class="text-muted d-block">Number of Sources</small>
+                <h4 class="mb-0">{{ funding_sources|length }}</h4>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="bg-light p-3 rounded">
+                <small class="text-muted d-block">Remaining to Allocate</small>
+                <h4 class="mb-0 text-warning">{{ "%.2f"|format(remaining_funding or 0) }} ر.س</h4>
+            </div>
+        </div>
+    </div>
+    
+    <!-- جدول مصادر التمويل -->
+    <div class="table-responsive">
+        <table class="primavera-table">
+            <thead>
+                <tr>
+                    <th>Funding Source</th>
+                    <th>Amount</th>
+                    <th>Fund Share</th>
+                    <th>Currency</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="fundingTable">
+                {% for source in funding_sources %}
+                <tr>
+                    <td>{{ source.source_name }}</td>
+                    <td>{{ "%.2f"|format(source.amount) }}</td>
+                    <td>{{ "%.1f"|format(source.share_percentage) }}%</td>
+                    <td>{{ source.currency }}</td>
+                    <td>
+                        <span class="badge bg-{{ 'success' if source.status == 'Approved' else 'warning' }}">
+                            {{ source.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-link" onclick="editFunding({{ source.id }})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- زر إضافة مصدر تمويل -->
+    <div class="mt-3">
+        <button class="btn-primavera" onclick="showAddFundingModal()">
+            <i class="fas fa-plus me-2"></i>Add Funding Source
+        </button>
+    </div>
+    
+    <!-- رسم بياني للتمويل -->
+    <div class="mt-4">
+        <canvas id="fundingChart" height="250"></canvas>
+    </div>
+</div>
+
+<!-- Modal إضافة مصدر تمويل -->
+<div class="modal fade" id="fundingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Funding Source</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="fundingForm">
+                    <div class="mb-3">
+                        <label class="form-label">Source Name</label>
+                        <input type="text" class="form-control" id="sourceName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount</label>
+                        <input type="number" class="form-control" id="fundingAmount" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Share Percentage</label>
+                        <input type="number" class="form-control" id="sharePercentage" step="0.1" min="0" max="100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Currency</label>
+                        <select class="form-control" id="fundingCurrency">
+                            <option value="SAR">SAR - Saudi Riyal</option>
+                            <option value="USD">USD - US Dollar</option>
+                            <option value="EUR">EUR - Euro</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-control" id="fundingStatus">
+                            <option value="Proposed">Proposed</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Received">Received</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveFunding()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAddFundingModal() {
+    document.getElementById('fundingForm').reset();
+    new bootstrap.Modal(document.getElementById('fundingModal')).show();
+}
+
+function saveFunding() {
+    const data = {
+        source_name: document.getElementById('sourceName').value,
+        amount: document.getElementById('fundingAmount').value,
+        share_percentage: document.getElementById('sharePercentage').value,
+        currency: document.getElementById('fundingCurrency').value,
+        status: document.getElementById('fundingStatus').value
+    };
+    
+    fetch(`/primavera/api/project/{{ project.id }}/funding`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire('تم', 'تم إضافة مصدر التمويل', 'success');
+            location.reload();
+        }
+    });
+}
+
+function initFundingChart() {
+    const ctx = document.getElementById('fundingChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    const sources = {{ funding_sources|tojson|safe if funding_sources else '[]'}};
+    
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: sources.map(s => s.source_name),
+            datasets: [{
+                data: sources.map(s => s.amount),
+                backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+            }]
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initFundingChart);
+</script>

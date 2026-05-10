@@ -1,0 +1,286 @@
+{% extends "client/base.html" %}
+
+{% block title %}نظرة عامة على الأداء{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h4><i class="fas fa-chart-line me-2"></i> نظرة عامة على أداء المشاريع</h4>
+        <p class="text-muted">تحليل شامل لأداء جميع مشاريعك</p>
+    </div>
+</div>
+
+{% if performance_data and performance_data|length > 0 %}
+    {% set total_projects = performance_data|length %}
+    {% set projects_with_good_spi = performance_data|selectattr('spi','>=',1)|list|length %}
+    {% set good_spi_percentage = (projects_with_good_spi / total_projects * 100) if total_projects > 0 else 0 %}
+    {% set projects_with_good_cpi = performance_data|selectattr('cpi','>=',1)|list|length %}
+    {% set good_cpi_percentage = (projects_with_good_cpi / total_projects * 100) if total_projects > 0 else 0 %}
+    {% set projects_with_good_csi = performance_data|selectattr('csi','>=',1)|list|length %}
+    {% set good_csi_percentage = (projects_with_good_csi / total_projects * 100) if total_projects > 0 else 0 %}
+    
+    <!-- Performance Metrics -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <div class="mb-2">
+                    <span class="badge bg-{% if good_spi_percentage >= 70 %}success{% elif good_spi_percentage >= 40 %}warning{% else %}danger{% endif %} p-2">
+                        <i class="fas fa-chart-line"></i> مؤشر الأداء
+                    </span>
+                </div>
+                <h3>{{ "%.2f"|format(performance_data|map(attribute='spi')|sum / total_projects if total_projects > 0 else 0) }}</h3>
+                <small>متوسط SPI</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <div class="mb-2">
+                    <span class="badge bg-{% if good_cpi_percentage >= 70 %}success{% elif good_cpi_percentage >= 40 %}warning{% else %}danger{% endif %} p-2">
+                        <i class="fas fa-coins"></i> كفاءة التكلفة
+                    </span>
+                </div>
+                <h3>{{ "%.2f"|format(performance_data|map(attribute='cpi')|sum / total_projects if total_projects > 0 else 0) }}</h3>
+                <small>متوسط CPI</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <div class="mb-2">
+                    <span class="badge bg-{% if good_csi_percentage >= 70 %}success{% elif good_csi_percentage >= 40 %}warning{% else %}danger{% endif %} p-2">
+                        <i class="fas fa-chart-simple"></i> الأداء المركب
+                    </span>
+                </div>
+                <h3>{{ "%.2f"|format(performance_data|map(attribute='csi')|sum / total_projects if total_projects > 0 else 0) }}</h3>
+                <small>متوسط CSI</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Chart -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i> مقارنة أداء المشاريع</h6>
+        </div>
+        <div class="card-body">
+            {% if performance_data|length > 0 %}
+            <canvas id="performanceComparisonChart" height="300"></canvas>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                <p class="text-muted">لا توجد بيانات كافية لعرض الرسم البياني</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Projects Performance Table -->
+    <div class="card">
+        <div class="card-header bg-white">
+            <h6 class="mb-0"><i class="fas fa-table me-2"></i> تفاصيل أداء المشاريع</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>المشروع</th>
+                            <th>التقدم</th>
+                            <th>SPI</th>
+                            <th>CPI</th>
+                            <th>CSI</th>
+                            <th>التقدير عند الإكمال</th>
+                            <th>التباين المتوقع</th>
+                            <th>الحالة</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in performance_data %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('client.project_detail', project_id=p.id) }}" class="text-decoration-none fw-bold">
+                                    {{ p.name }}
+                                </a>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress progress-custom" style="width: 80px;">
+                                        <div class="progress-bar bg-{% if p.progress >= 75 %}success{% elif p.progress >= 40 %}warning{% else %}info{% endif %}" 
+                                             style="width: {{ p.progress }}%"></div>
+                                    </div>
+                                    <small>{{ "%.1f"|format(p.progress) }}%</small>
+                                </div>
+                            </td>
+                            <td class="{% if p.spi >= 1 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {{ "%.2f"|format(p.spi) }}
+                            </td>
+                            <td class="{% if p.cpi >= 1 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {{ "%.2f"|format(p.cpi) }}
+                            </td>
+                            <td class="{% if p.csi >= 1 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {{ "%.2f"|format(p.csi) }}
+                            </td>
+                            <td>{{ "{:,.0f}".format(p.eac) }} ريال</td>
+                            <td class="{% if p.vac >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ "{:,.0f}".format(p.vac) }} ريال
+                            </td>
+                            <td>
+                                {% if p.status == 'active' %}
+                                <span class="badge bg-success">نشط</span>
+                                {% elif p.status == 'completed' %}
+                                <span class="badge bg-info">مكتمل</span>
+                                {% elif p.status == 'planning' %}
+                                <span class="badge bg-warning">تخطيط</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ p.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('client.project_detail', project_id=p.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delayed & Over Budget Projects -->
+    <div class="row g-4 mt-2">
+        {% if delayed_projects and delayed_projects|length > 0 %}
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> المشاريع المتأخرة</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for project in delayed_projects %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ project.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">متأخر:  {{ project.delay_days if project.delay_days else project.get_days_behind_schedule() if project.get_days_behind_schedule else 0 }} يوم</small>
+                                </div>
+                                <a href="{{ url_for('client.project_detail', project_id=project.id) }}" class="btn btn-sm btn-outline-danger">
+                                    مراجعة
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if over_budget_projects and over_budget_projects|length > 0 %}
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-white">
+                    <h6 class="mb-0"><i class="fas fa-coins me-2"></i> المشاريع المتجاوزة للميزانية</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for project in over_budget_projects %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ project.name }}</strong>
+                                    <br>
+                                    <small class="text-danger">تجاوز: {{ "{:,.0f}".format(project.variance|abs) }} ريال</small>
+                                </div>
+                                <a href="{{ url_for('client.financial_report', project_id=project.id) }}" class="btn btn-sm btn-outline-warning">
+                                    تحليل
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+{% else %}
+    <!-- رسالة عند عدم وجود بيانات -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد بيانات أداء متاحة</h5>
+            <p class="text-muted">لم يتم العثور على مشاريع أو لا توجد بيانات أداء كافية لعرضها</p>
+            <a href="{{ url_for('client.projects_list') }}" class="btn btn-primary">
+                <i class="fas fa-project-diagram me-2"></i>
+                عرض المشاريع
+            </a>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+{% if performance_data and performance_data|length > 0 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Performance Comparison Chart
+    const ctx = document.getElementById('performanceComparisonChart').getContext('2d');
+    
+    const projectNames = {{ performance_data|map(attribute='name')|list|tojson }};
+    const spiValues = {{ performance_data|map(attribute='spi')|list|tojson }};
+    const cpiValues = {{ performance_data|map(attribute='cpi')|list|tojson }};
+    
+    if (projectNames.length > 0) {
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: projectNames,
+                datasets: [
+                    {
+                        label: 'SPI (مؤشر الجدول)',
+                        data: spiValues,
+                        backgroundColor: 'rgba(67, 97, 238, 0.2)',
+                        borderColor: '#4361ee',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#4361ee'
+                    },
+                    {
+                        label: 'CPI (مؤشر التكلفة)',
+                        data: cpiValues,
+                        backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                        borderColor: '#4caf50',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#4caf50'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 2,
+                        ticks: { stepSize: 0.5 }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.raw.toFixed(2)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endif %}
+{% endblock %}

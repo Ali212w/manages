@@ -1,0 +1,673 @@
+<style>
+/* ============================================
+   تصميم نافذة النشاط مع تبويبات أفقية
+   متوافق مع base.html و hierarchy.html
+============================================ */
+
+/* تنسيق شريط التبويبات الأفقي */
+.primavera-tabs {
+    background: white;
+    padding: 0;
+    margin-top: 1.5rem;
+    border-bottom: 1px solid #eef2f7;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scrollbar-width: thin;
+}
+
+.primavera-tabs::-webkit-scrollbar {
+    height: 3px;
+}
+
+.primavera-tabs::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.primavera-tabs::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+}
+
+.primavera-tabs .nav-tabs {
+    border-bottom: none;
+    flex-wrap: nowrap;
+    display: inline-flex;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.primavera-tabs .nav-item {
+    display: inline-block;
+    margin: 0;
+}
+
+.primavera-tabs .nav-link {
+    border: none;
+    color: #64748b;
+    font-weight: 600;
+    padding: 0.85rem 1.25rem;
+    margin: 0;
+    border-radius: 0;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    position: relative;
+    background: transparent;
+    cursor: pointer;
+}
+
+.primavera-tabs .nav-link:hover {
+    color: var(--primary, #4361ee);
+    background: #f8fafc;
+}
+
+.primavera-tabs .nav-link.active {
+    color: var(--primary, #4361ee);
+    background: white;
+}
+
+.primavera-tabs .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary, #4361ee);
+}
+
+.primavera-tabs .nav-link i {
+    margin-left: 0.5rem;
+    font-size: 0.85rem;
+}
+
+/* تنسيق محتوى التبويبات */
+.tab-content-container {
+    background: white;
+    border-radius: 0 0 15px 15px;
+    padding: 2rem;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    min-height: 500px;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* بطاقات المعلومات السريعة */
+.quick-info-card {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    border-right: 4px solid var(--primary, #4361ee);
+    transition: all 0.3s;
+}
+
+.quick-info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.quick-info-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.quick-info-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--dark, #1e293b);
+}
+
+/* شريط الأدوات */
+.activity-toolbar {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.btn-activity {
+    background: linear-gradient(135deg, var(--primary, #4361ee), var(--secondary, #3f37c9));
+    border: none;
+    color: white;
+    padding: 0.6rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-activity:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+}
+
+.btn-outline-activity {
+    background: white;
+    border: 2px solid var(--primary, #4361ee);
+    color: var(--primary, #4361ee);
+    padding: 0.6rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-outline-activity:hover {
+    background: var(--primary, #4361ee);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* تنسيق البطاقات */
+.info-card {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.info-card-title {
+    font-weight: 700;
+    color: var(--dark, #1e293b);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.75rem;
+}
+
+/* تنسيق الجداول */
+.activity-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.activity-table th {
+    background: #f1f5f9;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.activity-table td {
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+}
+
+.activity-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* تنسيق الأزرار */
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s;
+    border: 1px solid #e2e8f0;
+    background: white;
+    cursor: pointer;
+}
+
+.btn-icon:hover {
+    background: var(--primary, #4361ee);
+    color: white;
+    transform: scale(1.05);
+}
+
+/* تنسيق الشارات */
+.badge-status {
+    padding: 0.4rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badge-pending { background: #fff3cd; color: #856404; }
+.badge-in_progress { background: #cce5ff; color: #004085; }
+.badge-completed { background: #d4edda; color: #155724; }
+.badge-critical { background: #f8d7da; color: #721c24; }
+
+/* تنسيق التقدم */
+.progress-sm {
+    height: 6px;
+    border-radius: 3px;
+}
+
+/* أزرار التحكم */
+.action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eef2f7;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-action:hover {
+    background: #f1f5f9;
+}
+
+.btn-action-primary {
+    background: var(--primary, #4361ee);
+    border-color: var(--primary, #4361ee);
+    color: white;
+}
+
+.btn-action-primary:hover {
+    background: var(--secondary, #3f37c9);
+}
+
+/* تجاوب مع الشاشات الصغيرة */
+@media (max-width: 768px) {
+    .primavera-tabs .nav-link {
+        padding: 0.6rem 1rem;
+        font-size: 0.75rem;
+    }
+    
+    .tab-content-container {
+        padding: 1rem;
+    }
+    
+    .activity-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+</style>
+
+<!-- شريط التبويبات الأفقي للنشاط -->
+<div class="primavera-tabs">
+    <ul class="nav nav-tabs" id="activityTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="general-tab" data-tab="general" type="button" role="tab">
+                <i class="fas fa-info-circle"></i> عام
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="status-tab" data-tab="status" type="button" role="tab">
+                <i class="fas fa-chart-line"></i> الحالة
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="resources-tab" data-tab="resources" type="button" role="tab">
+                <i class="fas fa-tools"></i> الموارد
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="predecessors-tab" data-tab="predecessors" type="button" role="tab">
+                <i class="fas fa-arrow-left"></i> الأنشطة السابقة
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="successors-tab" data-tab="successors" type="button" role="tab">
+                <i class="fas fa-arrow-right"></i> الأنشطة اللاحقة
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="codes-tab" data-tab="codes" type="button" role="tab">
+                <i class="fas fa-tags"></i> الأكواد
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="steps-tab" data-tab="steps" type="button" role="tab">
+                <i class="fas fa-list-ol"></i> الخطوات
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="expenses-tab" data-tab="expenses" type="button" role="tab">
+                <i class="fas fa-money-bill"></i> المصروفات
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="documents-tab" data-tab="documents" type="button" role="tab">
+                <i class="fas fa-file-alt"></i> المستندات
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="feedback-tab" data-tab="feedback" type="button" role="tab">
+                <i class="fas fa-comments"></i> الملاحظات
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="risks-tab" data-tab="risks" type="button" role="tab">
+                <i class="fas fa-shield-alt"></i> المخاطر
+            </button>
+        </li>
+    </ul>
+</div>
+
+<!-- محتوى التبويبات للنشاط -->
+<div class="tab-content-container">
+    <div class="tab-content">
+        <!-- General Tab -->
+        <div class="tab-pane active" id="general" role="tabpanel">
+            {% include 'primavera/activity_tabs/general.html' %}
+        </div>
+        
+        <!-- Status Tab -->
+        <div class="tab-pane" id="status" role="tabpanel">
+            {% include 'primavera/activity_tabs/status.html' %}
+        </div>
+        
+        <!-- Resources Tab -->
+        <div class="tab-pane" id="resources" role="tabpanel">
+            {% include 'primavera/activity_tabs/resources.html' %}
+        </div>
+        
+        <!-- Predecessors Tab -->
+        <div class="tab-pane" id="predecessors" role="tabpanel">
+            {% include 'primavera/activity_tabs/predecessors.html' %}
+        </div>
+        
+        <!-- Successors Tab -->
+        <div class="tab-pane" id="successors" role="tabpanel">
+            {% include 'primavera/activity_tabs/successors.html' %}
+        </div>
+        
+        <!-- Codes Tab -->
+        <div class="tab-pane" id="codes" role="tabpanel">
+            {% include 'primavera/activity_tabs/codes.html' %}
+        </div>
+        
+        <!-- Steps Tab -->
+        <div class="tab-pane" id="steps" role="tabpanel">
+            {% include 'primavera/activity_tabs/steps.html' %}
+        </div>
+        
+        <!-- Expenses Tab -->
+        <div class="tab-pane" id="expenses" role="tabpanel">
+            {% include 'primavera/activity_tabs/expenses.html' %}
+        </div>
+        
+        <!-- Documents Tab -->
+        <div class="tab-pane" id="documents" role="tabpanel">
+            {% include 'primavera/activity_tabs/documents.html' %}
+        </div>
+        
+        <!-- Feedback Tab -->
+        <div class="tab-pane" id="feedback" role="tabpanel">
+            {% include 'primavera/activity_tabs/feedback.html' %}
+        </div>
+        
+        <!-- Risks Tab -->
+        <div class="tab-pane" id="risks" role="tabpanel">
+            {% include 'primavera/activity_tabs/risks.html' %}
+        </div>
+    </div>
+</div>
+
+<!-- أزرار التحكم -->
+<div class="action-buttons">
+    <button class="btn-action" onclick="closeActivity()">
+        <i class="fas fa-times me-1"></i>
+        إغلاق
+    </button>
+    <button class="btn-action btn-action-primary" onclick="saveActivity()">
+        <i class="fas fa-save me-1"></i>
+        حفظ
+    </button>
+    <button class="btn-action" onclick="refreshActivity()">
+        <i class="fas fa-sync-alt me-1"></i>
+        تحديث
+    </button>
+</div>
+
+<script>
+// دوال التحكم في نافذة النشاط مع تبويبات أفقية
+
+// وظيفة تبديل التبويبات
+function switchActivityTab(tabId) {
+    // إخفاء جميع التبويبات
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+    });
+    
+    // إزالة التحديد من جميع الأزرار
+    document.querySelectorAll('.primavera-tabs .nav-link').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // إظهار التبويب المحدد
+    const selectedPane = document.getElementById(tabId);
+    if (selectedPane) {
+        selectedPane.classList.add('active');
+    }
+    
+    // تحديد الزر النشط
+    const activeButton = document.querySelector(`.primavera-tabs .nav-link[data-tab="${tabId}"]`);
+    if (activeButton) {
+        activeButton.classList.add('active');
+    }
+    
+    // حفظ التبويب النشط في localStorage
+    localStorage.setItem('activeActivityTab', tabId);
+}
+
+// حفظ التغييرات
+function saveActivity() {
+    const activityData = {
+        general: collectActivityGeneral(),
+        status: collectActivityStatus(),
+        resources: collectActivityResources(),
+        codes: collectActivityCodes()
+    };
+    
+    Swal.fire({
+        title: 'جاري الحفظ...',
+        text: 'الرجاء الانتظار',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch(`/primavera/api/activity/{{ activity.id }}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(activityData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.close();
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم',
+                text: 'تم حفظ التغييرات بنجاح',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error || 'حدث خطأ أثناء الحفظ'
+            });
+        }
+    })
+    .catch(error => {
+        Swal.close();
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال'
+        });
+    });
+}
+
+// تحديث الصفحة
+function refreshActivity() {
+    location.reload();
+}
+
+// تصدير النشاط
+function exportActivity() {
+    window.open(`/primavera/api/activity/{{ activity.id }}/export`, '_blank');
+}
+
+// إغلاق والعودة للقائمة
+function closeActivity() {
+    if (window.parent && window.parent.closeDetails) {
+        window.parent.closeDetails();
+    } else {
+        window.location.href = "{{ url_for('primavera.activities_list', project_id=activity.project_id) }}";
+    }
+}
+
+// دوال جمع البيانات
+function collectActivityGeneral() {
+    return {
+        type: document.getElementById('activityType')?.value,
+        duration_type: document.getElementById('durationType')?.value,
+        percent_complete_type: document.getElementById('percentCompleteType')?.value,
+        calendar: document.getElementById('activityCalendar')?.value,
+        wbs: document.getElementById('activityWBS')?.value,
+        responsible: document.getElementById('responsibleManager')?.value,
+        primary_resource: document.getElementById('primaryResource')?.value
+    };
+}
+
+function collectActivityStatus() {
+    return {
+        status: document.getElementById('activityStatus')?.value,
+        original_duration: document.getElementById('originalDuration')?.value,
+        actual_duration: document.getElementById('actualDuration')?.value,
+        remaining_duration: document.getElementById('remainingDuration')?.value,
+        at_complete_duration: document.getElementById('atCompleteDuration')?.value,
+        total_float: document.getElementById('totalFloat')?.value,
+        free_float: document.getElementById('freeFloat')?.value,
+        start_date: document.getElementById('startDate')?.value,
+        finish_date: document.getElementById('finishDate')?.value
+    };
+}
+
+function collectActivityResources() {
+    const resources = [];
+    document.querySelectorAll('.resource-row').forEach(row => {
+        resources.push({
+            id: row.dataset.resourceId,
+            remaining_units: row.querySelector('.remaining-units')?.value,
+            budgeted_units: row.querySelector('.budgeted-units')?.value
+        });
+    });
+    return resources;
+}
+
+function collectActivityCodes() {
+    const codes = {};
+    document.querySelectorAll('.activity-code').forEach(code => {
+        codes[code.dataset.type] = code.value;
+    });
+    return codes;
+}
+
+// دوال مساعدة للتنسيق
+function formatNumber(number) {
+    return new Intl.NumberFormat('ar-SA').format(number);
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('ar-SA');
+}
+
+// دوال عرض الرسائل
+function showSuccess(message) {
+    Swal.fire({
+        icon: 'success',
+        title: 'تم بنجاح',
+        text: message,
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
+
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'خطأ',
+        text: message
+    });
+}
+
+// تهيئة التبويبات عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    // ربط أحداث النقر على أزرار التبويبات
+    const tabButtons = document.querySelectorAll('.primavera-tabs .nav-link');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tabId = this.getAttribute('data-tab');
+            if (tabId) {
+                switchActivityTab(tabId);
+            }
+        });
+    });
+    
+    // استعادة آخر تبويب نشط من localStorage
+    const activeTab = localStorage.getItem('activeActivityTab');
+    if (activeTab) {
+        // التحقق من وجود التبويب
+        const tabExists = document.getElementById(activeTab);
+        if (tabExists) {
+            switchActivityTab(activeTab);
+        }
+    }
+});
+</script>

@@ -1,0 +1,307 @@
+{% extends "company/base.html" %}
+
+{% block title %}WBS - {{ project.name }}{% endblock %}
+
+{% block page_title %}هيكل تقسيم العمل{% endblock %}
+{% block page_subtitle %}{{ project.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wbs-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .wbs-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .wbs-tree {
+        min-height: 400px;
+    }
+    
+    .wbs-node {
+        margin-bottom: 0.5rem;
+        padding: 0.8rem;
+        border-radius: 12px;
+        transition: all 0.3s;
+        border: 1px solid #eef2f7;
+        background: white;
+    }
+    
+    .wbs-node:hover {
+        background: #f8f9fa;
+        border-color: var(--primary);
+    }
+    
+    .wbs-node.level-1 { margin-right: 0; border-right: 3px solid var(--primary); }
+    .wbs-node.level-2 { margin-right: 2rem; border-right: 3px solid var(--success); }
+    .wbs-node.level-3 { margin-right: 4rem; border-right: 3px solid var(--warning); }
+    .wbs-node.level-4 { margin-right: 6rem; border-right: 3px solid var(--info); }
+    .wbs-node.level-5 { margin-right: 8rem; border-right: 3px solid #6c757d; }
+    
+    .wbs-icon {
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 1rem;
+    }
+    
+    .wbs-code {
+        font-family: monospace;
+        background: #eef2f7;
+        padding: 0.2rem 0.5rem;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        margin-left: 0.5rem;
+    }
+    
+    .wbs-stats {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+    }
+    
+    .stat-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .progress-small {
+        width: 80px;
+        height: 5px;
+        background: #eef2f7;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-left: 0.5rem;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: var(--primary);
+        border-radius: 3px;
+    }
+    
+    .actions {
+        display: flex;
+        gap: 0.3rem;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .wbs-node:hover .actions {
+        opacity: 1;
+    }
+    
+    .action-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: none;
+        background: #eef2f7;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .action-btn:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .create-btn {
+        position: fixed;
+        bottom: 2rem;
+        left: 2rem;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
+        cursor: pointer;
+        transition: all 0.3s;
+        z-index: 100;
+        border: none;
+    }
+    
+    .create-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    .summary-card {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 15px;
+        padding: 1.2rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    
+    .summary-label {
+        font-size: 0.8rem;
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wbs-container">
+    <div class="wbs-header">
+        <h5 class="mb-0"><i class="fas fa-sitemap me-2 text-primary"></i>هيكل تقسيم العمل (WBS)</h5>
+        <button class="btn-primary-gradient" onclick="showCreateModal()">
+            <i class="fas fa-plus me-2"></i>إضافة عنصر WBS
+        </button>
+    </div>
+    
+    <!-- ملخص سريع -->
+    <div class="summary-card">
+        <div class="summary-grid">
+            <div>
+                <div class="summary-value">{{ wbs_nodes|length }}</div>
+                <div class="summary-label">إجمالي العناصر</div>
+            </div>
+            <div>
+                <div class="summary-value">{{ root_nodes|length }}</div>
+                <div class="summary-label">مستويات رئيسية</div>
+            </div>
+            <div>
+                <div class="summary-value">{{ project.total_activities }}</div>
+                <div class="summary-label">الأنشطة</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- شجرة WBS -->
+    <div class="wbs-tree">
+        {% for node in root_nodes %}
+        {% with node=node %}
+            {% include 'primavera/wbs_node.html' %}
+            {% endwith %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-sitemap fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted mb-3">لا توجد عناصر WBS</h5>
+            <p class="text-muted">قم بإنشاء هيكل تقسيم العمل لتنظيم أنشطة المشروع</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal إنشاء WBS -->
+<div class="modal fade" id="createWBSModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus-circle me-2 text-primary"></i>إضافة عنصر WBS</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('primavera.wbs_create') }}" id="wbsForm">
+                <input type="hidden" name="project_id" value="{{ project.id }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label required-field">رمز WBS</label>
+                        <input type="text" name="wbs_code" class="form-control" required>
+                        <small class="text-muted">مثال: 1.1، 1.2، 2.1</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label required-field">الاسم (عربي)</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">الوصف</label>
+                        <textarea name="description" class="form-control" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">العنصر الأب</label>
+                        <select name="parent_id" class="form-select">
+                            <option value="">-- عنصر رئيسي --</option>
+                            {% for node in wbs_nodes %}
+                            <option value="{{ node.id }}">{{ node.wbs_code }} - {{ node.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">الميزانية</label>
+                        <div class="input-group">
+                            <input type="number" name="budget" class="form-control" value="0" min="0" step="1000">
+                            <span class="input-group-text">ر.س</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn-primary-gradient">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<button class="create-btn" onclick="showCreateModal()">
+    <i class="fas fa-plus"></i>
+</button>
+
+<script>
+function showCreateModal() {
+    new bootstrap.Modal(document.getElementById('createWBSModal')).show();
+}
+
+// التحقق من صيغة رمز WBS
+document.getElementById('wbsForm').addEventListener('submit', function(e) {
+    const wbsCode = document.querySelector('input[name="wbs_code"]').value;
+    const pattern = /^[0-9]+(\.[0-9]+)*$/;
+    
+    if (!pattern.test(wbsCode)) {
+        e.preventDefault();
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'صيغة رمز WBS غير صحيحة. يجب أن تكون أرقام مفصولة بنقاط (مثال: 1.1)'
+        });
+    }
+});
+
+// تحديث تلقائي للبيانات كل 30 ثانية
+setInterval(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

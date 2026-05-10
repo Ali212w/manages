@@ -1,0 +1,78 @@
+<!-- templates/delivery/request_status.html -->
+{% extends "company/base.html" %}
+
+{% block title %}حالة طلب المواد{% endblock %}
+
+{% block page_title %}حالة طلب المواد{% endblock %}
+{% block page_subtitle %}تتبع كميات المواد المطلوبة والمستلمة{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-boxes text-primary me-2"></i>
+                    كميات المواد المطلوبة
+                </h5>
+                <span class="badge bg-primary">تحديث مباشر</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>المادة</th>
+                            <th>الوحدة</th>
+                            <th>الكمية المطلوبة</th>
+                            <th>الكمية المستلمة</th>
+                            <th>الكمية المتبقية</th>
+                            <th>نسبة الإنجاز</th>
+                            <th>الحالة</th>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td>{{ item.resource_name }}</td>
+                                <td>{{ item.unit }}</td>
+                                <td class="fw-bold">{{ item.required }}</td>
+                                <td class="text-success">{{ item.delivered }}</td>
+                                <td class="{% if item.remaining > 0 %}text-danger{% else %}text-muted{% endif %}">
+                                    {{ item.remaining }}
+                                </td>
+                                <td>
+                                    {% set percent = (item.delivered / item.required * 100) if item.required > 0 else 0 %}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                            <div class="progress-bar {% if percent >= 100 %}bg-success{% elif percent >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                 style="width: {{ percent }}%"></div>
+                                        </div>
+                                        <small>{{ "%.1f"|format(percent) }}%</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if item.remaining <= 0 %}
+                                    <span class="badge bg-success">مكتمل</span>
+                                    {% elif item.delivered > 0 %}
+                                    <span class="badge bg-warning">جزئي</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">قيد الانتظار</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="{{ url_for('supplier.requests_list') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-1"></i> العودة
+        </a>
+    </div>
+</div>
+{% endblock %}

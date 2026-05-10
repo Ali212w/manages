@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}الملف الشخصي{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-user-circle"></i> الصورة الشخصية</h5>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" 
+                     class="rounded-circle img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="">
+                
+                <form action="{{ url_for('profile') }}" method="POST" enctype="multipart/form-data" id="profileImageForm">
+                    <div class="mb-3">
+                        <label for="profile_image" class="form-label">تغيير الصورة</label>
+                        <input type="file" class="form-control" id="profile_image" name="profile_image" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> رفع الصورة
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> معلومات الحساب</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>اسم المستخدم:</strong> {{ current_user.username }}</p>
+                <p><strong>البريد الإلكتروني:</strong> {{ current_user.email }}</p>
+                <p><strong>الدور:</strong> 
+                    {% if current_user.role == 'admin' %}
+                        <span class="badge bg-danger">مدير عام</span>
+                    {% elif current_user.role == 'project_manager' %}
+                        <span class="badge bg-primary">مدير مشروع</span>
+                    {% elif current_user.role == 'supervisor' %}
+                        <span class="badge bg-info">مشرف</span>
+                    {% elif current_user.role == 'delegate' %}
+                        <span class="badge bg-success">مندوب</span>
+                    {% else %}
+                        <span class="badge bg-secondary">فرد</span>
+                    {% endif %}
+                </p>
+                <p><strong>تاريخ التسجيل:</strong> {{ current_user.created_at.strftime('%Y-%m-%d') }}</p>
+                <p><strong>آخر دخول:</strong> {{ current_user.last_login.strftime('%Y-%m-%d %H:%M') if current_user.last_login else 'لم يسجل بعد' }}</p>
+            </div>
+        </div>
+        
+        <div class="card shadow mb-4">
+            <div class="card-header bg-{{ 'success' if current_user.is_paid else 'warning' }} text-white">
+                <h5 class="mb-0"><i class="fas fa-crown"></i> حالة الاشتراك</h5>
+            </div>
+            <div class="card-body">
+                {% if current_user.is_paid %}
+                    <p class="text-success"><i class="fas fa-check-circle"></i> اشتراك مدفوع نشط</p>
+                    <p>تاريخ الانتهاء: {{ current_user.subscription_end.strftime('%Y-%m-%d') if current_user.subscription_end }}</p>
+                {% elif current_user.is_trial_active() %}
+                    <p class="text-warning"><i class="fas fa-hourglass-half"></i> فترة تجريبية</p>
+                    <p>تنتهي في: {{ current_user.trial_end.strftime('%Y-%m-%d') }}</p>
+                    <a href="{{ url_for('subscribe') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-crown"></i> اشترك الآن
+                    </a>
+                {% else %}
+                    <p class="text-danger"><i class="fas fa-times-circle"></i> اشتراك منتهي</p>
+                    <a href="{{ url_for('subscribe') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-crown"></i> اشترك الآن
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-edit"></i> تعديل الملف الشخصي</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('profile') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="full_name" class="form-label">الاسم الكامل</label>
+                            {{ form.full_name(class="form-control", value=current_user.full_name) }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">رقم الهاتف</label>
+                            {{ form.phone(class="form-control", value=current_user.phone or '') }}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h6>تغيير كلمة المرور</h6>
+                    <p class="text-muted small">اترك هذه الحقول فارغة إذا لم ترد تغيير كلمة المرور</p>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="current_password" class="form-label">كلمة المرور الحالية</label>
+                            {{ form.current_password(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="new_password" class="form-label">كلمة المرور الجديدة</label>
+                            {{ form.new_password(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="confirm_new_password" class="form-label">تأكيد كلمة المرور</label>
+                            {{ form.confirm_new_password(class="form-control") }}
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> حفظ التغييرات
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- نشاطات المستخدم -->
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-history"></i> آخر النشاطات</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for activity in current_user.activities|sort(attribute='created_at', reverse=True)|slice(10) %}
+                    <div class="mb-3 pb-2 border-bottom">
+                        <div class="d-flex justify-content-between">
+                            <p class="mb-1">
+                                <span class="badge bg-{{ 'success' if 'complete' in activity.action else 'info' }}">
+                                    {{ activity.action }}
+                                </span>
+                                {{ activity.details }}
+                            </p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                        <p>لا توجد نشاطات مسجلة</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // معالجة رفع الصورة
+    $('#profile_image').change(function() {
+        if(this.files && this.files[0]) {
+            $('#profileImageForm').submit();
+        }
+    });
+});
+</script>
+{% endblock %}

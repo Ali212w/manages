@@ -1,0 +1,546 @@
+{% extends "employee/base.html" %}
+
+{% block title %}تنفيذ مهمة - {{ task.task_name }}{% endblock %}
+
+{% block page_title %}تنفيذ المهمة{% endblock %}
+{% block page_subtitle %}{{ task.task_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .task-execution {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .task-header {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        text-align: center;
+    }
+    
+    .task-code {
+        font-size: 1.2rem;
+        color: var(--primary);
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .task-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1rem;
+    }
+    
+    .task-description {
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.5rem 2rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    .status-badge.pending {
+        background: rgba(248, 150, 30, 0.1);
+        color: var(--warning);
+    }
+    
+    .status-badge.in_progress {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+    }
+    
+    .status-badge.completed {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .timer-container {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: white;
+        text-align: center;
+    }
+    
+    .timer-display {
+        font-size: 3rem;
+        font-weight: 700;
+        font-family: monospace;
+        margin-bottom: 0.5rem;
+    }
+    
+    .timer-label {
+        opacity: 0.9;
+        font-size: 0.9rem;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    
+    .btn-start {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 1rem 3rem;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-start:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+    }
+    
+    .btn-complete {
+        background: linear-gradient(135deg, var(--success), #45b7af);
+        color: white;
+        border: none;
+        padding: 1rem 3rem;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-complete:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(76, 201, 240, 0.3);
+    }
+    
+    .btn-disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .instructions-card {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .instructions-title {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .instructions-title i {
+        color: var(--primary);
+    }
+    
+    .instructions-content {
+        color: #6c757d;
+        line-height: 1.8;
+    }
+    
+    .dependencies {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .dependency-item {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .dependency-item:last-child {
+        border-bottom: none;
+    }
+    
+    .dependency-status {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-left: 1rem;
+    }
+    
+    .dependency-status.completed { background: var(--success); }
+    .dependency-status.pending { background: #6c757d; }
+    
+    .progress-section {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .progress-slider {
+        width: 100%;
+        margin: 1rem 0;
+    }
+    
+    .progress-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary);
+        text-align: center;
+    }
+    
+    .notes-textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        resize: vertical;
+        margin-top: 1rem;
+    }
+    
+    .notes-textarea:focus {
+        border-color: var(--primary);
+        outline: none;
+    }
+    
+    @media (max-width: 768px) {
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .timer-display {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="task-execution">
+    <!-- Task Header -->
+    <div class="task-header">
+        <div class="task-code">{{ task.task_code }}</div>
+        <h1 class="task-title">{{ task.task_name }}</h1>
+        <p class="task-description">{{ task.description or 'لا يوجد وصف' }}</p>
+        
+        <span class="status-badge {{ task.status }}">
+            {% if task.status == 'pending' %}في الانتظار
+            {% elif task.status == 'in_progress' %}قيد التنفيذ
+            {% elif task.status == 'completed' %}مكتملة
+            {% endif %}
+        </span>
+    </div>
+    <!-- في بداية الصفحة، أضف تحقق من اكتمال المتطلبات -->
+    {% if task.status == 'pending' %}
+        {% set pending_reqs = task.get_pending_requirements() %}
+        {% if pending_reqs %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <div class="d-flex">
+                <div class="me-3">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                </div>
+                <div>
+                    <h5 class="alert-heading">المتطلبات غير مكتملة!</h5>
+                    <p>لا يمكن بدء المهمة حتى يتم إكمال جميع المتطلبات التالية:</p>
+                    <ul>
+                        {% for req in pending_reqs %}
+                        <li>{{ req.description }}</li>
+                        {% endfor %}
+                    </ul>
+                    <hr>
+                    <a href="{{ url_for('tracking.task_requirements', task_id=task.id) }}" class="btn btn-warning">
+                        <i class="fas fa-clipboard-check me-2"></i>إكمال المتطلبات
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
+    <!-- Timer -->
+    {% if task.status == 'in_progress' %}
+    <div class="timer-container" id="timerContainer">
+        <div class="timer-display" id="timer">00:00:00</div>
+        <div class="timer-label">مدة التنفيذ</div>
+    </div>
+    {% endif %}
+    
+    <!-- Instructions -->
+    {% if task.instructions %}
+    <div class="instructions-card">
+        <h5 class="instructions-title">
+            <i class="fas fa-clipboard-list"></i>
+            تعليمات التنفيذ
+        </h5>
+        <div class="instructions-content">
+            {{ task.instructions }}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Dependencies -->
+    {% if previous_task or next_tasks %}
+    <div class="dependencies">
+        <h5 class="instructions-title">
+            <i class="fas fa-link"></i>
+            التبعيات
+        </h5>
+        
+        {% if previous_task %}
+        <div class="dependency-item">
+            <div class="dependency-status {{ previous_task.status }}"></div>
+            <div class="flex-grow-1">
+                <strong>المهمة السابقة:</strong> {{ previous_task.task_name }}
+            </div>
+            <span class="badge bg-{{ 'success' if previous_task.status == 'completed' else 'secondary' }}">
+                {{ 'مكتملة' if previous_task.status == 'completed' else 'غير مكتملة' }}
+            </span>
+        </div>
+        {% endif %}
+        
+        {% if next_tasks %}
+        <div class="dependency-item">
+            <div class="dependency-status"></div>
+            <div class="flex-grow-1">
+                <strong>المهام التالية:</strong>
+                <ul class="mb-0 mt-1">
+                    {% for nt in next_tasks %}
+                    <li>{{ nt.task_name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Progress Update (for in_progress tasks) -->
+    {% if task.status == 'in_progress' %}
+    <div class="progress-section">
+        <h5 class="instructions-title">
+            <i class="fas fa-chart-line"></i>
+            تحديث التقدم
+        </h5>
+        
+        <div class="progress-value" id="progressValue">{{ task.progress_percentage|round }}%</div>
+        <input type="range" class="progress-slider" id="progressSlider" 
+               min="0" max="100" value="{{ task.progress_percentage }}" step="1">
+        
+        <textarea class="notes-textarea" id="progressNotes" 
+                  placeholder="أضف ملاحظات حول التقدم... (اختياري)" rows="3"></textarea>
+        
+        <button class="btn-start w-100 mt-3" onclick="updateProgress()">
+            <i class="fas fa-save me-2"></i> تحديث التقدم
+        </button>
+    </div>
+    {% endif %}
+    
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        {% if task.status == 'pending' %}
+        {% if task.get_pending_requirements() %}
+        <a href="{{ url_for('tracking.task_requirements', task_id=task.id) }}" 
+        class="btn btn-warning btn-lg w-100">
+            <i class="fas fa-clipboard-check me-2"></i>
+            إكمال المتطلبات أولاً
+        </a>
+        {% else %}
+        <button class="btn btn-success btn-lg w-100" onclick="startTask()">
+            <i class="fas fa-play me-2"></i>
+            بدء المهمة
+        </button>
+        {% endif %}
+        {% elif task.status == 'in_progress' %}
+        <button class="btn-complete" onclick="completeTask()">
+            <i class="fas fa-check me-2"></i> إكمال المهمة
+        </button>
+        {% endif %}
+        
+        <a href="{{ url_for('employee.my_tasks') }}" class="btn-start" style="background: #6c757d;">
+            <i class="fas fa-arrow-right me-2"></i> العودة
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let startTime = null;
+let timerInterval = null;
+
+{% if task.status == 'in_progress' and task.actual_start_date %}
+// بدء التايمر إذا كانت المهمة قيد التنفيذ
+startTime = new Date("{{ task.actual_start_date.strftime('%Y-%m-%d %H:%M:%S') }}").getTime();
+startTimer();
+{% endif %}
+
+function startTimer() {
+    timerInterval = setInterval(function() {
+        const now = new Date().getTime();
+        const elapsed = now - startTime;
+        
+        const hours = Math.floor(elapsed / (1000 * 60 * 60));
+        const minutes = Math.floor((elapsed % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((elapsed % (1000 * 60)) / 1000);
+        
+        document.getElementById('timer').innerHTML = 
+            String(hours).padStart(2, '0') + ':' + 
+            String(minutes).padStart(2, '0') + ':' + 
+            String(seconds).padStart(2, '0');
+    }, 1000);
+}
+
+function startTask() {
+    Swal.fire({
+        title: 'بدء المهمة',
+        text: 'هل أنت متأكد من بدء تنفيذ هذه المهمة؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، ابدأ',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/tracking/api/task/{{ task.id }}/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم البدء',
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+
+function completeTask() {
+    Swal.fire({
+        title: 'إكمال المهمة',
+        text: 'هل أنت متأكد من إكمال هذه المهمة؟',
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--success)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، أكمل',
+        cancelButtonText: 'إلغاء',
+        input: 'select',
+        inputOptions: {
+            'excellent': 'ممتاز',
+            'good': 'جيد',
+            'fair': 'متوسط',
+            'poor': 'ضعيف'
+        },
+        inputPlaceholder: 'اختر جودة التنفيذ',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'الرجاء اختيار جودة التنفيذ';
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/tracking/api/task/{{ task.id }}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    quality: result.value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تهانينا!',
+                        text: 'تم إكمال المهمة بنجاح',
+                        timer: 3000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = "{{ url_for('employee.my_tasks') }}";
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+
+function updateProgress() {
+    const progress = document.getElementById('progressSlider').value;
+    const notes = document.getElementById('progressNotes').value;
+    
+    fetch(`/tracking/api/task/{{ task.id }}/progress`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            progress: progress,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('progressValue').innerHTML = progress + '%';
+            Swal.fire({
+                icon: 'success',
+                title: 'تم التحديث',
+                text: 'تم تحديث تقدم المهمة',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            
+            if (progress >= 100) {
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            }
+        }
+    });
+}
+
+document.getElementById('progressSlider')?.addEventListener('input', function() {
+    document.getElementById('progressValue').innerHTML = this.value + '%';
+});
+</script>
+{% endblock %}

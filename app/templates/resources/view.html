@@ -1,0 +1,407 @@
+{% extends "company/base.html" %}
+
+{% block title %}تفاصيل المورد - {{ resource.name }}{% endblock %}
+
+{% block page_title %}تفاصيل المورد{% endblock %}
+{% block page_subtitle %}{{ resource.resource_id }} - {{ resource.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    .detail-card {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+    }
+    
+    .resource-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    .resource-title h2 {
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+    }
+    
+    .resource-code {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .resource-type-badge {
+        padding: 0.4rem 1.2rem;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .type-labor { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .type-material { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .type-equipment { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .type-non_labor { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .info-item {
+        background: #f8fafc;
+        border-radius: 15px;
+        padding: 1rem;
+    }
+    
+    .info-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0.3rem;
+    }
+    
+    .info-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+    
+    .utilization-card {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05), rgba(67, 97, 238, 0.1));
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .utilization-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .progress-large {
+        height: 12px;
+        border-radius: 6px;
+        background: #eef2f7;
+        margin: 1rem 0;
+    }
+    
+    .assignments-table {
+        margin-top: 1.5rem;
+    }
+    
+    .assignments-table th {
+        background: var(--primary);
+        color: white;
+        padding: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .assignments-table td {
+        padding: 0.8rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+    }
+    
+    .btn-edit {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-edit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .btn-delete {
+        background: var(--danger);
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-delete:hover {
+        background: #d32f2f;
+        transform: translateY(-2px);
+    }
+    
+    @media (max-width: 768px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .resource-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .action-buttons {
+            justify-content: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <div class="detail-card">
+        <!-- رأس المورد -->
+        <div class="resource-header">
+            <div class="resource-title">
+                <h2>{{ resource.name }}</h2>
+                <div class="resource-code">{{ resource.resource_id }}</div>
+            </div>
+            <div>
+                <span class="resource-type-badge type-{{ resource.type }}">
+                    {% if resource.type == 'labor' %}موارد بشرية
+                    {% elif resource.type == 'material' %}مواد
+                    {% elif resource.type == 'equipment' %}معدات
+                    {% else %}أخرى{% endif %}
+                </span>
+            </div>
+        </div>
+        
+        <!-- معلومات أساسية -->
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">الوصف</div>
+                <div class="info-value">{{ resource.description or 'لا يوجد وصف' }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">الوحدة</div>
+                <div class="info-value">{{ resource.unit or 'غير محدد' }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">التكلفة لكل وحدة</div>
+                <div class="info-value">{{ "{:,.2f}".format(resource.cost_per_unit) }} {{ resource.currency or 'ر.س' }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">الكمية المتاحة</div>
+                <div class="info-value">{{ resource.available_quantity }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">الكمية المخصصة</div>
+                <div class="info-value">{{ resource.total_allocated|default(0) }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">تاريخ الإنشاء</div>
+                <div class="info-value">{{ resource.created_at.strftime('%Y-%m-%d') if resource.created_at else '-' }}</div>
+            </div>
+        </div>
+        
+        <!-- معلومات خاصة حسب النوع -->
+        {% if resource.type == 'labor' %}
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">التخصص</div>
+                <div class="info-value">{{ resource.specialization or '-' }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">المهارات</div>
+                <div class="info-value">{{ resource.skills|join(', ') if resource.skills else '-' }}</div>
+            </div>
+        </div>
+        {% elif resource.type == 'equipment' %}
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">نوع المعدة</div>
+                <div class="info-value">{{ resource.equipment_type or '-' }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">الموديل</div>
+                <div class="info-value">{{ resource.equipment_model or '-' }}</div>
+            </div>
+        </div>
+        {% elif resource.type == 'material' %}
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">نوع المادة</div>
+                <div class="info-value">{{ resource.material_type or '-' }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">المورد</div>
+                <div class="info-value">{{ resource.supplier_name or '-' }}</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- نسبة الاستخدام -->
+        <div class="utilization-card">
+            <h6 class="mb-2">نسبة استخدام المورد</h6>
+            <div class="utilization-value {% if resource.utilization > 100 %}text-danger{% elif resource.utilization > 80 %}text-warning{% else %}text-success{% endif %}">
+                {{ "%.1f"|format(resource.utilization) }}%
+            </div>
+            <div class="progress-large">
+                <div class="progress-bar {% if resource.utilization > 100 %}bg-danger{% elif resource.utilization > 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                     style="width: {{ resource.utilization }}%; height: 100%; border-radius: 6px;"></div>
+            </div>
+            <div class="mt-2">
+                {% if resource.utilization > 100 %}
+                <span class="text-danger">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    مورد محمل فوق طاقته بنسبة {{ "%.1f"|format(resource.utilization - 100) }}%
+                </span>
+                {% elif resource.utilization > 80 %}
+                <span class="text-warning">
+                    <i class="fas fa-clock me-1"></i>
+                    مورد يقترب من الحد الأقصى للاستخدام
+                </span>
+                {% else %}
+                <span class="text-success">
+                    <i class="fas fa-check-circle me-1"></i>
+                    مورد متاح للاستخدام
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- أزرار الإجراءات -->
+        <div class="action-buttons">
+            <button class="btn-edit" onclick="window.location.href='{{ url_for('resource.edit', resource_id=resource.id) }}'">
+                <i class="fas fa-edit me-2"></i>
+                تعديل المورد
+            </button>
+            <button class="btn-delete" onclick="deleteResource({{ resource.id }}, '{{ resource.name }}')">
+                <i class="fas fa-trash me-2"></i>
+                حذف المورد
+            </button>
+        </div>
+    </div>
+    
+    <!-- التعيينات -->
+    {% if assignments or task_assignments %}
+    <div class="detail-card">
+        <h5 class="mb-3">
+            <i class="fas fa-link text-primary me-2"></i>
+            التعيينات المرتبطة
+        </h5>
+        
+        {% if assignments %}
+        <div class="assignments-table">
+            <h6 class="mb-2">الأنشطة</h6>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>النشاط</th>
+                        <th>الكمية المخططة</th>
+                        <th>الكمية الفعلية</th>
+                        <th>المتبقي</th>
+                        <th>التكلفة</th>
+                    </thead>
+                    <tbody>
+                        {% for a in assignments %}
+                        <tr>
+                            <td>{{ a.activity.activity_name if a.activity else '-' }}</td>
+                            <td class="fw-bold">{{ a.planned_quantity }}</td>
+                            <td>{{ a.actual_quantity }}</td>
+                            <td>{{ a.remaining_quantity }}</td>
+                            <td>{{ "{:,.2f}".format(a.planned_cost) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            
+            {% if task_assignments %}
+            <div class="assignments-table mt-4">
+                <h6 class="mb-2">المهام</h6>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>المهمة</th>
+                            <th>الكمية</th>
+                            <th>التكلفة</th>
+                            <th>الحالة</th>
+                        </thead>
+                        <tbody>
+                            {% for t in task_assignments %}
+                             <tr>
+                                 <td>{{ t.task.task_name if t.task else '-' }}</td>
+                                 <td class="fw-bold">{{ t.planned_quantity }}</td>
+                                 <td>{{ "{:,.2f}".format(t.planned_cost) }}</td>
+                                 <td>
+                                    <span class="badge bg-{{ 'success' if t.status == 'completed' else 'primary' }}">
+                                        {{ t.status }}
+                                    </span>
+                                 </td>
+                             </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+<script>
+function deleteResource(resourceId, resourceName) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: `هل أنت متأكد من حذف المورد "${resourceName}"؟`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/resources/api/${resourceId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الحذف',
+                        text: 'تم حذف المورد بنجاح',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = '{{ url_for("resource.index") }}';
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

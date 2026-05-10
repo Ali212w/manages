@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang|default('ar') }}" dir="{{ current_dir|default('rtl') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="description" content="{{ _('app_description') }}">
+    <meta name="author" content="ProManage">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <title>{% block title %}{{ _('app_name') }}{% endblock %} | {{ g.company.name if g.company else _('company') }}</title>
+    
+    <!-- ============================================ -->
+    <!-- Stylesheets - متوافقة مع RTL/LTR -->
+    <!-- ============================================ -->
+    
+    <!-- Bootstrap 5 حسب اتجاه اللغة -->
+    {% if current_dir == 'rtl' %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    {% else %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    {% endif %}
+    
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts حسب اللغة -->
+    {% if current_dir == 'rtl' %}
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    {% else %}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    {% endif %}
+    
+    <!-- ApexCharts -->
+    <link href="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.css" rel="stylesheet">
+    
+    <!-- DataTables -->
+    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+    
+    <!-- Toastr -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+    
+    <!-- Perfect Scrollbar -->
+    <link href="https://cdn.jsdelivr.net/npm/perfect-scrollbar@1.5.5/css/perfect-scrollbar.css" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <style>
+        /* ============================================ */
+        /* CSS Variables */
+        /* ============================================ */
+        :root {
+            --primary: {{ g.company.settings.primary_color|default('#4361ee') }};
+            --primary-dark: #3a0ca3;
+            --primary-light: #4895ef;
+            --secondary: {{ g.company.settings.secondary_color|default('#3f37c9') }};
+            --success: #4caf50;
+            --danger: #f44336;
+            --warning: #ff9800;
+            --info: #2196f3;
+            --dark: #2b2d42;
+            --light: #f8f9fa;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-300: #dee2e6;
+            --gray-400: #ced4da;
+            --gray-500: #adb5bd;
+            --gray-600: #6c757d;
+            --gray-700: #495057;
+            --gray-800: #343a40;
+            --gray-900: #212529;
+            --sidebar-bg: {{ g.company.settings.sidebar_color|default('#1e1e2f') }};
+            --sidebar-width: 280px;
+            --header-height: 70px;
+            --transition-speed: 0.3s;
+            --border-radius: 12px;
+            --border-radius-lg: 20px;
+            --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            --box-shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        /* Dark Theme */
+        [data-theme="dark"] {
+            --primary: #5a7dff;
+            --primary-dark: #4a6dee;
+            --dark: #f8f9fa;
+            --light: #1a1a2e;
+            --gray-100: #2b2d42;
+            --gray-200: #2d2f45;
+            --gray-300: #3a3c5a;
+            --gray-400: #4a4d6e;
+            --gray-500: #5a5d7e;
+            --gray-600: #8a8dae;
+            --gray-700: #cacdde;
+            --gray-800: #e0e2ef;
+            --gray-900: #f0f2ff;
+        }
+        
+        /* ============================================ */
+        /* Global Styles */
+        /* ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: {% if current_dir == 'rtl' %}'Cairo', 'Tajawal', sans-serif{% else %}'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif{% endif %};
+            direction: {{ current_dir }};
+            text-align: {{ 'right' if current_dir == 'rtl' else 'left' }};
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--gray-800);
+            line-height: 1.5;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        [data-theme="dark"] body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+        
+        /* ============================================ */
+        /* RTL/LTR Adjustments */
+        /* ============================================ */
+        .text-start { text-align: {{ 'right' if current_dir == 'rtl' else 'left' }} !important; }
+        .text-end { text-align: {{ 'left' if current_dir == 'rtl' else 'right' }} !important; }
+        
+        .ms-1 { margin-{{ 'right' if current_dir == 'rtl' else 'left' }}: 0.25rem !important; }
+        .me-1 { margin-{{ 'left' if current_dir == 'rtl' else 'right' }}: 0.25rem !important; }
+        .ms-2 { margin-{{ 'right' if current_dir == 'rtl' else 'left' }}: 0.5rem !important; }
+        .me-2 { margin-{{ 'left' if current_dir == 'rtl' else 'right' }}: 0.5rem !important; }
+        .ms-3 { margin-{{ 'right' if current_dir == 'rtl' else 'left' }}: 1rem !important; }
+        .me-3 { margin-{{ 'left' if current_dir == 'rtl' else 'right' }}: 1rem !important; }
+        
+        .ps-1 { padding-{{ 'right' if current_dir == 'rtl' else 'left' }}: 0.25rem !important; }
+        .pe-1 { padding-{{ 'left' if current_dir == 'rtl' else 'right' }}: 0.25rem !important; }
+        .ps-2 { padding-{{ 'right' if current_dir == 'rtl' else 'left' }}: 0.5rem !important; }
+        .pe-2 { padding-{{ 'left' if current_dir == 'rtl' else 'right' }}: 0.5rem !important; }
+        .ps-3 { padding-{{ 'right' if current_dir == 'rtl' else 'left' }}: 1rem !important; }
+        .pe-3 { padding-{{ 'left' if current_dir == 'rtl' else 'right' }}: 1rem !important; }
+        
+        .float-start { float: {{ 'right' if current_dir == 'rtl' else 'left' }} !important; }
+        .float-end { float: {{ 'left' if current_dir == 'rtl' else 'right' }} !important; }
+        
+        /* Form Controls */
+        input, textarea, select, .form-control, .form-select {
+            text-align: {{ 'right' if current_dir == 'rtl' else 'left' }};
+            direction: {{ current_dir }};
+        }
+        
+        /* ============================================ */
+        /* Premium Sidebar */
+        /* ============================================ */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            {{ 'right' if current_dir == 'rtl' else 'left' }}: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--sidebar-bg);
+            color: white;
+            z-index: 1000;
+            transition: all var(--transition-speed) ease;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: var(--sidebar-bg);
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+        
+        .sidebar-header {
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        
+        .sidebar-header h3 {
+            color: #fff;
+            font-weight: 700;
+            margin: 0;
+            font-size: 1.3rem;
+        }
+        
+        .sidebar-header p {
+            color: rgba(255, 255, 255, 0.7);
+            margin: 5px 0 0;
+            font-size: 0.85rem;
+        }
+        
+        .company-logo {
+            max-width: 120px;
+            max-height: 60px;
+            margin-bottom: 10px;
+        }
+        
+        /* User Info Card */
+        .user-info {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            margin: 15px;
+            border-radius: var(--border-radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all var(--transition-speed);
+        }
+        
+        .user-info:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .user-details h6 {
+            color: white;
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .user-details span {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+        
+        /* Navigation Menu */
+        .nav-menu {
+            padding: 10px 15px;
+        }
+        
+        .nav-header {
+            padding: 10px 20px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 10px;
+        }
+        
+        .nav-item {
+            margin-bottom: 5px;
+            list-style: none;
+        }
+        
+        .nav-link {
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            transition: all var(--transition-speed);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+        
+        .nav-link i {
+            width: 24px;
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.6);
+            transition: all var(--transition-speed);
+        }
+        
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX({{ '5px' if current_dir == 'rtl' else '-5px' }});
+        }
+        
+        .nav-link:hover i {
+            color: var(--primary);
+        }
+        
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .nav-link.active i {
+            color: white;
+        }
+        
+        .badge-notification {
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            margin-left: auto;
+            min-width: 18px;
+            text-align: center;
+        }
+        
+        .nav-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 15px 0;
+        }
+        
+        .live-badge {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* ============================================ */
+        /* Main Content */
+        /* ============================================ */
+        .main-content {
+            margin-{{ 'right' if current_dir == 'rtl' else 'left' }}: var(--sidebar-width);
+            padding: 20px 30px;
+            transition: all var(--transition-speed);
+        }
+        
+        /* ============================================ */
+        /* Glassmorphism Top Navbar */
+        /* ============================================ */
+        .navbar-top {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius-lg);
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            box-shadow: var(--box-shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        [data-theme="dark"] .navbar-top {
+            background: rgba(26, 26, 46, 0.95);
+        }
+        
+        .page-title h4 {
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 0;
+        }
+        
+        .page-title span {
+            color: var(--gray-600);
+            font-size: 0.85rem;
+        }
+        
+        /* Search Box */
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 280px;
+            padding: 10px 40px 10px 15px;
+            border: 2px solid var(--gray-200);
+            border-radius: 30px;
+            font-size: 0.9rem;
+            transition: all var(--transition-speed);
+            background: var(--gray-100);
+        }
+        
+        .search-box input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+            width: 320px;
+        }
+        
+        .search-box i {
+            position: absolute;
+            {{ 'right' if current_dir == 'rtl' else 'left' }}: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-500);
+        }
+        
+        /* Notifications */
+        .notification-icon {
+            position: relative;
+            width: 45px;
+            height: 45px;
+            border-radius: var(--border-radius);
+            background: var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            text-decoration: none;
+            color: var(--gray-600);
+        }
+        
+        .notification-icon:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            {{ 'right' if current_dir == 'rtl' else 'left' }}: -5px;
+            background: var(--danger);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        /* Profile Dropdown */
+        .profile-dropdown {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 18px;
+            background: var(--gray-100);
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+        
+        .profile-dropdown:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .profile-img {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        
+        /* ============================================ */
+        /* Cards */
+        /* ============================================ */
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            padding: 25px;
+            box-shadow: var(--box-shadow-sm);
+            transition: all var(--transition-speed);
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+        }
+        
+        [data-theme="dark"] .stat-card {
+            background: var(--gray-100);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0;
+        }
+        
+        .stat-label {
+            color: var(--gray-600);
+            margin: 5px 0 0;
+            font-size: 0.85rem;
+        }
+        
+        /* ============================================ */
+        /* Tables */
+        /* ============================================ */
+        .table-card {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            padding: 20px;
+            box-shadow: var(--box-shadow-sm);
+            margin-bottom: 25px;
+        }
+        
+        [data-theme="dark"] .table-card {
+            background: var(--gray-100);
+        }
+        
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .table-title {
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        
+        /* ============================================ */
+        /* Buttons */
+        /* ============================================ */
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            transition: all var(--transition-speed);
+        }
+        
+        .btn-primary-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
+            color: white;
+        }
+        
+        /* ============================================ */
+        /* Responsive */
+        /* ============================================ */
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX({{ '100%' if current_dir == 'rtl' else '-100%' }});
+                z-index: 1050;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-{{ 'right' if current_dir == 'rtl' else 'left' }}: 0;
+            }
+            
+            .search-box input {
+                width: 180px;
+            }
+            
+            .search-box input:focus {
+                width: 220px;
+            }
+            
+            .profile-dropdown strong,
+            .profile-dropdown small {
+                display: none;
+            }
+            
+            .profile-dropdown {
+                padding: 8px 12px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 15px;
+            }
+            
+            .navbar-top {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .page-title {
+                text-align: center;
+            }
+            
+            .navbar-actions {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .navbar-actions {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .search-box {
+                order: 1;
+                width: 100%;
+            }
+            
+            .search-box input {
+                width: 100%;
+            }
+            
+            .notification-icon,
+            .profile-dropdown {
+                order: 2;
+            }
+        }
+        
+        /* ============================================ */
+        /* Animations */
+        /* ============================================ */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.4s ease forwards;
+        }
+        
+        /* ============================================ */
+        /* Scroll to Top Button */
+        /* ============================================ */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 30px;
+            {{ 'left' if current_dir == 'rtl' else 'right' }}: 30px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            transition: all var(--transition-speed);
+            box-shadow: var(--box-shadow-sm);
+        }
+        
+        .scroll-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        /* ============================================ */
+        /* Mobile Menu Toggle */
+        /* ============================================ */
+        .mobile-menu-toggle {
+            position: fixed;
+            top: 20px;
+            {{ 'right' if current_dir == 'rtl' else 'left' }}: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: var(--border-radius);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            cursor: pointer;
+            z-index: 1060;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: var(--box-shadow-sm);
+        }
+        
+        @media (max-width: 991px) {
+            .mobile-menu-toggle {
+                display: flex;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Mobile Menu Toggle Button -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            {% if g.company and g.company.logo_url %}
+                <img src="{{ g.company.logo_url }}" alt="{{ g.company.name }}" class="company-logo">
+            {% else %}
+                <h3>{{ g.company.name if g.company else _('company') }}</h3>
+            {% endif %}
+            <p>{{ _('sidebar_subtitle') }}</p>
+        </div>
+        
+        <div class="user-info">
+            <div class="d-flex align-items-center gap-3">
+                <div class="user-avatar">
+                    {{ current_user.full_name[0]|upper if current_user.full_name else 'U' }}
+                </div>
+                <div class="user-details">
+                    <h6>{{ current_user.full_name or _('user') }}</h6>
+                    <span>{{ _(current_user.role) }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="nav-menu">
+            <div class="nav-header">{{ _('main_menu') }}</div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('company.dashboard') }}" class="nav-link {% if request.endpoint == 'company.dashboard' %}active{% endif %}">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>{{ _('dashboard') }}</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('dashboard.advanced_dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard.advanced_dashboard' %}active{% endif %}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>{{ _('advanced_dashboard') }}</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('company.executive_dashboard') }}" class="nav-link {% if request.endpoint == 'company.executive_dashboard' %}active{% endif %}">
+                    <i class="fas fa-chart-simple"></i>
+                    <span>{{ _('executive_dashboard') }}</span>
+                    <span class="badge bg-danger live-badge ms-2">{{ _('live') }}</span>
+                </a>
+            </div>
+            
+            <div class="nav-divider"></div>
+            <div class="nav-header">{{ _('management') }}</div>
+            
+            {% if current_user.role == 'org_admin' %}
+            <div class="nav-item">
+                <a href="{{ url_for('company.users') }}" class="nav-link {% if request.endpoint.startswith('company.users') %}active{% endif %}">
+                    <i class="fas fa-users"></i>
+                    <span>{{ _('users') }}</span>
+                    {% if g.notifications_count > 0 %}
+                        <span class="badge-notification">{{ g.notifications_count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+            {% endif %}
+            
+            <div class="nav-item">
+                <a href="{{ url_for('company.eps_hierarchy') }}" class="nav-link {% if request.endpoint.startswith('company.eps_hierarchy') %}active{% endif %}">
+                    <i class="fas fa-building"></i>
+                    <span>{{ _('departments') }}</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('projects.list_projects') }}" class="nav-link {% if request.endpoint.startswith('company.projects') %}active{% endif %}">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>{{ _('projects') }}</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('company.meetings_list') }}" class="nav-link {% if 'company.meetings' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>{{ _('meetings') }}</span>
+                    {% if g.upcoming_meetings_count > 0 %}
+                    <span class="badge-notification">{{ g.upcoming_meetings_count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('company.issues_list') }}" class="nav-link {% if 'company.issues' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-bug"></i>
+                    <span>{{ _('issues') }}</span>
+                    {% if g.open_issues_count > 0 %}
+                    <span class="badge-notification">{{ g.open_issues_count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('ai.index') }}" class="nav-link {% if request.endpoint == 'ai.index' %}active{% endif %}">
+                    <i class="fas fa-robot"></i>
+                    <span>{{ _('ai_command_center') }}</span>
+                    <span class="badge bg-primary ms-2" style="font-size: 0.7rem;">AI</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('tasks.list_tasks') }}" class="nav-link">
+                    <i class="fas fa-tasks"></i>
+                    <span>{{ _('tasks') }}</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('document.index') }}" class="nav-link">
+                    <i class="fas fa-file-alt"></i>
+                    <span>{{ _('documents') }}</span>
+                </a>
+            </div>
+            
+            <div class="nav-divider"></div>
+            <div class="nav-header">{{ _('resources_procurement') }}</div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('resource.index') }}" class="nav-link">
+                    <i class="fas fa-tools"></i>
+                    <span>{{ _('resources') }}</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('supplier.requests_list') }}" class="nav-link">
+                    <i class="fas fa-truck"></i>
+                    <span>{{ _('supply_requests') }}</span>
+                    {% if g.pending_deliveries_count > 0 %}
+                    <span class="badge-notification">{{ g.pending_deliveries_count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+            
+            <div class="nav-divider"></div>
+            <div class="nav-header">{{ _('reports_analytics') }}</div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('company.reports') }}" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    <span>{{ _('reports') }}</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('tracking.delays_report') }}" class="nav-link">
+                    <i class="fas fa-clock"></i>
+                    <span>{{ _('delays_report') }}</span>
+                    {% if g.delayed_tasks_count > 0 %}
+                    <span class="badge-notification">{{ g.delayed_tasks_count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('tracking.pending_verifications') }}" class="nav-link">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>{{ _('verification_requests') }}</span>
+                    {% set pending_count = get_pending_verifications_count() %}
+                    {% if pending_count > 0 %}
+                    <span class="badge-notification">{{ pending_count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+            
+            <div class="nav-divider"></div>
+            <div class="nav-header">{{ _('primavera_enterprise') }}</div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('primavera.eps_list') }}" class="nav-link">
+                    <i class="fas fa-sitemap"></i>
+                    <span>EPS - {{ _('enterprise_structure') }}</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('enterprise.index') }}" class="nav-link">
+                    <i class="fas fa-building"></i>
+                    <span>{{ _('enterprise_center') }}</span>
+                </a>
+            </div>
+            
+            <div class="nav-divider"></div>
+            
+            {% if current_user.role == 'org_admin' %}
+            <div class="nav-item">
+                <a href="{{ url_for('company.settings') }}" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>{{ _('settings') }}</span>
+                </a>
+            </div>
+            {% endif %}
+            
+            <div class="nav-divider"></div>
+            
+            <div class="nav-item">
+                <a href="{{ url_for('auth.logout') }}" class="nav-link text-danger" onclick="return confirmLogout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>{{ _('logout') }}</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Top Navbar -->
+        <div class="navbar-top">
+            <div class="page-title">
+                <h4>{% block page_title %}{{ _('dashboard') }}{% endblock %}</h4>
+                <span>{% block page_subtitle %}{% endblock %}</span>
+            </div>
+            
+            <div class="navbar-actions">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="{{ _('search_placeholder') }}" id="globalSearch">
+                </div>
+                
+                <!-- Language Switcher -->
+                {% include 'includes/language_switcher.html' %}
+                
+                <!-- Theme Toggle -->
+                <button class="notification-icon" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                
+                <!-- Notifications -->
+                <a href="{{ url_for('notifications.index') }}" class="notification-icon position-relative">
+                    <i class="far fa-bell"></i>
+                    {% if g.notifications_count > 0 %}
+                    <span class="notification-badge">{{ g.notifications_count }}</span>
+                    {% endif %}
+                </a>
+                
+                <!-- Profile Dropdown -->
+                <div class="profile-dropdown" data-bs-toggle="dropdown">
+                    <div class="profile-img">
+                        {{ current_user.full_name[0]|upper if current_user.full_name else 'U' }}
+                    </div>
+                    <div>
+                        <strong>{{ current_user.full_name }}</strong>
+                        <small class="d-block text-muted">{{ current_user.email }}</small>
+                    </div>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('company.profile') }}">
+                            <i class="fas fa-user me-2"></i>{{ _('profile') }}
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('company.settings') }}">
+                            <i class="fas fa-shield-alt me-2"></i>{{ _('security') }}
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                            <i class="fas fa-sign-out-alt me-2"></i>{{ _('logout') }}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Page Content -->
+        <div class="fade-in">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show mb-4" role="alert">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    <!-- Scroll to Top Button -->
+    <button class="scroll-to-top" id="scrollToTop">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    
+    <!-- ============================================ -->
+    <!-- Scripts -->
+    <!-- ============================================ -->
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Perfect Scrollbar -->
+    <script src="https://cdn.jsdelivr.net/npm/perfect-scrollbar@1.5.5/dist/perfect-scrollbar.min.js"></script>
+    
+    <!-- Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.js"></script>
+    
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    
+    <!-- Toastr -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <!-- Moment.js -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment-locale-ar"></script>
+    
+    <!-- Flatpickr -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
+    <!-- Core Scripts -->
+    <script>
+        // ============================================
+        // Theme Management
+        // ============================================
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                $('#themeToggle i').removeClass('fa-moon').addClass('fa-sun');
+            }
+        }
+        
+        function toggleTheme() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                $('#themeToggle i').removeClass('fa-sun').addClass('fa-moon');
+                toastr.success('{{ _("light_mode_enabled") }}');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                $('#themeToggle i').removeClass('fa-moon').addClass('fa-sun');
+                toastr.success('{{ _("dark_mode_enabled") }}');
+            }
+        }
+        
+        // ============================================
+        // Sidebar Management
+        // ============================================
+        function initSidebar() {
+            const sidebarState = localStorage.getItem('sidebarCollapsed');
+            if (sidebarState === 'true') {
+                $('#sidebar').addClass('collapsed');
+                $('#mainContent').addClass('expanded');
+            }
+        }
+        
+        // ============================================
+        // Perfect Scrollbar
+        // ============================================
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            new PerfectScrollbar(sidebar);
+        }
+        
+        // ============================================
+        // Select2 Initialization
+        // ============================================
+        $(document).ready(function() {
+            $('.select2').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: '{{ _("select") }}...',
+                allowClear: true,
+                dir: '{{ current_dir }}'
+            });
+        });
+        
+        // ============================================
+        // Global Search
+        // ============================================
+        let searchTimeout;
+        $('#globalSearch').on('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const query = $(this).val();
+                if (query.length >= 2) {
+                    console.log('Searching for:', query);
+                    // Implement search logic here
+                }
+            }, 500);
+        });
+        
+        // ============================================
+        // Scroll to Top
+        // ============================================
+        const scrollBtn = document.getElementById('scrollToTop');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                scrollBtn.style.display = 'flex';
+            } else {
+                scrollBtn.style.display = 'none';
+            }
+        });
+        
+        scrollBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        // ============================================
+        // Mobile Menu Toggle
+        // ============================================
+        $('#mobileMenuToggle').click(function() {
+            $('#sidebar').toggleClass('show');
+        });
+        
+        // Close sidebar when clicking outside on mobile
+        $(document).click(function(e) {
+            if (window.innerWidth <= 991) {
+                if (!$(e.target).closest('#sidebar').length && !$(e.target).closest('#mobileMenuToggle').length) {
+                    $('#sidebar').removeClass('show');
+                }
+            }
+        });
+        
+        // ============================================
+        // Toastr Configuration
+        // ============================================
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-top-left",
+            "preventDuplicates": true,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000"
+        };
+        
+        // ============================================
+        // Confirmation Functions
+        // ============================================
+        function confirmLogout() {
+            return confirm('{{ _("confirm_logout") }}');
+        }
+        
+        function confirmDelete(url, message = '{{ _("confirm_delete") }}') {
+            Swal.fire({
+                title: '{{ _("confirm") }}',
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f94144',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '{{ _("yes_delete") }}',
+                cancelButtonText: '{{ _("cancel") }}'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        }
+        
+        function showSuccess(message) {
+            Swal.fire({
+                icon: 'success',
+                title: '{{ _("success") }}',
+                text: message,
+                timer: 3000,
+                showConfirmButton: false
+            });
+        }
+        
+        function showError(message) {
+            Swal.fire({
+                icon: 'error',
+                title: '{{ _("error") }}',
+                text: message,
+                confirmButtonColor: '#f94144'
+            });
+        }
+        
+        // ============================================
+        // Bootstrap Direction Update
+        // ============================================
+        function updateBootstrapDirection() {
+            const isRTL = '{{ current_dir }}' === 'rtl';
+            const bootstrapLink = $('#bootstrap-css');
+            if (isRTL) {
+                bootstrapLink.attr('href', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css');
+            } else {
+                bootstrapLink.attr('href', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css');
+            }
+        }
+        
+        // ============================================
+        // DataTables Language
+        // ============================================
+        const dataTableLang = {
+            {% if current_lang == 'ar' %}
+            "sEmptyTable": "لا توجد بيانات متاحة",
+            "sInfo": "عرض _START_ إلى _END_ من _TOTAL_ مدخل",
+            "sInfoEmpty": "عرض 0 إلى 0 من 0 مدخل",
+            "sInfoFiltered": "(تمت التصفية من _MAX_ إجمالي المدخلات)",
+            "sLengthMenu": "عرض _MENU_ مدخل",
+            "sLoadingRecords": "جاري التحميل...",
+            "sProcessing": "جاري المعالجة...",
+            "sSearch": "بحث:",
+            "sZeroRecords": "لا توجد سجلات مطابقة",
+            "oPaginate": {
+                "sFirst": "الأول",
+                "sLast": "الأخير",
+                "sNext": "التالي",
+                "sPrevious": "السابق"
+            }
+            {% else %}
+            "sEmptyTable": "No data available",
+            "sInfo": "Showing _START_ to _END_ of _TOTAL_ entries",
+            "sInfoEmpty": "Showing 0 to 0 of 0 entries",
+            "sInfoFiltered": "(filtered from _MAX_ total entries)",
+            "sLengthMenu": "Show _MENU_ entries",
+            "sLoadingRecords": "Loading...",
+            "sProcessing": "Processing...",
+            "sSearch": "Search:",
+            "sZeroRecords": "No matching records found",
+            "oPaginate": {
+                "sFirst": "First",
+                "sLast": "Last",
+                "sNext": "Next",
+                "sPrevious": "Previous"
+            }
+            {% endif %}
+        };
+        
+        // ============================================
+        // Document Ready
+        // ============================================
+        $(document).ready(function() {
+            initTheme();
+            initSidebar();
+            
+            $('#themeToggle').click(toggleTheme);
+            
+            // Initialize DataTables
+            $('.data-table').DataTable({
+                language: dataTableLang,
+                responsive: true,
+                autoWidth: false
+            });
+            
+            // Auto-hide alerts after 5 seconds
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

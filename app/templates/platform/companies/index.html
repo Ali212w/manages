@@ -1,0 +1,419 @@
+{# templates/platform/companies/index.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('companies.title') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="page-title">{{ _('companies.title') }}</h1>
+            <p class="text-muted mb-0">{{ _('companies.list') }}</p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#addCompanyModal">
+                <i class="fas fa-plus-circle me-2"></i>{{ _('companies.add_new') }}
+            </button>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-2 col-md-4 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-primary">{{ stats.total }}</h3>
+                <small class="text-muted">{{ _('companies.total') }}</small>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-success">{{ stats.active }}</h3>
+                <small class="text-muted">{{ _('status.active') }}</small>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-secondary">{{ stats.inactive }}</h3>
+                <small class="text-muted">{{ _('status.inactive') }}</small>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-warning">{{ stats.trial }}</h3>
+                <small class="text-muted">{{ _('companies.trial') }}</small>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-danger">{{ stats.expired }}</h3>
+                <small class="text-muted">{{ _('companies.expired') }}</small>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-info">{{ stats.pending_verification }}</h3>
+                <small class="text-muted">{{ _('companies.unverified') }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters Bar -->
+    <div class="filters-bar">
+        <div class="row g-3 w-100">
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label small text-muted">{{ _('companies.search') }}</label>
+                <input type="text" id="searchInput" class="form-control" placeholder="{{ _('companies.search_placeholder') }}" value="{{ filters.search }}">
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label small text-muted">{{ _('companies.filter_by_status') }}</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="all" {% if filters.status == 'all' %}selected{% endif %}>{{ _('companies.all_status') }}</option>
+                    <option value="active" {% if filters.status == 'active' %}selected{% endif %}>{{ _('status.active') }}</option>
+                    <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>{{ _('status.inactive') }}</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label small text-muted">{{ _('companies.filter_by_subscription') }}</label>
+                <select id="subscriptionFilter" class="form-select">
+                    <option value="all" {% if filters.subscription == 'all' %}selected{% endif %}>{{ _('companies.all_subscriptions') }}</option>
+                    <option value="active" {% if filters.subscription == 'active' %}selected{% endif %}>{{ _('subscriptions.active') }}</option>
+                    <option value="trial" {% if filters.subscription == 'trial' %}selected{% endif %}>{{ _('subscriptions.trial') }}</option>
+                    <option value="expired" {% if filters.subscription == 'expired' %}selected{% endif %}>{{ _('subscriptions.expired') }}</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label small text-muted">{{ _('reports.from_date') }}</label>
+                <input type="date" id="dateFrom" class="form-control" value="{{ filters.from }}">
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label small text-muted">{{ _('reports.to_date') }}</label>
+                <input type="date" id="dateTo" class="form-control" value="{{ filters.to }}">
+            </div>
+            <div class="col-lg-1 col-md-12 d-flex align-items-end">
+                <button id="applyFilters" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Companies Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="companiesTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ _('companies.org_code') }}</th>
+                            <th>{{ _('companies.name') }}</th>
+                            <th>{{ _('companies.email') }}</th>
+                            <th>{{ _('companies.users_count') }}</th>
+                            <th>{{ _('companies.projects_count') }}</th>
+                            <th>{{ _('companies.status') }}</th>
+                            <th>{{ _('companies.subscription') }}</th>
+                            <th>{{ _('companies.created_at') }}</th>
+                            <th>{{ _('common.actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for company in companies.items %}
+                        <tr>
+                            <td><code>{{ company.org_code }}</code></td>
+                            <td>
+                                <a href="{{ url_for('platform.view_company', company_id=company.id) }}" class="text-decoration-none fw-bold">
+                                    {{ company.name }}
+                                </a>
+                            </td>
+                            <td>{{ company.email }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ company.current_users }} / {{ company.max_users }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ company.current_projects }} / {{ company.max_projects }}</span>
+                            </td>
+                            <td>
+                                {% if company.is_active %}
+                                <span class="badge bg-success">{{ _('status.active') }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">{{ _('status.inactive') }}</span>
+                                {% endif %}
+                                {% if not company.is_verified %}
+                                <span class="badge bg-warning">{{ _('companies.unverified') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if company.subscription_status == 'active' %}
+                                <span class="badge bg-success">{{ _('subscriptions.active') }}</span>
+                                {% elif company.subscription_status == 'trial' %}
+                                <span class="badge bg-info">{{ _('subscriptions.trial') }}</span>
+                                {% elif company.subscription_status == 'expired' %}
+                                <span class="badge bg-danger">{{ _('subscriptions.expired') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ company.subscription_status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ format_date(company.created_at) }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('platform.view_company', company_id=company.id) }}" class="btn btn-sm btn-outline-primary" title="{{ _('common.view') }}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('platform.edit_company', company_id=company.id) }}" class="btn btn-sm btn-outline-warning" title="{{ _('common.edit') }}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-success toggle-company" data-id="{{ company.id }}" data-status="{{ company.is_active }}" title="{{ _('companies.toggle_status') }}">
+                                        <i class="fas fa-power-off"></i>
+                                    </button>
+                                    {% if not company.is_verified %}
+                                    <button type="button" class="btn btn-sm btn-outline-info verify-company" data-id="{{ company.id }}" title="{{ _('companies.verify') }}">
+                                        <i class="fas fa-check-circle"></i>
+                                    </button>
+                                    {% endif %}
+                                    {% if g.is_super_admin %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-company" data-id="{{ company.id }}" data-name="{{ company.name }}" title="{{ _('common.delete') }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5">
+                                <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">{{ _('companies.no_companies') }}</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-transparent">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    {{ _('common.showing') }} {{ companies.items|length }} {{ _('common.of') }} {{ companies.total }} {{ _('common.items') }}
+                </div>
+                <nav>
+                    <ul class="pagination mb-0">
+                        {% if companies.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('platform.companies', page=companies.prev_num, status=filters.status, subscription=filters.subscription, search=filters.search, from=filters.from, to=filters.to) }}">
+                                <i class="fas fa-chevron-{{ 'right' if get_direction() == 'rtl' else 'left' }}"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in companies.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == companies.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('platform.companies', page=page_num, status=filters.status, subscription=filters.subscription, search=filters.search, from=filters.from, to=filters.to) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if companies.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('platform.companies', page=companies.next_num, status=filters.status, subscription=filters.subscription, search=filters.search, from=filters.from, to=filters.to) }}">
+                                <i class="fas fa-chevron-{{ 'left' if get_direction() == 'rtl' else 'right' }}"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Company Modal -->
+<div class="modal fade" id="addCompanyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title">{{ _('companies.add_new') }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addCompanyForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('companies.name') }} *</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('companies.name_ar') }}</label>
+                            <input type="text" name="name_ar" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('companies.email') }} *</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('companies.phone') }}</label>
+                            <input type="tel" name="phone" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('companies.website') }}</label>
+                            <input type="url" name="website" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('admins.password') }} *</label>
+                            <input type="password" name="password" class="form-control" value="Password123!" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ _('companies.address') }}</label>
+                            <textarea name="address" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('companies.tax_number') }}</label>
+                            <input type="text" name="tax_number" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('companies.commercial_register') }}</label>
+                            <input type="text" name="commercial_register" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('common.cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ _('common.save') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    const table = $('#companiesTable').DataTable({
+        responsive: true,
+        ordering: true,
+        searching: false,
+        paging: false,
+        info: false,
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/{{ "ar.json" if get_current_lang() == "ar" else "en-GB.json" }}'
+        }
+    });
+    
+    // Apply Filters
+    $('#applyFilters').click(function() {
+        const status = $('#statusFilter').val();
+        const subscription = $('#subscriptionFilter').val();
+        const search = $('#searchInput').val();
+        const from = $('#dateFrom').val();
+        const to = $('#dateTo').val();
+        
+        window.location.href = "{{ url_for('platform.companies') }}?status=" + status + "&subscription=" + subscription + "&search=" + encodeURIComponent(search) + "&from=" + from + "&to=" + to;
+    });
+    
+    // Enter key search
+    $('#searchInput').keypress(function(e) {
+        if (e.which == 13) $('#applyFilters').click();
+    });
+    
+    // Toggle Company Status
+    $('.toggle-company').click(function() {
+        const companyId = $(this).data('id');
+        const currentStatus = $(this).data('status');
+        const newStatus = currentStatus ? '{{ _("status.inactive") }}' : '{{ _("status.active") }}';
+        
+        if (confirm('{{ _("companies.confirm_delete") }} ' + newStatus + '?')) {
+            $.ajax({
+                url: "{{ url_for('platform.toggle_company_status', company_id=0) }}".replace('0', companyId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+    
+    // Verify Company
+    $('.verify-company').click(function() {
+        const companyId = $(this).data('id');
+        
+        if (confirm('{{ _("companies.verify") }}?')) {
+            $.ajax({
+                url: "{{ url_for('platform.verify_company', company_id=0) }}".replace('0', companyId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+    
+    // Delete Company
+    $('.delete-company').click(function() {
+        const companyId = $(this).data('id');
+        const companyName = $(this).data('name');
+        
+        if (confirm('{{ _("companies.confirm_delete") }}\n{{ _("companies.delete_warning") }}')) {
+            $.ajax({
+                url: "{{ url_for('platform.delete_company', company_id=0) }}".replace('0', companyId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+    
+    // Add Company Form
+    $('#addCompanyForm').submit(function(e) {
+        e.preventDefault();
+        const formData = $(this).serialize();
+        
+        $.ajax({
+            url: "{{ url_for('platform.create_company') }}",
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    $('#addCompanyModal').modal('hide');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    toastr.error(response.error);
+                }
+            },
+            error: function() {
+                toastr.error('{{ _("common.error") }}');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

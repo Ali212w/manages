@@ -1,0 +1,748 @@
+{% extends "company/base.html" %}
+
+{% block title %}تعديل المهمة - {{ task.task_name }}{% endblock %}
+
+{% block page_title %}تعديل المهمة{% endblock %}
+{% block page_subtitle %}{{ task.task_code }} - {{ task.task_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== المتغيرات الأساسية ===== */
+    :root {
+        --task-primary: #4361ee;
+        --task-success: #4caf50;
+        --task-warning: #ff9800;
+        --task-danger: #f44336;
+        --task-info: #00bcd4;
+    }
+
+    /* ===== الحاوية الرئيسية ===== */
+    .edit-container {
+        max-width: 1000px;
+        margin: 2rem auto;
+        animation: slideInUp 0.5s ease;
+    }
+
+    /* ===== بطاقة التعديل ===== */
+    .edit-card {
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03), 0 10px 20px rgba(67, 97, 238, 0.05);
+        overflow: hidden;
+        border: 1px solid #eef2f7;
+    }
+
+    /* ===== رأس البطاقة ===== */
+    .card-header {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05), rgba(67, 97, 238, 0.1));
+        padding: 2rem;
+        border-bottom: 3px solid var(--task-primary);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(67, 97, 238, 0.1) 0%, transparent 70%);
+        animation: rotate 20s linear infinite;
+    }
+
+    .header-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .header-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, var(--task-primary), #3f37c9);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+    }
+
+    .header-title {
+        flex: 1;
+    }
+
+    .header-title h2 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--dark);
+        margin-bottom: 0.3rem;
+    }
+
+    .header-title p {
+        color: #6c757d;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .header-title p i {
+        color: var(--task-primary);
+    }
+
+    /* ===== معلومات المهمة ===== */
+    .task-info {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 1.2rem;
+        margin: 1.5rem;
+        border: 2px solid #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .task-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--task-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    .task-details {
+        flex: 1;
+    }
+
+    .task-code-badge {
+        display: inline-block;
+        padding: 0.3rem 1rem;
+        background: var(--task-primary);
+        color: white;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+    }
+
+    .task-name {
+        font-weight: 700;
+        color: var(--dark);
+        font-size: 1.2rem;
+    }
+
+    .task-meta {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 0.2rem;
+    }
+
+    .task-status {
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-in_progress { background: #cce5ff; color: #004085; }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-on_hold { background: #fff3cd; color: #856404; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+
+    /* ===== أقسام النموذج ===== */
+    .card-body {
+        padding: 2rem;
+    }
+
+    .form-section {
+        background: #f8fafc;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s ease;
+    }
+
+    .form-section:hover {
+        border-color: rgba(67, 97, 238, 0.2);
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.1);
+    }
+
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.2rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px dashed #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+    }
+
+    .section-title i {
+        color: var(--task-primary);
+        font-size: 1.1rem;
+    }
+
+    /* ===== تنسيق الحقول ===== */
+    .form-group {
+        margin-bottom: 1.2rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        display: block;
+        font-size: 0.9rem;
+    }
+
+    .form-label i {
+        color: var(--task-primary);
+        margin-left: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.7rem 1rem;
+        width: 100%;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--task-primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        outline: none;
+    }
+
+    textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    /* ===== شبكة الحقول ===== */
+    .row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    /* ===== تنسيق خيارات الأولوية ===== */
+    .priority-options {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .priority-option {
+        flex: 1;
+        min-width: 80px;
+    }
+
+    .priority-option input[type="radio"] {
+        display: none;
+    }
+
+    .priority-option label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem;
+        background: white;
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .priority-option input[type="radio"]:checked + label {
+        border-color: var(--task-primary);
+        background: rgba(67, 97, 238, 0.05);
+    }
+
+    .priority-option .priority-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .priority-option .priority-text {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .priority-high .priority-icon { color: var(--task-danger); }
+    .priority-medium .priority-icon { color: var(--task-warning); }
+    .priority-low .priority-icon { color: var(--task-success); }
+
+    /* ===== تنسيق المستخدمين المعينين ===== */
+    .users-assigned {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        border: 2px solid #eef2f7;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .user-checkbox {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .user-checkbox:last-child {
+        border-bottom: none;
+    }
+
+    .user-checkbox input[type="checkbox"] {
+        margin-left: 0.5rem;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .user-checkbox label {
+        flex: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .user-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #eef2f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        color: var(--task-primary);
+    }
+
+    .user-info {
+        flex: 1;
+    }
+
+    .user-name {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .user-role {
+        font-size: 0.7rem;
+        color: #6c757d;
+    }
+
+    /* ===== أزرار الإجراءات ===== */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-start;
+        margin-top: 2rem;
+    }
+
+    .btn {
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-primary {
+        background: var(--task-primary);
+        color: white;
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+
+    .btn-primary:hover {
+        background: #3f37c9;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(67, 97, 238, 0.4);
+    }
+
+    .btn-secondary {
+        background: #eef2f7;
+        color: #6c757d;
+    }
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+        color: #2c3e50;
+    }
+
+    .btn-danger {
+        background: var(--task-danger);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #d32f2f;
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ===== تنسيق حالة المهمة ===== */
+    .current-status {
+        margin-right: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-container">
+    <form method="POST" class="edit-card">
+        <!-- رأس البطاقة -->
+        <div class="card-header">
+            <div class="header-content">
+                <div class="header-icon">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="header-title">
+                    <h2>تعديل المهمة</h2>
+                    <p>
+                        <i class="fas fa-tasks"></i>
+                        تحديث بيانات المهمة ومعلوماتها
+                    </p>
+                </div>
+                <div class="current-status">
+                    <span class="task-status status-{{ task.status }}">{{ task.get_status_display() }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- معلومات المهمة -->
+        <div class="task-info">
+            <div class="task-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="task-details">
+                <span class="task-code-badge">{{ task.task_code }}</span>
+                <div class="task-name">{{ task.task_name }}</div>
+                <div class="task-meta">
+                    <i class="fas fa-folder"></i> المشروع: {{ task.project.project_name if task.project else 'غير محدد' }}
+                </div>
+            </div>
+        </div>
+
+        <!-- محتوى النموذج -->
+        <div class="card-body">
+            <!-- المعلومات الأساسية -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    المعلومات الأساسية
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-tag"></i>
+                        اسم المهمة
+                    </label>
+                    <input type="text" 
+                           name="task_name" 
+                           class="form-control" 
+                           value="{{ task.task_name }}"
+                           placeholder="أدخل اسم المهمة" 
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-align-left"></i>
+                        الوصف
+                    </label>
+                    <textarea name="description" 
+                              class="form-control" 
+                              placeholder="أدخل وصف المهمة">{{ task.description or '' }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-list-ol"></i>
+                        التعليمات
+                    </label>
+                    <textarea name="instructions" 
+                              class="form-control" 
+                              placeholder="أدخل تعليمات المهمة">{{ task.instructions or '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- الأولوية والنشاط -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-flag"></i>
+                    الأولوية والنشاط
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">مستوى الأولوية</label>
+                    <div class="priority-options">
+                        <div class="priority-option priority-high">
+                            <input type="radio" name="priority" id="priority_high" value="3" 
+                                   {{ 'checked' if task.priority == 3 else '' }}>
+                            <label for="priority_high">
+                                <span class="priority-icon"><i class="fas fa-arrow-up"></i></span>
+                                <span class="priority-text">عالية</span>
+                            </label>
+                        </div>
+                        <div class="priority-option priority-medium">
+                            <input type="radio" name="priority" id="priority_medium" value="2"
+                                   {{ 'checked' if task.priority == 2 else '' }}>
+                            <label for="priority_medium">
+                                <span class="priority-icon"><i class="fas fa-minus"></i></span>
+                                <span class="priority-text">متوسطة</span>
+                            </label>
+                        </div>
+                        <div class="priority-option priority-low">
+                            <input type="radio" name="priority" id="priority_low" value="1"
+                                   {{ 'checked' if task.priority == 1 else '' }}>
+                            <label for="priority_low">
+                                <span class="priority-icon"><i class="fas fa-arrow-down"></i></span>
+                                <span class="priority-text">منخفضة</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-tasks"></i>
+                            النشاط
+                        </label>
+                        <select name="activity_id" class="form-select">
+                            <option value="">-- اختر النشاط --</option>
+                            {% for activity in activities %}
+                            <option value="{{ activity.id }}" 
+                                    {{ 'selected' if task.activity_id == activity.id else '' }}>
+                                {{ activity.activity_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-user"></i>
+                            المفوض
+                        </label>
+                        <select name="delegate_id" class="form-select">
+                            <option value="">-- اختر المفوض --</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}"
+                                    {{ 'selected' if task.delegate_id == user.id else '' }}>
+                                {{ user.full_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- التخطيط -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    التخطيط
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-play"></i>
+                            تاريخ البدء المخطط
+                        </label>
+                        <input type="date" 
+                               name="planned_start" 
+                               class="form-control"
+                               value="{{ task.planning.planned_start.strftime('%Y-%m-%d') if task.planning and task.planning.planned_start else '' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-stop"></i>
+                            تاريخ الانتهاء المخطط
+                        </label>
+                        <input type="date" 
+                               name="planned_finish" 
+                               class="form-control"
+                               value="{{ task.planning.planned_finish.strftime('%Y-%m-%d') if task.planning and task.planning.planned_finish else '' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-hourglass-half"></i>
+                            المدة المخططة (أيام)
+                        </label>
+                        <input type="number" 
+                               name="planned_duration" 
+                               class="form-control" 
+                               step="0.5"
+                               value="{{ task.planning.planned_duration if task.planning else '' }}"
+                               placeholder="مدة المهمة بالأيام">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-clock"></i>
+                            الجهد التقديري (ساعات)
+                        </label>
+                        <input type="number" 
+                               name="estimated_effort" 
+                               class="form-control" 
+                               step="0.5"
+                               value="{{ task.planning.estimated_effort if task.planning else '' }}"
+                               placeholder="الجهد المطلوب بالساعات">
+                    </div>
+                </div>
+            </div>
+
+            <!-- المستخدمين المعينين -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-users"></i>
+                    المستخدمين المعينين
+                </div>
+
+                <div class="users-assigned">
+                    {% for user in users %}
+                    <div class="user-checkbox">
+                        <input type="checkbox" 
+                               name="assigned_users" 
+                               id="user_{{ user.id }}"
+                               value="{{ user.id }}"
+                               {{ 'checked' if user.id in task.assigned_users else '' }}>
+                        <label for="user_{{ user.id }}">
+                            <span class="user-avatar">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <span class="user-info">
+                                <span class="user-name">{{ user.full_name }}</span>
+                                <span class="user-role">{{ user.role or 'مستخدم' }}</span>
+                            </span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- الموقع -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-map-marker-alt"></i>
+                    الموقع
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-map-pin"></i>
+                            الموقع
+                        </label>
+                        <input type="text" 
+                               name="location" 
+                               class="form-control"
+                               value="{{ task.location_rel.location if task.location_rel else '' }}"
+                               placeholder="أدخل الموقع">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-location-dot"></i>
+                            الإحداثيات
+                        </label>
+                        <input type="text" 
+                               name="coordinates" 
+                               class="form-control"
+                               value="{{ task.location_rel.coordinates if task.location_rel else '' }}"
+                               placeholder="مثال: 24.7136, 46.6753">
+                    </div>
+                </div>
+            </div>
+
+            <!-- أزرار الإجراءات -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    حفظ التغييرات
+                </button>
+                <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    إلغاء
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // التحقق من صحة التاريخ
+    const plannedStart = document.querySelector('input[name="planned_start"]');
+    const plannedFinish = document.querySelector('input[name="planned_finish"]');
+    
+    if (plannedStart && plannedFinish) {
+        plannedStart.addEventListener('change', function() {
+            if (plannedFinish.value && this.value > plannedFinish.value) {
+                alert('تاريخ البدء لا يمكن أن يكون بعد تاريخ الانتهاء');
+                this.value = '';
+            }
+        });
+        
+        plannedFinish.addEventListener('change', function() {
+            if (plannedStart.value && this.value < plannedStart.value) {
+                alert('تاريخ الانتهاء لا يمكن أن يكون قبل تاريخ البدء');
+                this.value = '';
+            }
+        });
+    }
+
+    // تأكيد الحفظ
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        if (!confirm('هل أنت متأكد من حفظ التغييرات؟')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

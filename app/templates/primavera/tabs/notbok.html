@@ -1,0 +1,758 @@
+<!-- primavera/tabs/notebook.html - نسخة متكاملة مع جميع الإصلاحات -->
+
+<!-- Notebook Tab - الملاحظات والوثائق -->
+<div class="row">
+    <!-- القائمة الجانبية لأنواع الملاحظات -->
+    <div class="col-md-3">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold">
+                    <i class="fas fa-filter me-2 text-primary"></i>
+                    Notebook Categories
+                </h6>
+            </div>
+            <div class="list-group list-group-flush" id="notebookCategories">
+                <a href="#" class="list-group-item list-group-item-action active" onclick="filterNotebook('all', event)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-book me-2"></i> All Entries</span>
+                        <span class="badge bg-primary rounded-pill" id="totalCount">0</span>
+                    </div>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="filterNotebook('note', event)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-sticky-note me-2 text-info"></i> Notes</span>
+                        <span class="badge bg-info rounded-pill" id="noteCount">0</span>
+                    </div>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="filterNotebook('topic', event)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-tag me-2 text-primary"></i> Topics</span>
+                        <span class="badge bg-primary rounded-pill" id="topicCount">0</span>
+                    </div>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="filterNotebook('issue', event)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-exclamation-triangle me-2 text-warning"></i> Issues</span>
+                        <span class="badge bg-warning rounded-pill" id="issueCount">0</span>
+                    </div>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="filterNotebook('decision', event)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-check-circle me-2 text-success"></i> Decisions</span>
+                        <span class="badge bg-success rounded-pill" id="decisionCount">0</span>
+                    </div>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="filterNotebook('question', event)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-question-circle me-2 text-secondary"></i> Questions</span>
+                        <span class="badge bg-secondary rounded-pill" id="questionCount">0</span>
+                    </div>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="filterNotebook('action_item', event)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-tasks me-2 text-dark"></i> Action Items</span>
+                        <span class="badge bg-dark rounded-pill" id="actionCount">0</span>
+                    </div>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="filterNotebook('risk', event)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-shield-alt me-2 text-danger"></i> Risks</span>
+                        <span class="badge bg-danger rounded-pill" id="riskCount">0</span>
+                    </div>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="filterNotebook('milestone', event)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-flag me-2 text-purple"></i> Milestones</span>
+                        <span class="badge bg-purple rounded-pill" id="milestoneCount">0</span>
+                    </div>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="filterNotebook('lesson', event)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-graduation-cap me-2 text-teal"></i> Lessons Learned</span>
+                        <span class="badge bg-teal rounded-pill" id="lessonCount">0</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold">
+                    <i class="fas fa-chart-pie me-2 text-primary"></i>
+                    Quick Stats
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-2">Open Items</small>
+                    <h4 class="mb-0" id="openCount">0</h4>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-2">Closed Items</small>
+                    <h4 class="mb-0" id="closedCount">0</h4>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-2">With Attachments</small>
+                    <h4 class="mb-0" id="attachmentsCount">0</h4>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-2">Recent (7 days)</small>
+                    <h4 class="mb-0" id="recentCount">0</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- القائمة الرئيسية للملاحظات -->
+    <div class="col-md-9">
+        <!-- شريط الأدوات -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <button type="button" class="btn btn-primary" onclick="showAddEntryModal(event)">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            New Notebook Entry
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary ms-2" onclick="refreshNotebook()">
+                            <i class="fas fa-sync-alt me-2"></i>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <div class="input-group" style="width: 250px;">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control border-start-0" 
+                                   id="searchNotebook" placeholder="Search entries..."
+                                   onkeyup="searchEntries()">
+                        </div>
+                        <select class="form-select" style="width: 150px;" id="statusFilter" onchange="filterByStatus()">
+                            <option value="">All Status</option>
+                            <option value="open">Open</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="closed">Closed</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- قائمة الملاحظات -->
+        <div id="notebookEntriesList">
+            <!-- سيتم تعبئتها عبر JavaScript -->
+            <div class="text-center py-5" id="loadingIndicator">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading notebook entries...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal متقدم لإضافة/عرض الملاحظات -->
+<div class="modal fade" id="notebookEntryModal" tabindex="-1" 
+     data-bs-backdrop="static" 
+     data-bs-keyboard="false"
+     aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus-circle text-primary me-2"></i>
+                    New Notebook Entry
+                </h5>
+                <button type="button" class="btn-close" onclick="closeModal()" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- معالج اختيار نوع الملاحظة -->
+                <div class="entry-type-selector mb-4" id="entryTypeSelector">
+                    <label class="form-label fw-bold mb-3">Select Entry Type:</label>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="type-card" onclick="selectEntryType('note')" id="type-note">
+                                <div class="text-center p-3 border rounded-3 type-card-inner">
+                                    <i class="fas fa-sticky-note fa-3x text-info mb-2"></i>
+                                    <h6 class="mb-1">Note</h6>
+                                    <small class="text-muted">General note or comment</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="type-card" onclick="selectEntryType('topic')" id="type-topic">
+                                <div class="text-center p-3 border rounded-3 type-card-inner">
+                                    <i class="fas fa-tag fa-3x text-primary mb-2"></i>
+                                    <h6 class="mb-1">Topic</h6>
+                                    <small class="text-muted">Discussion topic</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="type-card" onclick="selectEntryType('issue')" id="type-issue">
+                                <div class="text-center p-3 border rounded-3 type-card-inner">
+                                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-2"></i>
+                                    <h6 class="mb-1">Issue</h6>
+                                    <small class="text-muted">Problem to resolve</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="type-card" onclick="selectEntryType('decision')" id="type-decision">
+                                <div class="text-center p-3 border rounded-3 type-card-inner">
+                                    <i class="fas fa-check-circle fa-3x text-success mb-2"></i>
+                                    <h6 class="mb-1">Decision</h6>
+                                    <small class="text-muted">Important decision</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="type-card" onclick="selectEntryType('question')" id="type-question">
+                                <div class="text-center p-3 border rounded-3 type-card-inner">
+                                    <i class="fas fa-question-circle fa-3x text-secondary mb-2"></i>
+                                    <h6 class="mb-1">Question</h6>
+                                    <small class="text-muted">Question & answer</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="type-card" onclick="selectEntryType('action_item')" id="type-action_item">
+                                <div class="text-center p-3 border rounded-3 type-card-inner">
+                                    <i class="fas fa-tasks fa-3x text-dark mb-2"></i>
+                                    <h6 class="mb-1">Action Item</h6>
+                                    <small class="text-muted">Task to complete</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="type-card" onclick="selectEntryType('risk')" id="type-risk">
+                                <div class="text-center p-3 border rounded-3 type-card-inner">
+                                    <i class="fas fa-shield-alt fa-3x text-danger mb-2"></i>
+                                    <h6 class="mb-1">Risk</h6>
+                                    <small class="text-muted">Potential risk</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="type-card" onclick="selectEntryType('milestone')" id="type-milestone">
+                                <div class="text-center p-3 border rounded-3 type-card-inner">
+                                    <i class="fas fa-flag fa-3x text-purple mb-2"></i>
+                                    <h6 class="mb-1">Milestone</h6>
+                                    <small class="text-muted">Project milestone</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="type-card" onclick="selectEntryType('lesson')" id="type-lesson">
+                                <div class="text-center p-3 border rounded-3 type-card-inner">
+                                    <i class="fas fa-graduation-cap fa-3x text-teal mb-2"></i>
+                                    <h6 class="mb-1">Lesson Learned</h6>
+                                    <small class="text-muted">Knowledge capture</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- نموذج إدخال البيانات -->
+                <form id="notebookEntryForm" style="display: none;">
+                    <input type="hidden" id="entryId">
+                    <input type="hidden" id="selectedType">
+                    
+                    <!-- الحقول الأساسية -->
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Subject <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="entrySubject" 
+                                   placeholder="Enter a descriptive subject...">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Priority</label>
+                            <select class="form-select" id="entryPriority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- محرر النصوص المتقدم -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Content <span class="text-danger">*</span></label>
+                        <div class="border rounded">
+                            <div class="bg-light p-2 border-bottom">
+                                <button type="button" class="btn btn-sm btn-light" onclick="formatText('bold')" title="Bold">
+                                    <i class="fas fa-bold"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-light" onclick="formatText('italic')" title="Italic">
+                                    <i class="fas fa-italic"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-light" onclick="formatText('underline')" title="Underline">
+                                    <i class="fas fa-underline"></i>
+                                </button>
+                                <span class="mx-2">|</span>
+                                <button type="button" class="btn btn-sm btn-light" onclick="formatText('insertUnorderedList')" title="Bullet List">
+                                    <i class="fas fa-list-ul"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-light" onclick="formatText('insertOrderedList')" title="Numbered List">
+                                    <i class="fas fa-list-ol"></i>
+                                </button>
+                            </div>
+                            <textarea class="form-control border-0" id="entryContent" rows="8" 
+                                      placeholder="Write your entry content here..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- حقول إضافية حسب النوع -->
+                    <div id="additionalFields"></div>
+                    
+                    <!-- Assignee & Dates -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Assigned To</label>
+                            <select class="form-select" id="entryAssignee">
+                                <option value="">Unassigned</option>
+                                {% if project_managers %}
+                                    {% for user in project_managers %}
+                                    <option value="{{ user.id }}">{{ user.full_name }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Target Date</label>
+                            <input type="date" class="form-control" id="entryTargetDate">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Category</label>
+                            <select class="form-select" id="entryCategory">
+                                <option value="">Select Category</option>
+                                <option value="technical">Technical</option>
+                                <option value="management">Management</option>
+                                <option value="financial">Financial</option>
+                                <option value="schedule">Schedule</option>
+                                <option value="quality">Quality</option>
+                                <option value="safety">Safety</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Mentions -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-at me-1 text-info"></i> Mentions
+                        </label>
+                        <div class="mentions-container border rounded p-3 bg-light" id="mentionsContainer">
+                            <div class="d-flex flex-wrap gap-2 mb-2" id="selectedMentions"></div>
+                            <select class="form-select" id="mentionSelect" onchange="addMention()">
+                                <option value="">Select team member to mention...</option>
+                                {% if project_managers %}
+                                    {% for user in project_managers %}
+                                    <option value="{{ user.id }}" data-name="{{ user.full_name }}">
+                                        {{ user.full_name }}
+                                    </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Attachments -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-paperclip me-1 text-primary"></i> Attachments
+                        </label>
+                        <div class="dropzone border rounded p-4 text-center bg-light"
+                             onclick="document.getElementById('fileInput').click()"
+                             ondragover="event.preventDefault()"
+                             ondrop="handleFileDrop(event)">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <p class="mb-1">Drag and drop files here or <a href="#" onclick="document.getElementById('fileInput').click(); return false;">browse</a></p>
+                            <small class="text-muted">Max 10MB per file</small>
+                            <input type="file" id="fileInput" multiple style="display: none;" 
+                                   onchange="handleFileSelect(this)">
+                        </div>
+                        <div id="attachmentsPreview" class="row mt-3"></div>
+                    </div>
+                    
+                    <!-- Notifications -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="notifyTeam" checked>
+                            <label class="form-check-label" for="notifyTeam">
+                                Notify project team about this entry
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="setReminder">
+                            <label class="form-check-label" for="setReminder">
+                                Set reminder for due date
+                            </label>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- View Mode -->
+                <div id="viewMode" style="display: none;">
+                    <div class="entry-view-header mb-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h4 id="viewSubject"></h4>
+                                <div class="d-flex gap-2 mb-2" id="viewBadges"></div>
+                            </div>
+                            <span class="text-muted" id="viewDate"></span>
+                        </div>
+                        <div class="d-flex gap-3 small text-muted">
+                            <span><i class="fas fa-user me-1"></i> Created by: <span id="viewCreator"></span></span>
+                            <span><i class="fas fa-user-tag me-1"></i> Assigned to: <span id="viewAssignee">Unassigned</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="entry-view-content p-4 bg-light rounded mb-4" id="viewContent"></div>
+                    
+                    <div class="entry-view-additional mb-4" id="viewAdditional"></div>
+                    
+                    <!-- Comments Section -->
+                    <div class="comments-section">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-comments me-2"></i>
+                            Comments (<span id="commentsCount">0</span>)
+                        </h6>
+                        <div id="commentsList" class="mb-3"></div>
+                        
+                        <div class="add-comment">
+                            <textarea class="form-control mb-2" id="newComment" 
+                                      rows="2" placeholder="Add a comment..."></textarea>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="submitComment()">
+                                Post Comment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Close</button>
+                <button type="button" class="btn btn-primary" id="saveButton" onclick="saveEntry()" style="display: none;">
+                    <i class="fas fa-save me-2"></i>Save Entry
+                </button>
+                <button type="button" class="btn btn-warning" id="editButton" onclick="switchToEditMode()" style="display: none;">
+                    <i class="fas fa-edit me-2"></i>Edit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// متغيرات عامة
+let currentEntryId = null;
+let currentMode = 'add';
+let selectedMentions = [];
+let uploadedFiles = [];
+let currentFilter = 'all';
+let currentStatusFilter = '';
+
+// تحميل البيانات عند فتح الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    loadNotebookEntries();
+});
+
+// تحميل ملاحظات المشروع
+function loadNotebookEntries() {
+    fetch(`/primavera/api/project/{{ project.id }}/notebook/entries`)
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('loadingIndicator').style.display = 'none';
+        
+        if (data.success) {
+            displayEntries(data.entries);
+            updateStats(data.stats);
+        } else {
+            showError('Failed to load notebook entries');
+        }
+    })
+    .catch(error => {
+        document.getElementById('loadingIndicator').style.display = 'none';
+        showError('Network error occurred');
+    });
+}
+
+// عرض الملاحظات في القائمة
+function displayEntries(entries) {
+    const container = document.getElementById('notebookEntriesList');
+    
+    if (!entries || entries.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-book-open fa-4x text-muted"></i>
+                </div>
+                <h5 class="text-muted mb-3">No Notebook Entries Yet</h5>
+                <p class="text-muted mb-4">Start documenting your project by creating your first notebook entry</p>
+                <button type="button" class="btn btn-primary" onclick="showAddEntryModal(event)">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Create First Entry
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    entries.forEach(entry => {
+        html += `
+            <div class="card shadow-sm mb-3 notebook-entry-card" 
+                 data-id="${entry.id}"
+                 data-type="${entry.type}"
+                 data-status="${entry.status}"
+                 data-search="${entry.subject} ${entry.content}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                ${getTypeIcon(entry.type)}
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge bg-light text-dark">${getTypeDisplay(entry.type)}</span>
+                                    ${getPriorityBadge(entry.priority)}
+                                    ${getStatusBadge(entry.status)}
+                                    ${entry.attachments_count ? `<span class="badge bg-light"><i class="fas fa-paperclip me-1"></i>${entry.attachments_count}</span>` : ''}
+                                </div>
+                                <h5 class="card-title mb-2">${entry.subject}</h5>
+                                <p class="card-text text-muted mb-2">${entry.content.substring(0, 150)}${entry.content.length > 150 ? '...' : ''}</p>
+                                <div class="d-flex align-items-center gap-3 small text-muted">
+                                    <span><i class="fas fa-user me-1"></i>${entry.creator}</span>
+                                    <span><i class="fas fa-clock me-1"></i>${formatDate(entry.created_at)}</span>
+                                    ${entry.assignee ? `<span><i class="fas fa-user-tag me-1"></i>Assigned to: ${entry.assignee}</span>` : ''}
+                                    ${entry.comments_count ? `<span><i class="fas fa-comment me-1"></i>${entry.comments_count} comments</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-link" onclick="event.preventDefault(); event.stopPropagation();" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="viewEntry(${entry.id}, event)"><i class="fas fa-eye me-2"></i>View Details</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="editEntry(${entry.id}, event)"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="addComment(${entry.id}, event)"><i class="fas fa-comment me-2"></i>Add Comment</a></li>
+                                ${entry.type === 'action_item' && entry.status !== 'closed' ? 
+                                    `<li><a class="dropdown-item" href="#" onclick="markComplete(${entry.id}, event)"><i class="fas fa-check me-2 text-success"></i>Mark Complete</a></li>` : ''}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteEntry(${entry.id}, event)"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// تحديث الإحصائيات
+function updateStats(stats) {
+    if (!stats) return;
+    
+    document.getElementById('totalCount').textContent = stats.total || 0;
+    document.getElementById('noteCount').textContent = stats.by_type?.note || 0;
+    document.getElementById('topicCount').textContent = stats.by_type?.topic || 0;
+    document.getElementById('issueCount').textContent = stats.by_type?.issue || 0;
+    document.getElementById('decisionCount').textContent = stats.by_type?.decision || 0;
+    document.getElementById('questionCount').textContent = stats.by_type?.question || 0;
+    document.getElementById('actionCount').textContent = stats.by_type?.action_item || 0;
+    document.getElementById('riskCount').textContent = stats.by_type?.risk || 0;
+    document.getElementById('milestoneCount').textContent = stats.by_type?.milestone || 0;
+    document.getElementById('lessonCount').textContent = stats.by_type?.lesson || 0;
+    
+    document.getElementById('openCount').textContent = stats.open_count || 0;
+    document.getElementById('closedCount').textContent = stats.closed_count || 0;
+    document.getElementById('attachmentsCount').textContent = stats.with_attachments || 0;
+    document.getElementById('recentCount').textContent = stats.recent_count || 0;
+}
+
+// عرض نافذة إضافة ملاحظة جديدة
+function showAddEntryModal(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    currentMode = 'add';
+    currentEntryId = null;
+    
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle text-primary me-2"></i>New Notebook Entry';
+    document.getElementById('entryTypeSelector').style.display = 'block';
+    document.getElementById('notebookEntryForm').style.display = 'none';
+    document.getElementById('viewMode').style.display = 'none';
+    document.getElementById('saveButton').style.display = 'none';
+    document.getElementById('editButton').style.display = 'none';
+    
+    resetForm();
+    
+    const modalElement = document.getElementById('notebookEntryModal');
+    const modal = new bootstrap.Modal(modalElement, {
+        backdrop: 'static',
+        keyboard: false
+    });
+    modal.show();
+}
+
+// دوال مساعدة
+function getTypeIcon(type) {
+    const icons = {
+        'note': '<i class="fas fa-sticky-note fa-2x text-info"></i>',
+        'topic': '<i class="fas fa-tag fa-2x text-primary"></i>',
+        'issue': '<i class="fas fa-exclamation-triangle fa-2x text-warning"></i>',
+        'decision': '<i class="fas fa-check-circle fa-2x text-success"></i>',
+        'question': '<i class="fas fa-question-circle fa-2x text-secondary"></i>',
+        'action_item': '<i class="fas fa-tasks fa-2x text-dark"></i>',
+        'risk': '<i class="fas fa-shield-alt fa-2x text-danger"></i>',
+        'milestone': '<i class="fas fa-flag fa-2x text-purple"></i>',
+        'lesson': '<i class="fas fa-graduation-cap fa-2x text-teal"></i>'
+    };
+    return icons[type] || '<i class="fas fa-note-sticky fa-2x"></i>';
+}
+
+function getTypeDisplay(type) {
+    const displays = {
+        'note': 'Note',
+        'topic': 'Topic',
+        'issue': 'Issue',
+        'decision': 'Decision',
+        'question': 'Question',
+        'action_item': 'Action Item',
+        'risk': 'Risk',
+        'milestone': 'Milestone',
+        'lesson': 'Lesson Learned'
+    };
+    return displays[type] || type;
+}
+
+function getPriorityBadge(priority) {
+    const badges = {
+        'low': '<span class="badge bg-success">Low Priority</span>',
+        'medium': '<span class="badge bg-warning text-dark">Medium Priority</span>',
+        'high': '<span class="badge bg-danger">High Priority</span>',
+        'critical': '<span class="badge bg-danger">Critical</span>'
+    };
+    return badges[priority] || '';
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'open': '<span class="badge bg-primary">Open</span>',
+        'in_progress': '<span class="badge bg-info">In Progress</span>',
+        'closed': '<span class="badge bg-secondary">Closed</span>',
+        'pending': '<span class="badge bg-warning">Pending</span>'
+    };
+    return badges[status] || '';
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// باقي الدوال (selectEntryType, saveEntry, closeModal, filterNotebook, etc.)
+// يمكن إضافتها هنا كما في الكود السابق...
+
+// دالة عرض الخطأ
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: message
+    });
+}
+</script>
+
+<style>
+/* تنسيقات إضافية */
+.type-card {
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.type-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.type-card.selected .type-card-inner {
+    border-color: var(--primary) !important;
+    background-color: rgba(67, 97, 238, 0.05);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+}
+
+.notebook-entry-card {
+    transition: all 0.3s;
+}
+
+.notebook-entry-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
+}
+
+.bg-purple {
+    background-color: #6f42c1;
+}
+
+.bg-teal {
+    background-color: #20c997;
+}
+
+.text-purple {
+    color: #6f42c1;
+}
+
+.text-teal {
+    color: #20c997;
+}
+
+.mentions-container {
+    min-height: 100px;
+}
+
+.comment {
+    border-left: 3px solid var(--primary);
+}
+
+.dropzone {
+    border: 2px dashed #eef2f7;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.dropzone:hover {
+    border-color: var(--primary);
+    background: #eef2f7 !important;
+}
+
+#entryContent {
+    resize: vertical;
+    font-family: 'Courier New', monospace;
+    min-height: 200px;
+}
+
+/* منع إغلاق النافذة */
+.modal {
+    pointer-events: none;
+}
+
+.modal.show {
+    pointer-events: auto;
+}
+
+.modal-content {
+    pointer-events: auto;
+}
+</style>

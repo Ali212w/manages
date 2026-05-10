@@ -1,0 +1,398 @@
+{% extends "communication/base_chat.html" %}
+
+{% block title %}{{ _('chat.start_new_chat') }}{% endblock %}
+
+{% block extra_css %}
+<!-- <style>
+    .user-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 15px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+    }
+    
+    .user-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .user-card.selected {
+        border-color: var(--primary-color);
+        background: linear-gradient(135deg, #667eea10, #764ba210);
+    }
+    
+    .user-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+    }
+    
+    .role-badge {
+        position: absolute;
+        bottom: -5px;
+        right: -5px;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 20px;
+    }
+    
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .selected-users-list {
+        background: #f8f9fa;
+        border-radius: var(--radius-lg);
+        padding: 15px;
+        min-height: 150px;
+    }
+    
+    .selected-user-tag {
+        background: white;
+        border-radius: 20px;
+        padding: 5px 12px;
+        margin: 3px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .selected-user-tag .remove {
+        cursor: pointer;
+        color: #dc3545;
+    }
+</style> -->
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card-modern">
+                <div class="card-header">
+                    <i class="fas fa-plus-circle me-2"></i> {{ _('chat.start_new_chat') }}
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('communication.create_group_chat') }}" id="newChatForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <!-- اسم المحادثة -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ _('chat.chat_name') }}</label>
+                            <input type="text" name="chat_name" class="form-control" 
+                                   placeholder="{{ _('chat.enter_chat_name') }}" required>
+                        </div>
+                        
+                        <!-- نوع المحادثة -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ _('chat.chat_type') }}</label>
+                            <select name="chat_type" class="form-select">
+                                <option value="group">{{ _('chat.group_chat') }}</option>
+                                <option value="project">{{ _('chat.project_chat') }}</option>
+                                <option value="task">{{ _('chat.task_chat') }}</option>
+                            </select>
+                        </div>
+                        
+                        <!-- اختيار المشاركين -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ _('chat.select_participants') }}</label>
+                            
+                            <!-- حقل البحث -->
+                            <div class="mb-3">
+                                <input type="text" id="userSearch" class="form-control" 
+                                       placeholder="{{ _('chat.search_users_by_name') }}">
+                            </div>
+                            
+                            <!-- المستخدمون المختارون -->
+                            <div class="mb-3">
+                                <div class="small text-muted mb-2">{{ _('chat.selected_users') }}:</div>
+                                <div id="selectedUsersContainer" class="selected-users-list">
+                                    <div class="text-muted text-center py-3" id="emptySelectedMsg">
+                                        <i class="fas fa-users me-1"></i> {{ _('chat.no_users_selected_yet') }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- قائمة المستخدمين حسب الدور -->
+                            <div class="accordion" id="usersAccordion">
+                                {% if users_by_role.org_admin %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdmins">
+                                            <i class="fas fa-crown text-warning me-2"></i> {{ _('chat.org_admins') }} ({{ users_by_role.org_admin|length }})
+                                        </button>
+                                    </h2>
+                                    <div id="collapseAdmins" class="accordion-collapse collapse show" data-bs-parent="#usersAccordion">
+                                        <div class="accordion-body">
+                                            {% for user in users_by_role.org_admin %}
+                                            <div class="user-card" data-user-id="{{ user.id }}" data-user-name="{{ user.full_name }}" data-user-role="org_admin">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="position-relative">
+                                                        <div class="user-avatar">{{ user.full_name[0] }}</div>
+                                                        <span class="role-badge bg-warning text-dark">مدير</span>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">{{ user.full_name }}</h6>
+                                                        <small class="text-muted">{{ user.email }}</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if users_by_role.project_manager %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManagers">
+                                            <i class="fas fa-user-tie text-primary me-2"></i> {{ _('chat.project_managers') }} ({{ users_by_role.project_manager|length }})
+                                        </button>
+                                    </h2>
+                                    <div id="collapseManagers" class="accordion-collapse collapse" data-bs-parent="#usersAccordion">
+                                        <div class="accordion-body">
+                                            {% for user in users_by_role.project_manager %}
+                                            <div class="user-card" data-user-id="{{ user.id }}" data-user-name="{{ user.full_name }}" data-user-role="project_manager">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="position-relative">
+                                                        <div class="user-avatar">{{ user.full_name[0] }}</div>
+                                                        <span class="role-badge bg-primary">مدير مشروع</span>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">{{ user.full_name }}</h6>
+                                                        <small class="text-muted">{{ user.email }}</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if users_by_role.supervisor %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSupervisors">
+                                            <i class="fas fa-user-check text-info me-2"></i> {{ _('chat.supervisors') }} ({{ users_by_role.supervisor|length }})
+                                        </button>
+                                    </h2>
+                                    <div id="collapseSupervisors" class="accordion-collapse collapse" data-bs-parent="#usersAccordion">
+                                        <div class="accordion-body">
+                                            {% for user in users_by_role.supervisor %}
+                                            <div class="user-card" data-user-id="{{ user.id }}" data-user-name="{{ user.full_name }}" data-user-role="supervisor">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="position-relative">
+                                                        <div class="user-avatar">{{ user.full_name[0] }}</div>
+                                                        <span class="role-badge bg-info">مشرف</span>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">{{ user.full_name }}</h6>
+                                                        <small class="text-muted">{{ user.email }}</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if users_by_role.delegate %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDelegates">
+                                            <i class="fas fa-user-friends text-success me-2"></i> {{ _('chat.delegates') }} ({{ users_by_role.delegate|length }})
+                                        </button>
+                                    </h2>
+                                    <div id="collapseDelegates" class="accordion-collapse collapse" data-bs-parent="#usersAccordion">
+                                        <div class="accordion-body">
+                                            {% for user in users_by_role.delegate %}
+                                            <div class="user-card" data-user-id="{{ user.id }}" data-user-name="{{ user.full_name }}" data-user-role="delegate">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="position-relative">
+                                                        <div class="user-avatar">{{ user.full_name[0] }}</div>
+                                                        <span class="role-badge bg-success">مندوب</span>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">{{ user.full_name }}</h6>
+                                                        <small class="text-muted">{{ user.email }}</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if users_by_role.employee %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEmployees">
+                                            <i class="fas fa-users text-secondary me-2"></i> {{ _('chat.employees') }} ({{ users_by_role.employee|length }})
+                                        </button>
+                                    </h2>
+                                    <div id="collapseEmployees" class="accordion-collapse collapse" data-bs-parent="#usersAccordion">
+                                        <div class="accordion-body">
+                                            {% for user in users_by_role.employee %}
+                                            <div class="user-card" data-user-id="{{ user.id }}" data-user-name="{{ user.full_name }}" data-user-role="employee">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="position-relative">
+                                                        <div class="user-avatar">{{ user.full_name[0] }}</div>
+                                                        <span class="role-badge bg-secondary">موظف</span>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">{{ user.full_name }}</h6>
+                                                        <small class="text-muted">{{ user.email }}</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- أزرار الإجراء -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('communication.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i> {{ _('chat.cancel') }}
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-plus-circle me-2"></i> {{ _('chat.create_chat') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedUsers = [];
+    
+    // إضافة مستخدم
+    function addUser(userId, userName, userRole) {
+        if (selectedUsers.includes(userId)) return;
+        
+        selectedUsers.push(userId);
+        updateSelectedUsersDisplay();
+        
+        // تمييز البطاقة كمحددة
+        const userCard = document.querySelector(`.user-card[data-user-id="${userId}"]`);
+        if (userCard) userCard.classList.add('selected');
+    }
+    
+    // إزالة مستخدم
+    function removeUser(userId) {
+        selectedUsers = selectedUsers.filter(id => id != userId);
+        updateSelectedUsersDisplay();
+        
+        // إزالة التحديد من البطاقة
+        const userCard = document.querySelector(`.user-card[data-user-id="${userId}"]`);
+        if (userCard) userCard.classList.remove('selected');
+    }
+    
+    // تحديث عرض المستخدمين المختارين
+    function updateSelectedUsersDisplay() {
+        const container = document.getElementById('selectedUsersContainer');
+        const emptyMsg = document.getElementById('emptySelectedMsg');
+        
+        if (selectedUsers.length === 0) {
+            if (emptyMsg) emptyMsg.style.display = 'block';
+            container.innerHTML = '<div class="text-muted text-center py-3" id="emptySelectedMsg"><i class="fas fa-users me-1"></i> لا يوجد مستخدمين مختارين بعد</div>';
+            return;
+        }
+        
+        let html = '';
+        selectedUsers.forEach(userId => {
+            const userCard = document.querySelector(`.user-card[data-user-id="${userId}"]`);
+            if (userCard) {
+                const userName = userCard.dataset.userName;
+                html += `
+                    <span class="selected-user-tag">
+                        ${userName}
+                        <span class="remove" onclick="event.stopPropagation(); removeUser(${userId})">
+                            <i class="fas fa-times-circle"></i>
+                        </span>
+                    </span>
+                `;
+            }
+        });
+        
+        container.innerHTML = html;
+        
+        // إضافة حقل مخفي لنموذج الإرسال
+        let hiddenInputs = document.querySelectorAll('input[name="selected_users[]"]');
+        hiddenInputs.forEach(input => input.remove());
+        
+        selectedUsers.forEach(userId => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'selected_users[]';
+            input.value = userId;
+            document.getElementById('newChatForm').appendChild(input);
+        });
+    }
+    
+    // التحقق من صحة النموذج قبل الإرسال
+    document.getElementById('newChatForm').addEventListener('submit', function(e) {
+        if (selectedUsers.length === 0) {
+            e.preventDefault();
+            alert('الرجاء اختيار مشاركين على الأقل');
+            return false;
+        }
+        return true;
+    });
+    
+    // البحث عن المستخدمين
+    document.getElementById('userSearch').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const userCards = document.querySelectorAll('.user-card');
+        
+        userCards.forEach(card => {
+            const name = card.dataset.userName.toLowerCase();
+            if (name.includes(searchTerm)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+    
+    // إضافة مستخدم عند النقر على البطاقة
+    document.querySelectorAll('.user-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const userName = this.dataset.userName;
+            const userRole = this.dataset.userRole;
+            
+            if (selectedUsers.includes(parseInt(userId))) {
+                removeUser(parseInt(userId));
+            } else {
+                addUser(parseInt(userId), userName, userRole);
+            }
+        });
+    });
+</script>
+{% endblock %}

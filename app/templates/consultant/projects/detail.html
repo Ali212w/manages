@@ -1,0 +1,661 @@
+{% extends "consultant/base.html" %}
+
+{% block title %}{{ project.name }} - تفاصيل المشروع{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<style>
+    .nav-tabs .nav-link {
+        color: var(--dark-color);
+        font-weight: 500;
+        border: none;
+        padding: 12px 20px;
+    }
+    .nav-tabs .nav-link:hover {
+        border-bottom: 3px solid var(--secondary-color);
+        color: var(--secondary-color);
+    }
+    .nav-tabs .nav-link.active {
+        border-bottom: 3px solid var(--secondary-color);
+        color: var(--secondary-color);
+        background: transparent;
+    }
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    .info-value {
+        color: #2b2d42;
+    }
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+    .timeline-item {
+        position: relative;
+        padding-right: 30px;
+        padding-bottom: 25px;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        right: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+    }
+    .timeline-item:last-child::before {
+        display: none;
+    }
+    .timeline-dot {
+        position: absolute;
+        right: 5px;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--secondary-color);
+        border: 2px solid white;
+    }
+    .timeline-date {
+        font-size: 12px;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    .timeline-title {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    .timeline-content {
+        background: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 8px;
+    }
+    .achieved .timeline-dot {
+        background: var(--success-color);
+    }
+    .achieved .timeline-content {
+        background: #d4edda;
+    }
+    .delayed .timeline-dot {
+        background: var(--danger-color);
+    }
+    .delayed .timeline-content {
+        background: #f8d7da;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Project Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-gradient-primary text-white" style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start flex-wrap">
+                    <div>
+                        <h2 class="mb-2">{{ project.name }}</h2>
+                        <p class="mb-2 opacity-75">{{ project.description or 'لا يوجد وصف' }}</p>
+                        <div class="d-flex flex-wrap gap-3 mt-3">
+                            <div><i class="fas fa-code-branch me-1"></i> {{ project.project_code }}</div>
+                            <div><i class="fas fa-tag me-1"></i> {{ getStatusBadge(project.status)|safe }}</div>
+                            {% if project.category %}<div><i class="fas fa-layer-group me-1"></i> {{ project.category }}</div>{% endif %}
+                            {% if project.project_type %}<div><i class="fas fa-hard-hat me-1"></i> {{ project.project_type }}</div>{% endif %}
+                        </div>
+                    </div>
+                    <div class="text-center mt-3 mt-md-0">
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="fas fa-chart-line fa-3x"></i>
+                        </div>
+                        <div class="mt-2">
+                            <span class="badge bg-white text-dark fs-6">{{ "%.1f"|format(progress.progress_percentage if progress else 0) }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs Navigation -->
+<ul class="nav nav-tabs mb-4" id="projectTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+            <i class="fas fa-info-circle me-2"></i>نظرة عامة
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activities" type="button" role="tab">
+            <i class="fas fa-tasks me-2"></i>الأنشطة <span class="badge bg-secondary ms-1">{{ activities_stats.total }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#milestones" type="button" role="tab">
+            <i class="fas fa-flag-checkered me-2"></i>المعالم <span class="badge bg-secondary ms-1">{{ milestones_stats.total }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#issues" type="button" role="tab">
+            <i class="fas fa-bug me-2"></i>القضايا <span class="badge bg-danger ms-1">{{ issues_stats.open }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#meetings" type="button" role="tab">
+            <i class="fas fa-calendar-alt me-2"></i>الاجتماعات
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#quality" type="button" role="tab">
+            <i class="fas fa-clipboard-check me-2"></i>الجودة
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#team" type="button" role="tab">
+            <i class="fas fa-users me-2"></i>الفريق
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content">
+    <!-- ==================== OVERVIEW TAB ==================== -->
+    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+        <!-- Quick Stats Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <div class="icon bg-info bg-opacity-10 text-info mx-auto mb-2" style="width: 50px; height: 50px;">
+                        <i class="fas fa-calendar-alt fa-2x"></i>
+                    </div>
+                    <h5 class="mb-1">{{ dates.planned_start.strftime('%Y-%m-%d') if dates and dates.planned_start else '-' }}</h5>
+                    <small class="text-muted">تاريخ البدء المخطط</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <div class="icon bg-success bg-opacity-10 text-success mx-auto mb-2" style="width: 50px; height: 50px;">
+                        <i class="fas fa-calendar-check fa-2x"></i>
+                    </div>
+                    <h5 class="mb-1">{{ dates.planned_finish.strftime('%Y-%m-%d') if dates and dates.planned_finish else '-' }}</h5>
+                    <small class="text-muted">تاريخ الانتهاء المخطط</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <div class="icon bg-warning bg-opacity-10 text-warning mx-auto mb-2" style="width: 50px; height: 50px;">
+                        <i class="fas fa-tasks fa-2x"></i>
+                    </div>
+                    <h5 class="mb-1">{{ tasks_stats.total }}</h5>
+                    <small class="text-muted">إجمالي المهام</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <div class="icon bg-danger bg-opacity-10 text-danger mx-auto mb-2" style="width: 50px; height: 50px;">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                    <h5 class="mb-1">{{ activities_stats.delayed }}</h5>
+                    <small class="text-muted">أنشطة متأخرة</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Chart -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i> تقدم المشروع</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="progressChart" height="200"></canvas>
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>التقدم الحالي</span>
+                                <span class="fw-bold">{{ "%.1f"|format(progress.progress_percentage if progress else 0) }}%</span>
+                            </div>
+                            <div class="progress progress-custom">
+                                <div class="progress-bar bg-success" style="width: {{ progress.progress_percentage if progress else 0 }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i> توزيع الأنشطة</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="activitiesChart" height="200"></canvas>
+                        <div class="row mt-3 text-center">
+                            <div class="col-4">
+                                <div class="bg-success bg-opacity-10 rounded p-2">
+                                    <h5 class="text-success mb-0">{{ activities_stats.completed }}</h5>
+                                    <small>مكتمل</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-primary bg-opacity-10 rounded p-2">
+                                    <h5 class="text-primary mb-0">{{ activities_stats.in_progress }}</h5>
+                                    <small>قيد التنفيذ</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-secondary bg-opacity-10 rounded p-2">
+                                    <h5 class="text-secondary mb-0">{{ activities_stats.not_started }}</h5>
+                                    <small>لم يبدأ</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Details -->
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i> معلومات المشروع</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span class="info-label">رمز المشروع:</span>
+                            <span class="info-value">{{ project.project_code }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">الحالة:</span>
+                            <span class="info-value">{{ getStatusBadge(project.status)|safe }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">نوع المشروع:</span>
+                            <span class="info-value">{{ project.project_type or 'غير محدد' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">الفئة:</span>
+                            <span class="info-value">{{ project.category or 'غير محدد' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">مستوى التعقيد:</span>
+                            <span class="info-value">{{ project.complexity or 'غير محدد' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0"><i class="fas fa-users me-2"></i> فريق المشروع</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span class="info-label">مدير المشروع:</span>
+                            <span class="info-value">{{ project.manager.full_name if project.manager else '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">عدد أعضاء الفريق:</span>
+                            <span class="info-value">{{ project_users|length }} عضو</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ACTIVITIES TAB ==================== -->
+    <div class="tab-pane fade" id="activities" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-tasks me-2"></i> قائمة الأنشطة</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>الكود</th>
+                                <th>اسم النشاط</th>
+                                <th>الحالة</th>
+                                <th>التقدم</th>
+                                <th>تاريخ البدء</th>
+                                <th>تاريخ الانتهاء</th>
+                                <th>المسؤول</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in project.activities %}
+                            <tr>
+                                <td><span class="badge bg-secondary">{{ activity.activity_id }}</span></td>
+                                <td>{{ activity.activity_name }}</td>
+                                <td>
+                                    {% if activity.status == 'completed' %}
+                                    <span class="badge bg-success">مكتمل</span>
+                                    {% elif activity.status == 'in_progress' %}
+                                    <span class="badge bg-primary">قيد التنفيذ</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">لم يبدأ</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress progress-custom flex-grow-1" style="width: 100px;">
+                                            <div class="progress-bar" style="width: {{ activity.progress_percentage }}%"></div>
+                                        </div>
+                                        <small>{{ "%.0f"|format(activity.progress_percentage) }}%</small>
+                                    </div>
+                                </td>
+                                <td>{{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start else '-' }}</td>
+                                <td class="{% if activity.status != 'completed' and activity.planned_finish and activity.planned_finish.date() < now.date() %}text-danger fw-bold{% endif %}">
+                                    {{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish else '-' }}
+                                    {% if activity.status != 'completed' and activity.planned_finish and activity.planned_finish.date() < now.date() %}
+                                    <i class="fas fa-exclamation-triangle ms-1" title="متأخر"></i>
+                                    {% endif %}
+                                </td>
+                                <td>{{ activity.responsible.full_name if activity.responsible else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MILESTONES TAB ==================== -->
+    <div class="tab-pane fade" id="milestones" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-flag-checkered me-2"></i> معالم المشروع</h6>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for milestone in milestones %}
+                    <div class="timeline-item {% if milestone.status == 'achieved' %}achieved{% elif milestone.planned_date < now.date() %}delayed{% endif %}">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-date">{{ milestone.planned_date.strftime('%Y-%m-%d') }}</div>
+                        <div class="timeline-title">{{ milestone.name }}</div>
+                        <div class="timeline-content">
+                            <p class="mb-1">{{ milestone.description or 'لا يوجد وصف' }}</p>
+                            <small class="text-muted">
+                                {% if milestone.status == 'achieved' %}
+                                <i class="fas fa-check-circle text-success"></i> تم الإنجاز
+                                {% elif milestone.planned_date < now.date() %}
+                                <i class="fas fa-exclamation-triangle text-danger"></i> متأخر
+                                {% else %}
+                                <i class="fas fa-clock text-warning"></i> قادم
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-flag-checkered fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">لا توجد معالم مسجلة</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ISSUES TAB ==================== -->
+    <div class="tab-pane fade" id="issues" role="tabpanel">
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <h3 class="text-danger">{{ issues_stats.open }}</h3>
+                    <small>مفتوحة</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <h3 class="text-warning">{{ issues_stats.in_progress }}</h3>
+                    <small>قيد المعالجة</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <h3 class="text-success">{{ issues_stats.resolved }}</h3>
+                    <small>تم الحل</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <h3 class="text-info">{{ issues_stats.total }}</h3>
+                    <small>إجمالي</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-bug me-2"></i> قائمة القضايا</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>العنوان</th>
+                                <th>الأولوية</th>
+                                <th>الحالة</th>
+                                <th>تاريخ التبليغ</th>
+                                <th>المبلغ</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for issue in issues %}
+                            <tr>
+                                <td>{{ issue.title }}</td>
+                                <td>
+                                    {% if issue.priority == 'critical' %}
+                                    <span class="badge bg-danger">حرجة</span>
+                                    {% elif issue.priority == 'high' %}
+                                    <span class="badge bg-warning">عالية</span>
+                                    {% elif issue.priority == 'medium' %}
+                                    <span class="badge bg-info">متوسطة</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">منخفضة</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if issue.status == 'open' %}
+                                    <span class="badge bg-danger">مفتوحة</span>
+                                    {% elif issue.status == 'in_progress' %}
+                                    <span class="badge bg-warning">قيد المعالجة</span>
+                                    {% elif issue.status == 'resolved' %}
+                                    <span class="badge bg-success">تم الحل</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ issue.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ issue.reported_date.strftime('%Y-%m-%d') if issue.reported_date else '-' }}</td>
+                                <td>{{ issue.reporter.full_name if issue.reporter else '-' }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary view-issue" data-issue-id="{{ issue.id }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MEETINGS TAB ==================== -->
+    <div class="tab-pane fade" id="meetings" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> اجتماعات المشروع</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for meeting in meetings %}
+                    <a href="{{ url_for('consultant.view_meeting', meeting_id=meeting.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ meeting.title }}</strong>
+                                <br>
+                                <small class="text-muted">{{ meeting.scheduled_date.strftime('%Y-%m-%d %H:%M') if meeting.scheduled_date else '-' }}</small>
+                            </div>
+                            <div>
+                                {% if meeting.status == 'completed' %}
+                                <span class="badge bg-success">منعقد</span>
+                                {% elif meeting.status == 'scheduled' %}
+                                <span class="badge bg-primary">مجدول</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ meeting.status }}</span>
+                                {% endif %}
+                                <i class="fas fa-chevron-left ms-2"></i>
+                            </div>
+                        </div>
+                    </a>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">لا توجد اجتماعات مسجلة</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== QUALITY TAB ==================== -->
+    <div class="tab-pane fade" id="quality" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-clipboard-check me-2"></i> فحوصات الجودة</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>اسم الفحص</th>
+                                <th>النوع</th>
+                                <th>التاريخ المخطط</th>
+                                <th>التاريخ الفعلي</th>
+                                <th>النتيجة</th>
+                                <th>المنفذ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for check in quality_checks %}
+                            <tr>
+                                <td>{{ check.check_name }}</td>
+                                <td>{{ check.check_type or '-' }}</td>
+                                <td>{{ check.planned_date.strftime('%Y-%m-%d') if check.planned_date else '-' }}</td>
+                                <td>{{ check.actual_date.strftime('%Y-%m-%d') if check.actual_date else '-' }}</td>
+                                <td>
+                                    {% if check.status == 'passed' %}
+                                    <span class="badge bg-success">ناجح</span>
+                                    {% elif check.status == 'failed' %}
+                                    <span class="badge bg-danger">فاشل</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">قيد الانتظار</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ check.conductor.full_name if check.conductor else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TEAM TAB ==================== -->
+    <div class="tab-pane fade" id="team" role="tabpanel">
+        <div class="row g-4">
+            {% for member in project_users %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            {% if member.profile_image and member.profile_image != 'default.jpg' %}
+                            <img src="{{ url_for('static', filename='uploads/profiles/' + member.profile_image) }}" 
+                                 class="rounded-circle" width="80" height="80" style="object-fit: cover;">
+                            {% else %}
+                            <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                <i class="fas fa-user fa-3x text-secondary"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <h5 class="mb-1">{{ member.full_name }}</h5>
+                        <p class="text-muted small mb-2">{{ member.job_title or 'موظف' }}</p>
+                        <span class="badge bg-info">{{ member.role }}</span>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="text-center py-4">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لا يوجد أعضاء في فريق المشروع</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Progress Chart
+    const progressCtx = document.getElementById('progressChart').getContext('2d');
+    new Chart(progressCtx, {
+        type: 'line',
+        data: {
+            labels: {{ progress_history|map(attribute='date')|list|tojson }},
+            datasets: [{
+                label: 'نسبة التقدم (%)',
+                data: {{ progress_history|map(attribute='progress')|list|tojson }},
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { min: 0, max: 100, title: { display: true, text: 'نسبة التقدم (%)' } } }
+        }
+    });
+
+    // Activities Distribution Chart
+    const activitiesCtx = document.getElementById('activitiesChart').getContext('2d');
+    new Chart(activitiesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['مكتمل', 'قيد التنفيذ', 'لم يبدأ'],
+            datasets: [{
+                data: [{{ activities_stats.completed }}, {{ activities_stats.in_progress }}, {{ activities_stats.not_started }}],
+                backgroundColor: ['#27ae60', '#3498db', '#95a5a6'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+</script>
+{% endblock %}

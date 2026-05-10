@@ -1,0 +1,670 @@
+{% extends "company/base.html" %}
+
+{% block title %}تتبع المهام - {{ project.name }}{% endblock %}
+
+{% block page_title %}تتبع المهام{% endblock %}
+{% block page_subtitle %}{{ project.name }} - مراقبة وتتبع جميع المهام{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Filters */
+    .filters-section {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .filter-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .filter-input {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .filter-input:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .filter-badge {
+        display: inline-block;
+        padding: 0.4rem 1rem;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        border-radius: 30px;
+        font-size: 0.85rem;
+        margin-left: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .filter-badge i {
+        cursor: pointer;
+        margin-right: 0.5rem;
+    }
+    
+    .filter-badge i:hover {
+        color: var(--danger);
+    }
+    
+    /* Task Table */
+    .tasks-table-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .tasks-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 0.5rem;
+    }
+    
+    .tasks-table thead th {
+        background: #f8f9fa;
+        padding: 1rem;
+        font-weight: 600;
+        color: var(--dark);
+        border: none;
+        font-size: 0.9rem;
+    }
+    
+    .tasks-table tbody tr {
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        border-radius: 12px;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .tasks-table tbody tr:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    
+    .tasks-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        border: none;
+    }
+    
+    .task-status {
+        display: inline-block;
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .status-pending {
+        background: rgba(248, 150, 30, 0.1);
+        color: var(--warning);
+    }
+    
+    .status-in_progress {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+    }
+    
+    .status-completed {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .status-delayed {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+    }
+    
+    .progress-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .progress-bar-small {
+        width: 80px;
+        height: 6px;
+        background: #eef2f7;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: var(--primary);
+        border-radius: 3px;
+    }
+    
+    .delay-badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .responsible-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .responsible-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .action-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 10px;
+        border: none;
+        background: #f8f9fa;
+        color: #6c757d;
+        transition: all 0.3s;
+        margin: 0 2px;
+    }
+    
+    .action-btn:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    /* Gantt Chart */
+    .gantt-section {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .gantt-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .gantt-chart {
+        overflow-x: auto;
+        padding-bottom: 1rem;
+    }
+    
+    .gantt-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    
+    .gantt-task-name {
+        width: 200px;
+        padding-left: 1rem;
+        font-weight: 600;
+    }
+    
+    .gantt-bar-container {
+        flex: 1;
+        height: 30px;
+        position: relative;
+        background: #eef2f7;
+        border-radius: 15px;
+    }
+    
+    .gantt-bar {
+        position: absolute;
+        height: 100%;
+        border-radius: 15px;
+        transition: all 0.3s;
+    }
+    
+    .gantt-bar.completed {
+        background: var(--success);
+    }
+    
+    .gantt-bar.in_progress {
+        background: var(--primary);
+    }
+    
+    .gantt-bar.pending {
+        background: #6c757d;
+    }
+    
+    .gantt-bar.delayed {
+        background: var(--danger);
+        opacity: 0.7;
+    }
+    
+    .gantt-label {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .tasks-table {
+            font-size: 0.9rem;
+        }
+        
+        .progress-bar-small {
+            width: 50px;
+        }
+        
+        .gantt-task-name {
+            width: 120px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Filters Section -->
+<div class="filters-section">
+    <form id="filterForm">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="filter-label">بحث</label>
+                <input type="text" class="filter-input" id="searchInput" placeholder="اسم المهمة أو الكود...">
+            </div>
+            <div class="col-md-2">
+                <label class="filter-label">الحالة</label>
+                <select class="filter-input" id="statusFilter">
+                    <option value="all">جميع الحالات</option>
+                    <option value="pending">معلقة</option>
+                    <option value="in_progress">قيد التنفيذ</option>
+                    <option value="completed">مكتملة</option>
+                    <option value="delayed">متأخرة</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="filter-label">المسؤول</label>
+                <select class="filter-input" id="responsibleFilter">
+                    <option value="all">الجميع</option>
+                    {% for task in tasks %}
+                        {% if task.responsible not in ['غير معين'] %}
+                        <option value="{{ task.responsible }}">{{ task.responsible }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="filter-label">من تاريخ</label>
+                <input type="date" class="filter-input" id="dateFrom">
+            </div>
+            <div class="col-md-2">
+                <label class="filter-label">إلى تاريخ</label>
+                <input type="date" class="filter-input" id="dateTo">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="button" class="btn-primary-gradient w-100" onclick="applyFilters()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+    
+    <!-- Active Filters -->
+    <div class="mt-3" id="activeFilters"></div>
+</div>
+
+<!-- Tasks Table -->
+<div class="tasks-table-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0"><i class="fas fa-tasks ms-2 text-primary"></i>قائمة المهام</h5>
+        <div>
+            <button class="btn-outline-primary btn-sm" onclick="exportToExcel()">
+                <i class="fas fa-file-excel me-1"></i> تصدير
+            </button>
+            <button class="btn-outline-primary btn-sm ms-2" onclick="toggleGantt()">
+                <i class="fas fa-chart-bar me-1"></i> عرض Gantt
+            </button>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="tasks-table" id="tasksTable">
+            <thead>
+                <tr>
+                    <th>رمز المهمة</th>
+                    <th>اسم المهمة</th>
+                    <th>المسؤول</th>
+                    <th>الحالة</th>
+                    <th>التقدم</th>
+                    <th>البداية المخططة</th>
+                    <th>النهاية المخططة</th>
+                    <th>البداية الفعلية</th>
+                    <th>النهاية الفعلية</th>
+                    <th>وقت التنفيذ</th>
+                    <th>التأخير</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                <tr onclick="viewTask({{ task.id }})">
+                    <td>
+                        <span class="badge bg-secondary">{{ task.code }}</span>
+                    </td>
+                    <td>
+                        <strong>{{ task.name }}</strong>
+                        {% if task.predecessor %}
+                        <br><small class="text-muted">تعتمد على: {{ task.predecessor }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="responsible-info">
+                            <div class="responsible-avatar">{{ task.responsible[0] if task.responsible else '?' }}</div>
+                            <span>{{ task.responsible }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if task.is_delayed %}
+                        <span class="task-status status-delayed">متأخرة</span>
+                        {% else %}
+                        <span class="task-status status-{{ task.status }}">
+                            {% if task.status == 'pending' %}معلقة
+                            {% elif task.status == 'in_progress' %}قيد التنفيذ
+                            {% elif task.status == 'completed' %}مكتملة
+                            {% endif %}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="progress-indicator">
+                            <div class="progress-bar-small">
+                                <div class="progress-fill" style="width: {{ task.progress }}%"></div>
+                            </div>
+                            <span>{{ task.progress }}%</span>
+                        </div>
+                    </td>
+                    <td>{{ task.planned_start.strftime('%Y-%m-%d') if task.planned_start else '-' }}</td>
+                    <td>{{ task.planned_end.strftime('%Y-%m-%d') if task.planned_end else '-' }}</td>
+                    <td>{{ task.actual_start.strftime('%Y-%m-%d') if task.actual_start else '-' }}</td>
+                    <td>{{ task.actual_end.strftime('%Y-%m-%d') if task.actual_end else '-' }}</td>
+                    <td>
+                        {% if task.execution_time %}
+                        {{ (task.execution_time / 60)|round(1) if task.execution_time > 60 else task.execution_time }} 
+                        {{ 'ساعة' if task.execution_time > 60 else 'دقيقة' }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if task.is_delayed %}
+                        <span class="delay-badge">
+                            <i class="fas fa-clock ms-1"></i> {{ task.delay_days }} يوم
+                        </span>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td onclick="event.stopPropagation()">
+                        <button class="action-btn" onclick="viewTaskDetails({{ task.id }})" title="عرض التفاصيل">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        {% if task.status != 'completed' %}
+                        <button class="action-btn" onclick="remindExecutor({{ task.id }})" title="تذكير">
+                            <i class="fas fa-bell"></i>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Gantt Chart (Hidden by Default) -->
+<div class="gantt-section" id="ganttChart" style="display: none;">
+    <div class="gantt-header">
+        <h5 class="mb-0"><i class="fas fa-chart-gantt ms-2 text-primary"></i>مخطط جانت - الجدول الزمني للمهام</h5>
+        <button class="btn-close" onclick="toggleGantt()"></button>
+    </div>
+    
+    <div class="gantt-chart">
+        {% set min_date = tasks|map(attribute='planned_start')|reject('none')|min %}
+        {% set max_date = tasks|map(attribute='planned_end')|reject('none')|max %}
+        {% set total_days = (max_date - min_date).days if min_date and max_date else 30 %}
+        
+        {% for task in tasks if task.planned_start and task.planned_end %}
+        {% set start_offset = ((task.planned_start - min_date).days / total_days * 100) if min_date else 0 %}
+        {% set duration = ((task.planned_end - task.planned_start).days / total_days * 100) %}
+        <div class="gantt-row">
+            <div class="gantt-task-name">{{ task.name }}</div>
+            <div class="gantt-bar-container">
+                <div class="gantt-bar {{ 'delayed' if task.is_delayed else task.status }}"
+                     style="left: {{ start_offset }}%; width: {{ duration }}%;">
+                    <span class="gantt-label">{{ task.code }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentFilters = {
+    search: '',
+    status: 'all',
+    responsible: 'all',
+    dateFrom: '',
+    dateTo: ''
+};
+
+function applyFilters() {
+    currentFilters = {
+        search: document.getElementById('searchInput').value.toLowerCase(),
+        status: document.getElementById('statusFilter').value,
+        responsible: document.getElementById('responsibleFilter').value,
+        dateFrom: document.getElementById('dateFrom').value,
+        dateTo: document.getElementById('dateTo').value
+    };
+    
+    const rows = document.querySelectorAll('#tasksTable tbody tr');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const taskName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+        const taskCode = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+        const taskStatus = getTaskStatus(row);
+        const responsible = row.querySelector('td:nth-child(3) span').textContent;
+        const plannedStart = row.querySelector('td:nth-child(6)').textContent;
+        const plannedEnd = row.querySelector('td:nth-child(7)').textContent;
+        
+        let show = true;
+        
+        // Search filter
+        if (currentFilters.search && !taskName.includes(currentFilters.search) && !taskCode.includes(currentFilters.search)) {
+            show = false;
+        }
+        
+        // Status filter
+        if (currentFilters.status !== 'all' && taskStatus !== currentFilters.status) {
+            show = false;
+        }
+        
+        // Responsible filter
+        if (currentFilters.responsible !== 'all' && responsible !== currentFilters.responsible) {
+            show = false;
+        }
+        
+        // Date range filter
+        if (currentFilters.dateFrom && plannedStart !== '-' && new Date(plannedStart) < new Date(currentFilters.dateFrom)) {
+            show = false;
+        }
+        if (currentFilters.dateTo && plannedEnd !== '-' && new Date(plannedEnd) > new Date(currentFilters.dateTo)) {
+            show = false;
+        }
+        
+        if (show) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    updateActiveFilters();
+    
+    Swal.fire({
+        icon: 'info',
+        title: 'تم التصفية',
+        text: `عرض ${visibleCount} مهمة من أصل ${rows.length}`,
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
+
+function getTaskStatus(row) {
+    const statusSpan = row.querySelector('td:nth-child(4) span');
+    if (statusSpan.classList.contains('status-delayed')) return 'delayed';
+    if (statusSpan.classList.contains('status-pending')) return 'pending';
+    if (statusSpan.classList.contains('status-in_progress')) return 'in_progress';
+    if (statusSpan.classList.contains('status-completed')) return 'completed';
+    return 'unknown';
+}
+
+function updateActiveFilters() {
+    const container = document.getElementById('activeFilters');
+    container.innerHTML = '';
+    
+    if (currentFilters.search) {
+        container.innerHTML += `<span class="filter-badge"><i class="fas fa-times" onclick="removeFilter('search')"></i>بحث: ${currentFilters.search}</span>`;
+    }
+    if (currentFilters.status !== 'all') {
+        container.innerHTML += `<span class="filter-badge"><i class="fas fa-times" onclick="removeFilter('status')"></i>الحالة: ${currentFilters.status}</span>`;
+    }
+    if (currentFilters.responsible !== 'all') {
+        container.innerHTML += `<span class="filter-badge"><i class="fas fa-times" onclick="removeFilter('responsible')"></i>المسؤول: ${currentFilters.responsible}</span>`;
+    }
+    if (currentFilters.dateFrom) {
+        container.innerHTML += `<span class="filter-badge"><i class="fas fa-times" onclick="removeFilter('dateFrom')"></i>من: ${currentFilters.dateFrom}</span>`;
+    }
+    if (currentFilters.dateTo) {
+        container.innerHTML += `<span class="filter-badge"><i class="fas fa-times" onclick="removeFilter('dateTo')"></i>إلى: ${currentFilters.dateTo}</span>`;
+    }
+}
+
+function removeFilter(filter) {
+    if (filter === 'search') {
+        document.getElementById('searchInput').value = '';
+        currentFilters.search = '';
+    } else if (filter === 'status') {
+        document.getElementById('statusFilter').value = 'all';
+        currentFilters.status = 'all';
+    } else if (filter === 'responsible') {
+        document.getElementById('responsibleFilter').value = 'all';
+        currentFilters.responsible = 'all';
+    } else if (filter === 'dateFrom') {
+        document.getElementById('dateFrom').value = '';
+        currentFilters.dateFrom = '';
+    } else if (filter === 'dateTo') {
+        document.getElementById('dateTo').value = '';
+        currentFilters.dateTo = '';
+    }
+    
+    applyFilters();
+}
+
+function viewTask(taskId) {
+    window.location.href = `/tracking/task/${taskId}/execute`;
+}
+
+function viewTaskDetails(taskId) {
+    window.location.href = `/company/task/${taskId}`;
+}
+
+function remindExecutor(taskId) {
+    Swal.fire({
+        title: 'تذكير',
+        text: 'هل تريد إرسال تذكير للمسؤول عن هذه المهمة؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، أرسل',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/tracking/api/task/${taskId}/remind`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الإرسال',
+                        text: 'تم إرسال التذكير بنجاح',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        }
+    });
+}
+
+function exportToExcel() {
+    Swal.fire({
+        title: 'تصدير التقرير',
+        text: 'سيتم تحميل تقرير المهام بصيغة Excel',
+        icon: 'info',
+        timer: 2000,
+        showConfirmButton: false
+    });
+    
+    setTimeout(() => {
+        window.location.href = `/tracking/api/export-tasks?project_id={{ project.id }}`;
+    }, 2000);
+}
+
+function toggleGantt() {
+    const gantt = document.getElementById('ganttChart');
+    if (gantt.style.display === 'none') {
+        gantt.style.display = 'block';
+    } else {
+        gantt.style.display = 'none';
+    }
+}
+
+// تحديث تلقائي كل 60 ثانية
+setInterval(function() {
+    location.reload();
+}, 60000);
+</script>
+{% endblock %}

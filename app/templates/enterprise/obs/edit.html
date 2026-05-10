@@ -1,0 +1,856 @@
+{% extends "company/base.html" %}
+
+{% block title %}تعديل عنصر OBS - {{ obs.name }}{% endblock %}
+
+{% block page_title %}تعديل عنصر OBS{% endblock %}
+{% block page_subtitle %}{{ obs.obs_code }} - {{ obs.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== المتغيرات الأساسية ===== */
+    :root {
+        --obs-primary: #4cc9f0;
+        --obs-primary-dark: #3ab7d9;
+        --obs-primary-light: #7ad9f5;
+        --obs-bg: linear-gradient(135deg, #f8f9fa, #ffffff);
+        --obs-shadow: 0 10px 30px rgba(76, 201, 240, 0.1);
+        --obs-border: rgba(76, 201, 240, 0.2);
+        --obs-hover: rgba(76, 201, 240, 0.05);
+    }
+
+    /* ===== الحاوية الرئيسية ===== */
+    .obs-edit-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        animation: slideInUp 0.5s ease;
+    }
+
+    /* ===== بطاقة النموذج ===== */
+    .obs-edit-card {
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.08), 0 10px 20px rgba(76, 201, 240, 0.05);
+        overflow: hidden;
+        position: relative;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(76, 201, 240, 0.1);
+    }
+
+    .obs-edit-card:hover {
+        box-shadow: 0 30px 60px rgba(76, 201, 240, 0.15);
+        transform: translateY(-5px);
+    }
+
+    /* ===== رأس البطاقة ===== */
+    .obs-card-header {
+        background: linear-gradient(135deg, rgba(76, 201, 240, 0.05), rgba(76, 201, 240, 0.1));
+        padding: 2rem 2.5rem;
+        border-bottom: 3px solid var(--obs-primary);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .obs-card-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(76, 201, 240, 0.1) 0%, transparent 70%);
+        animation: rotate 20s linear infinite;
+    }
+
+    .obs-title-wrapper {
+        position: relative;
+        z-index: 1;
+    }
+
+    .obs-badge {
+        display: inline-block;
+        padding: 0.5rem 1.2rem;
+        background: rgba(76, 201, 240, 0.15);
+        border: 1px solid var(--obs-border);
+        border-radius: 50px;
+        color: var(--obs-primary-dark);
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(5px);
+    }
+
+    .obs-badge i {
+        margin-left: 0.5rem;
+        color: var(--obs-primary);
+    }
+
+    .obs-header-title {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, var(--dark), var(--obs-primary-dark));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .obs-header-subtitle {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .obs-code-badge {
+        background: linear-gradient(135deg, var(--obs-primary), var(--obs-primary-dark));
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        box-shadow: 0 5px 15px rgba(76, 201, 240, 0.3);
+    }
+
+    .obs-level-badge {
+        background: white;
+        border: 2px solid var(--obs-border);
+        color: var(--obs-primary-dark);
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .obs-level-badge i {
+        color: var(--obs-primary);
+        margin-left: 0.5rem;
+    }
+
+    /* ===== جسم البطاقة ===== */
+    .obs-card-body {
+        padding: 2.5rem;
+    }
+
+    /* ===== مجموعات الحقول ===== */
+    .form-section {
+        background: #f8fafc;
+        border-radius: 20px;
+        padding: 1.8rem;
+        margin-bottom: 2rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .form-section:hover {
+        border-color: var(--obs-border);
+        box-shadow: 0 5px 20px rgba(76, 201, 240, 0.1);
+    }
+
+    .form-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(135deg, var(--obs-primary), var(--obs-primary-light));
+        border-radius: 4px 0 0 4px;
+    }
+
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 2px dashed #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .section-title i {
+        color: var(--obs-primary);
+        font-size: 1.2rem;
+    }
+
+    /* ===== تنسيق الحقول ===== */
+    .form-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .form-label i {
+        color: var(--obs-primary);
+        font-size: 0.9rem;
+    }
+
+    .required-field::after {
+        content: "*";
+        color: var(--danger);
+        margin-right: 0.3rem;
+        font-size: 1.2rem;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid #eef2f7;
+        border-radius: 16px;
+        padding: 0.8rem 1.2rem;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--obs-primary);
+        box-shadow: 0 0 0 4px rgba(76, 201, 240, 0.1);
+        outline: none;
+    }
+
+    .form-control:hover, .form-select:hover {
+        border-color: var(--obs-primary-light);
+    }
+
+    .readonly-field {
+        background: #f8fafc;
+        color: var(--dark);
+        font-weight: 500;
+        border: 2px solid #eef2f7;
+        cursor: not-allowed;
+    }
+
+    .readonly-field:focus {
+        border-color: #eef2f7;
+        box-shadow: none;
+    }
+
+    /* ===== معاينة المسار ===== */
+    .path-preview {
+        background: linear-gradient(135deg, rgba(76, 201, 240, 0.05), rgba(76, 201, 240, 0.02));
+        border-radius: 16px;
+        padding: 1.2rem 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 2px dashed var(--obs-border);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .path-preview::before {
+        content: '📁';
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 2rem;
+        opacity: 0.1;
+    }
+
+    .path-label {
+        font-size: 0.85rem;
+        color: var(--obs-primary-dark);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .path-label i {
+        font-size: 1rem;
+    }
+
+    .path-display {
+        font-family: 'Courier New', monospace;
+        font-size: 1rem;
+        color: var(--dark);
+        background: white;
+        padding: 0.8rem 1.2rem;
+        border-radius: 12px;
+        border: 1px solid var(--obs-border);
+        direction: ltr;
+        text-align: left;
+        word-break: break-all;
+    }
+
+    .path-display i {
+        color: var(--obs-primary);
+        margin: 0 0.3rem;
+    }
+
+    /* ===== معلومات إضافية ===== */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-item {
+        background: white;
+        border: 1px solid #eef2f7;
+        border-radius: 14px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .info-item:hover {
+        border-color: var(--obs-border);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 201, 240, 0.1);
+    }
+
+    .info-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--obs-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    .info-content {
+        flex: 1;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.2rem;
+    }
+
+    .info-value {
+        font-weight: 700;
+        color: var(--dark);
+        font-size: 1rem;
+    }
+
+    /* ===== الأزرار ===== */
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid #eef2f7;
+        flex-wrap: wrap;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 0.8rem 2rem;
+        background: white;
+        border: 2px solid #eef2f7;
+        border-radius: 16px;
+        color: #6c757d;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-back:hover {
+        background: #f8fafc;
+        border-color: var(--obs-primary);
+        color: var(--obs-primary-dark);
+        transform: translateX(-5px);
+    }
+
+    .btn-save {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 0.8rem 2.5rem;
+        background: linear-gradient(135deg, var(--obs-primary), var(--obs-primary-dark));
+        border: none;
+        border-radius: 16px;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 5px 20px rgba(76, 201, 240, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-save::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+
+    .btn-save:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(76, 201, 240, 0.4);
+    }
+
+    .btn-save:hover::before {
+        width: 300px;
+        height: 300px;
+    }
+
+    .btn-save:active {
+        transform: translateY(0);
+    }
+
+    /* ===== الرسوم المتحركة ===== */
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes rotate {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(76, 201, 240, 0.4);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(76, 201, 240, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(76, 201, 240, 0);
+        }
+    }
+
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
+    /* ===== تلميحات الحقول ===== */
+    .field-hint {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.3rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .field-hint i {
+        color: var(--obs-primary);
+        font-size: 0.7rem;
+    }
+
+    /* ===== تنسيق متجاوب ===== */
+    @media (max-width: 768px) {
+        .obs-edit-container {
+            margin: 1rem;
+        }
+
+        .obs-card-header {
+            padding: 1.5rem;
+        }
+
+        .obs-card-body {
+            padding: 1.5rem;
+        }
+
+        .form-section {
+            padding: 1.2rem;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-back, .btn-save {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* ===== تأثيرات خاصة ===== */
+    .floating-effect {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-5px);
+        }
+        100% {
+            transform: translateY(0px);
+        }
+    }
+
+    /* ===== شارة الحالة ===== */
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.8rem;
+        background: rgba(76, 201, 240, 0.1);
+        border-radius: 30px;
+        color: var(--obs-primary-dark);
+        font-size: 0.8rem;
+    }
+
+    .status-indicator i {
+        font-size: 0.6rem;
+        color: var(--obs-primary);
+    }
+
+    /* ===== خطوات التعديل ===== */
+    .edit-steps {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .step-badge {
+        background: white;
+        border: 2px solid #eef2f7;
+        border-radius: 30px;
+        padding: 0.3rem 1rem;
+        font-size: 0.8rem;
+        color: #6c757d;
+        transition: all 0.3s ease;
+    }
+
+    .step-badge.active {
+        background: var(--obs-primary);
+        border-color: var(--obs-primary);
+        color: white;
+    }
+
+    .step-badge i {
+        margin-left: 0.3rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="obs-edit-container">
+    <div class="obs-edit-card">
+        <!-- رأس البطاقة -->
+        <div class="obs-card-header">
+            <div class="obs-title-wrapper">
+                <div class="obs-badge">
+                    <i class="fas fa-users-cog"></i>
+                    تعديل عنصر OBS
+                </div>
+                <h2 class="obs-header-title">{{ obs.name }}</h2>
+                <div class="obs-header-subtitle">
+                    <span class="obs-code-badge">
+                        <i class="fas fa-code"></i>
+                        {{ obs.obs_code }}
+                    </span>
+                    <span class="obs-level-badge">
+                        <i class="fas fa-layer-group"></i>
+                        المستوى {{ obs.level }}
+                    </span>
+                    <span class="status-indicator">
+                        <i class="fas fa-circle"></i>
+                        {{ obs.children|length if obs.children else 0 }} عناصر فرعية
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- جسم البطاقة -->
+        <div class="obs-card-body">
+            <form method="POST" action="{{ url_for('enterprise.obs_edit', obs_id=obs.id) }}" id="editForm">
+                <!-- معلومات أساسية -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        المعلومات الأساسية
+                    </h6>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label required-field">
+                                <i class="fas fa-code"></i>
+                                رمز OBS
+                            </label>
+                            <input type="text" 
+                                   class="form-control readonly-field" 
+                                   value="{{ obs.obs_code }}" 
+                                   readonly
+                                   title="لا يمكن تعديل رمز OBS">
+                            <div class="field-hint">
+                                <i class="fas fa-lock"></i>
+                                رمز OBS غير قابل للتعديل
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label required-field">
+                                <i class="fas fa-heading"></i>
+                                الاسم
+                            </label>
+                            <input type="text" 
+                                   name="name" 
+                                   class="form-control" 
+                                   value="{{ obs.name }}" 
+                                   required
+                                   placeholder="أدخل اسم العنصر">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-align-left"></i>
+                                الوصف
+                            </label>
+                            <textarea name="description" 
+                                      class="form-control" 
+                                      rows="3"
+                                      placeholder="أدخل وصفاً للعنصر...">{{ obs.description or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- المسار والهيكل -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-sitemap"></i>
+                        المسار والهيكل
+                    </h6>
+                    
+                    <div class="info-grid">
+                        <div class="info-item floating-effect">
+                            <div class="info-icon">
+                                <i class="fas fa-level-up-alt"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">المستوى الحالي</div>
+                                <div class="info-value">{{ obs.level }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-sitemap"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">العناصر الفرعية</div>
+                                <div class="info-value">{{ obs.children|length if obs.children else 0 }}</div>
+                            </div>
+                        </div>
+                        
+                        {% if obs.parent %}
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">العنصر الأب</div>
+                                <div class="info-value">{{ obs.parent.name }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="path-preview">
+                        <div class="path-label">
+                            <i class="fas fa-link"></i>
+                            المسار الكامل
+                        </div>
+                        <div class="path-display">
+                            <i class="fas fa-folder-open"></i>
+                            {{ obs.path }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- المسؤول والصلاحيات -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-user-tie"></i>
+                        المسؤول والصلاحيات
+                    </h6>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-12">
+                            <label class="form-label">
+                                <i class="fas fa-user-tie"></i>
+                                المسؤول
+                            </label>
+                            <select name="responsible_id" class="form-select">
+                                <option value="">-- غير معين --</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}" 
+                                        {% if obs.responsible_id == user.id %}selected{% endif %}
+                                        data-role="{{ user.role }}">
+                                    <div class="d-flex align-items-center gap-2">
+                                        {{ user.full_name }}
+                                        {% if user.role %}
+                                        <span class="badge bg-info ms-2">{{ user.role }}</span>
+                                        {% endif %}
+                                    </div>
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="field-hint">
+                                <i class="fas fa-info-circle"></i>
+                                اختر المسؤول عن هذا العنصر
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- إحصائيات سريعة -->
+                    <div class="row g-3 mt-3">
+                        <div class="col-sm-6">
+                            <div class="stat-box">
+                                <div class="stat-icon">
+                                    <i class="fas fa-project-diagram"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <span class="stat-value">{{ obs.projects.count() if obs.projects else 0 }}</span>
+                                    <span class="stat-label">مشاريع مرتبطة</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="stat-box">
+                                <div class="stat-icon">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <span class="stat-value">{{ obs.eps_permissions.count() if obs.eps_permissions else 0 }}</span>
+                                    <span class="stat-label">صلاحيات EPS</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- خطوات التعديل -->
+                <div class="edit-steps">
+                    <span class="step-badge active">
+                        <i class="fas fa-check"></i>
+                        المعلومات الأساسية
+                    </span>
+                    <span class="step-badge">
+                        <i class="fas fa-arrow-right"></i>
+                        المسار والهيكل
+                    </span>
+                    <span class="step-badge">
+                        <i class="fas fa-arrow-right"></i>
+                        المسؤول والصلاحيات
+                    </span>
+                </div>
+
+                <!-- أزرار التحكم -->
+                <div class="form-actions">
+                    <a href="{{ url_for('enterprise.obs_view', obs_id=obs.id) }}" class="btn-back">
+                        <i class="fas fa-arrow-right"></i>
+                        العودة للتفاصيل
+                    </a>
+                    <button type="submit" class="btn-save" id="saveBtn">
+                        <i class="fas fa-save"></i>
+                        حفظ التغييرات
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// تأكيد الحفظ
+document.getElementById('editForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    Swal.fire({
+        title: 'تأكيد الحفظ',
+        text: 'هل أنت متأكد من حفظ التغييرات؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4cc9f0',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، حفظ',
+        cancelButtonText: 'إلغاء',
+        backdrop: `
+            rgba(76,201,240,0.1)
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 24 24' fill='%234cc9f0'%3E%3Cpath d='M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm4-10H5V5h11v4z'/%3E%3C/svg%3E")
+            left top
+            no-repeat
+        `
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // إظهار مؤشر التحميل
+            const saveBtn = document.getElementById('saveBtn');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+            saveBtn.disabled = true;
+            
+            // إرسال النموذج
+            this.submit();
+        }
+    });
+});
+
+// التحقق من المدخلات
+document.querySelector('[name="name"]').addEventListener('input', function() {
+    if (this.value.trim().length < 3) {
+        this.style.borderColor = 'var(--danger)';
+    } else {
+        this.style.borderColor = 'var(--success)';
+    }
+});
+
+// تأثيرات حركية عند التمرير
+window.addEventListener('scroll', function() {
+    const cards = document.querySelectorAll('.info-item');
+    cards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }
+    });
+});
+
+
+</script>
+{% endblock %}

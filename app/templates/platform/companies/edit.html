@@ -1,0 +1,146 @@
+{# templates/platform/companies/edit.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('companies.edit') }}: {{ company.name }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title">{{ _('companies.edit') }}: {{ company.name }}</h1>
+            <p class="text-muted mb-0">{{ _('companies.edit_description') }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('platform.view_company', company_id=company.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-{{ 'right' if get_direction() == 'rtl' else 'left' }} me-2"></i>{{ _('common.back') }}
+            </a>
+        </div>
+    </div>
+    
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form method="POST">
+                <ul class="nav nav-tabs mb-4" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#basicInfo" type="button">
+                            <i class="fas fa-info-circle me-2"></i>{{ _('companies.basic_info') }}
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#quota" type="button">
+                            <i class="fas fa-chart-line me-2"></i>{{ _('companies.quota') }}
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#status" type="button">
+                            <i class="fas fa-toggle-on me-2"></i>{{ _('companies.status_settings') }}
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content">
+                    <!-- Basic Info Tab -->
+                    <div class="tab-pane fade show active" id="basicInfo">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('companies.name') }} *</label>
+                                <input type="text" name="name" class="form-control" value="{{ company.name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('companies.name_ar') }}</label>
+                                <input type="text" name="name_ar" class="form-control" value="{{ company.name_ar or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('companies.email') }}</label>
+                                <input type="email" class="form-control" value="{{ company.email }}" disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('companies.phone') }}</label>
+                                <input type="tel" name="phone" class="form-control" value="{{ company.phone or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('companies.website') }}</label>
+                                <input type="url" name="website" class="form-control" value="{{ company.website or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('companies.org_code') }}</label>
+                                <input type="text" class="form-control" value="{{ company.org_code }}" disabled>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ _('companies.address') }}</label>
+                                <textarea name="address" class="form-control" rows="2">{{ company.address or '' }}</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('companies.tax_number') }}</label>
+                                <input type="text" name="tax_number" class="form-control" value="{{ company.tax_number or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('companies.commercial_register') }}</label>
+                                <input type="text" name="commercial_register" class="form-control" value="{{ company.commercial_register or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quota Tab -->
+                    <div class="tab-pane fade" id="quota">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('companies.quota.users') }}</label>
+                                <input type="number" name="max_users" class="form-control" value="{{ company.max_users }}">
+                                <div class="form-text">{{ _('companies.current_usage') }}: {{ company.current_users }} / {{ company.max_users }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('companies.quota.projects') }}</label>
+                                <input type="number" name="max_projects" class="form-control" value="{{ company.max_projects }}">
+                                <div class="form-text">{{ _('companies.current_usage') }}: {{ company.current_projects }} / {{ company.max_projects }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('companies.quota.storage') }} (MB)</label>
+                                <input type="number" name="storage_limit_mb" class="form-control" value="{{ company.storage_limit_mb }}">
+                                <div class="form-text">{{ _('companies.current_usage') }}: {{ company.storage_used_mb }} / {{ company.storage_limit_mb }} MB</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Tab -->
+                    <div class="tab-pane fade" id="status">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="is_active" class="form-check-input" id="isActive" {% if company.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="isActive">{{ _('companies.is_active') }}</label>
+                                </div>
+                                <div class="form-check form-switch mt-2">
+                                    <input type="checkbox" name="is_verified" class="form-check-input" id="isVerified" {% if company.is_verified %}checked{% endif %}>
+                                    <label class="form-check-label" for="isVerified">{{ _('companies.is_verified') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('companies.subscription_status') }}</label>
+                                <select name="subscription_status" class="form-select">
+                                    <option value="trial" {% if company.subscription_status == 'trial' %}selected{% endif %}>{{ _('subscriptions.trial') }}</option>
+                                    <option value="active" {% if company.subscription_status == 'active' %}selected{% endif %}>{{ _('subscriptions.active') }}</option>
+                                    <option value="expired" {% if company.subscription_status == 'expired' %}selected{% endif %}>{{ _('subscriptions.expired') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('subscriptions.end_date') }}</label>
+                                <input type="date" name="subscription_end" class="form-control" value="{{ company.subscription_end.strftime('%Y-%m-%d') if company.subscription_end else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{{ url_for('platform.view_company', company_id=company.id) }}" class="btn btn-lg btn-outline-secondary">{{ _('common.cancel') }}</a>
+                    <button type="submit" class="btn btn-lg btn-gradient">
+                        <i class="fas fa-save me-2"></i>{{ _('common.save') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

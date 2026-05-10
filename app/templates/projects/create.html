@@ -1,0 +1,998 @@
+{% extends "company/base.html" %}
+
+{% block title %}إنشاء مشروع جديد{% endblock %}
+
+{% block page_title %}إنشاء مشروع جديد{% endblock %}
+{% block page_subtitle %}أدخل معلومات المشروع الأساسية{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== المتغيرات الأساسية ===== */
+    :root {
+        --create-primary: #4361ee;
+        --create-success: #4caf50;
+        --create-warning: #ff9800;
+        --create-danger: #f44336;
+        --create-info: #00bcd4;
+    }
+
+    /* ===== الحاوية الرئيسية ===== */
+    .create-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        animation: slideInUp 0.5s ease;
+    }
+
+    /* ===== بطاقة الإنشاء ===== */
+    .create-card {
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03), 0 10px 20px rgba(67, 97, 238, 0.05);
+        overflow: hidden;
+        border: 1px solid #eef2f7;
+    }
+
+    /* ===== رأس البطاقة ===== */
+    .card-header {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05), rgba(67, 97, 238, 0.1));
+        padding: 2rem;
+        border-bottom: 3px solid var(--create-primary);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(67, 97, 238, 0.1) 0%, transparent 70%);
+        animation: rotate 20s linear infinite;
+    }
+
+    .header-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .header-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, var(--create-primary), #3f37c9);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+    }
+
+    .header-title {
+        flex: 1;
+    }
+
+    .header-title h2 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--dark);
+        margin-bottom: 0.3rem;
+    }
+
+    .header-title p {
+        color: #6c757d;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .header-title p i {
+        color: var(--create-primary);
+    }
+
+    /* ===== أقسام النموذج ===== */
+    .card-body {
+        padding: 2.5rem;
+    }
+
+    .form-section {
+        background: #f8fafc;
+        border-radius: 20px;
+        padding: 1.8rem;
+        margin-bottom: 2rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s ease;
+    }
+
+    .form-section:hover {
+        border-color: rgba(67, 97, 238, 0.2);
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.1);
+    }
+
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 2px dashed #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .section-title i {
+        color: var(--create-primary);
+        font-size: 1.2rem;
+    }
+
+    /* ===== تنسيق الحقول ===== */
+    .form-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .form-label i {
+        color: var(--create-primary);
+        font-size: 0.9rem;
+    }
+
+    .required-field::after {
+        content: "*";
+        color: var(--create-danger);
+        margin-right: 0.3rem;
+        font-size: 1.2rem;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid #eef2f7;
+        border-radius: 14px;
+        padding: 0.8rem 1.2rem;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--create-primary);
+        box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+        outline: none;
+    }
+
+    .form-control:hover, .form-select:hover {
+        border-color: var(--create-primary);
+    }
+
+    .form-text {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.3rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .form-text i {
+        color: var(--create-primary);
+        font-size: 0.7rem;
+    }
+
+    /* ===== بطاقة معاينة كود المشروع ===== */
+    .code-preview {
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        border-radius: 16px;
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+        direction: ltr;
+        text-align: left;
+        color: #a5d6ff;
+        font-family: 'Courier New', monospace;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border: 2px solid var(--create-primary);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+
+    .code-preview i {
+        color: #ffd700;
+        margin-right: 0.5rem;
+    }
+
+    .code-preview span {
+        color: #4ade80;
+    }
+
+    /* ===== أزرار التحكم ===== */
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid #eef2f7;
+    }
+
+    .btn-create {
+        background: linear-gradient(135deg, var(--create-primary), #3f37c9);
+        border: none;
+        padding: 0.8rem 2.5rem;
+        border-radius: 16px;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.8rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
+        cursor: pointer;
+    }
+
+    .btn-create:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(67, 97, 238, 0.4);
+    }
+
+    .btn-cancel {
+        background: white;
+        border: 2px solid #eef2f7;
+        padding: 0.8rem 2rem;
+        border-radius: 16px;
+        color: #6c757d;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-cancel:hover {
+        background: #f8fafc;
+        border-color: var(--create-primary);
+        color: var(--create-primary);
+    }
+
+    /* ===== مؤشر التحميل ===== */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        display: none;
+        backdrop-filter: blur(5px);
+    }
+
+    .spinner {
+        width: 60px;
+        height: 60px;
+        border: 6px solid #eef2f7;
+        border-top-color: var(--create-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ===== تنسيق الحقول المساعدة ===== */
+    .field-hint {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.3rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .field-hint i {
+        color: var(--create-primary);
+        font-size: 0.7rem;
+    }
+
+    /* ===== بطاقات الخيارات ===== */
+    .option-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.5rem;
+    }
+
+    .option-card {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.8rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .option-card:hover {
+        border-color: var(--create-primary);
+        background: #f0f9ff;
+    }
+
+    .option-card.selected {
+        border-color: var(--create-primary);
+        background: #e0f2fe;
+    }
+
+    .option-icon {
+        font-size: 1.5rem;
+        color: var(--create-primary);
+        margin-bottom: 0.3rem;
+    }
+
+    .option-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    /* ===== تنسيق متجاوب ===== */
+    @media (max-width: 768px) {
+        .create-container {
+            margin: 1rem;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .form-section {
+            padding: 1.2rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-create, .btn-cancel {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .header-content {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-container">
+    <!-- مؤشر التحميل -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="create-card">
+        <!-- رأس الصفحة -->
+        <div class="card-header">
+            <div class="header-content">
+                <div class="header-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="header-title">
+                    <h2>إنشاء مشروع جديد</h2>
+                    <p>
+                        <i class="fas fa-info-circle"></i>
+                        أدخل المعلومات الأساسية للمشروع
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- جسم الصفحة -->
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('projects.create_project') }}" id="createProjectForm">
+                <!-- معاينة كود المشروع -->
+                <div class="code-preview" id="codePreview">
+                    <i class="fas fa-code"></i>
+                    <span id="previewCode">PRJ-{{ "%04d"|format(projects_count + 1) }}</span> - سيتم إنشاؤه تلقائياً
+                </div>
+
+                <!-- المعلومات الأساسية -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        المعلومات الأساسية
+                    </h6>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label required-field">
+                                <i class="fas fa-code"></i>
+                                كود المشروع
+                            </label>
+                            <input type="text" name="project_code" class="form-control" 
+                                   value="PRJ-{{ "%04d"|format(projects_count + 1) }}" 
+                                   placeholder="PRJ-0001" required>
+                            <div class="field-hint">
+                                <i class="fas fa-info-circle"></i>
+                                كود فريد للمشروع
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label required-field">
+                                <i class="fas fa-heading"></i>
+                                اسم المشروع
+                            </label>
+                            <input type="text" name="name" class="form-control" 
+                                   placeholder="أدخل اسم المشروع" required>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label">
+                                <i class="fas fa-align-left"></i>
+                                الوصف
+                            </label>
+                            <textarea name="description" class="form-control" rows="3" 
+                                      placeholder="وصف المشروع..."></textarea>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-tag"></i>
+                                التصنيف
+                            </label>
+                            <select name="category" class="form-select">
+                                <option value="">-- اختر التصنيف --</option>
+                                <option value="حكومي">حكومي</option>
+                                <option value="خاص">خاص</option>
+                                <option value="خيري">خيري</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-layer-group"></i>
+                                نوع المشروع
+                            </label>
+                            <select name="project_type" class="form-select">
+                                <option value="">-- اختر النوع --</option>
+                                <option value="بناء">بناء</option>
+                                <option value="طرق">طرق</option>
+                                <option value="جسور">جسور</option>
+                                <option value="بنية تحتية">بنية تحتية</option>
+                                <option value="تقني">تقني</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-ruler"></i>
+                                حجم المشروع
+                            </label>
+                            <select name="project_scale" class="form-select">
+                                <option value="">-- اختر الحجم --</option>
+                                <option value="صغير">صغير</option>
+                                <option value="متوسط">متوسط</option>
+                                <option value="كبير">كبير</option>
+                                <option value="عملاق">عملاق</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- الهيكل التنظيمي -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-sitemap"></i>
+                        الهيكل التنظيمي
+                    </h6>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-layer-group"></i>
+                                EPS
+                            </label>
+                            <select name="eps_id" class="form-select select2">
+                                {%if eps_id %}
+                                <option value="{{ eps_id.id }}">{{ eps_id.name }} ({{ eps_id.eps_code }})</option>
+                                {%else%}
+                                <option value="">-- اختر EPS --</option>
+                                {% for eps in eps_list %}
+                                <option value="{{ eps.id }}">{{ eps.name }} ({{ eps.eps_code }})</option>
+                                {% endfor %}
+                                {%endif%}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-users-cog"></i>
+                                OBS
+                            </label>
+                            <select name="obs_id" class="form-select select2">
+                                <option value="">-- اختر OBS --</option>
+                                {% for obs in obs_list %}
+                                <option value="{{ obs.id }}">{{ obs.name }} ({{ obs.obs_code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                التقويم
+                            </label>
+                            <select name="calendar_id" class="form-select">
+                                <option value="">-- اختر التقويم --</option>
+                                {% for cal in calendars %}
+                                <option value="{{ cal.id }}">{{ cal.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- التواريخ -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-calendar"></i>
+                        التواريخ
+                    </h6>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-play-circle"></i>
+                                تاريخ البداية المخطط
+                            </label>
+                            <input type="date" name="planned_start" class="form-control" 
+                                   value="{{ now().strftime('%Y-%m-%d') }}">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-stop-circle"></i>
+                                تاريخ النهاية المخطط
+                            </label>
+                            <input type="date" name="planned_finish" class="form-control">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-hourglass-end"></i>
+                                تاريخ الإلزام
+                            </label>
+                            <input type="date" name="must_finish_by" class="form-control">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-clock"></i>
+                                تاريخ البداية المتوقع
+                            </label>
+                            <input type="date" name="anticipated_start" class="form-control">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-clock"></i>
+                                تاريخ النهاية المتوقع
+                            </label>
+                            <input type="date" name="anticipated_finish" class="form-control">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-chart-line"></i>
+                                تاريخ الانتهاء المتوقع
+                            </label>
+                            <input type="date" name="expected_finish" class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- الموقع -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-map-marker-alt"></i>
+                        الموقع
+                    </h6>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-building"></i>
+                                اسم الموقع
+                            </label>
+                            <input type="text" name="site_name" class="form-control" 
+                                   placeholder="اسم موقع المشروع">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label class="form-label">
+                                <i class="fas fa-city"></i>
+                                المدينة
+                            </label>
+                            <input type="text" name="city" class="form-control" 
+                                   placeholder="المدينة">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label class="form-label">
+                                <i class="fas fa-globe"></i>
+                                الدولة
+                            </label>
+                            <input type="text" name="country" class="form-control" 
+                                   value="السعودية">
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label">
+                                <i class="fas fa-address-card"></i>
+                                العنوان
+                            </label>
+                            <textarea name="address" class="form-control" rows="2" 
+                                      placeholder="العنوان الكامل"></textarea>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-map-pin"></i>
+                                الإحداثيات
+                            </label>
+                            <input type="text" name="coordinates" class="form-control" 
+                                   placeholder="24.7136, 46.6753">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- الميزانية -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-coins"></i>
+                        الميزانية
+                    </h6>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-coins"></i>
+                                الميزانية الأصلية
+                            </label>
+                            <div class="input-group">
+                                <input type="number" name="original_budget" class="form-control" 
+                                       value="0" step="0.01" min="0">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-calculator"></i>
+                                العملة الأساسية
+                            </label>
+                            <select name="base_currency" class="form-select">
+                                <option value="SAR">ريال سعودي (SAR)</option>
+                                <option value="USD">دولار أمريكي (USD)</option>
+                                <option value="EUR">يورو (EUR)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                التقويم المالي
+                            </label>
+                            <select name="financial_calendar_id" class="form-select">
+                                <option value="">-- اختر التقويم المالي --</option>
+                                {% for cal in calendars %}
+                                <option value="{{ cal.id }}">{{ cal.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- الحالة والإعدادات -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-cog"></i>
+                        الحالة والإعدادات
+                    </h6>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-info-circle"></i>
+                                الحالة
+                            </label>
+                            <select name="status" class="form-select">
+                                <option value="planning">مخطط</option>
+                                <option value="active">نشط</option>
+                                <option value="completed">مكتمل</option>
+                                <option value="inactive">غير نشط</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-flag"></i>
+                                مستوى الأولوية
+                            </label>
+                            <input type="number" name="priority_level" class="form-control" 
+                                   value="50" min="1" max="100">
+                            <div class="field-hint">
+                                <i class="fas fa-info-circle"></i>
+                                1 = أعلى أولوية، 100 = أقل أولوية
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-shield-alt"></i>
+                                مستوى المخاطرة
+                            </label>
+                            <select name="risk_level" class="form-select">
+                                <option value="low">منخفض</option>
+                                <option value="medium" selected>متوسط</option>
+                                <option value="high">مرتفع</option>
+                                <option value="critical">حرج</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-chart-line"></i>
+                                التعقيد
+                            </label>
+                            <select name="complexity" class="form-select">
+                                <option value="low">بسيط</option>
+                                <option value="medium" selected>متوسط</option>
+                                <option value="high">معقد</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-calendar-week"></i>
+                                بداية السنة المالية
+                            </label>
+                            <input type="text" name="fiscal_year_start" class="form-control" 
+                                   value="01-01" placeholder="MM-DD">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-link"></i>
+                                تعريف المسار الحرج
+                            </label>
+                            <select name="critical_definition" class="form-select">
+                                <option value="Total Float <= 0">Total Float ≤ 0</option>
+                                <option value="Longest Path">Longest Path</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-globe"></i>
+                                الموقع الإلكتروني
+                            </label>
+                            <input type="url" name="website" class="form-control" 
+                                   placeholder="https://...">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" name="is_template" id="is_template">
+                                <label class="form-check-label" for="is_template">
+                                    <strong>استخدام كقالب</strong>
+                                    <small class="d-block text-muted">يمكن استخدام هذا المشروع كقالب للمشاريع المستقبلية</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- معلومات إضافية -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-users"></i>
+                        معلومات إضافية
+                    </h6>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-user-tie"></i>
+                                مدير المشروع
+                            </label>
+                            <select name="project_manager_id" class="form-select select2">
+                                <option value="">-- اختر مدير المشروع --</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-user"></i>
+                                مساعد مدير المشروع
+                            </label>
+                            <select name="assistant_manager_id" class="form-select select2">
+                                <option value="">-- اختر المساعد --</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-handshake"></i>
+                                العميل
+                            </label>
+                            <select name="client_id" class="form-select select2">
+                                <option value="">-- اختر العميل --</option>
+                                {% for client in clients %}
+                                <option value="{{ client.id }}">{{ client.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-user-md"></i>
+                                الاستشاري
+                            </label>
+                            <select name="consultant_id" class="form-select select2">
+                                <option value="">-- اختر الاستشاري --</option>
+                                {% for consultant in consultants %}
+                                <option value="{{ consultant.id }}">{{ consultant.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- أزرار التحكم -->
+                <div class="form-actions">
+                    <a href="{{ url_for('projects.list_projects') }}" class="btn-cancel">
+                        <i class="fas fa-arrow-right"></i>
+                        إلغاء
+                    </a>
+                    <button type="submit" class="btn-create" id="createBtn">
+                        <i class="fas fa-save"></i>
+                        إنشاء المشروع
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// تحديث معاينة الكود
+document.querySelector('[name="project_code"]').addEventListener('input', function() {
+    document.getElementById('previewCode').textContent = this.value || 'PRJ-0001';
+});
+
+// التحقق من صحة النموذج قبل الإرسال
+document.getElementById('createProjectForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const projectCode = document.querySelector('[name="project_code"]').value.trim();
+    const projectName = document.querySelector('[name="name"]').value.trim();
+    
+    if (!projectCode) {
+        showWarning('الرجاء إدخال كود المشروع');
+        return;
+    }
+    
+    if (!projectName) {
+        showWarning('الرجاء إدخال اسم المشروع');
+        return;
+    }
+    
+    // التحقق من تاريخ البداية والنهاية
+    const startDate = document.querySelector('[name="planned_start"]').value;
+    const endDate = document.querySelector('[name="planned_finish"]').value;
+    
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+        showWarning('تاريخ النهاية يجب أن يكون بعد تاريخ البداية');
+        return;
+    }
+    
+    Swal.fire({
+        title: 'تأكيد الإنشاء',
+        text: 'هل أنت متأكد من إنشاء هذا المشروع؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4361ee',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، إنشاء',
+        cancelButtonText: 'إلغاء',
+        backdrop: `
+            rgba(67,97,238,0.1)
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 24 24' fill='%234361ee'%3E%3Cpath d='M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z'/%3E%3C/svg%3E")
+            left top
+            no-repeat
+        `
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            this.submit();
+        }
+    });
+});
+
+
+
+// دوال مساعدة
+function showWarning(message) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'تنبيه',
+        text: message
+    });
+}
+// التحقق المباشر من كود المشروع
+document.querySelector('[name="project_code"]').addEventListener('blur', function() {
+    const code = this.value.trim();
+    if (code) {
+        fetch('/projects/api/check-code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ project_code: code })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.exists) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'تنبيه',
+                    text: 'هذا الكود موجود مسبقاً، الرجاء استخدام كود آخر'
+                });
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

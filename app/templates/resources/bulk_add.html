@@ -1,0 +1,810 @@
+{% extends "company/base.html" %}
+
+{% block title %}إضافة موارد متعددة{% endblock %}
+
+{% block page_title %}إضافة موارد متعددة{% endblock %}
+{% block page_subtitle %}إضافة موارد دفعة واحدة عبر جدول ديناميكي مع حقول متكاملة{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bulk-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .table-card {
+        background: white;
+        border-radius: 30px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+        overflow-x: auto;
+    }
+    
+    .dynamic-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1200px;
+        font-size: 0.85rem;
+    }
+    
+    .dynamic-table th {
+        background: var(--primary);
+        color: white;
+        padding: 0.8rem 0.5rem;
+        font-weight: 600;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .dynamic-table td {
+        padding: 0.6rem 0.5rem;
+        border-bottom: 1px solid #eef2f7;
+        vertical-align: middle;
+    }
+    
+    .dynamic-table input, .dynamic-table select {
+        width: 100%;
+        border: 2px solid #eef2f7;
+        border-radius: 6px;
+        padding: 0.4rem;
+        font-size: 0.8rem;
+        transition: all 0.3s;
+    }
+    
+    .dynamic-table input:focus, .dynamic-table select:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .dynamic-table input.error, .dynamic-table select.error {
+        border-color: var(--danger);
+        background: rgba(249, 65, 68, 0.05);
+    }
+    
+    .btn-remove-row {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+    }
+    
+    .btn-remove-row:hover {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+    }
+    
+    .btn-add-row {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-add-row:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .btn-save-all {
+        background: linear-gradient(135deg, var(--success), #3aa85a);
+        color: white;
+        border: none;
+        padding: 0.7rem 1.8rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-save-all:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 201, 240, 0.3);
+    }
+    
+    .summary-bar {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 0.8rem 1rem;
+        margin-top: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .type-badge {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-left: 0.3rem;
+    }
+    
+    .type-labor { background: var(--primary); }
+    .type-equipment { background: var(--warning); }
+    .type-material { background: var(--success); }
+    .type-non_labor { background: #6c757d; }
+    
+    .special-fields-row {
+        background: #f8fafc;
+        display: none;
+    }
+    
+    .special-fields-row.show {
+        display: table-row;
+    }
+    
+    .special-fields-cell {
+        padding: 0.8rem !important;
+        background: #f8fafc;
+    }
+    
+    .special-fields-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        padding: 0.5rem;
+    }
+    
+    .special-field {
+        flex: 1;
+        min-width: 150px;
+    }
+    
+    .special-field label {
+        font-size: 0.7rem;
+        color: #6c757d;
+        margin-bottom: 0.2rem;
+        display: block;
+    }
+    
+    .special-field input, .special-field select {
+        font-size: 0.75rem;
+        padding: 0.3rem;
+    }
+    
+    .btn-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: #eef2f7;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-icon:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    @media (max-width: 992px) {
+        .dynamic-table {
+            font-size: 0.7rem;
+        }
+        
+        .special-fields-container {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bulk-container">
+    <div class="table-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+                <i class="fas fa-table text-primary me-2"></i>
+                جدول إضافة الموارد
+            </h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary" onclick="pasteFromExcel()">
+                    <i class="fas fa-paste me-1"></i>لصق من Excel
+                </button>
+                <button class="btn btn-sm btn-outline-info" onclick="showHelp()">
+                    <i class="fas fa-question-circle me-1"></i>تعليمات
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <form id="bulkResourcesForm">
+                <table class="dynamic-table" id="resourcesTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">الكود</th>
+                            <th style="width: 120px;">الاسم <span class="text-danger">*</span></th>
+                            <th style="width: 100px;">النوع <span class="text-danger">*</span></th>
+                            <th style="width: 80px;">الوحدة</th>
+                            <th style="width: 80px;">التكلفة/وحدة</th>
+                            <th style="width: 80px;">الكمية</th>
+                            <th style="width: 100px;">العملة</th>
+                            <th style="width: 100px;">الحد الأدنى</th>
+                            <th style="width: 50px;"></th>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr class="resource-row" data-row="1">
+                                <td><input type="text" name="code[]" placeholder="RES-001">                               </td>
+                                <td><input type="text" name="name[]" placeholder="اسم المورد" required>                               </td>
+                                <td>
+                                    <select name="type[]" onchange="showSpecialFields(this, this.closest('tr').getAttribute('data-row'))">
+                                        <option value="labor">موارد بشرية</option>
+                                        <option value="equipment">معدات</option>
+                                        <option value="material">مواد</option>
+                                        <option value="non_labor">أخرى</option>
+                                    </select>
+                                </td>
+                                <td><input type="text" name="unit[]" placeholder="ساعة، يوم، قطعة">                               </td>
+                                <td><input type="number" name="cost[]" step="0.01" value="0">                               </td>
+                                <td><input type="number" name="quantity[]" step="0.01" value="0">                               </td>
+                                <td>
+                                    <select name="currency[]">
+                                        <option value="SAR">SAR</option>
+                                        <option value="USD">USD</option>
+                                        <option value="EUR">EUR</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" name="min_quantity[]" step="0.01" value="0">                               </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn-remove-row" onclick="removeRow(this)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- صفوف الحقول الخاصة (سيتم إضافتها ديناميكياً) -->
+                    <tbody id="specialFieldsBody"></tbody>
+                </form>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-3">
+                <button type="button" class="btn-add-row" onclick="addRow()">
+                    <i class="fas fa-plus"></i> إضافة صف جديد
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                        <i class="fas fa-undo-alt me-1"></i>إعادة تعيين
+                    </button>
+                    <button type="button" class="btn-save-all" onclick="submitAll()">
+                        <i class="fas fa-save me-1"></i>حفظ الكل
+                    </button>
+                </div>
+            </div>
+            
+            <div class="summary-bar">
+                <div>
+                    <i class="fas fa-chart-line text-primary me-1"></i>
+                    <span id="rowCount">1</span> مورد
+                </div>
+                <div class="d-flex gap-3">
+                    <span><span class="type-badge type-labor me-1"></span> موارد بشرية: <span id="laborCount">0</span></span>
+                    <span><span class="type-badge type-equipment me-1"></span> معدات: <span id="equipmentCount">0</span></span>
+                    <span><span class="type-badge type-material me-1"></span> مواد: <span id="materialCount">0</span></span>
+                    <span><span class="type-badge type-non_labor me-1"></span> أخرى: <span id="nonLaborCount">0</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let rowCounter = 1;
+let specialRows = {};
+
+// إضافة صف جديد
+function addRow() {
+    rowCounter++;
+    const tbody = document.getElementById('tableBody');
+    const newRow = document.createElement('tr');
+    newRow.className = 'resource-row';
+    newRow.setAttribute('data-row', rowCounter);
+    newRow.innerHTML = `
+        <td><input type="text" name="code[]" placeholder="RES-${String(rowCounter).padStart(3, '0')}"></td>
+        <td><input type="text" name="name[]" placeholder="اسم المورد" required></td>
+        <td>
+            <select name="type[]" onchange="showSpecialFields(this, ${rowCounter})">
+                <option value="labor">موارد بشرية</option>
+                <option value="equipment">معدات</option>
+                <option value="material">مواد</option>
+                <option value="non_labor">أخرى</option>
+            </select>
+        </td>
+        <td><input type="text" name="unit[]" placeholder="ساعة، يوم، قطعة"></td>
+        <td><input type="number" name="cost[]" step="0.01" value="0"></td>
+        <td><input type="number" name="quantity[]" step="0.01" value="0"></td>
+        <td>
+            <select name="currency[]">
+                <option value="SAR">SAR</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+            </select>
+        </td>
+        <td><input type="number" name="min_quantity[]" step="0.01" value="0"></td>
+        <td class="text-center">
+            <button type="button" class="btn-remove-row" onclick="removeRow(this)">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(newRow);
+    updateSummary();
+}
+
+// إظهار الحقول الخاصة حسب نوع المورد
+function showSpecialFields(select, rowId) {
+    const type = select.value;
+    const row = select.closest('tr');
+    const rowIndex = Array.from(row.parentNode.children).indexOf(row);
+    
+    // تحديث لون الصف
+    updateRowColor(select);
+    
+    // إزالة الصف الخاص السابق إن وجد
+    if (specialRows[rowId]) {
+        const oldRow = document.getElementById(`special-row-${rowId}`);
+        if (oldRow) oldRow.remove();
+        delete specialRows[rowId];
+    }
+    
+    // إنشاء صف جديد للحقول الخاصة
+    const specialTbody = document.getElementById('specialFieldsBody');
+    const specialRow = document.createElement('tr');
+    specialRow.id = `special-row-${rowId}`;
+    specialRow.className = 'special-fields-row';
+    specialRow.setAttribute('data-parent-row', rowId);
+    
+    let specialFieldsHtml = '';
+    
+    if (type === 'labor') {
+        specialFieldsHtml = `
+            <td colspan="10" class="special-fields-cell">
+                <div class="special-fields-container">
+                    <div class="special-field">
+                        <label><i class="fas fa-user-tie"></i> التخصص</label>
+                        <input type="text" name="specialization[]" placeholder="مثال: بناء، كهرباء">
+                    </div>
+                    <div class="special-field">
+                        <label><i class="fas fa-chart-line"></i> سنوات الخبرة</label>
+                        <input type="number" name="experience[]" step="0.5" value="0">
+                    </div>
+                    <div class="special-field">
+                        <label><i class="fas fa-certificate"></i> المهارات (فواصل)</label>
+                        <input type="text" name="skills[]" placeholder="لحام، صب خرسانة">
+                    </div>
+                </div>
+            </td>
+        `;
+    } else if (type === 'equipment') {
+        specialFieldsHtml = `
+            <td colspan="10" class="special-fields-cell">
+                <div class="special-fields-container">
+                    <div class="special-field">
+                        <label><i class="fas fa-tractor"></i> نوع المعدة</label>
+                        <input type="text" name="equipment_type[]" placeholder="حفار، رافعة">
+                    </div>
+                    <div class="special-field">
+                        <label><i class="fas fa-microchip"></i> الموديل</label>
+                        <input type="text" name="equipment_model[]" placeholder="CAT 320D">
+                    </div>
+                    <div class="special-field">
+                        <label><i class="fas fa-industry"></i> الشركة المصنعة</label>
+                        <input type="text" name="manufacturer[]" placeholder="كاتربيلر">
+                    </div>
+                </div>
+            </td>
+        `;
+    } else if (type === 'material') {
+        specialFieldsHtml = `
+            <td colspan="10" class="special-fields-cell">
+                <div class="special-fields-container">
+                    <div class="special-field">
+                        <label><i class="fas fa-cube"></i> نوع المادة</label>
+                        <input type="text" name="material_type[]" placeholder="حديد، اسمنت">
+                    </div>
+                    <div class="special-field">
+                        <label><i class="fas fa-chart-simple"></i> درجة المادة</label>
+                        <input type="text" name="material_grade[]" placeholder="A615, 42.5N">
+                    </div>
+                    <div class="special-field">
+                        <label><i class="fas fa-truck"></i> المورد</label>
+                        <select name="supplier_id[]">
+                            <option value="">اختر المورد</option>
+                            {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </td>
+        `;
+    } else {
+        specialFieldsHtml = `
+            <td colspan="10" class="special-fields-cell">
+                <div class="special-fields-container">
+                    <div class="special-field">
+                        <label><i class="fas fa-tag"></i> التصنيف</label>
+                        <input type="text" name="category[]" placeholder="تصنيف المورد">
+                    </div>
+                </div>
+            </td>
+        `;
+    }
+    
+    specialRow.innerHTML = specialFieldsHtml;
+    specialTbody.appendChild(specialRow);
+    specialRows[rowId] = specialRow;
+    specialRow.style.display = 'table-row';
+    
+    updateSummary();
+}
+
+function removeRow(btn) {
+    const row = btn.closest('tr');
+    const rowId = row.getAttribute('data-row');
+    const tbody = document.getElementById('tableBody');
+    
+    if (tbody.children.length > 1) {
+        // إزالة الصف الخاص المرتبط
+        if (specialRows[rowId]) {
+            specialRows[rowId].remove();
+            delete specialRows[rowId];
+        }
+        row.remove();
+        updateSummary();
+    } else {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'لا يمكن حذف الصف الأخير'
+        });
+    }
+}
+
+function updateRowColor(select) {
+    const row = select.closest('tr');
+    const type = select.value;
+    
+    const colors = {
+        'labor': 'rgba(67, 97, 238, 0.05)',
+        'equipment': 'rgba(248, 150, 30, 0.05)',
+        'material': 'rgba(76, 201, 240, 0.05)',
+        'non_labor': 'rgba(108, 117, 125, 0.05)'
+    };
+    row.style.backgroundColor = colors[type] || 'transparent';
+    updateSummary();
+}
+
+function updateSummary() {
+    const rows = document.querySelectorAll('.resource-row');
+    document.getElementById('rowCount').textContent = rows.length;
+    
+    let laborCount = 0, equipmentCount = 0, materialCount = 0, nonLaborCount = 0;
+    
+    rows.forEach(row => {
+        const type = row.querySelector('select[name="type[]"]').value;
+        if (type === 'labor') laborCount++;
+        else if (type === 'equipment') equipmentCount++;
+        else if (type === 'material') materialCount++;
+        else nonLaborCount++;
+    });
+    
+    document.getElementById('laborCount').textContent = laborCount;
+    document.getElementById('equipmentCount').textContent = equipmentCount;
+    document.getElementById('materialCount').textContent = materialCount;
+    document.getElementById('nonLaborCount').textContent = nonLaborCount;
+}
+
+function validateForm() {
+    let isValid = true;
+    const errors = [];
+    const rows = document.querySelectorAll('.resource-row');
+    
+    rows.forEach((row, index) => {
+        const nameInput = row.querySelector('input[name="name[]"]');
+        const typeSelect = row.querySelector('select[name="type[]"]');
+        
+        nameInput.classList.remove('error');
+        typeSelect.classList.remove('error');
+        
+        if (!nameInput.value.trim()) {
+            nameInput.classList.add('error');
+            errors.push(`الصف ${index + 1}: اسم المورد مطلوب`);
+            isValid = false;
+        }
+        
+        if (!typeSelect.value) {
+            typeSelect.classList.add('error');
+            errors.push(`الصف ${index + 1}: نوع المورد مطلوب`);
+            isValid = false;
+        }
+    });
+    
+    if (errors.length > 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'بيانات غير مكتملة',
+            html: `<ul class="text-end">${errors.map(e => `<li>${e}</li>`).join('')}</ul>`
+        });
+    }
+    
+    return isValid;
+}
+
+function submitAll() {
+    if (!validateForm()) return;
+    
+    const formData = new FormData(document.getElementById('bulkResourcesForm'));
+    const resources = [];
+    
+    const codes = formData.getAll('code[]');
+    const names = formData.getAll('name[]');
+    const types = formData.getAll('type[]');
+    const units = formData.getAll('unit[]');
+    const costs = formData.getAll('cost[]');
+    const quantities = formData.getAll('quantity[]');
+    const currencies = formData.getAll('currency[]');
+    const minQuantities = formData.getAll('min_quantity[]');
+    const specializations = formData.getAll('specialization[]');
+    const experiences = formData.getAll('experience[]');
+    const skills = formData.getAll('skills[]');
+    const equipmentTypes = formData.getAll('equipment_type[]');
+    const equipmentModels = formData.getAll('equipment_model[]');
+    const manufacturers = formData.getAll('manufacturer[]');
+    const materialTypes = formData.getAll('material_type[]');
+    const materialGrades = formData.getAll('material_grade[]');
+    const supplierIds = formData.getAll('supplier_id[]');
+    
+    for (let i = 0; i < names.length; i++) {
+        const resource = {
+            code: codes[i] || null,
+            name: names[i],
+            type: types[i],
+            unit: units[i] || null,
+            cost_per_unit: parseFloat(costs[i]) || 0,
+            available_quantity: parseFloat(quantities[i]) || 0,
+            currency: currencies[i] || 'SAR',
+            minimum_quantity: parseFloat(minQuantities[i]) || 0,
+        };
+        
+        // إضافة حقول خاصة حسب النوع
+        if (types[i] === 'labor') {
+            resource.specialization = specializations[i] || null;
+            resource.experience_years = parseFloat(experiences[i]) || 0;
+            resource.skills = skills[i] ? skills[i].split(',') : [];
+        } else if (types[i] === 'equipment') {
+            resource.equipment_type = equipmentTypes[i] || null;
+            resource.equipment_model = equipmentModels[i] || null;
+            resource.manufacturer = manufacturers[i] || null;
+        } else if (types[i] === 'material') {
+            resource.material_type = materialTypes[i] || null;
+            resource.material_grade = materialGrades[i] || null;
+            resource.supplier_id = supplierIds[i] || null;
+        }
+        
+        resources.push(resource);
+    }
+    
+    Swal.fire({
+        title: 'تأكيد الإضافة',
+        text: `هل أنت متأكد من إضافة ${resources.length} مورد؟`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، أضف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            importResources(resources);
+        }
+    });
+}
+
+function importResources(resources) {
+    Swal.fire({
+        title: 'جاري الإضافة...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch('/resources/api/bulk-create-multiple', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ resources: resources })
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.close();
+        
+        if (data.success) {
+            const successCount = data.results.success.length;
+            const failedCount = data.results.failed.length;
+            
+            let message = `تمت إضافة ${successCount} مورد بنجاح`;
+            if (failedCount > 0) {
+                message += `<br><span class="text-danger">فشل إضافة ${failedCount} مورد</span>`;
+            }
+            
+            Swal.fire({
+                icon: successCount > 0 ? 'success' : 'error',
+                title: 'نتيجة الإضافة',
+                html: message,
+                confirmButtonText: 'حسناً'
+            }).then(() => {
+                if (successCount > 0) {
+                    window.location.href = '{{ url_for("resource.index") }}';
+                }
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error
+            });
+        }
+    })
+    .catch(error => {
+        Swal.close();
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم'
+        });
+    });
+}
+
+function resetForm() {
+    Swal.fire({
+        title: 'إعادة تعيين',
+        text: 'هل أنت متأكد من مسح جميع البيانات؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، إعادة تعيين',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const tbody = document.getElementById('tableBody');
+            const firstRow = tbody.querySelector('.resource-row');
+            tbody.innerHTML = '';
+            tbody.appendChild(firstRow);
+            
+            // إعادة تعيين الحقول في الصف الأول
+            firstRow.querySelectorAll('input').forEach(input => {
+                if (input.name === 'code[]') input.value = '';
+                else if (input.name === 'name[]') input.value = '';
+                else if (input.name === 'unit[]') input.value = '';
+                else if (input.name === 'cost[]') input.value = '0';
+                else if (input.name === 'quantity[]') input.value = '0';
+                else if (input.name === 'min_quantity[]') input.value = '0';
+            });
+            firstRow.querySelector('select[name="type[]"]').value = 'labor';
+            firstRow.querySelector('select[name="currency[]"]').value = 'SAR';
+            
+            // إزالة جميع الصفوف الخاصة
+            const specialTbody = document.getElementById('specialFieldsBody');
+            specialTbody.innerHTML = '';
+            specialRows = {};
+            
+            rowCounter = 1;
+            updateSummary();
+            showSpecialFields(firstRow.querySelector('select[name="type[]"]'), 1);
+        }
+    });
+}
+
+function pasteFromExcel() {
+    Swal.fire({
+        title: 'لصق من Excel',
+        html: `
+            <textarea id="pasteData" class="form-control" rows="8" placeholder="الصق البيانات هنا..."></textarea>
+            <p class="text-muted small mt-2">تأكد من أن البيانات بنفس ترتيب الأعمدة</p>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'لصق',
+        cancelButtonText: 'إلغاء',
+        preConfirm: () => {
+            const text = document.getElementById('pasteData').value;
+            if (!text) return false;
+            return text;
+        }
+    }).then((result) => {
+        if (result.value) {
+            parsePastedData(result.value);
+        }
+    });
+}
+
+function parsePastedData(text) {
+    const lines = text.split('\n');
+    let addedCount = 0;
+    
+    for (let line of lines) {
+        if (!line.trim()) continue;
+        
+        const parts = line.split('\t');
+        if (parts.length < 2) continue;
+        
+        addRow();
+        const newRow = document.querySelector('.resource-row:last-child');
+        const rowId = newRow.getAttribute('data-row');
+        
+        const inputs = newRow.querySelectorAll('input, select');
+        if (inputs[0] && parts[0]) inputs[0].value = parts[0].trim();
+        if (inputs[1] && parts[1]) inputs[1].value = parts[1].trim();
+        if (parts.length > 2 && parts[2]) {
+            const typeSelect = inputs[2];
+            const type = parts[2].toLowerCase();
+            if (type === 'labor' || type === 'موارد بشرية') typeSelect.value = 'labor';
+            else if (type === 'equipment' || type === 'معدات') typeSelect.value = 'equipment';
+            else if (type === 'material' || type === 'مواد') typeSelect.value = 'material';
+            else typeSelect.value = 'non_labor';
+            showSpecialFields(typeSelect, rowId);
+        }
+        if (inputs[3] && parts[3]) inputs[3].value = parts[3].trim();
+        if (inputs[4] && parts[4]) inputs[4].value = parseFloat(parts[4]) || 0;
+        if (inputs[5] && parts[5]) inputs[5].value = parseFloat(parts[5]) || 0;
+        
+        addedCount++;
+    }
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'تم الإضافة',
+        text: `تمت إضافة ${addedCount} صف جديد`
+    });
+}
+
+function showHelp() {
+    Swal.fire({
+        title: 'تعليمات إضافة الموارد',
+        html: `
+            <div class="text-end">
+                <h6>الحقول الأساسية</h6>
+                <ul class="text-start">
+                    <li><strong>الاسم:</strong> مطلوب</li>
+                    <li><strong>النوع:</strong> مطلوب (موارد بشرية / معدات / مواد / أخرى)</li>
+                    <li><strong>الوحدة:</strong> ساعة، يوم، قطعة، طن، ...</li>
+                    <li><strong>التكلفة:</strong> التكلفة لكل وحدة</li>
+                    <li><strong>الكمية:</strong> الكمية المتاحة</li>
+                </ul>
+                
+                <h6 class="mt-3">الحقول الخاصة حسب النوع</h6>
+                <ul class="text-start">
+                    <li><strong>موارد بشرية:</strong> التخصص، الخبرة، المهارات</li>
+                    <li><strong>معدات:</strong> نوع المعدة، الموديل، الشركة المصنعة</li>
+                    <li><strong>مواد:</strong> نوع المادة، درجة المادة، المورد</li>
+                </ul>
+            </div>
+        `,
+        confirmButtonText: 'فهمت'
+    });
+}
+
+// تهيئة الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    updateSummary();
+    showSpecialFields(document.querySelector('.resource-row select[name="type[]"]'), 1);
+});
+</script>
+{% endblock %}

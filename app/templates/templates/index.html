@@ -1,0 +1,493 @@
+{% extends "company/base.html" %}
+
+{% block title %}توليد قوالب المشاريع - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}توليد قوالب المشاريع{% endblock %}
+{% block page_subtitle %}اختر التنسيق المناسب وقم بتوليد قالب جاهز للتعبئة{% endblock %}
+
+{% block extra_css %}
+<style>
+    .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .template-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+        cursor: pointer;
+        border: 2px solid transparent;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .template-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+    
+    .template-card.selected {
+        border-color: var(--primary);
+        background: rgba(67, 97, 238, 0.02);
+    }
+    
+    .template-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        transform: scaleX(0);
+        transition: transform 0.3s;
+    }
+    
+    .template-card.selected::before {
+        transform: scaleX(1);
+    }
+    
+    .template-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .template-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+    
+    .template-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+    
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .feature-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-bottom: 0.3rem;
+    }
+    
+    .feature-list li i {
+        color: var(--success);
+        font-size: 0.8rem;
+    }
+    
+    .preview-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        margin-bottom: 2rem;
+    }
+    
+    .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    .preview-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+    }
+    
+    .preview-content {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.5rem;
+        font-family: monospace;
+        white-space: pre-wrap;
+        direction: ltr;
+        text-align: left;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .options-section {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .form-check {
+        margin-bottom: 1rem;
+    }
+    
+    .btn-generate {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 1rem 3rem;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        width: 100%;
+    }
+    
+    .btn-generate:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+    }
+    
+    .language-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .templates-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Template Cards -->
+<div class="templates-grid">
+    <!-- Excel Template -->
+    <div class="template-card" data-format="excel" onclick="selectTemplate('excel')">
+        <div class="template-icon" style="background: linear-gradient(135deg, #1e6f3f, #217346);">
+            <i class="fas fa-file-excel"></i>
+        </div>
+        <h3 class="template-name">Excel</h3>
+        <p class="template-description">قالب Excel مع ثلاث أوراق عمل منظمة</p>
+        <ul class="feature-list">
+            <li><i class="fas fa-check-circle"></i> يدعم اللغة العربية بالكامل</li>
+            <li><i class="fas fa-check-circle"></i> صيغ التاريخ المنسقة</li>
+            <li><i class="fas fa-check-circle"></i> قوائم منسدلة للأولوية</li>
+            <li><i class="fas fa-check-circle"></i> تعليمات مدمجة</li>
+        </ul>
+    </div>
+    
+    <!-- Word Template -->
+    <div class="template-card" data-format="word" onclick="selectTemplate('word')">
+        <div class="template-icon" style="background: linear-gradient(135deg, #2a5699, #1e3e6f);">
+            <i class="fas fa-file-word"></i>
+        </div>
+        <h3 class="template-name">Word</h3>
+        <p class="template-description">مستند Word منسق وجاهز للتعبئة</p>
+        <ul class="feature-list">
+            <li><i class="fas fa-check-circle"></i> تصميم احترافي</li>
+            <li><i class="fas fa-check-circle"></i> جداول منظمة</li>
+            <li><i class="fas fa-check-circle"></i> مسافات واضحة للتعبئة</li>
+            <li><i class="fas fa-check-circle"></i> يدعم العربية والإنجليزية</li>
+        </ul>
+    </div>
+    
+    <!-- PDF Template -->
+    <div class="template-card" data-format="pdf" onclick="selectTemplate('pdf')">
+        <div class="template-icon" style="background: linear-gradient(135deg, #d32f2f, #b71c1c);">
+            <i class="fas fa-file-pdf"></i>
+        </div>
+        <h3 class="template-name">PDF</h3>
+        <p class="template-description">ملف PDF جاهز للطباعة</p>
+        <ul class="feature-list">
+            <li><i class="fas fa-check-circle"></i> جاهز للطباعة المباشرة</li>
+            <li><i class="fas fa-check-circle"></i> تصميم احترافي</li>
+            <li><i class="fas fa-check-circle"></i> يدعم العربية بشكل كامل</li>
+            <li><i class="fas fa-check-circle"></i> ثابت ومنسق</li>
+        </ul>
+    </div>
+    
+    <!-- CSV Template -->
+    <div class="template-card" data-format="csv" onclick="selectTemplate('csv')">
+        <div class="template-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+            <i class="fas fa-file-csv"></i>
+        </div>
+        <h3 class="template-name">CSV</h3>
+        <p class="template-description">ملف CSV بسيط وخفيف</p>
+        <ul class="feature-list">
+            <li><i class="fas fa-check-circle"></i> حجم صغير وسريع</li>
+            <li><i class="fas fa-check-circle"></i> متوافق مع كل البرامج</li>
+            <li><i class="fas fa-check-circle"></i> يدعم Unicode</li>
+            <li><i class="fas fa-check-circle"></i> سهل المعالجة</li>
+        </ul>
+    </div>
+    
+    <!-- JSON Template -->
+    <div class="template-card" data-format="json" onclick="selectTemplate('json')">
+        <div class="template-icon" style="background: linear-gradient(135deg, #f1c40f, #f39c12);">
+            <i class="fas fa-file-code"></i>
+        </div>
+        <h3 class="template-name">JSON</h3>
+        <p class="template-description">ملص JSON منظم للمطورين</p>
+        <ul class="feature-list">
+            <li><i class="fas fa-check-circle"></i> منظم وسهل القراءة</li>
+            <li><i class="fas fa-check-circle"></i> يدعم Unicode</li>
+            <li><i class="fas fa-check-circle"></i> مثالي للتطبيقات</li>
+            <li><i class="fas fa-check-circle"></i> قابل للتوسع</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Preview Card -->
+<div class="preview-card" id="previewCard" style="display: none;">
+    <div class="preview-header">
+        <h5 class="preview-title">
+            <i class="fas fa-eye ms-2 text-primary"></i>
+            معاينة هيكل القالب
+        </h5>
+        <span class="language-badge">
+            <i class="fas fa-language ms-1"></i>
+            يدعم العربية والإنجليزية
+        </span>
+    </div>
+    <div class="preview-content" id="previewContent">
+        <!-- يتم تعبئتها ديناميكياً -->
+    </div>
+</div>
+
+<!-- Options Section -->
+<div class="options-section">
+    <h5 class="mb-4"><i class="fas fa-cog ms-2 text-primary"></i>خيارات التوليد</h5>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="includeData" checked>
+                <label class="form-check-label" for="includeData">
+                    <i class="fas fa-database ms-2 text-success"></i>
+                    تضمين بيانات المشروع الحالي في القالب
+                </label>
+                <small class="text-muted d-block">سيتم تعبئة القالب ببيانات مشروعك الحالي إن وجد</small>
+            </div>
+            
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="arabicSupport" checked disabled>
+                <label class="form-check-label" for="arabicSupport">
+                    <i class="fas fa-language ms-2 text-primary"></i>
+                    دعم اللغة العربية (مفعل دائماً)
+                </label>
+            </div>
+            
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="englishSupport" checked disabled>
+                <label class="form-check-label" for="englishSupport">
+                    <i class="fas fa-language ms-2 text-info"></i>
+                    دعم اللغة الإنجليزية (مفعل دائماً)
+                </label>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>طريقة الاستخدام:</strong>
+                <ol class="mb-0 mt-2">
+                    <li>اختر تنسيق الملف المناسب</li>
+                    <li>حمّل القالب واملأ البيانات</li>
+                    <li>ارفع الملف لاستخراج المشروع والمهام</li>
+                    <li>النظام سيتعرف على البيانات تلقائياً</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <button class="btn-generate" onclick="generateTemplate()">
+            <i class="fas fa-download me-2"></i>
+            توليد وتحميل القالب
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedFormat = 'excel';
+let templateInfo = {};
+
+// ============================================
+// اختيار القالب
+// ============================================
+function selectTemplate(format) {
+    selectedFormat = format;
+    
+    // تحديث التحديد
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    document.querySelector(`[data-format="${format}"]`).classList.add('selected');
+    
+    // عرض المعاينة
+    previewTemplate(format);
+}
+
+// ============================================
+// معاينة القالب
+// ============================================
+async function previewTemplate(format) {
+    try {
+        const response = await fetch('/template/preview', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ format: format })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const info = result.info;
+            const previewCard = document.getElementById('previewCard');
+            const previewContent = document.getElementById('previewContent');
+            
+            // تنسيق المعاينة حسب نوع الملف
+            if (format === 'excel') {
+                previewContent.innerHTML = `
+                    <strong>📊 أوراق العمل:</strong><br>
+                    • ${info.sheets.join('<br>• ')}<br><br>
+                    <strong>📝 الوصف:</strong> ${info.description}<br><br>
+                    <strong>✨ المميزات:</strong><br>
+                    • ${info.features.join('<br>• ')}
+                `;
+            } else if (format === 'word') {
+                previewContent.innerHTML = `
+                    <strong>📑 الأقسام:</strong><br>
+                    • ${info.sections.join('<br>• ')}<br><br>
+                    <strong>📝 الوصف:</strong> ${info.description}<br><br>
+                    <strong>✨ المميزات:</strong><br>
+                    • ${info.features.join('<br>• ')}
+                `;
+            } else if (format === 'pdf') {
+                previewContent.innerHTML = `
+                    <strong>📄 عدد الصفحات:</strong> ${info.pages}<br><br>
+                    <strong>📝 الوصف:</strong> ${info.description}<br><br>
+                    <strong>✨ المميزات:</strong><br>
+                    • ${info.features.join('<br>• ')}
+                `;
+            } else {
+                previewContent.innerHTML = `
+                    <strong>📁 الهيكل:</strong> ${info.structure}<br><br>
+                    <strong>📝 الوصف:</strong> ${info.description}<br><br>
+                    <strong>✨ المميزات:</strong><br>
+                    • ${info.features.join('<br>• ')}
+                `;
+            }
+            
+            previewCard.style.display = 'block';
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// ============================================
+// توليد وتحميل القالب
+// ============================================
+async function generateTemplate() {
+    const includeData = document.getElementById('includeData').checked;
+    
+    // محاولة الحصول على بيانات المشروع الحالي من الصفحة
+    let projectData = null;
+    if (includeData && window.currentProject) {
+        projectData = window.currentProject;
+    }
+    
+    Swal.fire({
+        title: 'جاري توليد القالب',
+        text: 'يرجى الانتظار...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    try {
+        const response = await fetch('/template/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                format: selectedFormat,
+                include_data: includeData,
+                project_data: projectData
+            })
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '') || `template.${selectedFormat}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'تم التوليد بنجاح!',
+                text: 'تم توليد وتحميل القالب',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            const error = await response.json();
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: error.error || 'فشل توليد القالب'
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم'
+        });
+    }
+}
+
+// تحديد Excel كقالب افتراضي
+document.addEventListener('DOMContentLoaded', function() {
+    selectTemplate('excel');
+});
+</script>
+{% endblock %}

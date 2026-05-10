@@ -1,0 +1,972 @@
+{% extends "company/base.html" %}
+
+{% block title %}لوحة التحكم - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}لوحة التحكم الذكية{% endblock %}
+{% block page_subtitle %}نظرة شاملة على أداء الشركة مع تحليلات وتوصيات ذكية{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+    }
+    
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .stat-icon.primary { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .stat-icon.success { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .stat-icon.warning { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .stat-icon.danger { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+    .stat-icon.info { background: rgba(72, 149, 239, 0.1); color: var(--info); }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        margin: 0;
+    }
+    
+    .stat-trend {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .stat-trend.up {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .stat-trend.down {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+    }
+    
+    /* Section Cards */
+    .section-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .section-title i {
+        color: var(--primary);
+    }
+    
+    /* Notification Cards */
+    .notification-card {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        margin-bottom: 0.8rem;
+        transition: all 0.3s;
+        border-right: 4px solid transparent;
+    }
+    
+    .notification-card:hover {
+        transform: translateX(-5px);
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .notification-card.warning {
+        border-right-color: var(--warning);
+    }
+    
+    .notification-card.success {
+        border-right-color: var(--success);
+    }
+    
+    .notification-card.danger {
+        border-right-color: var(--danger);
+    }
+    
+    .notification-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        margin-left: 1rem;
+    }
+    
+    .notification-content {
+        flex: 1;
+    }
+    
+    .notification-title {
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+    }
+    
+    .notification-message {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+    
+    /* Project Cards */
+    .project-mini-card {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        margin-bottom: 0.8rem;
+        transition: all 0.3s;
+    }
+    
+    .project-mini-card:hover {
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateX(-5px);
+    }
+    
+    .project-info {
+        flex: 1;
+    }
+    
+    .project-name {
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+    }
+    
+    .project-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .project-progress {
+        width: 100px;
+    }
+    
+    .progress {
+        height: 6px;
+        background: #eef2f7;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        border-radius: 3px;
+    }
+    
+    .progress-bar.success { background: var(--success); }
+    .progress-bar.warning { background: var(--warning); }
+    .progress-bar.danger { background: var(--danger); }
+    .progress-bar.primary { background: var(--primary); }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .status-badge.active { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .status-badge.pending { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .status-badge.delayed { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+    .status-badge.completed { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    
+    /* User Cards */
+    .user-mini-card {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-left: 0.8rem;
+    }
+    
+    .user-avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .user-info {
+        flex: 1;
+    }
+    
+    .user-name {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+    
+    .user-stats {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .efficiency-badge {
+        padding: 0.2rem 0.5rem;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    /* Task Cards */
+    .task-mini-card {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .task-mini-card:last-child {
+        border-bottom: none;
+    }
+    
+    .task-priority {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-left: 1rem;
+    }
+    
+    .task-priority.high { background: var(--danger); }
+    .task-priority.medium { background: var(--warning); }
+    .task-priority.low { background: var(--success); }
+    
+    .task-info {
+        flex: 1;
+    }
+    
+    .task-name {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+    
+    .task-meta {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .delay-badge {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+        padding: 0.2rem 0.5rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    /* Prediction Card */
+    .prediction-card {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 15px;
+        padding: 1.2rem;
+        color: white;
+        margin-top: 1rem;
+    }
+    
+    .prediction-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        opacity: 0.9;
+    }
+    
+    .prediction-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+    }
+    
+    .prediction-risk {
+        display: inline-block;
+        padding: 0.2rem 0.8rem;
+        border-radius: 20px;
+        background: rgba(255,255,255,0.2);
+        font-size: 0.8rem;
+    }
+    
+    /* AI Command Card */
+    .ai-command-mini {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        border-right: 3px solid var(--primary);
+    }
+    
+    .ai-command-icon {
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 0.8rem;
+    }
+    
+    .ai-command-content {
+        flex: 1;
+    }
+    
+    .ai-command-text {
+        font-weight: 500;
+        font-size: 0.9rem;
+        margin-bottom: 0.2rem;
+    }
+    
+    .ai-command-meta {
+        font-size: 0.7rem;
+        color: #6c757d;
+    }
+    
+    /* Responsive */
+    @media (max-width: 992px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-icon primary">
+                <i class="fas fa-users"></i>
+            </span>
+            <span class="stat-trend up">
+                <i class="fas fa-arrow-up me-1"></i> +{{ today_activity.new_users }}
+            </span>
+        </div>
+        <h3 class="stat-value">{{ stats.total_users }}</h3>
+        <p class="stat-label">إجمالي المستخدمين</p>
+        <small class="text-muted">{{ stats.active_users }} نشط</small>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-icon success">
+                <i class="fas fa-project-diagram"></i>
+            </span>
+            <span class="stat-trend up">
+                <i class="fas fa-arrow-up me-1"></i> +{{ today_activity.new_projects }}
+            </span>
+        </div>
+        <h3 class="stat-value">{{ stats.total_projects }}</h3>
+        <p class="stat-label">إجمالي المشاريع</p>
+        <small class="text-muted">{{ stats.active_projects }} نشط • {{ stats.completed_projects }} مكتمل</small>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-icon warning">
+                <i class="fas fa-tasks"></i>
+            </span>
+        </div>
+        <h3 class="stat-value">{{ stats.total_tasks }}</h3>
+        <p class="stat-label">إجمالي المهام</p>
+        <small>
+            <span class="text-success">{{ stats.completed_tasks }} مكتمل</span> • 
+            <span class="text-primary">{{ stats.in_progress_tasks }} جاري</span> • 
+            <span class="text-warning">{{ stats.pending_tasks }} معلق</span>
+        </small>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-icon danger">
+                <i class="fas fa-exclamation-triangle"></i>
+            </span>
+        </div>
+        <h3 class="stat-value">{{ delayed_stats.total_delayed }}</h3>
+        <p class="stat-label">مهام متأخرة</p>
+        <small class="text-danger">
+            <i class="fas fa-clock me-1"></i> {{ delayed_stats.total_delay_days }} يوم تأخير
+            {% if delayed_stats.critical_delayed > 0 %}
+            <span class="badge bg-danger ms-2">حرج {{ delayed_stats.critical_delayed }}</span>
+            {% endif %}
+        </small>
+    </div>
+</div>
+
+<!-- Main Grid -->
+<div class="row">
+    <!-- Left Column - Projects & Tasks -->
+    <div class="col-lg-8">
+        <!-- Smart Notifications -->
+        {% if smart_notifications %}
+        <div class="section-card">
+            <div class="section-header">
+                <h5 class="section-title">
+                    <i class="fas fa-brain"></i>
+                    توصيات ذكية
+                </h5>
+                <span class="badge bg-primary">{{ smart_notifications|length }} جديد</span>
+            </div>
+            
+            {% for notif in smart_notifications %}
+            <a href="{{ notif.link }}" class="text-decoration-none">
+                <div class="notification-card {{ notif.type }}">
+                    <div class="notification-icon" style="background: rgba(
+                            {% if notif.type == 'warning' %}248, 150, 30
+                            {% elif notif.type == 'danger' %}249, 65, 68
+                            {% else %}76, 201, 240{% endif %}, 0.1);">
+                        <i class="fas fa-{{ notif.icon }}" style="color: 
+                            {% if notif.type == 'warning' %}var(--warning)
+                            {% elif notif.type == 'danger' %}var(--danger)
+                            {% else %}var(--success){% endif %};"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h6 class="notification-title">{{ notif.title }}</h6>
+                        <p class="notification-message">{{ notif.message }}</p>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Top Projects -->
+        {% if top_projects %}
+        <div class="section-card">
+            <div class="section-header">
+                <h5 class="section-title">
+                    <i class="fas fa-chart-line"></i>
+                    أفضل المشاريع أداءً
+                </h5>
+                <a href="{{ url_for('projects.list_projects') }}" class="btn-link">عرض الكل</a>
+            </div>
+            
+            {% for project in top_projects %}
+            <div class="project-mini-card">
+                <div class="project-info">
+                    <div class="project-name">{{ project.name }}</div>
+                    <div class="project-meta">
+                        <span><i class="fas fa-tasks me-1"></i> {{ project.completed_tasks }}/{{ project.total_tasks }}</span>
+                        <span class="status-badge {{ project.status }}">{{ project.status }}</span>
+                    </div>
+                </div>
+                <div class="project-progress">
+                    <div class="progress">
+                        <div class="progress-bar {{ 'success' if project.completion_rate >= 70 else 'warning' if project.completion_rate >= 40 else 'danger' }}" 
+                             style="width: {{ project.completion_rate }}%"></div>
+                    </div>
+                    <small class="d-block text-center mt-1">{{ project.completion_rate|round }}%</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- At Risk Projects -->
+        {% if at_risk_projects %}
+        <div class="section-card">
+            <div class="section-header">
+                <h5 class="section-title">
+                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                    مشاريع معرضة للخطر
+                </h5>
+            </div>
+            
+            {% for project in at_risk_projects %}
+            <div class="project-mini-card">
+                <div class="project-info">
+                    <div class="project-name">{{ project.name }}</div>
+                    <div class="project-meta">
+                        <span class="text-danger">
+                            <i class="fas fa-clock me-1"></i> {{ project.delayed_tasks }} مهام متأخرة
+                        </span>
+                        {% if project.critical_tasks > 0 %}
+                        <span class="badge bg-danger">حرج {{ project.critical_tasks }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-eye"></i>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Upcoming Tasks -->
+        <div class="section-card">
+            <div class="section-header">
+                <h5 class="section-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    المهام القادمة
+                </h5>
+                <a href="{{ url_for('tasks.list_tasks') }}" class="btn-link">عرض الكل</a>
+            </div>
+            
+            {% for task in upcoming_tasks %}
+            <div class="task-mini-card">
+                <div class="task-priority {{ 'high' if task.is_delayed else 'medium' }}"></div>
+                <div class="task-info">
+                    <div class="task-name">{{ task.name }}</div>
+                    <div class="task-meta">
+                        <span><i class="fas fa-project-diagram me-1"></i> {{ task.project_name }}</span>
+                        <span class="mx-2">•</span>
+                        <span><i class="fas fa-user me-1"></i> {{ task.responsible }}</span>
+                        {% if task.planned_start %}
+                        <span class="mx-2">•</span>
+                        <span><i class="fas fa-calendar me-1"></i> {{ task.planned_start.strftime('%Y-%m-%d') if task.planned_start }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if task.is_delayed %}
+                <span class="delay-badge">
+                    <i class="fas fa-clock me-1"></i> {{ task.delay_days }} يوم
+                </span>
+                {% else %}
+                <span class="badge bg-{{ 'primary' if task.status == 'in_progress' else 'secondary' }}">
+                    {{ 'جاري' if task.status == 'in_progress' else 'معلق' }}
+                </span>
+                {% endif %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3">لا توجد مهام قادمة</p>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Right Column - Users & Activity -->
+    <div class="col-lg-4">
+        <!-- Primavera Projects -->
+        <div class="section-card">
+            <div class="section-header">
+                <h5 class="section-title">
+                    <i class="fas fa-chart-line text-info"></i>
+                    مشاريع Primavera
+                </h5>
+                <a href="{{ url_for('primavera.eps_list') }}" class="btn-link">عرض الكل</a>
+            </div>
+            
+            {% for project in primavera_projects[:5] %}
+            <div class="project-mini-card">
+                <div class="project-info">
+                    <div class="project-name">{{ project.name }}</div>
+                    <div class="project-meta">
+                        <span><i class="fas fa-tasks me-1"></i> أنشطة</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('primavera.project_dashboard', project_id=project.id) }}" class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-eye"></i>
+                </a>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3">لا توجد مشاريع محولة</p>
+            {% endfor %}
+        </div>
+        
+        <!-- Today's Activity -->
+        <div class="section-card">
+            <div class="section-header">
+                <h5 class="section-title">
+                    <i class="fas fa-chart-bar"></i>
+                    نشاط اليوم
+                </h5>
+            </div>
+            
+            <div class="d-flex justify-content-between mb-3">
+                <div class="text-center">
+                    <h4 class="text-primary mb-1">{{ today_activity.completed_tasks }}</h4>
+                    <small class="text-muted">مهام مكتملة</small>
+                </div>
+                <div class="text-center">
+                    <h4 class="text-success mb-1">{{ today_activity.started_tasks }}</h4>
+                    <small class="text-muted">مهام بدأت</small>
+                </div>
+                <div class="text-center">
+                    <h4 class="text-warning mb-1">{{ today_activity.new_users }}</h4>
+                    <small class="text-muted">مستخدمين جدد</small>
+                </div>
+                <div class="text-center">
+                    <h4 class="text-info mb-1">{{ today_activity.ai_commands }}</h4>
+                    <small class="text-muted">أوامر ذكية</small>
+                </div>
+            </div>
+            
+            <!-- Prediction Card -->
+            <div class="prediction-card">
+                <div class="prediction-title">
+                    <i class="fas fa-robot me-2"></i>توقع اليوم
+                </div>
+                <div class="prediction-value">{{ predictions.expected_completions }} مهام</div>
+                <div class="prediction-risk">
+                    <i class="fas fa-{{ 'exclamation-triangle' if predictions.risk_level == 'high' else 'info-circle' }} me-1"></i>
+                    مستوى المخاطرة: 
+                    {% if predictions.risk_level == 'high' %}
+                    <span class="text-warning">مرتفع</span>
+                    {% elif predictions.risk_level == 'medium' %}
+                    <span class="text-info">متوسط</span>
+                    {% else %}
+                    <span class="text-success">منخفض</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Commands -->
+        {% if recent_ai_commands %}
+        <div class="section-card">
+            <div class="section-header">
+                <h5 class="section-title">
+                    <i class="fas fa-robot text-primary"></i>
+                    أوامر ذكية حديثة
+                </h5>
+                <a href="{{ url_for('ai.index') }}" class="btn-link">عرض الكل</a>
+            </div>
+            
+            {% for command in recent_ai_commands %}
+            <div class="ai-command-mini">
+                <div class="ai-command-icon">
+                    <i class="fas fa-{{ 'check-circle' if command.status == 'completed' else 'clock' }}"></i>
+                </div>
+                <div class="ai-command-content">
+                    <div class="ai-command-text">{{ command.command_text[:50] }}{% if command.command_text|length > 50 %}...{% endif %}</div>
+                    <div class="ai-command-meta">
+                        <span class="badge bg-{{ 'success' if command.status == 'completed' else 'warning' }}">
+                            {{ command.status }}
+                        </span>
+                        <span class="mx-1">•</span>
+                        <span>{{ command.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Top Performers -->
+        <div class="section-card">
+            <div class="section-header">
+                <h5 class="section-title">
+                    <i class="fas fa-star text-warning"></i>
+                    أفضل الموظفين
+                </h5>
+            </div>
+            
+            {% for user in top_performers %}
+            <div class="user-mini-card">
+                <div class="user-avatar">
+                    {% if user.avatar %}
+                    <img src="{{ user.avatar }}" alt="{{ user.name }}">
+                    {% else %}
+                    {{ user.name[0] }}
+                    {% endif %}
+                </div>
+                <div class="user-info">
+                    <div class="user-name">{{ user.name }}</div>
+                    <div class="user-stats">
+                        <span><i class="fas fa-check-circle text-success me-1"></i> {{ user.completed_tasks }}</span>
+                        <span class="mx-1">•</span>
+                        <span><i class="fas fa-chart-line text-primary me-1"></i> {{ user.completion_rate|round }}%</span>
+                    </div>
+                </div>
+                <span class="efficiency-badge">{{ user.efficiency }}%</span>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3">لا توجد بيانات أداء</p>
+            {% endfor %}
+        </div>
+        
+        <!-- Recent Users -->
+        <div class="section-card">
+            <div class="section-header">
+                <h5 class="section-title">
+                    <i class="fas fa-user-plus"></i>
+                    آخر المستخدمين
+                </h5>
+                <a href="{{ url_for('company.users') }}" class="btn-link">عرض الكل</a>
+            </div>
+            
+            {% for user in recent_users %}
+            <div class="user-mini-card">
+                <div class="user-avatar">
+                    {% if user.profile_image %}
+                    <img src="{{ user.profile_image }}" alt="{{ user.full_name }}">
+                    {% else %}
+                    {{ user.full_name[0] }}
+                    {% endif %}
+                </div>
+                <div class="user-info">
+                    <div class="user-name">{{ user.full_name }}</div>
+                    <div class="user-stats">
+                        <span class="badge bg-{{ 'success' if user.is_user_active else 'secondary' }}">
+                            {{ 'نشط' if user.is_user_active else 'غير نشط' }}
+                        </span>
+                        <span class="mx-1">•</span>
+                        <span>{{ user.role }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Recent Projects -->
+        <div class="section-card">
+            <div class="section-header">
+                <h5 class="section-title">
+                    <i class="fas fa-folder-open"></i>
+                    آخر المشاريع
+                </h5>
+                <a href="{{ url_for('projects.list_projects') }}" class="btn-link">عرض الكل</a>
+            </div>
+            
+            {% for project in recent_projects %}
+            <div class="project-mini-card">
+                <div class="project-info">
+                    <div class="project-name">{{ project.name }}</div>
+                    <div class="project-meta">
+                        <span><i class="fas fa-code me-1"></i> {{ project.code }}</span>
+                        <span class="status-badge {{ project.status }}">{{ project.status }}</span>
+                    </div>
+                </div>
+                <div class="project-progress">
+                    <div class="progress">
+                        <div class="progress-bar primary" style="width: {{ project.progress }}%"></div>
+                    </div>
+                    <small class="d-block text-center mt-1">{{ project.progress|round if project.progress else '0' }}%</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+    </div>
+    <!-- templates/company/dashboard.html - إضافة أقسام جديدة -->
+
+    <!-- بعد قسم الإحصائيات الرئيسية، أضف قسم الموارد -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tools text-primary me-2"></i>
+                        حالة الموارد
+                    </h5>
+                    <a href="{{ url_for('resource.index') }}" class="btn btn-sm btn-link">عرض الكل</a>
+                </div>
+                <div class="card-body">
+                    {% if resource_summary %}
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <h4 class="text-primary">{{ resource_summary.total_resources }}</h4>
+                            <small class="text-muted">إجمالي الموارد</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-success">{{ resource_summary.by_type.labor }}</h4>
+                            <small class="text-muted">موارد بشرية</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-warning">{{ resource_summary.by_type.equipment }}</h4>
+                            <small class="text-muted">معدات</small>
+                        </div>
+                    </div>
+                    
+                    {% for resource in resource_summary.resources_list[:5] %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>{{ resource.name }}</strong>
+                            <br>
+                            <small class="text-muted">{{ resource.unit }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-{{ 'danger' if resource.utilization > 100 else 'warning' if resource.utilization > 80 else 'success' }}">
+                                {{ "%.0f"|format(resource.utilization) }}%
+                            </span>
+                            <div class="progress mt-1" style="width: 100px; height: 4px;">
+                                <div class="progress-bar bg-{{ 'danger' if resource.utilization > 100 else 'warning' if resource.utilization > 80 else 'success' }}" 
+                                    style="width: {{ resource.utilization }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted text-center py-3">لا توجد موارد مسجلة</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-truck text-primary me-2"></i>
+                        طلبات التوريد النشطة
+                    </h5>
+                    <a href="{{ url_for('supplier.requests_list') }}" class="btn btn-sm btn-link">عرض الكل</a>
+                </div>
+                <div class="card-body">
+                    {% if pending_deliveries %}
+                        {% for delivery in pending_deliveries[:5] %}
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded-3">
+                            <div>
+                                <strong>{{ delivery.project_name }}</strong>
+                                <br>
+                                <small class="text-muted">رقم: {{ delivery.delivery_number }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-warning">في انتظار التأكيد</span>
+                                <button class="btn btn-sm btn-outline-primary mt-1" onclick="confirmDelivery({{ delivery.id }})">
+                                    تأكيد
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <p class="text-muted text-center py-3">لا توجد طلبات توريد معلقة</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden element to pass data to JavaScript -->
+<div id="dashboard-data" 
+     data-delayed="{{ delayed_stats.total_delayed }}"
+     data-critical="{{ delayed_stats.critical_delayed }}"
+     style="display: none;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// تحديث تلقائي كل 60 ثانية
+setInterval(function() {
+    location.reload();
+}, 60000);
+
+// عرض تنبيه إذا كان هناك مهام حرجة
+document.addEventListener('DOMContentLoaded', function() {
+    const data = document.getElementById('dashboard-data');
+    const critical = parseInt(data.dataset.critical);
+    const delayed = parseInt(data.dataset.delayed);
+    
+    if (critical > 0) {
+        console.log(`⚠️ ${critical} مهام حرجة متأخرة`);
+        
+        // يمكن إضافة إشعار مرئي للمستخدم
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.innerHTML = `
+            <strong><i class="fas fa-exclamation-triangle me-2"></i>تنبيه!</strong>
+            يوجد ${critical} مهام حرجة متأخرة تحتاج إلى تدخل فوري.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        // إخفاء الإشعار بعد 5 ثوان
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

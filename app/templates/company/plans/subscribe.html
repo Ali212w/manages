@@ -1,0 +1,338 @@
+{# templates/company/plans/subscribe.html #}
+{% extends "company/base.html" %}
+
+{% block title %}{{ _('plans.subscribe_to') }} {{ plan.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Progress Steps -->
+            <div class="steps-wrapper mb-5">
+                <div class="steps d-flex justify-content-between">
+                    <div class="step active">
+                        <div class="step-circle">1</div>
+                        <div class="step-label">{{ _('plans.select_plan') }}</div>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">{{ _('plans.payment_method') }}</div>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">{{ _('plans.confirmation') }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plan Details Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-layer-group me-2"></i>
+                        {{ _('plans.selected_plan') }}: {{ plan.name }}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="plan-info mb-3">
+                                <label class="text-muted">{{ _('plans.description') }}</label>
+                                <p>{{ plan.description or '-' }}</p>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="info-item text-center p-2 bg-light rounded">
+                                        <i class="fas fa-users text-primary"></i>
+                                        <div class="fw-bold">{{ plan.max_users if plan.max_users > 0 else '∞' }}</div>
+                                        <small class="text-muted">{{ _('plans.max_users') }}</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-item text-center p-2 bg-light rounded">
+                                        <i class="fas fa-project-diagram text-primary"></i>
+                                        <div class="fw-bold">{{ plan.max_projects if plan.max_projects > 0 else '∞' }}</div>
+                                        <small class="text-muted">{{ _('plans.max_projects') }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="features-list">
+                                <label class="text-muted">{{ _('plans.features') }}</label>
+                                <ul class="list-unstyled">
+                                    {% for feature in plan.features %}
+                                    <li class="mb-1">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        {{ feature }}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subscription Form -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>
+                        {{ _('plans.subscription_details') }}
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" id="subscriptionForm">
+                        <!-- Duration Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ _('subscriptions.duration_months') }}</label>
+                            <div class="row g-3">
+                                <div class="col-md-3 col-6">
+                                    <div class="duration-option" data-months="3">
+                                        <div class="border rounded-3 p-3 text-center cursor-pointer duration-card">
+                                            <div class="fw-bold h5 mb-1">3 {{ _('subscriptions.months') }}</div>
+                                            <div class="price">{{ format_currency(pricing['3_months']) }}</div>
+                                            <small class="text-muted">{{ _('plans.save') }} {{ ((pricing['12_months']/12 - pricing['3_months']/3) / (pricing['12_months']/12) * 100)|round }}%</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="duration-option" data-months="6">
+                                        <div class="border rounded-3 p-3 text-center cursor-pointer duration-card">
+                                            <div class="fw-bold h5 mb-1">6 {{ _('subscriptions.months') }}</div>
+                                            <div class="price">{{ format_currency(pricing['6_months']) }}</div>
+                                            <small class="text-muted">{{ _('plans.save') }} {{ ((pricing['12_months']/12 - pricing['6_months']/6) / (pricing['12_months']/12) * 100)|round }}%</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="duration-option" data-months="12">
+                                        <div class="border rounded-3 p-3 text-center cursor-pointer duration-card recommended">
+                                            <span class="badge bg-success position-absolute top-0 start-50 translate-middle">{{ _('plans.best_value') }}</span>
+                                            <div class="fw-bold h5 mb-1">12 {{ _('subscriptions.months') }}</div>
+                                            <div class="price">{{ format_currency(pricing['12_months']) }}</div>
+                                            <small class="text-muted">{{ _('plans.save_2_months') }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="duration-option" data-months="24">
+                                        <div class="border rounded-3 p-3 text-center cursor-pointer duration-card">
+                                            <div class="fw-bold h5 mb-1">24 {{ _('subscriptions.months') }}</div>
+                                            <div class="price">{{ format_currency(pricing['24_months']) }}</div>
+                                            <small class="text-muted">{{ _('plans.save') }} {{ ((pricing['12_months']/12 - pricing['24_months']/24) / (pricing['12_months']/12) * 100)|round }}%</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="duration_months" id="selectedDuration" value="12">
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ _('plans.payment_method') }}</label>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="payment-option" data-method="credit_card">
+                                        <div class="border rounded-3 p-3 cursor-pointer payment-card">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <i class="fab fa-cc-visa fa-2x text-primary"></i>
+                                                <i class="fab fa-cc-mastercard fa-2x text-danger"></i>
+                                                <div>
+                                                    <div class="fw-bold">{{ _('plans.credit_card') }}</div>
+                                                    <small class="text-muted">{{ _('plans.instant_activation') }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="payment-option" data-method="bank_transfer">
+                                        <div class="border rounded-3 p-3 cursor-pointer payment-card">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <i class="fas fa-university fa-2x text-success"></i>
+                                                <div>
+                                                    <div class="fw-bold">{{ _('plans.bank_transfer') }}</div>
+                                                    <small class="text-muted">{{ _('plans.manual_verification') }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="payment_method" id="selectedPaymentMethod" value="credit_card">
+                        </div>
+
+                        <!-- Price Summary -->
+                        <div class="bg-light rounded-3 p-3 mb-4">
+                            <div class="row">
+                                <div class="col-6">
+                                    <span class="text-muted">{{ _('plans.subtotal') }}:</span>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <span id="subtotal">{{ format_currency(pricing['12_months']) }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted">{{ _('plans.tax') }} (15%):</span>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <span id="tax">{{ format_currency(pricing['12_months'] * 0.15) }}</span>
+                                </div>
+                                <hr class="my-2">
+                                <div class="col-6">
+                                    <strong>{{ _('plans.total') }}:</strong>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <strong id="total" class="text-primary h5">{{ format_currency(pricing['12_months'] * 1.15) }}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Terms -->
+                        <div class="form-check mb-4">
+                            <input type="checkbox" class="form-check-input" id="termsCheckbox" required>
+                            <label class="form-check-label" for="termsCheckbox">
+                                {{ _('plans.agree_to_terms') }}
+                                <a href="#" target="_blank">{{ _('plans.terms_of_service') }}</a>
+                                {{ _('plans.and') }}
+                                <a href="#" target="_blank">{{ _('plans.privacy_policy') }}</a>
+                            </label>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-gradient btn-lg w-100" id="submitBtn" disabled>
+                            <i class="fas fa-check-circle me-2"></i>
+                            {{ _('plans.proceed_to_subscription') }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.steps-wrapper {
+    padding: 0 20px;
+}
+.steps {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+.step {
+    text-align: center;
+    flex: 1;
+    position: relative;
+    z-index: 2;
+}
+.step-circle {
+    width: 40px;
+    height: 40px;
+    background: #e9ecef;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    font-weight: bold;
+    color: #6c757d;
+}
+.step.active .step-circle {
+    background: var(--gradient-primary);
+    color: white;
+}
+.step.completed .step-circle {
+    background: #10b981;
+    color: white;
+}
+.step-label {
+    font-size: 12px;
+    color: #6c757d;
+}
+.step.active .step-label {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+.step-line {
+    flex: 1;
+    height: 2px;
+    background: #e9ecef;
+    margin: 0 5px;
+}
+.duration-card, .payment-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+.duration-card:hover, .payment-card:hover {
+    border-color: var(--primary-color) !important;
+    background: rgba(67, 97, 238, 0.05);
+}
+.duration-card.selected, .payment-card.selected {
+    border-color: var(--primary-color) !important;
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.1), rgba(67, 97, 238, 0.05));
+    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
+}
+.recommended {
+    border-color: #10b981 !important;
+    position: relative;
+    overflow: visible;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    const pricing = {{ pricing|tojson }};
+    const taxRate = 0.15;
+    
+    // Duration Selection
+    $('.duration-option').click(function() {
+        $('.duration-option .duration-card').removeClass('selected');
+        $(this).find('.duration-card').addClass('selected');
+        
+        const months = $(this).data('months');
+        $('#selectedDuration').val(months);
+        
+        let amount = 0;
+        if (months == 3) amount = pricing['3_months'];
+        else if (months == 6) amount = pricing['6_months'];
+        else if (months == 12) amount = pricing['12_months'];
+        else if (months == 24) amount = pricing['24_months'];
+        
+        const tax = amount * taxRate;
+        const total = amount + tax;
+        
+        $('#subtotal').text(formatCurrency(amount));
+        $('#tax').text(formatCurrency(tax));
+        $('#total').text(formatCurrency(total));
+    });
+    
+    // Payment Method Selection
+    $('.payment-option').click(function() {
+        $('.payment-option .payment-card').removeClass('selected');
+        $(this).find('.payment-card').addClass('selected');
+        $('#selectedPaymentMethod').val($(this).data('method'));
+    });
+    
+    // Terms Checkbox
+    $('#termsCheckbox').change(function() {
+        $('#submitBtn').prop('disabled', !$(this).is(':checked'));
+    });
+    
+    // Form Submit
+    $('#subscriptionForm').submit(function(e) {
+        e.preventDefault();
+        showLoading();
+        this.submit();
+    });
+    
+    // Select default options
+    $('.duration-option[data-months="12"] .duration-card').addClass('selected');
+    $('.payment-option[data-method="credit_card"] .payment-card').addClass('selected');
+});
+</script>
+{% endblock %}

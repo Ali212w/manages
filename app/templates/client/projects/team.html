@@ -1,0 +1,195 @@
+{% extends "client/base.html" %}
+
+{% block title %}فريق المشروع - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4><i class="fas fa-users me-2"></i> فريق المشروع</h4>
+                <p class="text-muted mb-0">{{ project.name }}</p>
+            </div>
+            <a href="{{ url_for('client.project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> العودة للمشروع
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Team Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <h3 class="text-primary">{{ team_data|length }}</h3>
+            <small>إجمالي الأعضاء</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <h3 class="text-success">{{ team_data|sum(attribute='completed_tasks') }}</h3>
+            <small>مهام مكتملة</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <h3 class="text-warning">{{ team_data|sum(attribute='in_progress_tasks') }}</h3>
+            <small>مهام قيد التنفيذ</small>
+        </div>
+    </div>
+</div>
+
+<!-- Team Members Grid -->
+<div class="row g-4">
+    {% for member in team_data %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card team-card">
+            <div class="card-body text-center">
+                <div class="mb-3 position-relative">
+                    {% if member.user.profile_image and member.user.profile_image != 'default.jpg' %}
+                    <img src="{{ url_for('static', filename='uploads/profiles/' + member.user.profile_image) }}" 
+                         class="rounded-circle team-avatar" width="100" height="100" style="object-fit: cover;">
+                    {% else %}
+                    <div class="avatar-placeholder bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                        <i class="fas fa-user fa-3x text-primary"></i>
+                    </div>
+                    {% endif %}
+                    
+                    {% if member.user.role == 'project_manager' %}
+                    <span class="position-absolute top-0 start-0 badge bg-primary">مدير مشروع</span>
+                    {% elif member.user.role == 'supervisor' %}
+                    <span class="position-absolute top-0 start-0 badge bg-info">مشرف</span>
+                    {% elif member.user.role == 'delegate' %}
+                    <span class="position-absolute top-0 start-0 badge bg-warning">مندوب</span>
+                    {% elif member.user.role == 'employee' %}
+                    <span class="position-absolute top-0 start-0 badge bg-secondary">موظف</span>
+                    {% endif %}
+                </div>
+                
+                <h5 class="mb-1">{{ member.user.full_name }}</h5>
+                <p class="text-muted small mb-2">{{ member.user.job_title or 'موظف' }}</p>
+                
+                <div class="d-flex justify-content-center gap-4 mb-3">
+                    <div class="text-center">
+                        <h6 class="mb-0 text-success">{{ member.completed_tasks }}</h6>
+                        <small class="text-muted">مكتملة</small>
+                    </div>
+                    <div class="text-center">
+                        <h6 class="mb-0 text-warning">{{ member.in_progress_tasks }}</h6>
+                        <small class="text-muted">قيد التنفيذ</small>
+                    </div>
+                    <div class="text-center">
+                        <h6 class="mb-0">{{ member.total_tasks }}</h6>
+                        <small class="text-muted">إجمالي</small>
+                    </div>
+                </div>
+                
+                <div class="progress mb-3">
+                    <div class="progress-bar bg-success" style="width: {{ (member.completed_tasks / member.total_tasks * 100) if member.total_tasks > 0 else 0 }}%"></div>
+                </div>
+                
+                <div class="row g-2 small">
+                    <div class="col-6">
+                        <div class="border rounded p-1 text-center">
+                            <i class="fas fa-envelope text-muted"></i>
+                            <span class="d-block text-truncate">{{ member.user.email }}</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-1 text-center">
+                            <i class="fas fa-phone text-muted"></i>
+                            <span class="d-block">{{ member.user.mobile or member.user.phone or '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">لا يوجد أعضاء في فريق المشروع</h5>
+            <p class="text-muted">سيتم عرض أعضاء الفريق هنا عند تعيينهم للمهام</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Performance Summary -->
+<div class="card mt-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i> ملخص أداء الفريق</h6>
+    </div>
+    <div class="card-body">
+        <canvas id="teamPerformanceChart" height="300"></canvas>
+    </div>
+</div>
+
+<style>
+    .team-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .team-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-placeholder {
+        margin: 0 auto;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Team Performance Chart
+    const ctx = document.getElementById('teamPerformanceChart').getContext('2d');
+    
+    const memberNames = {{ team_data|map(attribute='user')|map(attribute='full_name')|list|tojson }};
+    const completedTasks = {{ team_data|map(attribute='completed_tasks')|list|tojson }};
+    const inProgressTasks = {{ team_data|map(attribute='in_progress_tasks')|list|tojson }};
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: memberNames,
+            datasets: [
+                {
+                    label: 'المهام المكتملة',
+                    data: completedTasks,
+                    backgroundColor: 'rgba(76, 175, 80, 0.7)',
+                    borderRadius: 8
+                },
+                {
+                    label: 'المهام قيد التنفيذ',
+                    data: inProgressTasks,
+                    backgroundColor: 'rgba(255, 152, 0, 0.7)',
+                    borderRadius: 8
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.raw} مهمة`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    title: { display: true, text: 'عدد المهام' },
+                    beginAtZero: true,
+                    stepSize: 1
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

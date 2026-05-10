@@ -1,0 +1,184 @@
+{# templates/platform/audit_log.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('audit_log.title') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1 class="page-title">{{ _('audit_log.title') }}</h1>
+        <p class="text-muted mb-0">{{ _('audit_log.description') }}</p>
+    </div>
+    
+    <!-- Filters Bar -->
+    <div class="filters-bar">
+        <div class="row g-3 w-100">
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small text-muted">{{ _('audit_log.filter_by_action') }}</label>
+                <select id="actionFilter" class="form-select">
+                    <option value="">{{ _('audit_log.all_actions') }}</option>
+                    {% for action in actions %}
+                    <option value="{{ action }}" {% if request.args.get('action') == action %}selected{% endif %}>
+                        {{ _('audit_log.actions.' + action) if _('audit_log.actions.' + action) != 'audit_log.actions.' + action else action }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small text-muted">{{ _('audit_log.filter_by_admin') }}</label>
+                <select id="adminFilter" class="form-select">
+                    <option value="">{{ _('audit_log.all_admins') }}</option>
+                    {% for admin in admins %}
+                    <option value="{{ admin.id }}" {% if request.args.get('admin')|int == admin.id %}selected{% endif %}>{{ admin.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-4 col-md-12 d-flex align-items-end">
+                <div class="d-flex gap-2 w-100">
+                    <button id="applyFilters" class="btn btn-primary flex-grow-1">
+                        <i class="fas fa-search"></i> {{ _('common.filter') }}
+                    </button>
+                    <button id="resetFilters" class="btn btn-outline-secondary">
+                        <i class="fas fa-undo"></i> {{ _('common.reset') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Audit Log Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="auditLogTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ _('audit_log.timestamp') }}</th>
+                            <th>{{ _('audit_log.admin') }}</th>
+                            <th>{{ _('audit_log.action') }}</th>
+                            <th>{{ _('audit_log.details') }}</th>
+                            <th>{{ _('audit_log.ip_address') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs.items %}
+                        <tr>
+                            <td style="min-width: 160px;">
+                                <i class="far fa-clock text-muted me-1"></i>
+                                {{ format_datetime(log.created_at) }}
+                                <br>
+                                <small class="text-muted">{{ time_ago(log.created_at) }}</small>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="bg-gradient-primary rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 32px; height: 32px; font-size: 12px;">
+                                        {{ log.admin_name[0]|upper if log.admin_name else '?' }}
+                                    </div>
+                                    <div>
+                                        <strong>{{ log.admin_name or 'System' }}</strong>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 
+                                    'success' if 'create' in log.action 
+                                    else 'warning' if 'edit' in log.action or 'update' in log.action 
+                                    else 'danger' if 'delete' in log.action 
+                                    else 'info' 
+                                }}">
+                                    {{ _('audit_log.actions.' + log.action) if _('audit_log.actions.' + log.action) != 'audit_log.actions.' + log.action else log.action }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 400px;" title="{{ log.details }}">
+                                    {{ log.details or '-' }}
+                                </div>
+                            </td>
+                            <td>
+                                <code>{{ log.ip_address or '-' }}</code>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">{{ _('audit_log.no_logs') }}</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {% if logs.pages > 1 %}
+        <div class="card-footer bg-transparent">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    {{ _('common.showing') }} {{ logs.items|length }} {{ _('common.of') }} {{ logs.total }} {{ _('common.items') }}
+                </div>
+                <nav>
+                    <ul class="pagination mb-0">
+                        {% if logs.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('platform.audit_log', page=logs.prev_num, action=request.args.get('action', ''), admin=request.args.get('admin', '')) }}">
+                                <i class="fas fa-chevron-{{ 'right' if get_direction() == 'rtl' else 'left' }}"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in logs.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == logs.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('platform.audit_log', page=page_num, action=request.args.get('action', ''), admin=request.args.get('admin', '')) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if logs.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('platform.audit_log', page=logs.next_num, action=request.args.get('action', ''), admin=request.args.get('admin', '')) }}">
+                                <i class="fas fa-chevron-{{ 'left' if get_direction() == 'rtl' else 'right' }}"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Apply Filters
+    $('#applyFilters').click(function() {
+        const action = $('#actionFilter').val();
+        const admin = $('#adminFilter').val();
+        
+        let url = "{{ url_for('platform.audit_log') }}?";
+        if (action) url += "action=" + encodeURIComponent(action);
+        if (admin) url += (action ? "&" : "") + "admin=" + admin;
+        
+        window.location.href = url;
+    });
+    
+    // Reset Filters
+    $('#resetFilters').click(function() {
+        window.location.href = "{{ url_for('platform.audit_log') }}";
+    });
+    
+    // Auto-submit on select change
+    $('#actionFilter, #adminFilter').change(function() {
+        $('#applyFilters').click();
+    });
+});
+</script>
+{% endblock %}

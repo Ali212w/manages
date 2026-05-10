@@ -1,0 +1,243 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ _('emp.create_daily_report') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-header {
+        background: linear-gradient(135deg, #00b894 0%, #019874 100%);
+        border-radius: var(--radius-lg);
+        padding: 25px;
+        color: white;
+        margin-bottom: 25px;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .form-section h5 {
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .task-item {
+        background: #f8f9fa;
+        border-radius: var(--radius-md);
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .btn-add-task {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        color: white;
+        border-radius: var(--radius-md);
+        padding: 8px 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-2"><i class="fas fa-plus-circle me-2"></i> {{ _('emp.create_daily_report') }}</h2>
+            <p class="mb-0 text-white-50">{{ _('emp.record_your_daily_work_activities') }}</p>
+        </div>
+        <a href="{{ url_for('employee.daily_reports') }}" class="btn btn-light">
+            <i class="fas fa-arrow-right me-2"></i> {{ _('emp.back') }}
+        </a>
+    </div>
+</div>
+
+<form method="POST" id="dailyReportForm">
+    <!-- معلومات أساسية -->
+    <div class="form-section">
+        <h5><i class="fas fa-info-circle me-2 text-primary"></i> {{ _('emp.basic_info') }}</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('emp.report_date') }} *</label>
+                <input type="date" name="report_date" class="form-control" value="{{ now.date().isoformat() }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('emp.project') }} *</label>
+                <select name="project_id" class="form-select" required onchange="loadProjectTasks(this.value)">
+                    <option value="">{{ _('emp.select_project') }}</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}">{{ project.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- الظروف الجوية -->
+    <div class="form-section">
+        <h5><i class="fas fa-cloud-sun me-2 text-primary"></i> {{ _('emp.weather_conditions') }}</h5>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ _('emp.weather') }}</label>
+                <select name="weather_condition" class="form-select">
+                    <option value="sunny">{{ _('emp.sunny') }}</option>
+                    <option value="cloudy">{{ _('emp.cloudy') }}</option>
+                    <option value="rainy">{{ _('emp.rainy') }}</option>
+                    <option value="dusty">{{ _('emp.dusty') }}</option>
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ _('emp.temperature') }} (°C)</label>
+                <input type="number" name="temperature" class="form-control" step="0.5">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ _('emp.humidity') }} (%)</label>
+                <input type="number" name="humidity" class="form-control" step="1" min="0" max="100">
+            </div>
+        </div>
+    </div>
+
+    <!-- المهام المنجزة -->
+    <div class="form-section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><i class="fas fa-tasks me-2 text-primary"></i> {{ _('emp.completed_tasks') }}</h5>
+            <button type="button" class="btn-add-task" onclick="addTaskRow()">
+                <i class="fas fa-plus me-1"></i> {{ _('emp.add_task') }}
+            </button>
+        </div>
+        <div id="tasksContainer">
+            <!-- سيتم إضافة صفوف المهام ديناميكياً -->
+        </div>
+    </div>
+
+    <!-- ملخص العمل -->
+    <div class="form-section">
+        <h5><i class="fas fa-clipboard-list me-2 text-primary"></i> {{ _('emp.work_summary') }}</h5>
+        <div class="mb-3">
+            <label class="form-label">{{ _('emp.work_summary') }}</label>
+            <textarea name="work_summary" class="form-control" rows="3" placeholder="{{ _('emp.describe_work_done') }}"></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">{{ _('emp.completed_work') }}</label>
+            <textarea name="completed_work" class="form-control" rows="3" placeholder="{{ _('emp.what_was_completed') }}"></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">{{ _('emp.planned_work') }}</label>
+            <textarea name="planned_work" class="form-control" rows="3" placeholder="{{ _('emp.what_is_planned_for_tomorrow') }}"></textarea>
+        </div>
+    </div>
+
+    <!-- المشكلات والسلامة -->
+    <div class="form-section">
+        <h5><i class="fas fa-exclamation-triangle me-2 text-primary"></i> {{ _('emp.issues_and_safety') }}</h5>
+        <div class="mb-3">
+            <label class="form-label">{{ _('emp.issues_encountered') }}</label>
+            <textarea name="issues_encountered" class="form-control" rows="2" placeholder="{{ _('emp.any_issues_or_challenges') }}"></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">{{ _('emp.safety_notes') }}</label>
+            <textarea name="safety_notes" class="form-control" rows="2" placeholder="{{ _('emp.safety_observations_or_incidents') }}"></textarea>
+        </div>
+    </div>
+
+    <!-- ملاحظات المشرف -->
+    <div class="form-section">
+        <h5><i class="fas fa-user-check me-2 text-primary"></i> {{ _('emp.supervisor_notes') }}</h5>
+        <textarea name="supervisor_notes" class="form-control" rows="2" placeholder="{{ _('emp.notes_for_supervisor') }}"></textarea>
+    </div>
+
+    <!-- أزرار الإجراء -->
+    <div class="d-flex justify-content-between">
+        <a href="{{ url_for('employee.daily_reports') }}" class="btn btn-secondary">
+            <i class="fas fa-times me-2"></i> {{ _('emp.cancel') }}
+        </a>
+        <button type="submit" class="btn btn-gradient">
+            <i class="fas fa-save me-2"></i> {{ _('emp.submit_report') }}
+        </button>
+    </div>
+</form>
+
+<script>
+    let taskCounter = 0;
+    let availableTasks = {{ tasks|tojson|safe }};
+    
+    function loadProjectTasks(projectId) {
+        // فلترة المهام حسب المشروع المختار
+        const filteredTasks = availableTasks.filter(t => t.project_id == projectId);
+        updateTasksList(filteredTasks);
+    }
+    
+    function updateTasksList(tasks) {
+        const container = document.getElementById('tasksContainer');
+        container.innerHTML = '';
+        taskCounter = 0;
+        
+        tasks.forEach(task => {
+            addTaskRow(task);
+        });
+    }
+    
+    function addTaskRow(task = null) {
+        const container = document.getElementById('tasksContainer');
+        const taskId = `task_${Date.now()}_${taskCounter}`;
+        
+        const taskHtml = `
+            <div class="task-item" id="${taskId}">
+                <div class="row align-items-end">
+                    <div class="col-md-5 mb-2">
+                        <label class="form-label small">{{ _('emp.task') }}</label>
+                        <select name="task_ids[]" class="form-select" ${task ? '' : 'required'}>
+                            <option value="">{{ _('emp.select_task') }}</option>
+                            ${generateTaskOptions(task)}
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label small">{{ _('emp.progress') }} (%)</label>
+                        <input type="number" name="task_progress[]" class="form-control" step="5" min="0" max="100" value="${task ? task.progress || 0 : 0}">
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label small">{{ _('emp.notes') }}</label>
+                        <input type="text" name="task_notes[]" class="form-control" placeholder="{{ _('emp.optional_notes') }}">
+                    </div>
+                    <div class="col-md-1 mb-2 text-end">
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeTaskRow('${taskId}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', taskHtml);
+        taskCounter++;
+    }
+    
+    function generateTaskOptions(selectedTask) {
+        let options = '';
+        const tasksForProject = selectedTask ? availableTasks.filter(t => t.project_id == selectedTask.project_id) : availableTasks;
+        
+        tasksForProject.forEach(task => {
+            const selected = selectedTask && selectedTask.id == task.id ? 'selected' : '';
+            options += `<option value="${task.id}" ${selected}>${task.task_name} (${task.task_code})</option>`;
+        });
+        
+        return options;
+    }
+    
+    function removeTaskRow(taskId) {
+        document.getElementById(taskId).remove();
+    }
+    
+    // إضافة صف افتراضي واحد
+    setTimeout(() => {
+        if (availableTasks.length > 0) {
+            addTaskRow();
+        }
+    }, 100);
+</script>
+{% endblock %}

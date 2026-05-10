@@ -1,0 +1,576 @@
+<style>
+/* ============================================
+   تصميم نافذة WBS للعرض أسفل الهيكل الشجري
+   متوافق مع base.html و hierarchy.html
+============================================ */
+
+.wbs-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+/* رأس النافذة */
+.wbs-header {
+    background: linear-gradient(135deg, #f8fafc, #ffffff);
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid #eef2f7;
+}
+
+.wbs-header h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--dark, #1e293b);
+}
+
+.wbs-header .wbs-code {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+.wbs-header .wbs-meta {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    flex-wrap: wrap;
+}
+
+/* محتوى النافذة */
+.wbs-body {
+    padding: 1.5rem;
+}
+
+/* بطاقات المعلومات السريعة */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.info-card {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    transition: all 0.3s;
+    border: 1px solid #eef2f7;
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.info-card .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.info-card .value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--dark, #1e293b);
+    line-height: 1.2;
+}
+
+.info-card small {
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+/* أقسام المحتوى */
+.section {
+    margin-bottom: 1.5rem;
+    background: #ffffff;
+    border: 1px solid #eef2f7;
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.section-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--dark, #1e293b);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #eef2f7;
+}
+
+.section-title i {
+    color: var(--primary, #4361ee);
+    font-size: 0.9rem;
+}
+
+/* شريط التقدم المحسن */
+.progress-large {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-large .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary, #4361ee), var(--secondary, #3f37c9));
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* قائمة العناصر الفرعية */
+.children-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.children-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    background: #f8fafc;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s;
+    border: 1px solid #eef2f7;
+    cursor: pointer;
+}
+
+.children-list li:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    transform: translateX(-3px);
+}
+
+.children-list li i {
+    font-size: 1rem;
+    color: var(--primary, #4361ee);
+    width: 24px;
+    text-align: center;
+}
+
+.children-list .child-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--dark, #1e293b);
+}
+
+.children-list .child-code {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    font-family: monospace;
+}
+
+.children-list .child-progress {
+    width: 60px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--primary, #4361ee);
+}
+
+/* جدول الأنشطة */
+.activities-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.activities-table th {
+    background: #f8fafc;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: right;
+    border: 1px solid #eef2f7;
+}
+
+.activities-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid #eef2f7;
+    font-size: 0.8rem;
+    vertical-align: middle;
+}
+
+.activities-table tr {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.activities-table tr:hover td {
+    background: #f8fafc;
+}
+
+/* شارات الحالة */
+.badge-status {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.badge-completed { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.badge-in_progress { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.badge-not_started { background: rgba(100, 116, 139, 0.1); color: #475569; }
+
+/* أزرار */
+.btn-view {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    color: var(--primary, #4361ee);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-view:hover {
+    background: var(--primary, #4361ee);
+    color: white;
+    border-color: var(--primary, #4361ee);
+}
+
+/* الوصف */
+.description-text {
+    color: #475569;
+    line-height: 1.6;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* حالة فارغة */
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #94a3b8;
+}
+
+.empty-state i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: #cbd5e1;
+}
+
+.empty-state p {
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+/* أزرار التحكم */
+.action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eef2f7;
+}
+
+.btn-action {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-action:hover {
+    background: #f1f5f9;
+}
+
+.btn-action-primary {
+    background: var(--primary, #4361ee);
+    border-color: var(--primary, #4361ee);
+    color: white;
+}
+
+.btn-action-primary:hover {
+    background: var(--secondary, #3f37c9);
+}
+
+/* تجاوب مع الشاشات الصغيرة */
+@media (max-width: 768px) {
+    .wbs-body {
+        padding: 1rem;
+    }
+    
+    .info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .children-list li {
+        flex-wrap: wrap;
+    }
+    
+    .children-list .child-progress {
+        width: auto;
+        margin-right: auto;
+    }
+    
+    .progress-stats {
+        font-size: 0.65rem;
+    }
+}
+</style>
+
+<div class="wbs-container">
+    <!-- رأس النافذة -->
+    <div class="wbs-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h3>{{ wbs.name }}</h3>
+                <div class="wbs-code">
+                    <i class="fas fa-code me-1"></i>
+                    {{ wbs.wbs_code }}
+                </div>
+                <div class="wbs-meta">
+                    <span><i class="fas fa-layer-group me-1"></i>المستوى {{ wbs.level }}</span>
+                    <span><i class="fas fa-folder me-1"></i>{{ wbs.wbs_path or 'الجذر' }}</span>
+                </div>
+            </div>
+            <button class="btn-action btn-action-primary" onclick="editWBS()">
+                <i class="fas fa-edit me-1"></i>
+                تعديل
+            </button>
+        </div>
+    </div>
+    
+    <!-- محتوى النافذة -->
+    <div class="wbs-body">
+        <!-- معلومات سريعة -->
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="label">الميزانية</div>
+                <div class="value">{{ "{:,.0f}".format(wbs.budget or 0) }}</div>
+                <small>ر.س</small>
+            </div>
+            <div class="info-card">
+                <div class="label">التكلفة المخططة</div>
+                <div class="value">{{ "{:,.0f}".format(wbs.planned_cost or 0) }}</div>
+                <small>ر.س</small>
+            </div>
+            <div class="info-card">
+                <div class="label">التكلفة الفعلية</div>
+                <div class="value">{{ "{:,.0f}".format(wbs.actual_cost or 0) }}</div>
+                <small>ر.س</small>
+            </div>
+            <div class="info-card">
+                <div class="label">الفرق</div>
+                <div class="value {% if (wbs.planned_cost or 0) - (wbs.actual_cost or 0) < 0 %}text-danger{% endif %}">
+                    {{ "{:,.0f}".format((wbs.planned_cost or 0) - (wbs.actual_cost or 0)) }}
+                </div>
+                <small>ر.س</small>
+            </div>
+        </div>
+        
+        <!-- تقدم العنصر -->
+        <div class="section">
+            <div class="section-title">
+                <i class="fas fa-chart-line"></i>
+                التقدم
+            </div>
+            <div class="progress-large">
+                <div class="progress-fill" style="width: {{ progress }}%"></div>
+            </div>
+            <div class="progress-stats">
+                <span>{{ "%.1f"|format(progress) }}% مكتمل</span>
+                <span>{{ stats.total_activities }} نشاط</span>
+                <span>{{ stats.completed_activities }} مكتمل</span>
+                <span>{{ stats.in_progress_activities }} قيد التنفيذ</span>
+            </div>
+        </div>
+        
+        <!-- الوصف -->
+        {% if wbs.description %}
+        <div class="section">
+            <div class="section-title">
+                <i class="fas fa-align-left"></i>
+                الوصف
+            </div>
+            <p class="description-text">{{ wbs.description }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- العناصر الفرعية -->
+        {% if children %}
+        <div class="section">
+            <div class="section-title">
+                <i class="fas fa-sitemap"></i>
+                العناصر الفرعية
+                <span class="badge bg-primary ms-2">{{ children|length }}</span>
+            </div>
+            <ul class="children-list">
+                {% for child in children %}
+                <li onclick="selectWBS({{ child.id }})">
+                    <i class="fas fa-folder"></i>
+                    <div class="child-name">{{ child.name }}</div>
+                    <div class="child-code">{{ child.wbs_code }}</div>
+                    <div class="child-progress">{{ child.progress_percentage }}%</div>
+                    <button class="btn-view" onclick="event.stopPropagation(); viewWBS({{ child.id }})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <!-- الأنشطة المرتبطة -->
+        {% if activities %}
+        <div class="section">
+            <div class="section-title">
+                <i class="fas fa-tasks"></i>
+                الأنشطة المرتبطة
+                <span class="badge bg-primary ms-2">{{ activities|length }}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="activities-table">
+                    <thead>
+                        <tr>
+                            <th>الكود</th>
+                            <th>الاسم</th>
+                            <th>الحالة</th>
+                            <th>التقدم</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in activities %}
+                        <tr onclick="selectActivity({{ activity.id }})">
+                            <td>
+                                <code class="small">{{ activity.activity_id }}</code>
+                            </td>
+                            <td class="fw-medium">{{ activity.activity_name }}</td>
+                            <td>
+                                <span class="badge-status badge-{{ activity.status }}">
+                                    {% if activity.status == 'completed' %}مكتمل
+                                    {% elif activity.status == 'in_progress' %}قيد التنفيذ
+                                    {% else %}لم يبدأ{% endif %}
+                                </span>
+                            </td>
+                            <td style="width: 120px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 4px;">
+                                        <div class="progress-bar" style="width: {{ activity.progress_percentage }}%; background: var(--primary);"></div>
+                                    </div>
+                                    <span class="small">{{ activity.progress_percentage }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn-view" onclick="event.stopPropagation(); viewActivity({{ activity.id }})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- حالة عدم وجود بيانات -->
+        {% if not children and not activities %}
+        <div class="empty-state">
+            <i class="fas fa-folder-open"></i>
+            <p>لا توجد عناصر فرعية أو أنشطة مرتبطة بهذا WBS</p>
+        </div>
+        {% endif %}
+        
+        <!-- أزرار التحكم -->
+        <div class="action-buttons">
+            <button class="btn-action" onclick="closeDetails()">
+                <i class="fas fa-times me-1"></i>
+                إغلاق
+            </button>
+            <button class="btn-action btn-action-primary" onclick="refreshWBS()">
+                <i class="fas fa-sync-alt me-1"></i>
+                تحديث
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// دوال التحكم في نافذة WBS للعرض أسفل الهيكل
+function editWBS() {
+    window.location.href = "{{ url_for('primavera.wbs_edit', wbs_id=wbs.id) }}";
+}
+
+function viewWBS(wbsId) {
+    if (window.parent && window.parent.selectNode) {
+        window.parent.selectNode(`wbs_${wbsId}`, 'wbs', '');
+    }
+}
+
+function viewActivity(activityId) {
+    if (window.parent && window.parent.selectNode) {
+        window.parent.selectNode(`activity_${activityId}`, 'activity', '');
+    }
+}
+
+function selectWBS(wbsId) {
+    if (window.parent && window.parent.selectNode) {
+        window.parent.selectNode(`wbs_${wbsId}`, 'wbs', '');
+    }
+}
+
+function selectActivity(activityId) {
+    if (window.parent && window.parent.selectNode) {
+        window.parent.selectNode(`activity_${activityId}`, 'activity', '');
+    }
+}
+
+function closeDetails() {
+    if (window.parent && window.parent.closeDetails) {
+        window.parent.closeDetails();
+    }
+}
+
+function refreshWBS() {
+    if (window.parent && window.parent.refreshTree) {
+        window.parent.refreshTree();
+    } else {
+        location.reload();
+    }
+}
+
+// جعل الدوال متاحة عالمياً
+window.editWBS = editWBS;
+window.viewWBS = viewWBS;
+window.viewActivity = viewActivity;
+window.selectWBS = selectWBS;
+window.selectActivity = selectActivity;
+window.closeDetails = closeDetails;
+window.refreshWBS = refreshWBS;
+</script>

@@ -1,0 +1,942 @@
+{% extends "company/base.html" %}
+
+{% block title %}Global Change - التغيير الشامل{% endblock %}
+
+{% block page_title %}Global Change - التغيير الشامل{% endblock %}
+{% block page_subtitle %}تعديل جماعي للأنشطة والمشاريع والموارد{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== المتغيرات الأساسية ===== */
+    :root {
+        --global-primary: #9c27b0;
+        --global-primary-dark: #7b1fa2;
+        --global-primary-light: #ba68c8;
+        --global-shadow: 0 10px 30px rgba(156, 39, 176, 0.1);
+        --global-border: rgba(156, 39, 176, 0.2);
+    }
+
+    /* ===== الحاوية الرئيسية ===== */
+    .changes-container {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03), 0 10px 20px rgba(156, 39, 176, 0.05);
+        border: 1px solid #eef2f7;
+        animation: slideInUp 0.5s ease;
+    }
+
+    /* ===== رأس الصفحة ===== */
+    .changes-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 3px solid #eef2f7;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .header-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, var(--global-primary), var(--global-primary-dark));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        box-shadow: 0 10px 25px rgba(156, 39, 176, 0.3);
+    }
+
+    .header-text h2 {
+        font-size: 2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--dark), var(--global-primary-dark));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0;
+    }
+
+    .header-text p {
+        color: #6c757d;
+        margin: 0.3rem 0 0;
+    }
+
+    .btn-create {
+        background: linear-gradient(135deg, var(--global-primary), var(--global-primary-dark));
+        border: none;
+        padding: 0.9rem 2rem;
+        border-radius: 16px;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.8rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 20px rgba(156, 39, 176, 0.3);
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .btn-create:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(156, 39, 176, 0.4);
+    }
+
+    .btn-create i {
+        font-size: 1.2rem;
+    }
+
+    /* ===== إحصائيات سريعة ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: #f8fafc;
+        border-radius: 20px;
+        padding: 1.5rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--global-border);
+        box-shadow: var(--global-shadow);
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 15px;
+        background: rgba(156, 39, 176, 0.1);
+        color: var(--global-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--dark);
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ===== بطاقة التغيير ===== */
+    .changes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .change-card {
+        background: white;
+        border: 1px solid #eef2f7;
+        border-radius: 24px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .change-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(156, 39, 176, 0.15);
+        border-color: var(--global-border);
+    }
+
+    .change-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(135deg, var(--global-primary), var(--global-primary-dark));
+        border-radius: 4px 0 0 4px;
+        transform: scaleY(0);
+        transition: transform 0.3s ease;
+    }
+
+    .change-card:hover::before {
+        transform: scaleY(1);
+    }
+
+    /* ===== رأس البطاقة ===== */
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .change-name {
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+        font-size: 1.2rem;
+    }
+
+    .target-badge {
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .target-activity { 
+        background: rgba(67, 97, 238, 0.1); 
+        color: var(--primary); 
+    }
+    .target-project { 
+        background: rgba(76, 201, 240, 0.1); 
+        color: var(--success); 
+    }
+    .target-resource { 
+        background: rgba(248, 150, 30, 0.1); 
+        color: var(--warning); 
+    }
+
+    /* ===== وصف التغيير ===== */
+    .change-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px dashed #eef2f7;
+    }
+
+    /* ===== شروط وإجراءات ===== */
+    .rules-container {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .rules-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .rules-title i {
+        color: var(--global-primary);
+    }
+
+    .conditions-list, .actions-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .condition-item, .action-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 8px;
+        margin-bottom: 0.3rem;
+        font-size: 0.85rem;
+        border: 1px solid #eef2f7;
+    }
+
+    .condition-item i, .action-item i {
+        font-size: 0.8rem;
+    }
+
+    .condition-field {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .action-field {
+        font-weight: 600;
+        color: var(--success);
+    }
+
+    .operator {
+        color: var(--warning);
+        font-weight: 600;
+    }
+
+    .value {
+        color: var(--global-primary);
+        font-weight: 600;
+    }
+
+    .empty-rules {
+        color: #6c757d;
+        font-style: italic;
+        padding: 0.5rem;
+    }
+
+    /* ===== إحصائيات التشغيل ===== */
+    .stats-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 2px solid #eef2f7;
+    }
+
+    .stat-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+
+    .stat-info i {
+        color: var(--global-primary);
+    }
+
+    .run-count {
+        background: var(--global-primary);
+        color: white;
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    /* ===== أزرار التحكم ===== */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        border: 2px solid #eef2f7;
+        background: white;
+        color: #6c757d;
+        font-weight: 600;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        cursor: pointer;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-preview:hover {
+        border-color: var(--global-primary);
+        color: var(--global-primary);
+    }
+
+    .btn-run:hover {
+        border-color: var(--success);
+        background: var(--success);
+        color: white;
+    }
+
+    .btn-edit:hover {
+        border-color: var(--primary);
+        background: var(--primary);
+        color: white;
+    }
+
+    .btn-delete:hover {
+        border-color: var(--danger);
+        background: var(--danger);
+        color: white;
+    }
+
+    /* ===== الحالة الفارغة ===== */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: #f8fafc;
+        border-radius: 30px;
+        border: 2px dashed #eef2f7;
+        grid-column: 1 / -1;
+    }
+
+    .empty-state-icon {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(156, 39, 176, 0.1);
+        color: var(--global-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        margin: 0 auto 1.5rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+
+    /* ===== مؤشر التحميل ===== */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        display: none;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #eef2f7;
+        border-top-color: var(--global-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* ===== الرسوم المتحركة ===== */
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* ===== تنسيق متجاوب ===== */
+    @media (max-width: 768px) {
+        .changes-container {
+            padding: 1rem;
+        }
+
+        .changes-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .btn-create {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .changes-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .btn-action {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="changes-container">
+    <!-- رأس الصفحة -->
+    <div class="changes-header">
+        <div class="header-title">
+            <div class="header-icon">
+                <i class="fas fa-globe"></i>
+            </div>
+            <div class="header-text">
+                <h2>Global Change</h2>
+                <p>التغيير الشامل - تعديل جماعي للأنشطة والمشاريع والموارد</p>
+            </div>
+        </div>
+        <a href="{{ url_for('enterprise.global_change_create') }}" class="btn-create">
+            <i class="fas fa-plus-circle"></i>
+            نموذج جديد
+        </a>
+    </div>
+
+    <!-- إحصائيات سريعة -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ changes|selectattr('target_type', 'equalto', 'activity')|list|length }}</div>
+                <div class="stat-label">نماذج الأنشطة</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ changes|selectattr('target_type', 'equalto', 'project')|list|length }}</div>
+                <div class="stat-label">نماذج المشاريع</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-cubes"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ changes|selectattr('target_type', 'equalto', 'resource')|list|length }}</div>
+                <div class="stat-label">نماذج الموارد</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ changes|sum(attribute='run_count') }}</div>
+                <div class="stat-label">إجمالي التشغيل</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- شبكة نماذج التغيير -->
+    <div class="changes-grid">
+        {% for change in changes %}
+        <div class="change-card" id="change-{{ change.id }}" data-target="{{ change.target_type }}">
+            <!-- رأس البطاقة -->
+            <div class="card-header">
+                <h6 class="change-name">{{ change.change_name }}</h6>
+                <span class="target-badge target-{{ change.target_type }}">
+                    <i class="fas fa-{% if change.target_type == 'activity' %}tasks{% elif change.target_type == 'project' %}project-diagram{% else %}cubes{% endif %}"></i>
+                    {% if change.target_type == 'activity' %}نشاط
+                    {% elif change.target_type == 'project' %}مشروع
+                    {% else %}مورد
+                    {% endif %}
+                </span>
+            </div>
+            
+            <!-- وصف التغيير -->
+            {% if change.change_description %}
+            <div class="change-description">
+                {{ change.change_description }}
+            </div>
+            {% endif %}
+            
+            <!-- الشروط والإجراءات -->
+            <div class="rules-container">
+                <!-- الشروط -->
+                <div class="rules-title">
+                    <i class="fas fa-filter"></i>
+                    الشروط
+                </div>
+                <ul class="conditions-list">
+                    {% if change.conditions and change.conditions|length > 0 %}
+                        {% for condition in change.conditions %}
+                        <li class="condition-item">
+                            <i class="fas fa-circle" style="color: var(--primary); font-size: 0.5rem;"></i>
+                            <span class="condition-field">{{ condition.field }}</span>
+                            <span class="operator">{{ condition.operator }}</span>
+                            <span class="value">{{ condition.value }}</span>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="empty-rules">
+                            <i class="fas fa-info-circle me-1"></i>
+                            لا توجد شروط (يطبق على الكل)
+                        </li>
+                    {% endif %}
+                </ul>
+                
+                <!-- الإجراءات -->
+                <div class="rules-title mt-3">
+                    <i class="fas fa-tools"></i>
+                    الإجراءات
+                </div>
+                <ul class="actions-list">
+                    {% if change.actions and change.actions|length > 0 %}
+                        {% for action in change.actions %}
+                        <li class="action-item">
+                            <i class="fas fa-circle" style="color: var(--success); font-size: 0.5rem;"></i>
+                            <span class="action-field">{{ action.field }}</span>
+                            <span>=</span>
+                            <span class="value">{{ action.value }}</span>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="empty-rules">
+                            <i class="fas fa-info-circle me-1"></i>
+                            لا توجد إجراءات
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <!-- إحصائيات التشغيل -->
+            <div class="stats-footer">
+                <div class="stat-info">
+                    <i class="fas fa-calendar-alt"></i>
+                    آخر تشغيل: 
+                    {% if change.last_run %}
+                        {{ change.last_run.strftime('%Y-%m-%d') }}
+                    {% else %}
+                        لم يشغل بعد
+                    {% endif %}
+                </div>
+                <span class="run-count">
+                    <i class="fas fa-play"></i>
+                    {{ change.run_count }} مرة
+                </span>
+            </div>
+            
+            <!-- أزرار التحكم -->
+            <div class="action-buttons">
+                <button class="btn-action btn-preview" onclick="previewChange({{ change.id }})">
+                    <i class="fas fa-eye"></i>
+                    معاينة
+                </button>
+                <button class="btn-action btn-run" onclick="runChange({{ change.id }})">
+                    <i class="fas fa-play"></i>
+                    تشغيل
+                </button>
+                <a href="{{ url_for('enterprise.global_change_edit', change_id=change.id) }}" class="btn-action btn-edit">
+                    <i class="fas fa-edit"></i>
+                    تعديل
+                </a>
+                <button class="btn-action btn-delete" onclick="deleteChange({{ change.id }})">
+                    <i class="fas fa-trash"></i>
+                    حذف
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-globe"></i>
+            </div>
+            <h3>لا توجد نماذج تغيير شامل</h3>
+            <p>قم بإنشاء نموذج لتطبيق تعديلات على مجموعة من العناصر</p>
+            <a href="{{ url_for('enterprise.global_change_create') }}" class="btn-create">
+                <i class="fas fa-plus-circle"></i>
+                إنشاء نموذج جديد
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- مؤشر التحميل -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+
+<script>
+// دوال مساعدة للتحميل
+function showLoading() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+// معاينة التغيير
+function previewChange(id) {
+    showLoading();
+    
+    fetch(`/enterprise/api/global-change/preview`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            target_type: document.querySelector(`#change-${id}`).dataset.target,
+            conditions: []
+        })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.text();
+    })
+    .then(text => {
+        hideLoading();
+        
+        if (!text || text.trim() === '') {
+            throw new Error('Empty response');
+        }
+        
+        try {
+            const data = JSON.parse(text);
+            if (data.success) {
+                let html = '<div class="text-start">';
+                html += '<h6 class="mb-3">العناصر المتأثرة (أول 10):</h6>';
+                html += '<ul class="list-group">';
+                
+                data.items.forEach(item => {
+                    html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><strong>${item.name}</strong></span>
+                        <span class="badge bg-primary">${item.code}</span>
+                    </li>`;
+                });
+                
+                html += '</ul>';
+                html += '</div>';
+                
+                Swal.fire({
+                    title: 'معاينة التغيير',
+                    html: html,
+                    icon: 'info',
+                    width: '600px',
+                    confirmButtonText: 'حسناً',
+                    confirmButtonColor: '#9c27b0'
+                });
+            } else {
+                showError(data.error || 'فشل تحميل المعاينة');
+            }
+        } catch (e) {
+            console.error('JSON Parse Error:', e);
+            showError('خطأ في استجابة الخادم');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error:', error);
+        showError('حدث خطأ في الاتصال');
+    });
+}
+
+// تشغيل التغيير
+function runChange(id) {
+    Swal.fire({
+        title: 'تأكيد تشغيل التغيير',
+        text: 'هل أنت متأكد من تطبيق هذا التغيير على جميع العناصر المتطابقة؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#9c27b0',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، شغل',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            showLoading();
+            
+            fetch(`/enterprise/global-change/${id}/run`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
+            .then(text => {
+                hideLoading();
+                
+                if (!text || text.trim() === '') {
+                    throw new Error('Empty response');
+                }
+                
+                try {
+                    const data = JSON.parse(text);
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'تم التشغيل بنجاح',
+                            text: data.message || 'تم تطبيق التغيير على العناصر',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        showError(data.error || 'فشل تشغيل التغيير');
+                    }
+                } catch (e) {
+                    console.error('JSON Parse Error:', e);
+                    showError('خطأ في استجابة الخادم');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                showError('حدث خطأ في الاتصال');
+            });
+        }
+    });
+}
+
+// تعديل التغيير
+function editChange(id) {
+    window.location.href = `/enterprise/global-change/${id}/edit`;
+}
+
+// حذف التغيير
+function deleteChange(id) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا النموذج؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            showLoading();
+            
+            fetch(`/enterprise/global-change/${id}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
+            .then(text => {
+                hideLoading();
+                
+                if (!text || text.trim() === '') {
+                    throw new Error('Empty response');
+                }
+                
+                try {
+                    const data = JSON.parse(text);
+                    if (data.success) {
+                        document.getElementById(`change-${id}`).remove();
+                        
+                        // التحقق من عدم وجود عناصر
+                        if (document.querySelectorAll('.change-card').length === 0) {
+                            location.reload();
+                        } else {
+                            showSuccess('تم حذف النموذج بنجاح');
+                        }
+                    } else {
+                        showError(data.error || 'فشل حذف النموذج');
+                    }
+                } catch (e) {
+                    console.error('JSON Parse Error:', e);
+                    showError('خطأ في استجابة الخادم');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                showError('حدث خطأ في الاتصال');
+            });
+        }
+    });
+}
+
+// دوال مساعدة
+function showSuccess(message) {
+    Swal.fire({
+        icon: 'success',
+        title: 'تم بنجاح',
+        text: message,
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
+
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'خطأ',
+        text: message
+    });
+}
+
+function showWarning(message) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'تنبيه',
+        text: message
+    });
+}
+
+// تحديث العدادات عند التحميل
+document.addEventListener('DOMContentLoaded', function() {
+    // يمكن إضافة منطق إضافي هنا
+});
+</script>
+{% endblock %}

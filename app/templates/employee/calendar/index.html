@@ -1,0 +1,118 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ _('emp.calendar') }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<style>
+    .calendar-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        color: white;
+        margin-bottom: 25px;
+    }
+    
+    #calendar {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .fc-event {
+        cursor: pointer;
+        border-radius: 8px;
+        padding: 2px 8px;
+        font-size: 12px;
+    }
+    
+    .fc-event-title {
+        font-weight: 500;
+    }
+    
+    .fc-toolbar-title {
+        font-size: 1.2rem !important;
+        font-weight: 600 !important;
+    }
+    
+    .fc-button-primary {
+        background: var(--primary-color) !important;
+        border-color: var(--primary-color) !important;
+    }
+    
+    .fc-button-primary:hover {
+        background: var(--primary-dark) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="calendar-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-2"><i class="fas fa-calendar-alt me-2"></i> {{ _('calendar') }}</h2>
+            <p class="mb-0 text-white-50">{{ _('emp.view_your_tasks_and_activities') }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <select id="calendarView" class="form-select form-select-sm bg-white" style="width: auto;">
+                <option value="dayGridMonth">{{ _('emp.month') }}</option>
+                <option value="timeGridWeek">{{ _('emp.week') }}</option>
+                <option value="timeGridDay">{{ _('emp.day') }}</option>
+                <option value="listWeek">{{ _('emp.list') }}</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div id="calendar"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        const currentLang = '{{ current_lang }}';
+        
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: currentLang === 'ar' ? 'ar' : 'en',
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+            },
+            buttonText: {
+                today: '{{ _("today") }}',
+                month: '{{ _("month") }}',
+                week: '{{ _("week") }}',
+                day: '{{ _("day") }}',
+                list: '{{ _("list") }}'
+            },
+            events: '/employee/api/calendar/events',
+            eventClick: function(info) {
+                if (info.event.url) {
+                    window.location.href = info.event.url;
+                }
+            },
+            eventDidMount: function(info) {
+                // إضافة تلميح عند التحويم
+                info.el.setAttribute('title', info.event.title);
+            },
+            height: 'auto',
+            slotMinTime: '08:00:00',
+            slotMaxTime: '18:00:00',
+            allDaySlot: true,
+            slotDuration: '01:00:00',
+            nowIndicator: true
+        });
+        
+        calendar.render();
+        
+        // تغيير العرض
+        document.getElementById('calendarView').addEventListener('change', function() {
+            calendar.changeView(this.value);
+        });
+    });
+</script>
+{% endblock %}

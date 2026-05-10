@@ -1,0 +1,300 @@
+{% extends "layouts/auth_base.html" %}
+
+{% block title %}لوحة تحكم المؤسسة - {{ org.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- رأس الصفحة -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-0">{{ org.name }}</h2>
+                            <p class="mb-0 opacity-75">لوحة تحكم المؤسسة</p>
+                        </div>
+                        <div class="text-start">
+                            <span class="badge bg-light text-dark p-2">
+                                <i class="fas fa-calendar me-1"></i>
+                                {{ now.strftime('%Y-%m-%d') }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقات سريعة -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">إجمالي المستخدمين</h6>
+                            <h3 class="mb-0">{{ stats.users_count }}</h3>
+                            <small class="text-success">{{ stats.active_users }} نشط</small>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-users fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">حالة الاشتراك</h6>
+                            <h3 class="mb-0">
+                                {% if stats.subscription_status == 'active' %}
+                                    <span class="badge bg-success">نشط</span>
+                                {% elif stats.subscription_status == 'trial' %}
+                                    <span class="badge bg-warning">تجريبي</span>
+                                {% else %}
+                                    <span class="badge bg-danger">منتهي</span>
+                                {% endif %}
+                            </h3>
+                            <small class="text-muted">{{ stats.subscription_status }}</small>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-credit-card fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">الأيام المتبقية</h6>
+                            <h3 class="mb-0">{{ stats.trial_days_left if stats.trial_days_left > 0 else 0 }}</h3>
+                            <small class="text-muted">يوم في الفترة التجريبية</small>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-hourglass-half fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">تاريخ التسجيل</h6>
+                            <h6 class="mb-0">{{ org.created_at.strftime('%Y-%m-%d') }}</h6>
+                            <small class="text-muted">عضو منذ {{ (now - org.created_at).days }} يوم</small>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-calendar-check fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- معلومات المؤسسة والتنقل -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle text-primary me-2"></i>
+                        معلومات المؤسسة
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="120">الاسم:</th>
+                            <td>{{ org.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>البريد:</th>
+                            <td>{{ org.email }}</td>
+                        </tr>
+                        <tr>
+                            <th>الهاتف:</th>
+                            <td>{{ org.phone or 'غير محدد' }}</td>
+                        </tr>
+                        <tr>
+                            <th>الرمز:</th>
+                            <td><span class="badge bg-secondary">{{ org.org_code }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>السجل التجاري:</th>
+                            <td>{{ org.commercial_register or 'غير محدد' }}</td>
+                        </tr>
+                        <tr>
+                            <th>الرقم الضريبي:</th>
+                            <td>{{ org.tax_number or 'غير محدد' }}</td>
+                        </tr>
+                    </table>
+                    
+                    <div class="d-grid mt-3">
+                        <a href="{{ url_for('company.settings') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit me-2"></i>تعديل المعلومات
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tachometer-alt text-success me-2"></i>
+                        روابط سريعة للإدارة
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <a href="{{ url_for('company.users') }}" class="text-decoration-none">
+                                <div class="card border-0 bg-light text-center p-3">
+                                    <i class="fas fa-users fa-3x text-primary mb-2"></i>
+                                    <h6>إدارة المستخدمين</h6>
+                                    <small class="text-muted">{{ stats.users_count }} مستخدم</small>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <a href="{{ url_for('company.projects') }}" class="text-decoration-none">
+                                <div class="card border-0 bg-light text-center p-3">
+                                    <i class="fas fa-project-diagram fa-3x text-success mb-2"></i>
+                                    <h6>المشاريع</h6>
+                                    <small class="text-muted">عرض وإدارة المشاريع</small>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <a href="{{ url_for('company.departments') }}" class="text-decoration-none">
+                                <div class="card border-0 bg-light text-center p-3">
+                                    <i class="fas fa-building fa-3x text-info mb-2"></i>
+                                    <h6>الأقسام</h6>
+                                    <small class="text-muted">الهيكل التنظيمي</small>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <a href="{{ url_for('company.reports') }}" class="text-decoration-none">
+                                <div class="card border-0 bg-light text-center p-3">
+                                    <i class="fas fa-chart-bar fa-3x text-warning mb-2"></i>
+                                    <h6>التقارير</h6>
+                                    <small class="text-muted">تحليلات وإحصائيات</small>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <a href="{{ url_for('company.settings') }}" class="text-decoration-none">
+                                <div class="card border-0 bg-light text-center p-3">
+                                    <i class="fas fa-cog fa-3x text-secondary mb-2"></i>
+                                    <h6>الإعدادات</h6>
+                                    <small class="text-muted">تخصيص النظام</small>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <a href="{{ url_for('company.subscription') }}" class="text-decoration-none">
+                                <div class="card border-0 bg-light text-center p-3">
+                                    <i class="fas fa-credit-card fa-3x text-danger mb-2"></i>
+                                    <h6>الاشتراك</h6>
+                                    <small class="text-muted">الباقات والفواتير</small>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- حالة الاشتراك -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line text-warning me-2"></i>
+                        حالة الاشتراك
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if stats.subscription_status == 'trial' %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>فترة تجريبية:</strong> متبقي {{ stats.trial_days_left }} يوم من الفترة التجريبية.
+                            <a href="{{ url_for('company.subscription') }}" class="alert-link">اشترك الآن</a> للاستمرار في استخدام النظام.
+                        </div>
+                        
+                        <div class="progress mb-3" style="height: 20px;">
+                            {% set percent = ((30 - stats.trial_days_left) / 30 * 100) %}
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" 
+                                 style="width: {{ percent }}%">
+                                {{ '%0.1f'|format(percent) }}% مستخدم
+                            </div>
+                        </div>
+                        
+                    {% elif stats.subscription_status == 'active' %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>اشتراك نشط:</strong> الاشتراك ساري المفعول.
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle me-2"></i>
+                            <strong>اشتراك منتهي:</strong> يرجى تجديد الاشتراك للاستمرار.
+                            <a href="{{ url_for('company.subscription') }}" class="alert-link">تجديد الآن</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- آخر النشاطات -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history text-info me-2"></i>
+                        آخر النشاطات
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted text-center py-4">سيتم عرض آخر النشاطات هنا قريباً</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- تذييل الصفحة -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">
+                <i class="fas fa-sign-out-alt me-2"></i>
+                تسجيل الخروج من المؤسسة
+            </a>
+            <p class="text-muted small mt-3">
+                <i class="fas fa-copyright me-1"></i>
+                {{ now.year }} {{ org.name }}. جميع الحقوق محفوظة
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

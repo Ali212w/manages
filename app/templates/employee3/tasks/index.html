@@ -1,0 +1,251 @@
+{% extends "employee/base.html" %}
+
+{% block title %}مهامي - نظام المهام{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">مهامي</h2>
+        <p class="text-muted">
+            {% if view_type == 'supervised' %}
+                المهام التي أشرف عليها
+            {% elif view_type == 'delegated' %}
+                المهام الموكلة إلي
+            {% else %}
+                المهام المعينة لي
+            {% endif %}
+        </p>
+    </div>
+    <div>
+        <button class="btn btn-outline-primary me-2" onclick="filterTasks('all')">
+            <i class="fas fa-list me-1"></i>الكل
+        </button>
+        <button class="btn btn-outline-warning me-2" onclick="filterTasks('pending')">
+            <i class="fas fa-clock me-1"></i>معلق
+        </button>
+        <button class="btn btn-outline-primary me-2" onclick="filterTasks('in_progress')">
+            <i class="fas fa-spinner me-1"></i>قيد التنفيذ
+        </button>
+        <button class="btn btn-outline-success" onclick="filterTasks('completed')">
+            <i class="fas fa-check-circle me-1"></i>مكتمل
+        </button>
+    </div>
+</div>
+
+<!-- المهام المتأخرة -->
+{% if overdue_tasks %}
+<div class="alert alert-danger mb-4">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>لديك {{ overdue_tasks|length }} مهام متأخرة!</strong>
+    <button class="btn btn-sm btn-danger ms-3" onclick="showOverdueTasks()">
+        عرض المهام المتأخرة
+    </button>
+</div>
+{% endif %}
+
+<!-- لوحة المهام (Kanban) -->
+<div class="row g-4">
+    <!-- عمود المهام المعلقة -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-warning text-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    معلقة ({{ pending_tasks|length }})
+                </h5>
+            </div>
+            <div class="card-body" style="min-height: 500px;" id="pending-column">
+                {% for task in pending_tasks %}
+                <div class="task-card pending" draggable="true" ondragstart="drag(event)" id="task-{{ task.id }}">
+                    <h6 class="task-title">{{ task.task_name }}</h6>
+                    <div class="task-meta small">
+                        <span><i class="fas fa-project-diagram"></i> {{ task.project.name if task.project }}</span><br>
+                        <span><i class="fas fa-calendar"></i> {{ task.planned_end_date.strftime('%Y-%m-%d') if task.planned_end_date }}</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 3px;">
+                        <div class="progress-bar bg-warning" style="width: {{ task.progress_percentage }}%"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small>{{ task.progress_percentage }}%</small>
+                        <a href="{{ url_for('employee.view_task', task_id=task.id) }}" class="btn btn-sm btn-link">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                    <form action="{{ url_for('tracking.api_start_task', task_id=task.id) }}" method="POST" class="d-inline" id="startForm{{ task.id }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="button" class="btn btn-success" onclick="confirmTaskStart({{ task.id }})" title="بدء المهمة">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </form>
+                 
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">لا توجد مهام معلقة</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- عمود المهام قيد التنفيذ -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-spinner me-2"></i>
+                    قيد التنفيذ ({{ in_progress_tasks|length }})
+                </h5>
+            </div>
+            <div class="card-body" style="min-height: 500px;" id="progress-column">
+                {% for task in in_progress_tasks %}
+                <div class="task-card in_progress" draggable="true" ondragstart="drag(event)" id="task-{{ task.id }}">
+                    <h6 class="task-title">{{ task.task_name }}</h6>
+                    <div class="task-meta small">
+                        <span><i class="fas fa-project-diagram"></i> {{ task.project.name if task.project }}</span><br>
+                        <span><i class="fas fa-calendar"></i> {{ task.planned_end_date.strftime('%Y-%m-%d') if task.planned_end_date }}</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 3px;">
+                        <div class="progress-bar bg-primary" style="width: {{ task.progress_percentage }}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small>{{ task.progress_percentage }}%</small>
+                        <a href="{{ url_for('employee.view_task', task_id=task.id) }}" class="btn btn-sm btn-link">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">لا توجد مهام قيد التنفيذ</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- عمود المهام المكتملة -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-success text-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-check-circle me-2"></i>
+                    مكتملة ({{ completed_tasks|length }})
+                </h5>
+            </div>
+            <div class="card-body" style="min-height: 500px;" id="completed-column">
+                {% for task in completed_tasks %}
+                <div class="task-card completed" id="task-{{ task.id }}">
+                    <h6 class="task-title">{{ task.task_name }}</h6>
+                    <div class="task-meta small">
+                        <span><i class="fas fa-project-diagram"></i> {{ task.project.name if task.project }}</span><br>
+                        <span><i class="fas fa-check-circle text-success"></i> تم الإكمال</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 3px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small><i class="fas fa-star text-warning"></i> مكتمل</small>
+                        <a href="{{ url_for('employee.view_task', task_id=task.id) }}" class="btn btn-sm btn-link">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">لا توجد مهام مكتملة</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// سحب وإفلات المهام (Drag & Drop)
+function drag(ev) {
+    ev.dataTransfer.setData("text", ev.target.id);
+}
+
+document.querySelectorAll('#pending-column, #progress-column, #completed-column').forEach(column => {
+    column.addEventListener('dragover', (ev) => {
+        ev.preventDefault();
+    });
+    
+    column.addEventListener('drop', (ev) => {
+        ev.preventDefault();
+        const data = ev.dataTransfer.getData("text");
+        const taskElement = document.getElementById(data);
+        
+        if (taskElement && ev.target.closest('.card-body')) {
+            const targetColumn = ev.target.closest('.card-body');
+            const taskId = data.split('-')[1];
+            let newStatus = 'pending';
+            
+            if (targetColumn.id === 'progress-column') newStatus = 'in_progress';
+            else if (targetColumn.id === 'completed-column') newStatus = 'completed';
+            
+            // تحديث حالة المهمة في قاعدة البيانات
+            updateTaskStatus(taskId, newStatus);
+            
+            // نقل العنصر في الواجهة
+            targetColumn.appendChild(taskElement);
+            
+            // تحديث لون البطاقة
+            taskElement.className = `task-card ${newStatus}`;
+        }
+    });
+});
+
+function updateTaskStatus(taskId, status) {
+    fetch(`/employee/tasks/${taskId}/update-progress`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            status: status,
+            progress: status === 'completed' ? 100 : (status === 'in_progress' ? 50 : 0)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('تم تحديث حالة المهمة');
+        } else {
+            showError('حدث خطأ في تحديث المهمة');
+        }
+    });
+}
+
+function filterTasks(status) {
+    const tasks = document.querySelectorAll('.task-card');
+    tasks.forEach(task => {
+        if (status === 'all') {
+            task.style.display = 'block';
+        } else {
+            if (task.classList.contains(status)) {
+                task.style.display = 'block';
+            } else {
+                task.style.display = 'none';
+            }
+        }
+    });
+}
+function confirmTaskStart(taskId) {
+    Swal.fire({
+        title: 'بدء المهمة',
+        text: 'هل أنت متأكد من بدء هذه المهمة؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--success)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، ابدأ',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('startForm' + taskId).submit();
+        }
+    });
+}
+function showOverdueTasks() {
+    // TODO: عرض المهام المتأخرة
+}
+</script>
+{% endblock %}

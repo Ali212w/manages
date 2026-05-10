@@ -1,0 +1,120 @@
+{% extends "layouts/auth_base.html" %}
+
+{% block title %}نظام إدارة المشاريع الهندسية{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center min-vh-100 align-items-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="text-center mb-5">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="شعار المنصة" class="img-fluid mb-4" style="max-height: 100px;">
+                <h1 class="display-5 fw-bold">نظام إدارة المشاريع الهندسية</h1>
+                <p class="lead text-muted">منصة متكاملة لإدارة المشاريع والفرق</p>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-primary bg-gradient text-white rounded-circle mb-3 mx-auto" style="width: 60px; height: 60px; line-height: 60px;">
+                                <i class="fas fa-building fa-2x"></i>
+                            </div>
+                            <h3 class="h4 mb-3">تسجيل شركة جديدة</h3>
+                            <p class="text-muted mb-4">سجل شركتك الآن وابدأ بإدارة مشاريعك باحترافية</p>
+                            <div class="d-grid">
+                                <a href="{{ url_for('auth.register_company') }}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-plus-circle me-2"></i>تسجيل شركة
+                                </a>
+                            </div>
+                            <p class="mt-3 small text-muted">
+                                <i class="fas fa-check-circle text-success"></i> 30 يوم تجريبي مجاني
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-success bg-gradient text-white rounded-circle mb-3 mx-auto" style="width: 60px; height: 60px; line-height: 60px;">
+                                <i class="fas fa-sign-in-alt fa-2x"></i>
+                            </div>
+                            <h3 class="h4 mb-3">تسجيل الدخول</h3>
+                            <p class="text-muted mb-4">لديك حساب بالفعل؟ سجل دخولك الآن</p>
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('auth.login') }}" class="btn btn-success btn-lg">
+                                    <i class="fas fa-sign-in-alt me-2"></i>تسجيل الدخول
+                                </a>
+                                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#loginHelpModal">
+                                    <i class="fas fa-question-circle me-2"></i>مساعدة في تسجيل الدخول
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- إضافة هذا الكارد بجانب الكروت الموجودة -->
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-warning">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon bg-warning bg-gradient text-white rounded-circle mb-3 mx-auto" style="width: 60px; height: 60px; line-height: 60px;">
+                            <i class="fas fa-crown fa-2x"></i>
+                        </div>
+                        <h3 class="h4 mb-3">مدير المنصة</h3>
+                        <p class="text-muted mb-4">الدخول للوحة تحكم المنصة وإدارة الشركات</p>
+                        <div class="d-grid">
+                            <a href="{{ url_for('auth.platform_login') }}" class="btn btn-warning btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>دخول المديرين
+                            </a>
+                        </div>
+                        <p class="mt-3 small text-muted">
+                            <i class="fas fa-shield-alt text-warning"></i> منطقة محمية
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- مزايا المنصة -->
+            <div class="row mt-5 text-center">
+                <div class="col-4">
+                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                    <h6 class="fw-bold">إدارة الفرق</h6>
+                </div>
+                <div class="col-4">
+                    <i class="fas fa-project-diagram fa-2x text-success mb-2"></i>
+                    <h6 class="fw-bold">تخطيط المشاريع</h6>
+                </div>
+                <div class="col-4">
+                    <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                    <h6 class="fw-bold">تقارير وتحليلات</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal مساعدة -->
+<div class="modal fade" id="loginHelpModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">مساعدة في تسجيل الدخول</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>يمكنك تسجيل الدخول بإحدى الطريقتين:</p>
+                
+                <h6 class="fw-bold mt-3">1️⃣ تسجيل الدخول كمستخدم:</h6>
+                <p>استخدم بريدك الإلكتروني وكلمة المرور الخاصة بحسابك في الشركة.</p>
+                
+                <h6 class="fw-bold mt-3">2️⃣ تسجيل الدخول كمؤسسة:</h6>
+                <p>إذا كنت تمثل الشركة نفسها (لإدارة الاشتراكات والإعدادات العامة).</p>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    للمستخدمين الجدد، يرجى التواصل مع مدير الشركة للحصول على دعوة تسجيل.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,346 @@
+{% extends "layouts/dashboard_layout.html" %}
+
+{% block title %}لوحة تحكم المدير{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">لوحة تحكم المدير</h1>
+            <p class="text-muted mb-0">نظرة عامة على النظام والإحصائيات</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="refreshDashboard()">
+                <i class="fas fa-sync-alt me-1"></i> تحديث
+            </button>
+        </div>
+    </div>
+    
+    <!-- Quick Stats Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Total Projects -->
+        <div class="col-xl-3 col-lg-4 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-2">المشاريع الكلية</h6>
+                            <h3 class="mb-0">{{ stats.total_projects }}</h3>
+                            <small class="text-success">
+                                <i class="fas fa-arrow-up me-1"></i> {{ stats.projects_growth }}% هذا الشهر
+                            </small>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                            <i class="fas fa-project-diagram fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Projects -->
+        <div class="col-xl-3 col-lg-4 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-2">المشاريع النشطة</h6>
+                            <h3 class="mb-0">{{ stats.active_projects }}</h3>
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar bg-success" style="width: {{ (stats.active_projects / stats.total_projects * 100) if stats.total_projects > 0 else 0 }}%"></div>
+                            </div>
+                        </div>
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                            <i class="fas fa-play-circle fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Users -->
+        <div class="col-xl-3 col-lg-4 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-2">المستخدمون</h6>
+                            <h3 class="mb-0">{{ stats.total_users }}</h3>
+                            <small class="text-muted">
+                                <span class="text-primary">{{ stats.active_users }}</span> نشطون
+                            </small>
+                        </div>
+                        <div class="bg-info bg-opacity-10 rounded-circle p-3">
+                            <i class="fas fa-users fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Revenue -->
+        <div class="col-xl-3 col-lg-4 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-2">الإيرادات الكلية</h6>
+                            <h3 class="mb-0">{{ stats.total_revenue|format_currency }}</h3>
+                            <small class="text-success">
+                                <i class="fas fa-arrow-up me-1"></i> {{ stats.revenue_growth }}% هذا الشهر
+                            </small>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 rounded-circle p-3">
+                            <i class="fas fa-money-bill-wave fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <!-- Projects Progress Chart -->
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0">
+                    <h6 class="mb-0">تقدم المشاريع</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="projectsProgressChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Project Status Distribution -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0">
+                    <h6 class="mb-0">توزيع حالة المشاريع</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="projectStatusChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activities & Quick Actions -->
+    <div class="row g-4">
+        <!-- Recent Activities -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">النشاطات الأخيرة</h6>
+                    <a href="{{ url_for('admin.activities') }}" class="btn btn-sm btn-outline-primary">
+                        عرض الكل
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>المستخدم</th>
+                                    <th>النشاط</th>
+                                    <th>الوقت</th>
+                                    <th>التفاصيل</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in recent_activities %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if activity.user.avatar_url %}
+                                            <img src="{{ activity.user.avatar_url }}" class="rounded-circle me-2" width="32" height="32" alt="">
+                                            {% else %}
+                                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                                <i class="fas fa-user text-muted"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold">{{ activity.user.full_name }}</div>
+                                                <small class="text-muted">{{ activity.user.role }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-circle p-2 me-2 bg-{{ activity.type }}-subtle">
+                                                <i class="fas fa-{{ activity.icon }} text-{{ activity.type }}"></i>
+                                            </div>
+                                            <span>{{ activity.action }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ activity.timestamp|timeago }}</small>
+                                    </td>
+                                    <td>
+                                        {% if activity.details %}
+                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="{{ activity.details }}">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h6 class="mb-0">إجراءات سريعة</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('admin.create_user') }}" class="btn btn-outline-primary text-start">
+                            <i class="fas fa-user-plus me-2"></i> إنشاء مستخدم جديد
+                        </a>
+                        <a href="{{ url_for('admin.create_project') }}" class="btn btn-outline-primary text-start">
+                            <i class="fas fa-plus-circle me-2"></i> إنشاء مشروع جديد
+                        </a>
+                        <a href="{{ url_for('admin.system_settings') }}" class="btn btn-outline-secondary text-start">
+                            <i class="fas fa-cog me-2"></i> إعدادات النظام
+                        </a>
+                        <a href="{{ url_for('admin.backup') }}" class="btn btn-outline-secondary text-start">
+                            <i class="fas fa-database me-2"></i> نسخ احتياطي
+                        </a>
+                        <a href="{{ url_for('admin.reports') }}" class="btn btn-outline-success text-start">
+                            <i class="fas fa-chart-bar me-2"></i> تقارير النظام
+                        </a>
+                        <a href="{{ url_for('admin.logs') }}" class="btn btn-outline-warning text-start">
+                            <i class="fas fa-clipboard-list me-2"></i> سجلات النظام
+                        </a>
+                    </div>
+                    
+                    <!-- System Health -->
+                    <div class="mt-4 pt-3 border-top">
+                        <h6 class="mb-3">صحة النظام</h6>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>مساحة التخزين</small>
+                                <small>{{ system_health.storage.used_gb }} / {{ system_health.storage.total_gb }} جيجا</small>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-{{ system_health.storage.status }}" style="width: {{ system_health.storage.percentage }}%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>الأداء</small>
+                                <small>{{ system_health.performance.percentage }}%</small>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-{{ system_health.performance.status }}" style="width: {{ system_health.performance.percentage }}%"></div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small>آخر تحديث</small>
+                            <small>{{ system_health.last_update|timeago }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize charts
+document.addEventListener('DOMContentLoaded', function() {
+    // Projects Progress Chart
+    const progressCtx = document.getElementById('projectsProgressChart').getContext('2d');
+    new Chart(progressCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ project_names|safe }},
+            datasets: [{
+                label: 'التقدم %',
+                data: {{ project_progress|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'النسبة المئوية %'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'المشاريع'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Project Status Chart
+    const statusCtx = document.getElementById('projectStatusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ status_labels|safe }},
+            datasets: [{
+                data: {{ status_data|safe }},
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Refresh dashboard function
+    window.refreshDashboard = function() {
+        location.reload();
+    };
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

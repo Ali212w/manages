@@ -1,0 +1,948 @@
+{% extends "company/base.html" %}
+
+{% block title %}تفضيلات الإدارة - Admin Preferences{% endblock %}
+
+{% block page_title %}تفضيلات الإدارة{% endblock %}
+{% block page_subtitle %}إعدادات عامة للمنصة والمشاريع{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== المتغيرات الأساسية ===== */
+    :root {
+        --pref-primary: #4361ee;
+        --pref-secondary: #4cc9f0;
+        --pref-success: #4caf50;
+        --pref-warning: #ff9800;
+        --pref-danger: #f44336;
+        --pref-bg: linear-gradient(135deg, #f8f9fa, #ffffff);
+        --pref-shadow: 0 20px 40px rgba(67, 97, 238, 0.1);
+        --pref-border: rgba(67, 97, 238, 0.2);
+    }
+
+    /* ===== الحاوية الرئيسية ===== */
+    .preferences-container {
+        max-width: 1000px;
+        margin: 2rem auto;
+        animation: slideInUp 0.5s ease;
+    }
+
+    /* ===== بطاقة الإعدادات ===== */
+    .pref-card {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03), 0 10px 20px rgba(67, 97, 238, 0.05);
+        border: 1px solid #eef2f7;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pref-card:hover {
+        box-shadow: var(--pref-shadow);
+        border-color: var(--pref-border);
+        transform: translateY(-5px);
+    }
+
+    .pref-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(135deg, var(--pref-primary), var(--pref-secondary));
+        border-radius: 4px 0 0 4px;
+        transform: scaleY(0);
+        transition: transform 0.3s ease;
+    }
+
+    .pref-card:hover::before {
+        transform: scaleY(1);
+    }
+
+    /* ===== رأس البطاقة ===== */
+    .pref-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px dashed #eef2f7;
+    }
+
+    .header-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--pref-primary), var(--pref-secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+    }
+
+    .pref-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+        flex: 1;
+    }
+
+    /* ===== شبكة النموذج ===== */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-label i {
+        color: var(--pref-primary);
+        font-size: 0.9rem;
+    }
+
+    .form-control, .form-select {
+        width: 100%;
+        border: 2px solid #eef2f7;
+        border-radius: 14px;
+        padding: 0.8rem 1.2rem;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+        background: white;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--pref-primary);
+        box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+        outline: none;
+    }
+
+    .form-control:hover, .form-select:hover {
+        border-color: var(--pref-primary-light);
+    }
+
+    /* ===== وحدات القياس ===== */
+    .units-section {
+        margin-top: 1rem;
+    }
+
+    .units-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        min-height: 60px;
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 1rem;
+        border: 2px dashed #eef2f7;
+    }
+
+    .unit-tag {
+        background: linear-gradient(135deg, white, #f8fafc);
+        border: 2px solid #eef2f7;
+        border-radius: 40px;
+        padding: 0.5rem 1.2rem;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .unit-tag:hover {
+        border-color: var(--pref-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.15);
+    }
+
+    .unit-tag i {
+        color: var(--pref-danger);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+    }
+
+    .unit-tag i:hover {
+        transform: scale(1.2);
+        color: var(--pref-danger);
+    }
+
+    .add-unit {
+        background: linear-gradient(135deg, var(--pref-primary), var(--pref-secondary));
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 0.5rem 1.5rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+
+    .add-unit:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 10px 25px rgba(67, 97, 238, 0.4);
+    }
+
+    .add-unit i {
+        color: white;
+    }
+
+    /* ===== قسم المعاينة ===== */
+    .preview-section {
+        background: linear-gradient(135deg, #f8fafc, #ffffff);
+        border-radius: 24px;
+        padding: 2rem;
+        margin-top: 2rem;
+        border: 2px solid var(--pref-border);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .preview-section::before {
+        content: '🔍';
+        position: absolute;
+        bottom: 1rem;
+        left: 1rem;
+        font-size: 3rem;
+        opacity: 0.1;
+        transform: rotate(15deg);
+    }
+
+    .preview-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .preview-title i {
+        color: var(--pref-primary);
+    }
+
+    .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .preview-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .preview-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        text-align: center;
+        border: 2px solid #eef2f7;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .preview-card:hover {
+        border-color: var(--pref-primary);
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(67, 97, 238, 0.15);
+    }
+
+    .preview-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--pref-primary), var(--pref-secondary));
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .preview-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .preview-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 15px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--pref-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin: 0 auto 1rem;
+    }
+
+    .preview-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.3rem;
+        direction: ltr;
+    }
+
+    .preview-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    /* ===== أزرار الحفظ ===== */
+    .save-section {
+        text-align: center;
+        margin-top: 3rem;
+        position: relative;
+    }
+
+    .save-section::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--pref-primary), transparent);
+        transform: translateY(-50%);
+        z-index: 0;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, var(--pref-primary), var(--pref-secondary));
+        border: none;
+        color: white;
+        padding: 1.2rem 4rem;
+        border-radius: 60px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+        position: relative;
+        z-index: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .btn-save:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 20px 40px rgba(67, 97, 238, 0.4);
+    }
+
+    .btn-save i {
+        font-size: 1.3rem;
+        animation: bounce 2s infinite;
+    }
+
+    /* ===== مؤشرات الحالة ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.3rem 1rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--pref-primary);
+    }
+
+    /* ===== تلميحات ===== */
+    .field-hint {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.3rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .field-hint i {
+        color: var(--pref-primary);
+        font-size: 0.7rem;
+    }
+
+    /* ===== الرسوم المتحركة ===== */
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0);
+        }
+        40% {
+            transform: translateY(-10px);
+        }
+        60% {
+            transform: translateY(-5px);
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.4);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(67, 97, 238, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(67, 97, 238, 0);
+        }
+    }
+
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
+    /* ===== مؤشر التحميل ===== */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        display: none;
+        backdrop-filter: blur(5px);
+    }
+
+    .spinner {
+        width: 60px;
+        height: 60px;
+        border: 6px solid #eef2f7;
+        border-top-color: var(--pref-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* ===== تنسيق متجاوب ===== */
+    @media (max-width: 768px) {
+        .preferences-container {
+            margin: 1rem;
+        }
+
+        .pref-card {
+            padding: 1.5rem;
+        }
+
+        .btn-save {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="preferences-container">
+    <!-- مؤشر التحميل -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <form method="POST" action="{{ url_for('enterprise.admin_preferences') }}" id="preferencesForm">
+        <!-- الإعدادات العامة -->
+        <div class="pref-card">
+            <div class="pref-header">
+                <div class="header-icon">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <h5 class="pref-title">الإعدادات العامة</h5>
+                <span class="status-badge">
+                    <i class="fas fa-check-circle me-1"></i>
+                    عام
+                </span>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-calendar"></i>
+                        صيغة التاريخ
+                    </label>
+                    <select name="date_format" class="form-select">
+                        <option value="dd/MM/yyyy" {% if preferences.date_format == 'dd/MM/yyyy' %}selected{% endif %}>يوم/شهر/سنة (31/12/2024)</option>
+                        <option value="MM/dd/yyyy" {% if preferences.date_format == 'MM/dd/yyyy' %}selected{% endif %}>شهر/يوم/سنة (12/31/2024)</option>
+                        <option value="yyyy-MM-dd" {% if preferences.date_format == 'yyyy-MM-dd' %}selected{% endif %}>سنة-شهر-يوم (2024-12-31)</option>
+                    </select>
+                    <div class="field-hint">
+                        <i class="fas fa-info-circle"></i>
+                        التنسيق المستخدم في عرض التواريخ
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-clock"></i>
+                        صيغة الوقت
+                    </label>
+                    <select name="time_format" class="form-select">
+                        <option value="HH:mm" {% if preferences.time_format == 'HH:mm' %}selected{% endif %}>24 ساعة (14:30)</option>
+                        <option value="hh:mm a" {% if preferences.time_format == 'hh:mm a' %}selected{% endif %}>12 ساعة (02:30 PM)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-week"></i>
+                        بداية الأسبوع
+                    </label>
+                    <select name="week_start" class="form-select">
+                        <option value="1" {% if preferences.week_start == 1 %}selected{% endif %}>الأحد</option>
+                        <option value="2" {% if preferences.week_start == 2 %}selected{% endif %}>الإثنين</option>
+                        <option value="7" {% if preferences.week_start == 7 %}selected{% endif %}>السبت</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-alt"></i>
+                        بداية السنة المالية
+                    </label>
+                    <input type="text" name="fiscal_year_start" class="form-control" 
+                           value="{{ preferences.fiscal_year_start }}" 
+                           placeholder="01-01"
+                           pattern="\d{2}-\d{2}"
+                           title="صيغة MM-DD">
+                    <div class="field-hint">
+                        <i class="fas fa-info-circle"></i>
+                        صيغة: MM-DD (مثال: 01-01)
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- إعدادات العملة -->
+        <div class="pref-card">
+            <div class="pref-header">
+                <div class="header-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <h5 class="pref-title">إعدادات العملة</h5>
+                <span class="status-badge">
+                    <i class="fas fa-money-bill-wave me-1"></i>
+                    مالي
+                </span>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-dollar-sign"></i>
+                        العملة الأساسية
+                    </label>
+                    <select name="base_currency" class="form-select">
+                        <option value="SAR" {% if preferences.base_currency == 'SAR' %}selected{% endif %}>🇸🇦 ريال سعودي (SAR)</option>
+                        <option value="USD" {% if preferences.base_currency == 'USD' %}selected{% endif %}>🇺🇸 دولار أمريكي (USD)</option>
+                        <option value="EUR" {% if preferences.base_currency == 'EUR' %}selected{% endif %}>🇪🇺 يورو (EUR)</option>
+                        <option value="GBP" {% if preferences.base_currency == 'GBP' %}selected{% endif %}>🇬🇧 جنيه إسترليني (GBP)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-hashtag"></i>
+                        المنازل العشرية
+                    </label>
+                    <select name="decimal_places" class="form-select">
+                        <option value="0" {% if preferences.decimal_places == 0 %}selected{% endif %}>0 (١٢٣٤)</option>
+                        <option value="1" {% if preferences.decimal_places == 1 %}selected{% endif %}>1 (١٢٣٤.٥)</option>
+                        <option value="2" {% if preferences.decimal_places == 2 %}selected{% endif %}>2 (١٢٣٤.٥٦)</option>
+                        <option value="3" {% if preferences.decimal_places == 3 %}selected{% endif %}>3 (١٢٣٤.٥٦٧)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-format"></i>
+                        صيغة الأرقام
+                    </label>
+                    <select name="number_format" class="form-select">
+                        <option value="###,###.##" {% if preferences.number_format == '###,###.##' %}selected{% endif %}>1,234,567.89</option>
+                        <option value="###,###.###" {% if preferences.number_format == '###,###.###' %}selected{% endif %}>1,234,567.890</option>
+                        <option value="### ###.##" {% if preferences.number_format == '### ###.##' %}selected{% endif %}>1 234 567.89</option>
+                        <option value="'###'###.##" {% if preferences.number_format == "'###'###.##" %}selected{% endif %}>1'234'567.89</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- وحدات القياس -->
+        <div class="pref-card">
+            <div class="pref-header">
+                <div class="header-icon">
+                    <i class="fas fa-ruler"></i>
+                </div>
+                <h5 class="pref-title">وحدات القياس</h5>
+                <span class="status-badge">
+                    <i class="fas fa-cubes me-1"></i>
+                    موارد
+                </span>
+            </div>
+            
+            <div class="units-section">
+                <label class="form-label">
+                    <i class="fas fa-tags"></i>
+                    الوحدات المتاحة
+                </label>
+                <div class="units-container" id="unitsContainer">
+                    {% if preferences.units_of_measure %}
+                        {% for unit in preferences.units_of_measure %}
+                        <span class="unit-tag" data-unit="{{ unit }}">
+                            <i class="fas fa-cube me-1" style="color: var(--pref-primary);"></i>
+                            {{ unit }}
+                            <i class="fas fa-times" onclick="removeUnit('{{ unit }}')" title="حذف"></i>
+                        </span>
+                        {% endfor %}
+                    {% endif %}
+                    <span class="unit-tag add-unit" onclick="addUnit()">
+                        <i class="fas fa-plus"></i>
+                        إضافة وحدة
+                    </span>
+                </div>
+                <input type="hidden" name="units" id="unitsInput" 
+                       value="{{ preferences.units_of_measure|join(',') if preferences.units_of_measure }}">
+                
+                <div class="field-hint">
+                    <i class="fas fa-info-circle"></i>
+                    الوحدات المستخدمة في المواد والموارد (مثال: متر, طن, ساعة)
+                </div>
+            </div>
+        </div>
+        
+        <!-- معاينة الإعدادات -->
+        <div class="preview-section">
+            <h6 class="preview-title">
+                <i class="fas fa-eye"></i>
+                معاينة التنسيق
+            </h6>
+            <div class="preview-grid">
+                <div class="preview-card">
+                    <div class="preview-icon">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <div class="preview-value" id="previewNumber">
+                        {% set num = 1234567.89 %}
+                        {% if preferences.number_format == '###,###.##' %}
+                            1,234,567.89
+                        {% elif preferences.number_format == '###,###.###' %}
+                            1,234,567.890
+                        {% elif preferences.number_format == '### ###.##' %}
+                            1 234 567.89
+                        {% else %}
+                            1'234'567.89
+                        {% endif %}
+                    </div>
+                    <div class="preview-label">الأرقام</div>
+                </div>
+                
+                <div class="preview-card">
+                    <div class="preview-icon">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="preview-value" id="previewDate">
+                        {% if preferences.date_format == 'dd/MM/yyyy' %}
+                            31/12/2024
+                        {% elif preferences.date_format == 'MM/dd/yyyy' %}
+                            12/31/2024
+                        {% else %}
+                            2024-12-31
+                        {% endif %}
+                    </div>
+                    <div class="preview-label">التاريخ</div>
+                </div>
+                
+                <div class="preview-card">
+                    <div class="preview-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="preview-value" id="previewTime">
+                        {% if preferences.time_format == 'HH:mm' %}
+                            14:30
+                        {% else %}
+                            02:30 PM
+                        {% endif %}
+                    </div>
+                    <div class="preview-label">الوقت</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- حفظ الإعدادات -->
+        <div class="save-section">
+            <button type="submit" class="btn-save" id="saveBtn">
+                <i class="fas fa-save"></i>
+                حفظ الإعدادات
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ============================================
+// متغيرات عامة
+// ============================================
+let units = [];
+
+{% if preferences.units_of_measure %}
+    units = {{ preferences.units_of_measure|tojson }};
+{% endif %}
+
+// ============================================
+// دوال التحميل
+// ============================================
+function showLoading() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+// ============================================
+// دوال إدارة وحدات القياس
+// ============================================
+function addUnit() {
+    Swal.fire({
+        title: 'إضافة وحدة قياس',
+        html: `
+            <div class="text-start">
+                <label class="form-label">اسم الوحدة</label>
+                <input type="text" class="form-control" id="newUnit" 
+                       placeholder="مثال: متر, طن, ساعة">
+                <small class="text-muted">يمكنك إضافة وحدات متعددة بفواصل</small>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'إضافة',
+        cancelButtonText: 'إلغاء',
+        confirmButtonColor: '#4361ee',
+        preConfirm: () => {
+            const input = document.getElementById('newUnit').value;
+            if (!input) {
+                Swal.showValidationMessage('الرجاء إدخال اسم الوحدة');
+                return false;
+            }
+            return input;
+        }
+    }).then((result) => {
+        if (result.value) {
+            // دعم إضافة وحدات متعددة بفواصل
+            const newUnits = result.value.split(',').map(u => u.trim()).filter(u => u);
+            
+            newUnits.forEach(unit => {
+                if (!units.includes(unit)) {
+                    units.push(unit);
+                }
+            });
+            
+            updateUnitsDisplay();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'تم الإضافة',
+                text: `تم إضافة ${newUnits.length} وحدة جديدة`,
+                timer: 1500,
+                showConfirmButton: false
+            });
+        }
+    });
+}
+
+function removeUnit(unit) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: `هل أنت متأكد من حذف وحدة "${unit}"؟`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#f44336',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            units = units.filter(u => u !== unit);
+            updateUnitsDisplay();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'تم الحذف',
+                text: `تم حذف وحدة "${unit}"`,
+                timer: 1500,
+                showConfirmButton: false
+            });
+        }
+    });
+}
+
+function updateUnitsDisplay() {
+    const container = document.getElementById('unitsContainer');
+    const input = document.getElementById('unitsInput');
+    
+    // مسح المحتوى الحالي مع الاحتفاظ بزر الإضافة
+    const addButton = container.querySelector('.add-unit');
+    container.innerHTML = '';
+    
+    // إضافة الوحدات
+    units.forEach(unit => {
+        const tag = document.createElement('span');
+        tag.className = 'unit-tag';
+        tag.dataset.unit = unit;
+        tag.innerHTML = `
+            <i class="fas fa-cube me-1" style="color: var(--pref-primary);"></i>
+            ${unit}
+            <i class="fas fa-times" onclick="removeUnit('${unit}')" title="حذف"></i>
+        `;
+        container.appendChild(tag);
+    });
+    
+    // إعادة إضافة زر الإضافة
+    container.appendChild(addButton);
+    
+    // تحديث الحقل المخفي
+    input.value = units.join(',');
+}
+
+// ============================================
+// تحديث المعاينة المباشرة
+// ============================================
+document.querySelectorAll('select[name="date_format"], select[name="time_format"], select[name="number_format"]').forEach(select => {
+    select.addEventListener('change', updatePreview);
+});
+
+function updatePreview() {
+    const dateFormat = document.querySelector('select[name="date_format"]').value;
+    const timeFormat = document.querySelector('select[name="time_format"]').value;
+    const numberFormat = document.querySelector('select[name="number_format"]').value;
+    
+    // تحديث معاينة التاريخ
+    const previewDate = document.getElementById('previewDate');
+    if (dateFormat === 'dd/MM/yyyy') {
+        previewDate.textContent = '31/12/2024';
+    } else if (dateFormat === 'MM/dd/yyyy') {
+        previewDate.textContent = '12/31/2024';
+    } else {
+        previewDate.textContent = '2024-12-31';
+    }
+    
+    // تحديث معاينة الوقت
+    const previewTime = document.getElementById('previewTime');
+    if (timeFormat === 'HH:mm') {
+        previewTime.textContent = '14:30';
+    } else {
+        previewTime.textContent = '02:30 PM';
+    }
+    
+    // تحديث معاينة الأرقام
+    const previewNumber = document.getElementById('previewNumber');
+    if (numberFormat === '###,###.##') {
+        previewNumber.textContent = '1,234,567.89';
+    } else if (numberFormat === '###,###.###') {
+        previewNumber.textContent = '1,234,567.890';
+    } else if (numberFormat === '### ###.##') {
+        previewNumber.textContent = '1 234 567.89';
+    } else {
+        previewNumber.textContent = '1\'234\'567.89';
+    }
+}
+
+// ============================================
+// التحقق من صحة النموذج
+// ============================================
+document.getElementById('preferencesForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // التحقق من fiscal_year_start
+    const fiscalYear = document.querySelector('input[name="fiscal_year_start"]').value;
+    const fiscalPattern = /^\d{2}-\d{2}$/;
+    
+    if (!fiscalPattern.test(fiscalYear)) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'صيغة بداية السنة المالية يجب أن تكون MM-DD (مثال: 01-01)'
+        });
+        return;
+    }
+    
+    Swal.fire({
+        title: 'تأكيد الحفظ',
+        text: 'هل أنت متأكد من حفظ الإعدادات؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4361ee',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، حفظ',
+        cancelButtonText: 'إلغاء',
+        backdrop: `
+            rgba(67,97,238,0.1)
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 24 24' fill='%234361ee'%3E%3Cpath d='M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm4-10H5V5h11v4z'/%3E%3C/svg%3E")
+            left top
+            no-repeat
+        `
+    }).then((result) => {
+        if (result.isConfirmed) {
+            showLoading();
+            this.submit();
+        }
+    });
+});
+
+// ============================================
+// تهيئة الصفحة
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    updatePreview();
+    
+   
+});
+</script>
+{% endblock %}

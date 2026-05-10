@@ -1,0 +1,202 @@
+{% extends "employee/base.html" %}
+
+{% block title %}تقرير يومي جديد - نظام المهام{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">تقرير يومي جديد</h2>
+        <p class="text-muted">سجل أعمالك وإنجازاتك اليومية</p>
+    </div>
+    <div>
+        <a href="{{ url_for('employee.daily_reports') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-2"></i>عودة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-edit me-2 text-primary"></i>
+                    تفاصيل التقرير
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('employee.create_daily_report') }}">
+                    <!-- معلومات أساسية -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">التاريخ <span class="text-danger">*</span></label>
+                            <input type="date" name="report_date" class="form-control" 
+                                   value="{{ now.date().isoformat() }}" required max="{{ now.date().isoformat() }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">المشروع</label>
+                            <select name="project_id" class="form-select">
+                                <option value="">-- اختر المشروع --</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- حالة الطقس -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">الحالة الجوية</label>
+                            <select name="weather_condition" class="form-select">
+                                <option value="">-- اختر --</option>
+                                <option value="مشمس">مشمس</option>
+                                <option value="غائم">غائم</option>
+                                <option value="ممطر">ممطر</option>
+                                <option value="عاصف">عاصف</option>
+                                <option value="حار">حار</option>
+                                <option value="بارد">بارد</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">درجة الحرارة (°C)</label>
+                            <input type="number" name="temperature" class="form-control" step="0.1">
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- محتوى التقرير -->
+                    <div class="mb-3">
+                        <label class="form-label">ملخص العمل <span class="text-danger">*</span></label>
+                        <textarea name="work_summary" class="form-control" rows="4" 
+                                  placeholder="ملخص عام لأعمال اليوم..." required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">الأعمال المنجزة</label>
+                        <textarea name="completed_work" class="form-control" rows="3" 
+                                  placeholder="ما تم إنجازه اليوم..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">الأعمال المخطط لها غداً</label>
+                        <textarea name="planned_work" class="form-control" rows="3" 
+                                  placeholder="خطة العمل ليوم غد..."></textarea>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- مشاكل ومعوقات -->
+                    <div class="mb-3">
+                        <label class="form-label">المشاكل والمعوقات</label>
+                        <textarea name="issues_encountered" class="form-control" rows="3" 
+                                  placeholder="أي مشاكل واجهتك اليوم..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات السلامة</label>
+                        <textarea name="safety_notes" class="form-control" rows="2" 
+                                  placeholder="ملاحظات تتعلق بالسلامة..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات للمشرف</label>
+                        <textarea name="supervisor_notes" class="form-control" rows="2" 
+                                  placeholder="أي ملاحظات تريد إيصالها للمشرف..."></textarea>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- المهام المرتبطة -->
+                    <div class="mb-3">
+                        <label class="form-label">المهام المرتبطة</label>
+                        <select name="tasks" class="form-select" multiple size="3">
+                            <option value="">اختر المهام المرتبطة بهذا التقرير</option>
+                        </select>
+                        <small class="text-muted">يمكنك اختيار عدة مهام (اختياري)</small>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn-primary-gradient px-5">
+                            <i class="fas fa-save me-2"></i>حفظ التقرير
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary ms-2 px-5">
+                            <i class="fas fa-undo me-2"></i>إعادة تعيين
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- المساعدة والإرشادات -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-lightbulb me-2 text-warning"></i>
+                    نصائح للتقرير
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        كن دقيقاً في وصف الأعمال
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        اذكر الإنجازات الرئيسية
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        حدد المشاكل بوضوح
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        اقترح حلولاً للمشاكل
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2 text-info"></i>
+                    آخر تقرير
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-0">لا يوجد تقارير سابقة</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// تعيين الحد الأقصى للتاريخ إلى اليوم
+document.querySelector('input[name="report_date"]').max = new Date().toISOString().split('T')[0];
+
+// التحقق من عدم اختيار تاريخ مستقبلي
+document.querySelector('input[name="report_date"]').addEventListener('change', function() {
+    const selectedDate = new Date(this.value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDate > today) {
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'لا يمكن اختيار تاريخ مستقبلي'
+        });
+        this.value = today.toISOString().split('T')[0];
+    }
+});
+</script>
+{% endblock %}

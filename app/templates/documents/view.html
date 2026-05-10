@@ -1,0 +1,960 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ document.title }} - {{ super() }}{% endblock %}
+
+{% block styles %}
+<style>
+    .document-view-container {
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 56px);
+        padding: 2rem;
+    }
+    
+    .document-header {
+        background-color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-right: 5px solid var(--primary-color);
+    }
+    
+    .document-actions-bar {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .document-content {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+    }
+    
+    .document-preview-section {
+        background-color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        min-height: 600px;
+    }
+    
+    .document-details-section {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .document-info-card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .document-info-item {
+        display: flex;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .document-info-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .info-label {
+        min-width: 120px;
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .info-value {
+        flex: 1;
+        font-weight: 500;
+    }
+    
+    .preview-container {
+        width: 100%;
+        height: 500px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .preview-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    
+    .preview-unsupported {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .document-icon-large {
+        width: 80px;
+        height: 80px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 2.5rem;
+        color: white;
+    }
+    
+    .document-icon-large.pdf { background-color: #e74c3c; }
+    .document-icon-large.docx { background-color: #2ecc71; }
+    .document-icon-large.xlsx { background-color: #27ae60; }
+    .document-icon-large.image { background-color: #3498db; }
+    .document-icon-large.other { background-color: #9b59b6; }
+    
+    .extraction-results {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        border: 2px dashed #ddd;
+    }
+    
+    .extraction-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    
+    .extraction-table th {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 12px;
+        text-align: right;
+        font-weight: 500;
+    }
+    
+    .extraction-table td {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .extraction-table tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .version-history {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .version-item {
+        padding: 1rem;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .version-item:last-child {
+        border-bottom: none;
+    }
+    
+    .version-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .related-documents {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .related-doc-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        transition: all 0.3s;
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .related-doc-item:hover {
+        background-color: #e9ecef;
+        transform: translateX(-5px);
+    }
+    
+    .related-doc-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 10px;
+        color: white;
+        flex-shrink: 0;
+    }
+    
+    .document-timeline {
+        position: relative;
+        padding-right: 30px;
+    }
+    
+    .document-timeline::before {
+        content: '';
+        position: absolute;
+        right: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #e0e0e0;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        right: -25px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--secondary-color);
+        border: 2px solid white;
+        box-shadow: 0 0 0 3px var(--secondary-color);
+    }
+    
+    .timeline-time {
+        font-size: 0.8rem;
+        color: #666;
+        margin-bottom: 0.25rem;
+    }
+    
+    .timeline-content {
+        font-size: 0.9rem;
+    }
+    
+    @media (max-width: 992px) {
+        .document-content {
+            grid-template-columns: 1fr;
+        }
+        
+        .document-preview-section {
+            min-height: 400px;
+        }
+        
+        .preview-container {
+            height: 400px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .document-view-container {
+            padding: 1rem;
+        }
+        
+        .document-header {
+            padding: 1.5rem;
+        }
+        
+        .document-actions-bar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+        
+        .preview-container {
+            height: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="document-view-container">
+    <!-- Document Header -->
+    <div class="document-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="document-icon-large {{ document.file_extension }}">
+                        {% if document.file_extension == 'pdf' %}
+                        <i class="fas fa-file-pdf"></i>
+                        {% elif document.file_extension in ['doc', 'docx'] %}
+                        <i class="fas fa-file-word"></i>
+                        {% elif document.file_extension in ['xls', 'xlsx', 'csv'] %}
+                        <i class="fas fa-file-excel"></i>
+                        {% elif document.file_extension in ['jpg', 'jpeg', 'png'] %}
+                        <i class="fas fa-file-image"></i>
+                        {% else %}
+                        <i class="fas fa-file"></i>
+                        {% endif %}
+                    </div>
+                    <div class="ms-3">
+                        <h2 class="mb-1">{{ document.title }}</h2>
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <span class="badge bg-primary">
+                                {{ get_document_type_label(document.document_type) }}
+                            </span>
+                            {% if document.category %}
+                            <span class="badge bg-secondary">
+                                {{ document.category }}
+                            </span>
+                            {% endif %}
+                            {% if document.requires_approval %}
+                                {% if document.approval_status == 'approved' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>موافق عليه
+                                </span>
+                                {% elif document.approval_status == 'rejected' %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times-circle me-1"></i>مرفوض
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock me-1"></i>بانتظار الموافقة
+                                </span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                {% if document.description %}
+                <p class="text-muted mb-0">{{ document.description }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-4 text-md-end">
+                <div class="document-stats">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="fs-4 fw-bold">{{ format_file_size(document.file_size) }}</div>
+                                <small class="text-muted">الحجم</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="fs-4 fw-bold">{{ document.file_extension|upper }}</div>
+                                <small class="text-muted">الصيغة</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Actions Bar -->
+    <div class="document-actions-bar">
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('document.download', document_id=document.id) }}" 
+               class="btn btn-primary">
+                <i class="fas fa-download me-2"></i>تحميل
+            </a>
+            
+            {% if current_user.role in ['admin', 'project_manager'] %}
+                {% if document.requires_approval and document.approval_status != 'approved' %}
+                <form method="POST" 
+                      action="{{ url_for('document.approve_document', document_id=document.id) }}"
+                      class="d-inline"
+                      onsubmit="return confirm('هل تريد الموافقة على هذا المستند؟')">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-2"></i>موافقة
+                    </button>
+                </form>
+                
+                <form method="POST" 
+                      action="{{ url_for('document.reject_document', document_id=document.id) }}"
+                      class="d-inline"
+                      onsubmit="return confirm('هل تريد رفض هذا المستند؟')">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times me-2"></i>رفض
+                    </button>
+                </form>
+                {% endif %}
+            {% endif %}
+            
+            {% if document.document_type == 'bill_of_quantities' and document.extraction_status != 'completed' %}
+            <form method="POST" 
+                  action="{{ url_for('document.extract_document', document_id=document.id) }}"
+                  class="d-inline"
+                  onsubmit="return confirm('هل تريد استخراج البيانات من هذا المستند؟')">
+                <button type="submit" class="btn btn-info">
+                    <i class="fas fa-brain me-2"></i>استخراج البيانات
+                </button>
+            </form>
+            {% endif %}
+            
+            {% if can_delete_document(document, current_user) %}
+            <form method="POST" 
+                  action="{{ url_for('document.delete_document', document_id=document.id) }}"
+                  class="d-inline"
+                  onsubmit="return confirm('هل تريد حذف هذا المستند نهائياً؟')">
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="fas fa-trash me-2"></i>حذف
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('project.view', project_id=document.project.id) }}" 
+               class="btn btn-outline-primary">
+                <i class="fas fa-project-diagram me-2"></i>المشروع
+            </a>
+            <button class="btn btn-outline-secondary" onclick="shareDocument()">
+                <i class="fas fa-share-alt me-2"></i>مشاركة
+            </button>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="document-content">
+        <!-- Preview Section -->
+        <div class="document-preview-section">
+            <h4 class="mb-3">معاينة المستند</h4>
+            
+            <div class="preview-container" id="previewContainer">
+                {% if document.file_extension == 'pdf' %}
+                <iframe src="{{ url_for('document.download', document_id=document.id) }}#toolbar=0" 
+                        class="preview-iframe"
+                        id="pdfPreview"></iframe>
+                {% elif document.file_extension in ['jpg', 'jpeg', 'png'] %}
+                <img src="{{ url_for('document.download', document_id=document.id) }}" 
+                     alt="{{ document.title }}"
+                     style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                {% else %}
+                <div class="preview-unsupported">
+                    <div class="document-icon-large {{ document.file_extension }} mb-3">
+                        {% if document.file_extension == 'pdf' %}
+                        <i class="fas fa-file-pdf"></i>
+                        {% elif document.file_extension in ['doc', 'docx'] %}
+                        <i class="fas fa-file-word"></i>
+                        {% elif document.file_extension in ['xls', 'xlsx', 'csv'] %}
+                        <i class="fas fa-file-excel"></i>
+                        {% else %}
+                        <i class="fas fa-file"></i>
+                        {% endif %}
+                    </div>
+                    <h5>لا يمكن معاينة هذا النوع من الملفات</h5>
+                    <p class="text-muted mb-3">يمكنك تحميل الملف لعرضه على جهازك</p>
+                    <a href="{{ url_for('document.download', document_id=document.id) }}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>تحميل المستند
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Document Controls -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="d-flex gap-2">
+                    {% if document.file_extension == 'pdf' %}
+                    <button class="btn btn-sm btn-outline-secondary" onclick="zoomIn()">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="zoomOut()">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="fitToWidth()">
+                        <i class="fas fa-arrows-alt-h"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" onclick="printDocument()">
+                        <i class="fas fa-print me-1"></i>طباعة
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="fullScreenPreview()">
+                        <i class="fas fa-expand me-1"></i>شاشة كاملة
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Extraction Results -->
+            {% if document.extraction_status == 'completed' and document.extraction_metadata %}
+            <div class="extraction-results mt-4">
+                <h5>
+                    <i class="fas fa-brain me-2"></i>
+                    البيانات المستخرجة
+                </h5>
+                
+                {% if document.document_type == 'bill_of_quantities' %}
+                <div class="table-responsive">
+                    <table class="extraction-table">
+                        <thead>
+                            <tr>
+                                <th>البند</th>
+                                <th>الوصف</th>
+                                <th>الوحدة</th>
+                                <th>الكمية</th>
+                                <th>السعر</th>
+                                <th>المجموع</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in bill_items %}
+                            <tr>
+                                <td>{{ item.item_number }}</td>
+                                <td>{{ item.description }}</td>
+                                <td>{{ item.unit }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.unit_price }}</td>
+                                <td>{{ item.total_price }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-3 bg-white rounded">
+                    <pre>{{ document.extraction_metadata|tojson(indent=2) }}</pre>
+                </div>
+                {% endif %}
+            </div>
+            {% elif document.extraction_status == 'failed' %}
+            <div class="alert alert-danger mt-4">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                فشل استخراج البيانات من المستند
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Details Section -->
+        <div class="document-details-section">
+            <!-- Document Information -->
+            <div class="document-info-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    معلومات المستند
+                </h5>
+                
+                <div class="document-info-item">
+                    <span class="info-label">المشروع:</span>
+                    <span class="info-value">
+                        <a href="{{ url_for('project.view', project_id=document.project.id) }}">
+                            {{ document.project.name }}
+                        </a>
+                    </span>
+                </div>
+                
+                <div class="document-info-item">
+                    <span class="info-label">اسم الملف:</span>
+                    <span class="info-value">{{ document.original_filename }}</span>
+                </div>
+                
+                <div class="document-info-item">
+                    <span class="info-label">حجم الملف:</span>
+                    <span class="info-value">{{ format_file_size(document.file_size) }}</span>
+                </div>
+                
+                <div class="document-info-item">
+                    <span class="info-label">صيغة الملف:</span>
+                    <span class="info-value">{{ document.file_extension|upper }}</span>
+                </div>
+                
+                <div class="document-info-item">
+                    <span class="info-label">تاريخ الرفع:</span>
+                    <span class="info-value">{{ document.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                
+                <div class="document-info-item">
+                    <span class="info-label">رافع الملف:</span>
+                    <span class="info-value">
+                        {{ document.uploader.full_name if document.uploader else 'غير معروف' }}
+                    </span>
+                </div>
+                
+                {% if document.approved_by %}
+                <div class="document-info-item">
+                    <span class="info-label">موافق عليه بواسطة:</span>
+                    <span class="info-value">
+                        {{ document.approver.full_name if document.approver else 'غير معروف' }}
+                    </span>
+                </div>
+                
+                <div class="document-info-item">
+                    <span class="info-label">تاريخ الموافقة:</span>
+                    <span class="info-value">
+                        {{ document.approved_at.strftime('%Y-%m-%d %H:%M') if document.approved_at else '-' }}
+                    </span>
+                </div>
+                {% endif %}
+                
+                <div class="document-info-item">
+                    <span class="info-label">مستوى الوصول:</span>
+                    <span class="info-value">
+                        {% if document.is_public %}
+                        عام
+                        {% elif document.access_level == 'organization' %}
+                        المؤسسة
+                        {% elif document.access_level == 'team' %}
+                        الفريق
+                        {% else %}
+                        مقيد
+                        {% endif %}
+                    </span>
+                </div>
+                
+                {% if document.version %}
+                <div class="document-info-item">
+                    <span class="info-label">الإصدار:</span>
+                    <span class="info-value">{{ document.version }}</span>
+                </div>
+                {% endif %}
+                
+                {% if document.revision_number %}
+                <div class="document-info-item">
+                    <span class="info-label">رقم المراجعة:</span>
+                    <span class="info-value">{{ document.revision_number }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Activity Timeline -->
+            <div class="document-info-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-history me-2"></i>
+                    سجل النشاط
+                </h5>
+                
+                <div class="document-timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-time">الآن</div>
+                        <div class="timeline-content">أنت تشاهد هذا المستند</div>
+                    </div>
+                    
+                    {% if document.approved_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-time">{{ document.approved_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                        <div class="timeline-content">تمت الموافقة على المستند</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-time">{{ document.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                        <div class="timeline-content">تم رفع المستند</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Related Documents -->
+            {% if related_documents %}
+            <div class="document-info-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-folder me-2"></i>
+                    مستندات ذات صلة
+                </h5>
+                
+                <div class="related-documents">
+                    {% for related_doc in related_documents %}
+                    <a href="{{ url_for('document.view', document_id=related_doc.id) }}" 
+                       class="related-doc-item">
+                        <div class="related-doc-icon {{ related_doc.file_extension }}">
+                            {% if related_doc.file_extension == 'pdf' %}
+                            <i class="fas fa-file-pdf"></i>
+                            {% elif related_doc.file_extension in ['doc', 'docx'] %}
+                            <i class="fas fa-file-word"></i>
+                            {% elif related_doc.file_extension in ['xls', 'xlsx', 'csv'] %}
+                            <i class="fas fa-file-excel"></i>
+                            {% else %}
+                            <i class="fas fa-file"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">{{ related_doc.title|truncate(40) }}</div>
+                            <small class="text-muted">
+                                {{ related_doc.uploaded_at.strftime('%Y-%m-%d') }}
+                            </small>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">مشاركة المستند</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">رابط المشاركة</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="shareLink" 
+                               value="{{ url_for('document.view', document_id=document.id, _external=True) }}"
+                               readonly>
+                        <button class="btn btn-outline-secondary" onclick="copyShareLink()">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                {% if document.is_public %}
+                <div class="mb-3">
+                    <label class="form-label">صلاحية الوصول</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="allowDownload" checked>
+                        <label class="form-check-label" for="allowDownload">
+                            السماح بالتحميل
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="setExpiry" checked>
+                        <label class="form-check-label" for="setExpiry">
+                            انتهاء الصلاحية بعد 7 أيام
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">مشاركة عبر</label>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary flex-fill" onclick="shareViaEmail()">
+                            <i class="fas fa-envelope me-2"></i>بريد
+                        </button>
+                        <button class="btn btn-outline-success flex-fill" onclick="shareViaWhatsApp()">
+                            <i class="fab fa-whatsapp me-2"></i>واتساب
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    هذا المستند غير عام. يجب أن يكون لديك صلاحية الوصول لعرضه.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-primary" onclick="generateShareLink()">
+                    إنشاء رابط مخصص
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // تهيئة معاينة PDF
+        if (document.file_extension === 'pdf') {
+            initializePDFViewer();
+        }
+        
+        // تحميل معلومات إضافية
+        loadAdditionalInfo();
+    });
+    
+    function initializePDFViewer() {
+        const iframe = document.getElementById('pdfPreview');
+        let currentScale = 1;
+        
+        window.zoomIn = function() {
+            currentScale = Math.min(currentScale + 0.1, 3);
+            updatePDFScale();
+        };
+        
+        window.zoomOut = function() {
+            currentScale = Math.max(currentScale - 0.1, 0.5);
+            updatePDFScale();
+        };
+        
+        window.fitToWidth = function() {
+            const containerWidth = document.getElementById('previewContainer').offsetWidth;
+            // هذا يحتاج إلى حساب دقيق بناءً على حجم PDF
+            currentScale = 1;
+            updatePDFScale();
+        };
+        
+        function updatePDFScale() {
+            // تحديث حجم PDF
+            // هذه وظيفة تحتاج إلى مكتبة PDF.js للتطبيق الكامل
+            console.log('Zoom scale:', currentScale);
+        }
+    }
+    
+    function loadAdditionalInfo() {
+        // تحميل معلومات إضافية عن المستند
+        $.ajax({
+            url: `/api/documents/{{ document.id }}/metadata`,
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    // تحديث الواجهة بالمعلومات الإضافية
+                    if (response.metadata.download_count !== undefined) {
+                        updateDownloadCount(response.metadata.download_count);
+                    }
+                }
+            }
+        });
+        
+        // تحديث عدد المشاهدات
+        updateViewCount();
+    }
+    
+    function updateDownloadCount(count) {
+        // يمكن تحديث عداد التنزيلات في الواجهة
+        console.log('Download count:', count);
+    }
+    
+    function updateViewCount() {
+        $.ajax({
+            url: `/api/documents/{{ document.id }}/view`,
+            method: 'POST',
+            success: function(response) {
+                console.log('View recorded');
+            }
+        });
+    }
+    
+    function printDocument() {
+        if (document.file_extension === 'pdf') {
+            // طباعة PDF
+            const iframe = document.getElementById('pdfPreview');
+            iframe.contentWindow.print();
+        } else {
+            // طباعة الصفحة الحالية
+            window.print();
+        }
+    }
+    
+    function fullScreenPreview() {
+        const previewContainer = document.getElementById('previewContainer');
+        
+        if (!document.fullscreenElement) {
+            if (previewContainer.requestFullscreen) {
+                previewContainer.requestFullscreen();
+            } else if (previewContainer.webkitRequestFullscreen) {
+                previewContainer.webkitRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+        }
+    }
+    
+    function shareDocument() {
+        const modal = new bootstrap.Modal(document.getElementById('shareModal'));
+        modal.show();
+    }
+    
+    function copyShareLink() {
+        const shareLink = document.getElementById('shareLink');
+        shareLink.select();
+        shareLink.setSelectionRange(0, 99999);
+        
+        navigator.clipboard.writeText(shareLink.value).then(() => {
+            showNotification('تم', 'تم نسخ الرابط إلى الحافظة', 'success');
+        }).catch(err => {
+            showNotification('خطأ', 'فشل نسخ الرابط', 'danger');
+        });
+    }
+    
+    function generateShareLink() {
+        const allowDownload = document.getElementById('allowDownload').checked;
+        const setExpiry = document.getElementById('setExpiry').checked;
+        
+        $.ajax({
+            url: `/api/documents/{{ document.id }}/share-link`,
+            method: 'POST',
+            data: JSON.stringify({
+                allow_download: allowDownload,
+                expires_in: setExpiry ? 7 : null
+            }),
+            contentType: 'application/json',
+            success: function(response) {
+                if (response.success) {
+                    const shareLink = document.getElementById('shareLink');
+                    shareLink.value = response.share_link;
+                    showNotification('تم', 'تم إنشاء رابط المشاركة', 'success');
+                }
+            },
+            error: function() {
+                showNotification('خطأ', 'حدث خطأ في إنشاء رابط المشاركة', 'danger');
+            }
+        });
+    }
+    
+    function shareViaEmail() {
+        const subject = `مشاركة مستند: {{ document.title }}`;
+        const body = `مرحباً،\n\nأود مشاركة هذا المستند معك:\n{{ document.title }}\n\nيمكنك الوصول إليه عبر الرابط:\n${document.getElementById('shareLink').value}\n\nمع تحياتي`;
+        
+        window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+    
+    function shareViaWhatsApp() {
+        const text = `مرحباً، أود مشاركة هذا المستند معك: {{ document.title }}\n\n${document.getElementById('shareLink').value}`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+    
+    // معالجة ملفات PDF الكبيرة
+    function handleLargePDF() {
+        const iframe = document.getElementById('pdfPreview');
+        iframe.onload = function() {
+            // يمكن إضافة مؤشر تحميل هنا
+            setTimeout(() => {
+                // إخفاء مؤشر التحميل
+            }, 1000);
+        };
+    }
+    
+    // تحديث معلومات المستند تلقائياً
+    setInterval(() => {
+        $.ajax({
+            url: `/api/documents/{{ document.id }}/status`,
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    // تحديث حالة الموافقة إذا تغيرت
+                    if (response.status.approval_status !== '{{ document.approval_status }}') {
+                        showNotification('تحديث', 'تم تحديث حالة الموافقة', 'info');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                }
+            }
+        });
+    }, 30000); // كل 30 ثانية
+</script>
+{% endblock %}

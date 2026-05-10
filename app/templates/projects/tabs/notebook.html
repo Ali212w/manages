@@ -1,0 +1,289 @@
+<div class="card">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-book text-primary me-2"></i>Project Notebook</h6>
+    </div>
+    <div class="card-body">
+        <!-- Notebook Topic Selection with Categories -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Notebook Topic</label>
+                <select class="form-select" id="notebook_topic">
+                    <optgroup label="📋 Project Management">
+                        <option value="Constraints">1. Constraints</option>
+                        <option value="Change Management">2. Change Management</option>
+                        <option value="Sponsor Feedback">3. Sponsor Feedback</option>
+                        <option value="Lessons Learned">4. Lessons Learned</option>
+                        <option value="Business Benefits">5. Business Benefits</option>
+                    </optgroup>
+                    <optgroup label="📝 Project Definition">
+                        <option value="Rationale">6. Rationale</option>
+                        <option value="Objectives">7. Objectives</option>
+                        <option value="Scope">11. Scope</option>
+                        <option value="Business Justification">16. Business Justification</option>
+                    </optgroup>
+                    <optgroup label="⚙️ Project Control">
+                        <option value="Changes">8. Changes</option>
+                        <option value="Corrective Actions">9. Corrective Actions</option>
+                        <option value="Anticipated Problems">12. Anticipated Problems</option>
+                        <option value="Progress Photographs">10. Progress Photographs</option>
+                    </optgroup>
+                    <optgroup label="🎯 Project Boundaries">
+                        <option value="Entry Criteria">13. Entry Criteria</option>
+                        <option value="Exit Criteria">15. Exit Criteria</option>
+                    </optgroup>
+                    <optgroup label="🛠️ Tools & General">
+                        <option value="Tools/Techniques">14. Tools/Techniques</option>
+                        <option value="Comments">17. Comments</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Entry Type</label>
+                <select class="form-select" id="entry_type">
+                    <option value="note">📝 Note</option>
+                    <option value="issue">⚠️ Issue</option>
+                    <option value="decision">✅ Decision</option>
+                    <option value="risk">🛡️ Risk</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Notebook Entry Editor -->
+        <div class="mb-3">
+            <label class="form-label fw-bold">Notebook Entry</label>
+            <div class="border rounded">
+                <!-- Toolbar -->
+                <div class="bg-light p-2 border-bottom">
+                    <button class="btn btn-sm btn-light" onclick="formatText('bold')" title="Bold"><i class="fas fa-bold"></i></button>
+                    <button class="btn btn-sm btn-light" onclick="formatText('italic')" title="Italic"><i class="fas fa-italic"></i></button>
+                    <button class="btn btn-sm btn-light" onclick="formatText('underline')" title="Underline"><i class="fas fa-underline"></i></button>
+                    <span class="mx-2">|</span>
+                    <button class="btn btn-sm btn-light" onclick="formatText('insertUnorderedList')" title="Bullet List"><i class="fas fa-list-ul"></i></button>
+                    <button class="btn btn-sm btn-light" onclick="formatText('insertOrderedList')" title="Numbered List"><i class="fas fa-list-ol"></i></button>
+                    <span class="mx-2">|</span>
+                    <button class="btn btn-sm btn-light" onclick="attachFile()" title="Attach File"><i class="fas fa-paperclip"></i></button>
+                </div>
+                <textarea class="form-control border-0" id="notebook_entry" rows="5" 
+                          placeholder="Enter your notebook entry here..."></textarea>
+            </div>
+        </div>
+
+        <!-- Attachments Preview -->
+        <div id="attachments_preview" class="mb-3" style="display: none;">
+            <div class="d-flex flex-wrap gap-2 p-2 bg-light rounded">
+                <span class="badge bg-info"><i class="fas fa-file me-1"></i> file1.pdf <i class="fas fa-times ms-1" onclick="removeAttachment(this)"></i></span>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <button class="btn btn-primary" onclick="addNotebookEntry()">
+                <i class="fas fa-plus me-1"></i>Add Entry
+            </button>
+            <span class="text-muted small">Last entry: {{ notebook_entries[0].created_at.strftime('%Y-%m-%d %H:%M') if notebook_entries else 'Never' }}</span>
+        </div>
+
+        <!-- Notebook History Table -->
+        <h6 class="fw-bold mb-3">Notebook History</h6>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Topic</th>
+                        <th>Type</th>
+                        <th>Author</th>
+                        <th>Entry</th>
+                        <th>Attachments</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="notebook_entries_table">
+                    {% for entry in notebook_entries %}
+                    <tr>
+                        <td>{{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ entry.topic }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'info' if entry.entry_type == 'note' else 'warning' if entry.entry_type == 'issue' else 'success' }}">
+                                {{ entry.entry_type }}
+                            </span>
+                        </td>
+                        <td>{{ entry.creator.full_name }}</td>
+                        <td>{{ entry.content[:50] }}{% if entry.content|length > 50 %}...{% endif %}</td>
+                        <td class="text-center">
+                            {% if entry.attachments %}
+                            <i class="fas fa-paperclip text-primary"></i>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-link" onclick="viewEntry({{ entry.id }})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-link" onclick="editEntry({{ entry.id }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No notebook entries yet</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- View Entry Modal -->
+<div class="modal fade" id="viewEntryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Notebook Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="view_entry_content">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let attachments = [];
+
+function formatText(command) {
+    const textarea = document.getElementById('notebook_entry');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    
+    let newText = text;
+    switch(command) {
+        case 'bold':
+            newText = text.substring(0, start) + '**' + text.substring(start, end) + '**' + text.substring(end);
+            break;
+        case 'italic':
+            newText = text.substring(0, start) + '*' + text.substring(start, end) + '*' + text.substring(end);
+            break;
+        case 'underline':
+            newText = text.substring(0, start) + '__' + text.substring(start, end) + '__' + text.substring(end);
+            break;
+        case 'insertUnorderedList':
+            newText = text.substring(0, start) + '\n- ' + text.substring(start, end).replace(/\n/g, '\n- ') + text.substring(end);
+            break;
+        case 'insertOrderedList':
+            newText = text.substring(0, start) + '\n1. ' + text.substring(start, end).split('\n').map((line, i) => (i > 0 ? `${i+1}. ` : '') + line).join('\n') + text.substring(end);
+            break;
+    }
+    
+    textarea.value = newText;
+}
+
+function attachFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            attachments.push(file);
+            updateAttachmentsPreview();
+        }
+    };
+    input.click();
+}
+
+function updateAttachmentsPreview() {
+    const preview = document.getElementById('attachments_preview');
+    const container = preview.querySelector('.d-flex');
+    container.innerHTML = '';
+    
+    attachments.forEach((file, index) => {
+        const tag = document.createElement('span');
+        tag.className = 'badge bg-info';
+        tag.innerHTML = `<i class="fas fa-file me-1"></i> ${file.name} <i class="fas fa-times ms-1" onclick="removeAttachment(${index})"></i>`;
+        container.appendChild(tag);
+    });
+    
+    preview.style.display = attachments.length > 0 ? 'block' : 'none';
+}
+
+function removeAttachment(index) {
+    attachments.splice(index, 1);
+    updateAttachmentsPreview();
+}
+
+function addNotebookEntry() {
+    const topic = document.getElementById('notebook_topic').value;
+    const entryType = document.getElementById('entry_type').value;
+    const content = document.getElementById('notebook_entry').value;
+    
+    if (!content.trim()) {
+        showWarning('Please enter notebook content');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('topic', topic);
+    formData.append('entry_type', entryType);
+    formData.append('content', content);
+    attachments.forEach(file => formData.append('attachments[]', file));
+    
+    fetch(`/projects/api/{{ project.id }}/notebook/entry`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Notebook entry added successfully');
+            document.getElementById('notebook_entry').value = '';
+            attachments = [];
+            updateAttachmentsPreview();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'Error adding notebook entry');
+        }
+    });
+}
+
+function viewEntry(id) {
+    fetch(`/projects/api/notebook/entry/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('view_entry_content').innerHTML = `
+                    <div class="mb-3">
+                        <strong>Topic:</strong> ${data.entry.topic}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Type:</strong> <span class="badge bg-info">${data.entry.entry_type}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Date:</strong> ${data.entry.date}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Author:</strong> ${data.entry.author}
+                    </div>
+                    <hr>
+                    <div class="p-3 bg-light rounded">
+                        ${data.entry.content.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+                new bootstrap.Modal(document.getElementById('viewEntryModal')).show();
+            }
+        });
+}
+</script>

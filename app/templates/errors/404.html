@@ -1,0 +1,53 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}الصفحة غير موجودة{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <i class="fas fa-compass"></i>
+        <h1>404</h1>
+        <h2>الصفحة غير موجودة</h2>
+        <p>عذراً، الصفحة التي تبحث عنها غير متوفرة أو تم نقلها.</p>
+        <a href="{{ url_for('index') }}" class="btn-primary">
+            <i class="fas fa-home"></i>
+            العودة للرئيسية
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.error-container {
+    min-height: calc(100vh - var(--header-height) - 100px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.error-content i {
+    font-size: 5rem;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+.error-content h1 {
+    font-size: 8rem;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.error-content h2 {
+    font-size: 2rem;
+    color: var(--dark-color);
+    margin-bottom: 15px;
+}
+
+.error-content p {
+    color: var(--gray-color);
+    margin-bottom: 30px;
+}
+</style>
+{% endblock %}

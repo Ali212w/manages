@@ -1,0 +1,1162 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}رفع مستند جديد - {{ super() }}{% endblock %}
+
+{% block styles %}
+<style>
+    .upload-container {
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 56px);
+        padding: 2rem;
+    }
+    
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .upload-wizard {
+        background-color: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .upload-steps {
+        display: flex;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .upload-step {
+        flex: 1;
+        padding: 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+    }
+    
+    .upload-step.active {
+        background-color: white;
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .upload-step.completed {
+        background-color: rgba(46, 204, 113, 0.1);
+        color: var(--success-color);
+    }
+    
+    .upload-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 100%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-left: 10px solid #e9ecef;
+    }
+    
+    .upload-step.active:not(:last-child)::after {
+        border-left-color: white;
+    }
+    
+    .upload-step.completed:not(:last-child)::after {
+        border-left-color: rgba(46, 204, 113, 0.1);
+    }
+    
+    .upload-content {
+        padding: 2rem;
+    }
+    
+    .upload-step-content {
+        display: none;
+    }
+    
+    .upload-step-content.active {
+        display: block;
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .file-upload-area {
+        border: 3px dashed #ddd;
+        border-radius: 10px;
+        padding: 4rem 2rem;
+        text-align: center;
+        background-color: #f8f9fa;
+        transition: all 0.3s;
+        cursor: pointer;
+        margin-bottom: 2rem;
+    }
+    
+    .file-upload-area:hover {
+        border-color: var(--primary-color);
+        background-color: #e9ecef;
+    }
+    
+    .file-upload-area.dragover {
+        border-color: var(--primary-color);
+        background-color: #e3f2fd;
+        transform: scale(1.02);
+    }
+    
+    .upload-icon {
+        font-size: 4rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+    
+    .file-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .file-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.3s;
+    }
+    
+    .file-item:last-child {
+        border-bottom: none;
+    }
+    
+    .file-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .file-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 10px;
+        color: white;
+        font-size: 1.2rem;
+    }
+    
+    .file-icon.pdf { background-color: #e74c3c; }
+    .file-icon.docx { background-color: #2ecc71; }
+    .file-icon.xlsx { background-color: #27ae60; }
+    .file-icon.image { background-color: #3498db; }
+    .file-icon.other { background-color: #9b59b6; }
+    
+    .file-info {
+        flex: 1;
+    }
+    
+    .file-name {
+        font-weight: 500;
+        margin-bottom: 2px;
+    }
+    
+    .file-meta {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .file-remove {
+        color: #dc3545;
+        cursor: pointer;
+        padding: 5px;
+        transition: all 0.3s;
+    }
+    
+    .file-remove:hover {
+        transform: scale(1.2);
+    }
+    
+    .upload-progress {
+        margin-top: 2rem;
+        display: none;
+    }
+    
+    .progress-container {
+        background-color: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+    
+    .progress-bar {
+        height: 20px;
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        border-radius: 10px;
+        transition: width 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    
+    .upload-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #eee;
+    }
+    
+    .document-preview {
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        background-color: #f8f9fa;
+    }
+    
+    .preview-image {
+        max-width: 100%;
+        max-height: 300px;
+        display: block;
+        margin: 0 auto;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .file-validation-error {
+        color: #dc3545;
+        font-size: 0.9rem;
+        margin-top: 5px;
+        display: none;
+    }
+    
+    .ai-suggestions {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        border-right: 4px solid var(--primary-color);
+    }
+    
+    @media (max-width: 768px) {
+        .upload-container {
+            padding: 1rem;
+        }
+        
+        .upload-content {
+            padding: 1rem;
+        }
+        
+        .upload-steps {
+            flex-direction: column;
+        }
+        
+        .upload-step:not(:last-child)::after {
+            display: none;
+        }
+        
+        .upload-actions {
+            flex-direction: column;
+            gap: 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <div class="page-header">
+        <h2 class="mb-0">رفع مستند جديد</h2>
+        <p class="text-muted mb-0">أضف مستندات جديدة للمشاريع</p>
+    </div>
+    
+    <div class="upload-wizard">
+        <!-- Steps Navigation -->
+        <div class="upload-steps">
+            <div class="upload-step active" data-step="1">
+                <i class="fas fa-folder-open me-2"></i>
+                اختيار المشروع
+            </div>
+            <div class="upload-step" data-step="2">
+                <i class="fas fa-upload me-2"></i>
+                رفع الملفات
+            </div>
+            <div class="upload-step" data-step="3">
+                <i class="fas fa-info-circle me-2"></i>
+                معلومات المستند
+            </div>
+            <div class="upload-step" data-step="4">
+                <i class="fas fa-check-circle me-2"></i>
+                تأكيد الرفع
+            </div>
+        </div>
+        
+        <!-- Upload Form -->
+        <form method="POST" action="{{ url_for('document.upload') }}" enctype="multipart/form-data" id="uploadForm">
+            <div class="upload-content">
+                <!-- Step 1: Project Selection -->
+                <div class="upload-step-content active" id="step1">
+                    <h4 class="mb-3">اختر المشروع</h4>
+                    <p class="text-muted mb-4">اختر المشروع الذي ترغب في رفع المستندات له</p>
+                    
+                    {% if projects %}
+                    <div class="row">
+                        {% for project in projects %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card project-card" data-project-id="{{ project.id }}">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input class="form-check-input project-select" 
+                                               type="radio" 
+                                               name="project_id" 
+                                               id="project{{ project.id }}" 
+                                               value="{{ project.id }}" 
+                                               required>
+                                        <label class="form-check-label" for="project{{ project.id }}">
+                                            <h6 class="mb-1">{{ project.name }}</h6>
+                                            <small class="text-muted">{{ project.project_code }}</small>
+                                        </label>
+                                    </div>
+                                    <div class="project-info mt-2">
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            {{ project.planned_start_date.strftime('%Y-%m-%d') if project.planned_start_date else 'غير محدد' }}
+                                        </small>
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-tasks me-1"></i>
+                                            {{ project.tasks|length }} مهمة
+                                        </small>
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-folder me-1"></i>
+                                            {{ project.documents|length }} مستند
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        لا توجد مشاريع متاحة للرفع. يجب أن تكون مشاركاً في مشروع على الأقل.
+                    </div>
+                    <a href="{{ url_for('project.index') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>تصفح المشاريع
+                    </a>
+                    {% endif %}
+                    
+                    <div class="upload-actions">
+                        <div></div> <!-- Empty div for spacing -->
+                        <button type="button" class="btn btn-primary next-step" data-next="2">
+                            التالي <i class="fas fa-arrow-left ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Step 2: File Upload -->
+                <div class="upload-step-content" id="step2">
+                    <h4 class="mb-3">رفع الملفات</h4>
+                    <p class="text-muted mb-4">اسحب الملفات أو انقر لاختيارها (PDF, Word, Excel, Images)</p>
+                    
+                    <div class="file-upload-area" id="dropzone">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h5>اسحب الملفات هنا</h5>
+                        <p class="text-muted">أو انقر لاختيار الملفات</p>
+                        <input type="file" 
+                               class="form-control d-none" 
+                               id="fileInput" 
+                               name="document" 
+                               multiple 
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png"
+                               required>
+                        <button type="button" class="btn btn-outline-primary mt-2" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-folder-open me-2"></i>اختيار الملفات
+                        </button>
+                    </div>
+                    
+                    <div class="file-list" id="fileListContainer">
+                        <!-- سيتم تعبئته بواسطة JavaScript -->
+                    </div>
+                    
+                    <div class="file-validation-error" id="fileValidationError">
+                        <!-- رسائل خطأ الملفات -->
+                    </div>
+                    
+                    <div class="upload-actions">
+                        <button type="button" class="btn btn-outline-secondary prev-step" data-prev="1">
+                            <i class="fas fa-arrow-right me-2"></i>السابق
+                        </button>
+                        <button type="button" class="btn btn-primary next-step" data-next="3">
+                            التالي <i class="fas fa-arrow-left ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Document Information -->
+                <div class="upload-step-content" id="step3">
+                    <h4 class="mb-3">معلومات المستند</h4>
+                    <p class="text-muted mb-4">أدخل المعلومات التفصيلية للمستند</p>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">نوع المستند *</label>
+                            <select class="form-select" name="document_type" id="documentType" required>
+                                <option value="">اختر النوع</option>
+                                <option value="bill_of_quantities">جدول كميات</option>
+                                <option value="contract">عقد</option>
+                                <option value="drawing">رسم</option>
+                                <option value="specification">مواصفات</option>
+                                <option value="report">تقرير</option>
+                                <option value="invoice">فاتورة</option>
+                                <option value="other">أخرى</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">التصنيف</label>
+                            <select class="form-select" name="category" id="documentCategory">
+                                <option value="">اختر التصنيف</option>
+                                <option value="general">عام</option>
+                                <option value="technical">فني</option>
+                                <option value="financial">مالي</option>
+                                <option value="legal">قانوني</option>
+                                <option value="design">تصميم</option>
+                                <option value="quality">جودة</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-12">
+                            <label class="form-label">عنوان المستند *</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="title" 
+                                   id="documentTitle" 
+                                   placeholder="أدخل عنواناً وصفياً للمستند"
+                                   required>
+                        </div>
+                        
+                        <div class="col-md-12">
+                            <label class="form-label">وصف المستند</label>
+                            <textarea class="form-control" 
+                                      name="description" 
+                                      id="documentDescription" 
+                                      rows="3" 
+                                      placeholder="أدخل وصفاً تفصيلياً للمستند"></textarea>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       name="requires_approval" 
+                                       id="requiresApproval" 
+                                       value="1">
+                                <label class="form-check-label" for="requiresApproval">
+                                    يتطلب موافقة
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       name="is_public" 
+                                       id="isPublic" 
+                                       value="1">
+                                <label class="form-check-label" for="isPublic">
+                                    عام (مرئي للجميع)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">مستوى الوصول</label>
+                            <select class="form-select" name="access_level">
+                                <option value="team">الفريق</option>
+                                <option value="organization">المؤسسة</option>
+                                <option value="restricted">مقيد</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">رقم المراجعة</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="revision_number" 
+                                   placeholder="مثال: 1.0">
+                        </div>
+                    </div>
+                    
+                    <!-- AI Suggestions (if available) -->
+                    <div class="ai-suggestions" id="aiSuggestions" style="display: none;">
+                        <h6>
+                            <i class="fas fa-robot me-2"></i>
+                            اقتراحات الذكاء الاصطناعي
+                        </h6>
+                        <div id="suggestionsContent">
+                            <!-- سيتم تعبئته بواسطة JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <div class="upload-actions">
+                        <button type="button" class="btn btn-outline-secondary prev-step" data-prev="2">
+                            <i class="fas fa-arrow-right me-2"></i>السابق
+                        </button>
+                        <button type="button" class="btn btn-primary next-step" data-next="4">
+                            التالي <i class="fas fa-arrow-left ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Confirmation -->
+                <div class="upload-step-content" id="step4">
+                    <h4 class="mb-3">تأكيد الرفع</h4>
+                    <p class="text-muted mb-4">راجع المعلومات قبل الرفع النهائي</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-folder me-2"></i>معلومات المشروع
+                                    </h6>
+                                    <div id="confirmProjectInfo">
+                                        <!-- سيتم تعبئته بواسطة JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-file me-2"></i>ملخص المستندات
+                                    </h6>
+                                    <div id="confirmFilesInfo">
+                                        <!-- سيتم تعبئته بواسطة JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-info-circle me-2"></i>إعدادات المستند
+                            </h6>
+                            <div id="confirmSettingsInfo">
+                                <!-- سيتم تعبئته بواسطة JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="upload-actions mt-3">
+                        <button type="button" class="btn btn-outline-secondary prev-step" data-prev="3">
+                            <i class="fas fa-arrow-right me-2"></i>السابق
+                        </button>
+                        <button type="submit" class="btn btn-success" id="submitUpload">
+                            <i class="fas fa-check me-2"></i>تأكيد الرفع
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Upload Progress (hidden by default) -->
+                <div class="upload-progress" id="uploadProgress">
+                    <h4 class="mb-3">جاري رفع الملفات...</h4>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar" style="width: 0%">0%</div>
+                    </div>
+                    <div class="text-center">
+                        <p id="uploadStatus">جاري تحضير الملفات للرفع...</p>
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">جاري الرفع...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        let selectedFiles = [];
+        let currentStep = 1;
+        
+        // تهيئة خطوات الرفع
+        initializeWizard();
+        
+        // إدارة اختيار المشروع
+        $('.project-card').click(function() {
+            const projectId = $(this).data('project-id');
+            $(`#project${projectId}`).prop('checked', true);
+            $('.project-card').removeClass('selected');
+            $(this).addClass('selected');
+        });
+        
+        // إدارة اختيار الملفات
+        $('#fileInput').change(function(e) {
+            handleFiles(e.target.files);
+        });
+        
+        // سحب وإفلات الملفات
+        initializeDragAndDrop();
+        
+        // معالجة تغيير نوع المستند
+        $('#documentType').change(function() {
+            updateDocumentSettings();
+            if ($(this).val() === 'bill_of_quantities') {
+                showAISuggestions();
+            } else {
+                hideAISuggestions();
+            }
+        });
+        
+        // إرسال النموذج
+        $('#uploadForm').submit(function(e) {
+            e.preventDefault();
+            startUpload();
+        });
+    });
+    
+    function initializeWizard() {
+        // التنقل بين الخطوات
+        $('.next-step').click(function() {
+            const nextStep = $(this).data('next');
+            goToStep(nextStep);
+        });
+        
+        $('.prev-step').click(function() {
+            const prevStep = $(this).data('prev');
+            goToStep(prevStep);
+        });
+        
+        // تحديث حالة الخطوات
+        updateStepIndicators();
+    }
+    
+    function goToStep(stepNumber) {
+        // التحقق من صحة البيانات قبل الانتقال
+        if (!validateStep(currentStep)) {
+            return;
+        }
+        
+        // إخفاء الخطوة الحالية
+        $(`#step${currentStep}`).removeClass('active');
+        $(`.upload-step[data-step="${currentStep}"]`).removeClass('active');
+        
+        // إظهار الخطوة الجديدة
+        $(`#step${stepNumber}`).addClass('active');
+        $(`.upload-step[data-step="${stepNumber}"]`).addClass('active').addClass('completed');
+        
+        currentStep = stepNumber;
+        
+        // تحديث معلومات التأكيد إذا كنا في الخطوة الأخيرة
+        if (stepNumber === 4) {
+            updateConfirmationInfo();
+        }
+    }
+    
+    function validateStep(step) {
+        switch(step) {
+            case 1:
+                const selectedProject = $('input[name="project_id"]:checked').val();
+                if (!selectedProject) {
+                    showNotification('تحذير', 'الرجاء اختيار مشروع', 'warning');
+                    return false;
+                }
+                return true;
+                
+            case 2:
+                if (selectedFiles.length === 0) {
+                    showNotification('تحذير', 'الرجاء اختيار ملف واحد على الأقل', 'warning');
+                    return false;
+                }
+                return true;
+                
+            case 3:
+                const docType = $('#documentType').val();
+                const docTitle = $('#documentTitle').val().trim();
+                
+                if (!docType) {
+                    showNotification('تحذير', 'الرجاء اختيار نوع المستند', 'warning');
+                    return false;
+                }
+                
+                if (!docTitle) {
+                    showNotification('تحذير', 'الرجاء إدخال عنوان المستند', 'warning');
+                    return false;
+                }
+                
+                return true;
+                
+            default:
+                return true;
+        }
+    }
+    
+    function updateStepIndicators() {
+        // تحديث حالة الخطوات
+        for (let i = 1; i < currentStep; i++) {
+            $(`.upload-step[data-step="${i}"]`).addClass('completed');
+        }
+        
+        $(`.upload-step[data-step="${currentStep}"]`).addClass('active');
+    }
+    
+    function initializeDragAndDrop() {
+        const dropzone = $('#dropzone');
+        
+        dropzone.on('dragover', function(e) {
+            e.preventDefault();
+            $(this).addClass('dragover');
+        });
+        
+        dropzone.on('dragleave', function(e) {
+            e.preventDefault();
+            $(this).removeClass('dragover');
+        });
+        
+        dropzone.on('drop', function(e) {
+            e.preventDefault();
+            $(this).removeClass('dragover');
+            
+            const files = e.originalEvent.dataTransfer.files;
+            handleFiles(files);
+        });
+    }
+    
+    function handleFiles(files) {
+        const validExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.txt', '.jpg', '.jpeg', '.png'];
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        let hasError = false;
+        
+        // إضافة الملفات الجديدة
+        Array.from(files).forEach(file => {
+            // التحقق من الامتداد
+            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+            if (!validExtensions.includes(fileExtension)) {
+                showFileError('صيغة الملف غير مدعومة: ' + file.name);
+                hasError = true;
+                return;
+            }
+            
+            // التحقق من الحجم
+            if (file.size > maxSize) {
+                showFileError('حجم الملف كبير جداً: ' + file.name + ' (الحد الأقصى 100MB)');
+                hasError = true;
+                return;
+            }
+            
+            // إضافة الملف إذا كان صالحاً
+            selectedFiles.push(file);
+        });
+        
+        if (!hasError) {
+            updateFileList();
+        }
+    }
+    
+    function showFileError(message) {
+        const errorDiv = $('#fileValidationError');
+        errorDiv.text(message).fadeIn();
+        
+        setTimeout(() => {
+            errorDiv.fadeOut();
+        }, 5000);
+    }
+    
+    function updateFileList() {
+        const container = $('#fileListContainer');
+        container.empty();
+        
+        if (selectedFiles.length === 0) {
+            container.html(`
+                <div class="text-center py-3 text-muted">
+                    <i class="fas fa-folder-open fa-2x mb-2"></i>
+                    <p>لم يتم اختيار أي ملفات</p>
+                </div>
+            `);
+            return;
+        }
+        
+        selectedFiles.forEach((file, index) => {
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            const fileSize = formatFileSize(file.size);
+            const iconClass = getFileIconClass(fileExtension);
+            
+            const fileItem = $(`
+                <div class="file-item" data-index="${index}">
+                    <div class="file-icon ${iconClass}">
+                        <i class="fas fa-${getFileIcon(fileExtension)}"></i>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-meta">${fileSize} • ${fileExtension.toUpperCase()}</div>
+                    </div>
+                    <div class="file-remove" onclick="removeFile(${index})">
+                        <i class="fas fa-times"></i>
+                    </div>
+                </div>
+            `);
+            
+            // معاينة الصور
+            if (['jpg', 'jpeg', 'png'].includes(fileExtension)) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    fileItem.find('.file-icon').hide();
+                    fileItem.find('.file-info').before(`
+                        <img src="${e.target.result}" 
+                             alt="${file.name}" 
+                             style="width: 40px; height: 40px; border-radius: 8px; margin-left: 10px; object-fit: cover;">
+                    `);
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            container.append(fileItem);
+        });
+    }
+    
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        updateFileList();
+    }
+    
+    function getFileIconClass(extension) {
+        if (extension === 'pdf') return 'pdf';
+        if (['doc', 'docx'].includes(extension)) return 'docx';
+        if (['xls', 'xlsx', 'csv'].includes(extension)) return 'xlsx';
+        if (['jpg', 'jpeg', 'png'].includes(extension)) return 'image';
+        return 'other';
+    }
+    
+    function getFileIcon(extension) {
+        if (extension === 'pdf') return 'file-pdf';
+        if (['doc', 'docx'].includes(extension)) return 'file-word';
+        if (['xls', 'xlsx', 'csv'].includes(extension)) return 'file-excel';
+        if (['jpg', 'jpeg', 'png'].includes(extension)) return 'file-image';
+        return 'file';
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 بايت';
+        const k = 1024;
+        const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function updateDocumentSettings() {
+        const docType = $('#documentType').val();
+        
+        // تحديث الإعدادات حسب نوع المستند
+        if (docType === 'bill_of_quantities') {
+            $('#requiresApproval').prop('checked', true);
+            $('#documentCategory').val('technical');
+        } else if (docType === 'contract') {
+            $('#requiresApproval').prop('checked', true);
+            $('#documentCategory').val('legal');
+        } else if (docType === 'drawing') {
+            $('#documentCategory').val('design');
+        }
+        
+        // توليد عنوان تلقائي إذا لم يكن هناك عنوان
+        if (!$('#documentTitle').val()) {
+            generateDocumentTitle();
+        }
+    }
+    
+    function generateDocumentTitle() {
+        if (selectedFiles.length > 0) {
+            const firstFile = selectedFiles[0];
+            const docType = $('#documentType').val();
+            const typeLabel = getDocumentTypeLabel(docType);
+            const projectName = $('input[name="project_id"]:checked').next().find('h6').text();
+            
+            const title = `${typeLabel} - ${projectName} - ${new Date().toLocaleDateString('ar-SA')}`;
+            $('#documentTitle').val(title);
+        }
+    }
+    
+    function getDocumentTypeLabel(type) {
+        const labels = {
+            'bill_of_quantities': 'جدول كميات',
+            'contract': 'عقد',
+            'drawing': 'رسم',
+            'specification': 'مواصفات',
+            'report': 'تقرير',
+            'invoice': 'فاتورة',
+            'other': 'مستند'
+        };
+        return labels[type] || type;
+    }
+    
+    function showAISuggestions() {
+        // يمكن استدعاء API الذكاء الاصطناعي هنا
+        $.ajax({
+            url: '/api/ai/suggest-document-info',
+            method: 'POST',
+            data: JSON.stringify({
+                file_count: selectedFiles.length,
+                file_types: selectedFiles.map(f => f.name.split('.').pop()),
+                document_type: $('#documentType').val()
+            }),
+            contentType: 'application/json',
+            success: function(response) {
+                if (response.success) {
+                    const suggestions = response.suggestions;
+                    let suggestionsHtml = '';
+                    
+                    if (suggestions.title) {
+                        suggestionsHtml += `
+                            <div class="mb-2">
+                                <strong>عنوان مقترح:</strong>
+                                <div class="d-flex align-items-center mt-1">
+                                    <span>${suggestions.title}</span>
+                                    <button class="btn btn-sm btn-outline-primary ms-2" 
+                                            onclick="useSuggestion('title', '${suggestions.title}')">
+                                        استخدام
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    if (suggestions.description) {
+                        suggestionsHtml += `
+                            <div class="mb-2">
+                                <strong>وصف مقترح:</strong>
+                                <div class="d-flex align-items-center mt-1">
+                                    <span>${suggestions.description}</span>
+                                    <button class="btn btn-sm btn-outline-primary ms-2" 
+                                            onclick="useSuggestion('description', '${suggestions.description}')">
+                                        استخدام
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    if (suggestions.keywords) {
+                        suggestionsHtml += `
+                            <div>
+                                <strong>كلمات مفتاحية:</strong>
+                                <div class="mt-1">
+                                    ${suggestions.keywords.map(kw => 
+                                        `<span class="badge bg-light text-dark me-1">${kw}</span>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    $('#suggestionsContent').html(suggestionsHtml);
+                    $('#aiSuggestions').fadeIn();
+                }
+            }
+        });
+    }
+    
+    function useSuggestion(type, value) {
+        if (type === 'title') {
+            $('#documentTitle').val(value);
+        } else if (type === 'description') {
+            $('#documentDescription').val(value);
+        }
+        
+        showNotification('تم', 'تم تطبيق الاقتراح بنجاح', 'success');
+    }
+    
+    function hideAISuggestions() {
+        $('#aiSuggestions').fadeOut();
+    }
+    
+    function updateConfirmationInfo() {
+        // معلومات المشروع
+        const projectId = $('input[name="project_id"]:checked').val();
+        const projectName = $(`#project${projectId}`).next().find('h6').text();
+        const projectCode = $(`#project${projectId}`).next().find('small').text();
+        
+        $('#confirmProjectInfo').html(`
+            <p><strong>الاسم:</strong> ${projectName}</p>
+            <p><strong>الرمز:</strong> ${projectCode}</p>
+        `);
+        
+        // معلومات الملفات
+        const totalSize = selectedFiles.reduce((total, file) => total + file.size, 0);
+        const filesByType = {};
+        
+        selectedFiles.forEach(file => {
+            const ext = file.name.split('.').pop().toLowerCase();
+            filesByType[ext] = (filesByType[ext] || 0) + 1;
+        });
+        
+        let filesSummary = `
+            <p><strong>عدد الملفات:</strong> ${selectedFiles.length}</p>
+            <p><strong>الحجم الإجمالي:</strong> ${formatFileSize(totalSize)}</p>
+            <div class="file-types-summary mt-2">
+                <strong>الأنواع:</strong><br>
+        `;
+        
+        for (const [ext, count] of Object.entries(filesByType)) {
+            filesSummary += `<span class="badge bg-light text-dark me-1">${ext.toUpperCase()} (${count})</span>`;
+        }
+        
+        filesSummary += `</div>`;
+        
+        $('#confirmFilesInfo').html(filesSummary);
+        
+        // إعدادات المستند
+        const docType = $('#documentType').val();
+        const docTitle = $('#documentTitle').val();
+        const requiresApproval = $('#requiresApproval').is(':checked');
+        const isPublic = $('#isPublic').is(':checked');
+        
+        $('#confirmSettingsInfo').html(`
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>نوع المستند:</strong> ${getDocumentTypeLabel(docType)}</p>
+                    <p><strong>العنوان:</strong> ${docTitle}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>يتطلب موافقة:</strong> ${requiresApproval ? 'نعم' : 'لا'}</p>
+                    <p><strong>عام:</strong> ${isPublic ? 'نعم' : 'لا'}</p>
+                </div>
+            </div>
+        `);
+    }
+    
+    function startUpload() {
+        // إخفاء النموذج وإظهار مؤشر التقدم
+        $('.upload-step-content').fadeOut();
+        $('#uploadProgress').fadeIn();
+        
+        // تحضير الملفات للرفع
+        const formData = new FormData();
+        
+        // إضافة بيانات النموذج
+        formData.append('project_id', $('input[name="project_id"]:checked').val());
+        formData.append('document_type', $('#documentType').val());
+        formData.append('title', $('#documentTitle').val());
+        formData.append('description', $('#documentDescription').val());
+        formData.append('category', $('#documentCategory').val());
+        formData.append('access_level', $('select[name="access_level"]').val());
+        formData.append('revision_number', $('input[name="revision_number"]').val());
+        
+        if ($('#requiresApproval').is(':checked')) {
+            formData.append('requires_approval', '1');
+        }
+        
+        if ($('#isPublic').is(':checked')) {
+            formData.append('is_public', '1');
+        }
+        
+        // إضافة الملفات
+        selectedFiles.forEach((file, index) => {
+            formData.append('document', file);
+        });
+        
+        // رفع الملفات باستخدام AJAX مع متابعة التقدم
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                updateProgressBar(percentComplete);
+            }
+        });
+        
+        xhr.addEventListener('load', function() {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    showUploadSuccess(response);
+                } else {
+                    showUploadError(response.error);
+                }
+            } else {
+                showUploadError('حدث خطأ في الاتصال بالخادم');
+            }
+        });
+        
+        xhr.addEventListener('error', function() {
+            showUploadError('حدث خطأ في الاتصال بالخادم');
+        });
+        
+        xhr.open('POST', "{{ url_for('document.upload') }}");
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.send(formData);
+    }
+    
+    function updateProgressBar(percentage) {
+        const progressBar = $('#progressBar');
+        const uploadStatus = $('#uploadStatus');
+        
+        const percent = Math.round(percentage);
+        progressBar.css('width', percent + '%').text(percent + '%');
+        
+        if (percent < 100) {
+            uploadStatus.text(`جاري رفع الملفات... ${percent}%`);
+        } else {
+            uploadStatus.text('جاري معالجة الملفات...');
+        }
+    }
+    
+    function showUploadSuccess(response) {
+        $('#uploadStatus').html(`
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                ${response.message || 'تم رفع المستندات بنجاح!'}
+            </div>
+        `);
+        
+        setTimeout(() => {
+            window.location.href = response.redirect_url || "{{ url_for('document.index') }}";
+        }, 2000);
+    }
+    
+    function showUploadError(errorMessage) {
+        $('#uploadStatus').html(`
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${errorMessage}
+            </div>
+        `);
+        
+        // إظهار زر لإعادة المحاولة
+        $('#uploadProgress').append(`
+            <div class="text-center mt-3">
+                <button class="btn btn-primary" onclick="retryUpload()">
+                    <i class="fas fa-redo me-2"></i>إعادة المحاولة
+                </button>
+                <button class="btn btn-outline-secondary" onclick="window.location.reload()">
+                    <i class="fas fa-times me-2"></i>إلغاء
+                </button>
+            </div>
+        `);
+    }
+    
+    function retryUpload() {
+        window.location.reload();
+    }
+</script>
+{% endblock %}

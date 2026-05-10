@@ -1,0 +1,185 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-bold mb-0">
+        <i class="fas fa-shield-alt text-primary me-2"></i>فحوصات السلامة
+    </h6>
+    <button class="btn btn-sm btn-primary" onclick="showAddSafetyCheckModal()">
+        <i class="fas fa-plus me-1"></i> إضافة فحص
+    </button>
+</div>
+
+<div class="table-responsive">
+    <table class="detail-table">
+        <thead>
+            <tr>
+                <th>نوع الفحص</th>
+                <th>اسم الفحص</th>
+                <th>الوصف</th>
+                <th>الحالة</th>
+                <th>تم التحقق بواسطة</th>
+                <th>تاريخ التحقق</th>
+                <th>صورة الإثبات</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for check in safety_checks %}
+            <tr>
+                <td>
+                    <span class="badge bg-{{ 'primary' if check.check_type == 'ppe' else 'success' if check.check_type == 'equipment' else 'warning' if check.check_type == 'training' else 'info' }}">
+                        {{ check.check_type }}
+                    </span>
+                </td>
+                <td>{{ check.check_name }}</td>
+                <td>{{ check.description or '-' }}</td>
+                <td>
+                    {% if check.is_verified %}
+                    <span class="badge bg-success">تم التحقق</span>
+                    {% else %}
+                    <span class="badge bg-warning">في الانتظار</span>
+                    {% endif %}
+                </td>
+                <td>{{ check.verified_by_user.full_name if check.verified_by_user else '-' }}</td>
+                <td>{{ check.verified_at.strftime('%Y-%m-%d') if check.verified_at else '-' }}</td>
+                <td>
+                    {% if check.proof_photo %}
+                    <a href="{{ check.proof_photo }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-image"></i>
+                    </a>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not check.is_verified %}
+                    <button class="btn btn-sm btn-success" onclick="verifySafetyCheck({{ check.id }})">
+                        <i class="fas fa-check"></i> تحقق
+                    </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" class="text-center py-4">
+                    <i class="fas fa-shield-alt fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">لا توجد فحوصات سلامة</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal إضافة فحص سلامة -->
+<div class="modal fade" id="addSafetyCheckModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة فحص سلامة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="safetyForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نوع الفحص</label>
+                        <select class="form-select" id="safetyType" required>
+                            <option value="ppe">معدات الوقاية الشخصية (PPE)</option>
+                            <option value="equipment">معدات</option>
+                            <option value="training">تدريب</option>
+                            <option value="permit">تصريح</option>
+                            <option value="general">عام</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اسم الفحص</label>
+                        <input type="text" class="form-control" id="safetyName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">الوصف</label>
+                        <textarea class="form-control" id="safetyDescription" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="addSafetyCheck()">إضافة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAddSafetyCheckModal() {
+    document.getElementById('safetyForm').reset();
+    new bootstrap.Modal(document.getElementById('addSafetyCheckModal')).show();
+}
+
+function addSafetyCheck() {
+    const data = {
+        check_name: document.getElementById('safetyName').value,
+        check_type: document.getElementById('safetyType').value,
+        description: document.getElementById('safetyDescription').value
+    };
+    
+    if (!data.check_name) {
+        showWarning('الرجاء إدخال اسم الفحص');
+        return;
+    }
+    
+    fetch(`/tasks/api/{{ task.id }}/safety-check`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addSafetyCheckModal')).hide();
+            showSuccess('تم إضافة فحص السلامة');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'حدث خطأ');
+        }
+    });
+}
+
+function verifySafetyCheck(checkId) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const formData = new FormData();
+        formData.append('proof_photo', file);
+        
+        Swal.fire({
+            title: 'جاري التحقق...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+        
+        fetch(`/tasks/api/safety-check/${checkId}/verify`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            Swal.close();
+            if (data.success) {
+                showSuccess('تم التحقق من فحص السلامة');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.error || 'حدث خطأ');
+            }
+        });
+    };
+    input.click();
+}
+</script>

@@ -1,0 +1,327 @@
+<div class="card">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-tasks text-primary me-2"></i>Project Tasks</h6>
+        <div>
+            <a href="{{ url_for('tasks.create_task', project_id=project.id) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>New Task
+            </a>
+            <button class="btn btn-outline-primary btn-sm" onclick="exportTasks()">
+                <i class="fas fa-download me-1"></i>Export
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Task Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <small class="text-muted">Total Tasks</small>
+                        <h4 class="mb-0 text-primary">{{ project.statistics.total_tasks if project.statistics else 0 }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <small class="text-muted">Pending</small>
+                        <h4 class="mb-0 text-warning">{{ pending_tasks_count }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <small class="text-muted">In Progress</small>
+                        <h4 class="mb-0 text-info">{{ in_progress_tasks_count }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <small class="text-muted">Completed</small>
+                        <h4 class="mb-0 text-success">{{ project.statistics.completed_tasks if project.statistics else 0 }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Filter -->
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Filter by Activity</label>
+                <select class="form-select" id="activity_filter" onchange="filterTasks()">
+                    <option value="">All Activities</option>
+                    {% for activity in project.activities %}
+                    <option value="{{ activity.id }}">{{ activity.activity_code }} - {{ activity.activity_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Filter by Status</label>
+                <select class="form-select" id="status_filter" onchange="filterTasks()">
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Filter by Priority</label>
+                <select class="form-select" id="priority_filter" onchange="filterTasks()">
+                    <option value="">All Priorities</option>
+                    <option value="5">Critical (5)</option>
+                    <option value="4">High (4)</option>
+                    <option value="3">Medium (3)</option>
+                    <option value="2">Low (2)</option>
+                    <option value="1">Very Low (1)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Search</label>
+                <input type="text" class="form-control" id="task_search" placeholder="Search tasks..." onkeyup="filterTasks()">
+            </div>
+        </div>
+
+        <!-- Tasks Table -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Task ID</th>
+                        <th>Task Name</th>
+                        <th>Activity</th>
+                        <th>Status</th>
+                        <th>Progress</th>
+                        <th>Priority</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Assigned To</th>
+                        <th>Delay</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tasks_table">
+                    {% for task in project.tasks %}
+                    <tr class="task-row" data-activity-id="{{ task.activity_id }}" 
+                        data-status="{{ task.status }}" data-priority="{{ task.priority }}">
+                        <td><span class="fw-bold text-primary">{{ task.task_code }}</span></td>
+                        <td>
+                            <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="text-decoration-none">
+                                {{ task.task_name }}
+                            </a>
+                        </td>
+                        <td>{{ task.activity.activity_code if task.activity else '-' }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'warning' if task.status == 'pending' else 'info' if task.status == 'in_progress' else 'success' }}">
+                                {{ task.status|replace('_', ' ')|title }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                    <div class="progress-bar bg-success" style="width: {{ task.progress.progress_percentage }}%"></div>
+                                </div>
+                                <small>{{ task.progress.progress_percentage }}%</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 'danger' if task.priority >= 4 else 'warning' if task.priority >= 3 else 'info' }}">
+                                {{ task.priority }}
+                            </span>
+                        </td>
+                        <td>{{ task.planning.planned_start.strftime('%Y-%m-%d') if task.planning and task.planning.planned_start else '-' }}</td>
+                        <td class="{% if task.is_delayed %}text-danger fw-bold{% endif %}">
+                            {{ task.planning.planned_finish.strftime('%Y-%m-%d') if task.planning and task.planning.planned_finish else '-' }}
+                        </td>
+                        <td>
+                            {% if task.assignments %}
+                                {% for assignment in task.assignments[:2] %}
+                                    <span class="badge bg-secondary">{{ assignment.user.full_name }}</span>
+                                {% endfor %}
+                                {% if task.assignments.count() > 2 %}
+                                    <span class="badge bg-secondary">+{{ task.assignments.count() - 2 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if task.is_delayed %}
+                                <span class="badge bg-danger">{{ task.delay_days }} days</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteTask({{ task.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="11" class="text-center py-4">
+                            <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No tasks yet</p>
+                            <a href="{{ url_for('tasks.create_task', project_id=project.id) }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus me-1"></i>Create First Task
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Task Statistics Chart -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h6 class="fw-bold mb-3"><i class="fas fa-chart-pie text-primary me-2"></i>Task Status Distribution</h6>
+                <canvas id="taskStatusChart" height="200"></canvas>
+            </div>
+            <div class="col-md-6">
+                <h6 class="fw-bold mb-3"><i class="fas fa-chart-line text-primary me-2"></i>Task Completion Trend</h6>
+                <canvas id="taskTrendChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let taskStatusChart = null;
+let taskTrendChart = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initTaskCharts();
+});
+
+function initTaskCharts() {
+    // Status Distribution Chart
+    const statusCtx = document.getElementById('taskStatusChart')?.getContext('2d');
+    if (statusCtx) {
+        const statusData = {
+            pending: {{ pending_tasks_count }},
+            in_progress: {{ in_progress_tasks_count }},
+            completed: {{ project.statistics.completed_tasks if project.statistics else 0 }}
+        };
+        
+        if (taskStatusChart) taskStatusChart.destroy();
+        
+        taskStatusChart = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'In Progress', 'Completed'],
+                datasets: [{
+                    data: [statusData.pending, statusData.in_progress, statusData.completed],
+                    backgroundColor: ['#ffc107', '#17a2b8', '#28a745']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Trend Chart
+    const trendCtx = document.getElementById('taskTrendChart')?.getContext('2d');
+    if (trendCtx) {
+        // Get last 7 days of task completions
+        const dates = [];
+        const completed = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            dates.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            completed.push(Math.floor(Math.random() * 5) + 1); // Replace with actual data
+        }
+        
+        if (taskTrendChart) taskTrendChart.destroy();
+        
+        taskTrendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Tasks Completed',
+                    data: completed,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function filterTasks() {
+    const activityFilter = document.getElementById('activity_filter').value;
+    const statusFilter = document.getElementById('status_filter').value;
+    const priorityFilter = document.getElementById('priority_filter').value;
+    const searchText = document.getElementById('task_search').value.toLowerCase();
+    
+    const rows = document.querySelectorAll('.task-row');
+    
+    rows.forEach(row => {
+        const activityId = row.dataset.activityId;
+        const status = row.dataset.status;
+        const priority = row.dataset.priority;
+        const taskName = row.cells[1].textContent.toLowerCase();
+        const taskCode = row.cells[0].textContent.toLowerCase();
+        
+        const matchesActivity = !activityFilter || activityId === activityFilter;
+        const matchesStatus = !statusFilter || status === statusFilter;
+        const matchesPriority = !priorityFilter || priority === priorityFilter;
+        const matchesSearch = searchText === '' || taskName.includes(searchText) || taskCode.includes(searchText);
+        
+        row.style.display = matchesActivity && matchesStatus && matchesPriority && matchesSearch ? '' : 'none';
+    });
+}
+
+function deleteTask(id) {
+    confirmDelete('Are you sure you want to delete this task?', function() {
+        fetch(`/tasks/api/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('Task deleted successfully');
+                location.reload();
+            } else {
+                showError(data.error || 'Error deleting task');
+            }
+        });
+    });
+}
+
+function exportTasks() {
+    window.location.href = `/projects/api/{{ project.id }}/tasks/export`;
+}
+</script>

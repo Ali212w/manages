@@ -1,0 +1,935 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}المستندات - {{ super() }}{% endblock %}
+
+{% block styles %}
+<style>
+    .documents-container {
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 56px);
+        padding: 2rem;
+    }
+    
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .documents-toolbar {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .document-filters {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .filter-chip {
+        background-color: #e9ecef;
+        border-radius: 20px;
+        padding: 5px 15px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .filter-chip:hover {
+        background-color: #dee2e6;
+    }
+    
+    .filter-chip.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .documents-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .document-card {
+        background-color: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s;
+        position: relative;
+        border: 1px solid #e9ecef;
+    }
+    
+    .document-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        border-color: var(--primary-color);
+    }
+    
+    .document-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #eee;
+        position: relative;
+    }
+    
+    .document-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+        color: white;
+    }
+    
+    .document-icon.pdf { background-color: #e74c3c; }
+    .document-icon.docx { background-color: #2ecc71; }
+    .document-icon.xlsx { background-color: #27ae60; }
+    .document-icon.image { background-color: #3498db; }
+    .document-icon.other { background-color: #9b59b6; }
+    
+    .document-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+        height: 40px;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    
+    .document-body {
+        padding: 1.5rem;
+    }
+    
+    .document-meta {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .document-meta li {
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .document-meta .label {
+        color: #666;
+        min-width: 80px;
+    }
+    
+    .document-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f8f9fa;
+    }
+    
+    .document-actions {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .document-status {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+    }
+    
+    .document-preview {
+        position: relative;
+        overflow: hidden;
+        max-height: 200px;
+        background-color: #f8f9fa;
+    }
+    
+    .document-preview img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+    
+    .document-card:hover .document-preview img {
+        transform: scale(1.05);
+    }
+    
+    .preview-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .document-card:hover .preview-overlay {
+        opacity: 1;
+    }
+    
+    .view-preview-btn {
+        background-color: white;
+        color: var(--primary-color);
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .view-preview-btn:hover {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .document-types {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 1rem;
+    }
+    
+    .document-type-tag {
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        background-color: #e9ecef;
+        color: #666;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        grid-column: 1 / -1;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #ddd;
+        margin-bottom: 1rem;
+    }
+    
+    .upload-dropzone {
+        border: 2px dashed #ccc;
+        border-radius: 10px;
+        padding: 3rem;
+        text-align: center;
+        background-color: #f8f9fa;
+        transition: all 0.3s;
+        cursor: pointer;
+        margin-bottom: 2rem;
+    }
+    
+    .upload-dropzone:hover {
+        border-color: var(--primary-color);
+        background-color: #e9ecef;
+    }
+    
+    .upload-dropzone.dragover {
+        border-color: var(--primary-color);
+        background-color: #e3f2fd;
+    }
+    
+    @media (max-width: 768px) {
+        .documents-container {
+            padding: 1rem;
+        }
+        
+        .documents-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .document-filters {
+            flex-direction: column;
+        }
+        
+        .document-actions {
+            flex-direction: column;
+            gap: 5px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="documents-container">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-0">إدارة المستندات</h2>
+            <p class="text-muted mb-0">إدارة جميع مستندات المشاريع</p>
+        </div>
+        <a href="{{ url_for('document.upload') }}" class="btn btn-primary">
+            <i class="fas fa-upload me-2"></i>رفع مستند جديد
+        </a>
+    </div>
+    
+    <!-- Search and Filter Bar -->
+    <div class="documents-toolbar">
+        <form method="GET" class="mb-4">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" name="search" 
+                               placeholder="ابحث في المستندات..." 
+                               value="{{ request.args.get('search', '') }}">
+                        <button type="submit" class="btn btn-primary">
+                            بحث
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" name="type" onchange="this.form.submit()">
+                        <option value="">جميع الأنواع</option>
+                        <option value="bill_of_quantities" {% if request.args.get('type') == 'bill_of_quantities' %}selected{% endif %}>
+                            جداول الكميات
+                        </option>
+                        <option value="contract" {% if request.args.get('type') == 'contract' %}selected{% endif %}>
+                            العقود
+                        </option>
+                        <option value="drawing" {% if request.args.get('type') == 'drawing' %}selected{% endif %}>
+                            الرسومات
+                        </option>
+                        <option value="specification" {% if request.args.get('type') == 'specification' %}selected{% endif %}>
+                            المواصفات
+                        </option>
+                        <option value="report" {% if request.args.get('type') == 'report' %}selected{% endif %}>
+                            التقارير
+                        </option>
+                        <option value="invoice" {% if request.args.get('type') == 'invoice' %}selected{% endif %}>
+                            الفواتير
+                        </option>
+                    </select>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Quick Filters -->
+        <div class="document-filters">
+            <div class="filter-chip {% if not request.args.get('type') %}active{% endif %}" 
+                 onclick="window.location.href='{{ url_for('document.index') }}'">
+                الكل <span class="badge bg-secondary">{{ documents|length }}</span>
+            </div>
+            {% for type, count in document_types_counts() %}
+            <div class="filter-chip {% if request.args.get('type') == type %}active{% endif %}" 
+                 onclick="filterByType('{{ type }}')">
+                {{ get_document_type_label(type) }} 
+                <span class="badge bg-secondary">{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Bulk Actions -->
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="selectAll">
+                <label class="form-check-label" for="selectAll">
+                    تحديد الكل
+                </label>
+            </div>
+            <div class="bulk-actions">
+                <select class="form-select form-select-sm d-inline-block w-auto" id="bulkAction">
+                    <option value="">إجراء جماعي</option>
+                    <option value="download">تحميل</option>
+                    <option value="archive">أرشفة</option>
+                    <option value="delete">حذف</option>
+                </select>
+                <button class="btn btn-sm btn-primary" onclick="applyBulkAction()">
+                    تطبيق
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Documents Grid -->
+    <div class="documents-grid">
+        {% for document in documents %}
+        <div class="document-card" data-id="{{ document.id }}" data-type="{{ document.document_type }}">
+            <div class="document-status">
+                {% if document.requires_approval %}
+                    {% if document.approval_status == 'approved' %}
+                    <span class="badge bg-success">
+                        <i class="fas fa-check-circle me-1"></i>موافق عليه
+                    </span>
+                    {% elif document.approval_status == 'rejected' %}
+                    <span class="badge bg-danger">
+                        <i class="fas fa-times-circle me-1"></i>مرفوض
+                    </span>
+                    {% else %}
+                    <span class="badge bg-warning">
+                        <i class="fas fa-clock me-1"></i>بانتظار الموافقة
+                    </span>
+                    {% endif %}
+                {% endif %}
+            </div>
+            
+            <div class="document-preview">
+                {% if document.file_extension in ['jpg', 'jpeg', 'png'] %}
+                <img src="{{ url_for('document.download', document_id=document.id) }}" 
+                     alt="{{ document.title }}"
+                     onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\"d-flex align-items-center justify-content-center h-100\"><div class=\"document-icon {{ document.file_extension }}\"><i class=\"fas fa-file\"></i></div></div>';">
+                {% else %}
+                <div class="d-flex align-items-center justify-content-center h-100">
+                    <div class="document-icon {{ document.file_extension }}">
+                        {% if document.file_extension == 'pdf' %}
+                        <i class="fas fa-file-pdf"></i>
+                        {% elif document.file_extension in ['doc', 'docx'] %}
+                        <i class="fas fa-file-word"></i>
+                        {% elif document.file_extension in ['xls', 'xlsx', 'csv'] %}
+                        <i class="fas fa-file-excel"></i>
+                        {% elif document.file_extension in ['jpg', 'jpeg', 'png'] %}
+                        <i class="fas fa-file-image"></i>
+                        {% else %}
+                        <i class="fas fa-file"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="preview-overlay">
+                    <button class="view-preview-btn" onclick="previewDocument({{ document.id }})">
+                        <i class="fas fa-eye me-1"></i>معاينة
+                    </button>
+                </div>
+            </div>
+            
+            <div class="document-header">
+                <h5 class="document-title">{{ document.title }}</h5>
+                <div class="document-types">
+                    <span class="document-type-tag">
+                        {{ get_document_type_label(document.document_type) }}
+                    </span>
+                    {% if document.category %}
+                    <span class="document-type-tag">
+                        {{ document.category }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="document-body">
+                <ul class="document-meta">
+                    <li>
+                        <span class="label">
+                            <i class="fas fa-folder me-1"></i>المشروع:
+                        </span>
+                        <span class="value">
+                            {{ document.project.name }}
+                        </span>
+                    </li>
+                    <li>
+                        <span class="label">
+                            <i class="fas fa-hdd me-1"></i>الحجم:
+                        </span>
+                        <span class="value">
+                            {{ format_file_size(document.file_size) }}
+                        </span>
+                    </li>
+                    <li>
+                        <span class="label">
+                            <i class="fas fa-calendar me-1"></i>تاريخ الرفع:
+                        </span>
+                        <span class="value">
+                            {{ document.uploaded_at.strftime('%Y-%m-%d') }}
+                        </span>
+                    </li>
+                    <li>
+                        <span class="label">
+                            <i class="fas fa-user me-1"></i>رافع الملف:
+                        </span>
+                        <span class="value">
+                            {{ document.uploader.full_name if document.uploader else 'غير معروف' }}
+                        </span>
+                    </li>
+                    {% if document.description %}
+                    <li>
+                        <span class="label">
+                            <i class="fas fa-align-left me-1"></i>الوصف:
+                        </span>
+                        <span class="value">
+                            {{ document.description|truncate(50) }}
+                        </span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <div class="document-footer">
+                <div class="form-check">
+                    <input class="form-check-input document-checkbox" 
+                           type="checkbox" 
+                           value="{{ document.id }}">
+                </div>
+                <div class="document-actions">
+                    <a href="{{ url_for('document.view', document_id=document.id) }}" 
+                       class="btn btn-sm btn-outline-primary" title="عرض">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{{ url_for('document.download', document_id=document.id) }}" 
+                       class="btn btn-sm btn-outline-success" title="تحميل">
+                        <i class="fas fa-download"></i>
+                    </a>
+                    {% if current_user.role in ['admin', 'project_manager'] and document.requires_approval and document.approval_status != 'approved' %}
+                    <form method="POST" 
+                          action="{{ url_for('document.approve_document', document_id=document.id) }}"
+                          class="d-inline"
+                          onsubmit="return confirm('هل تريد الموافقة على هذا المستند؟')">
+                        <button type="submit" class="btn btn-sm btn-outline-success" title="موافقة">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if can_delete_document(document, current_user) %}
+                    <form method="POST" 
+                          action="{{ url_for('document.delete_document', document_id=document.id) }}"
+                          class="d-inline"
+                          onsubmit="return confirm('هل تريد حذف هذا المستند؟')">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <h4>لا توجد مستندات</h4>
+            <p class="text-muted">لم يتم العثور على مستندات مطابقة للبحث</p>
+            <a href="{{ url_for('document.upload') }}" class="btn btn-primary mt-2">
+                <i class="fas fa-upload me-2"></i>رفع مستند جديد
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if documents|length > 0 %}
+    <nav aria-label="تصفح المستندات" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1">السابق</a>
+            </li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link" href="#">التالي</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalTitle">معاينة المستند</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent">
+                    <!-- سيتم تعبئته بواسطة JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-primary" id="downloadPreviewBtn">
+                    <i class="fas fa-download me-2"></i>تحميل
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // تحديد/إلغاء تحديد الكل
+        $('#selectAll').change(function() {
+            $('.document-checkbox').prop('checked', $(this).prop('checked'));
+        });
+        
+        // تصفية حسب النوع
+        window.filterByType = function(type) {
+            if (type) {
+                window.location.href = "{{ url_for('document.index') }}?type=" + type;
+            } else {
+                window.location.href = "{{ url_for('document.index') }}";
+            }
+        };
+        
+        // البحث المباشر
+        let searchTimeout;
+        $('input[name="search"]').on('keyup', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                $(this).closest('form').submit();
+            }, 500);
+        });
+        
+        // تحميل معاينات المستندات
+        initializeDocumentPreviews();
+        
+        // سحب وإفلات الملفات
+        initializeDragAndDrop();
+    });
+    
+    function applyBulkAction() {
+        const action = $('#bulkAction').val();
+        const selectedDocuments = $('.document-checkbox:checked');
+        
+        if (!action) {
+            showNotification('تحذير', 'الرجاء اختيار إجراء', 'warning');
+            return;
+        }
+        
+        if (selectedDocuments.length === 0) {
+            showNotification('تحذير', 'الرجاء اختيار مستند واحد على الأقل', 'warning');
+            return;
+        }
+        
+        const documentIds = selectedDocuments.map(function() {
+            return $(this).val();
+        }).get();
+        
+        switch(action) {
+            case 'download':
+                downloadMultipleDocuments(documentIds);
+                break;
+            case 'archive':
+                archiveDocuments(documentIds);
+                break;
+            case 'delete':
+                deleteMultipleDocuments(documentIds);
+                break;
+        }
+    }
+    
+    function downloadMultipleDocuments(documentIds) {
+        if (documentIds.length === 1) {
+            // تحميل مستند واحد مباشرة
+            window.location.href = `/documents/${documentIds[0]}/download`;
+        } else {
+            // تحميل عدة مستندات كملف مضغوط
+            $.ajax({
+                url: '/api/documents/download-multiple',
+                method: 'POST',
+                data: JSON.stringify({ document_ids: documentIds }),
+                contentType: 'application/json',
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(blob) {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `مستندات_${new Date().toISOString().split('T')[0]}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                    
+                    showNotification('تم', 'تم بدء تحميل الملفات', 'success');
+                },
+                error: function() {
+                    showNotification('خطأ', 'حدث خطأ أثناء تحضير الملفات', 'danger');
+                }
+            });
+        }
+    }
+    
+    function archiveDocuments(documentIds) {
+        if (confirm(`هل تريد أرشفة ${documentIds.length} مستند؟`)) {
+            $.ajax({
+                url: '/api/documents/archive',
+                method: 'POST',
+                data: JSON.stringify({ document_ids: documentIds }),
+                contentType: 'application/json',
+                success: function(response) {
+                    if (response.success) {
+                        showNotification('تم', response.message, 'success');
+                        // تحديث الصفحة بعد 2 ثانية
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                },
+                error: function() {
+                    showNotification('خطأ', 'حدث خطأ أثناء الأرشفة', 'danger');
+                }
+            });
+        }
+    }
+    
+    function deleteMultipleDocuments(documentIds) {
+        if (confirm(`هل تريد حذف ${documentIds.length} مستند نهائياً؟`)) {
+            $.ajax({
+                url: '/api/documents/delete-multiple',
+                method: 'POST',
+                data: JSON.stringify({ document_ids: documentIds }),
+                contentType: 'application/json',
+                success: function(response) {
+                    if (response.success) {
+                        showNotification('تم', response.message, 'success');
+                        // إزالة المستندات المحذوفة من العرض
+                        documentIds.forEach(id => {
+                            $(`.document-card[data-id="${id}"]`).fadeOut(300, function() {
+                                $(this).remove();
+                            });
+                        });
+                    }
+                },
+                error: function() {
+                    showNotification('خطأ', 'حدث خطأ أثناء الحذف', 'danger');
+                }
+            });
+        }
+    }
+    
+    function previewDocument(documentId) {
+        $.ajax({
+            url: `/api/documents/${documentId}`,
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    const document = response.document;
+                    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+                    
+                    $('#previewModalTitle').text(document.title);
+                    $('#downloadPreviewBtn').off('click').on('click', function() {
+                        window.location.href = `/documents/${documentId}/download`;
+                    });
+                    
+                    let previewContent = '';
+                    
+                    if (document.file_extension === 'pdf') {
+                        previewContent = `
+                            <iframe src="/documents/${documentId}/download" 
+                                    width="100%" 
+                                    height="600px" 
+                                    style="border: none;"></iframe>
+                        `;
+                    } else if (['jpg', 'jpeg', 'png'].includes(document.file_extension)) {
+                        previewContent = `
+                            <img src="/documents/${documentId}/download" 
+                                 alt="${document.title}" 
+                                 style="max-width: 100%; max-height: 600px; display: block; margin: 0 auto;">
+                        `;
+                    } else if (['docx', 'doc'].includes(document.file_extension)) {
+                        previewContent = `
+                            <div class="text-center py-5">
+                                <i class="fas fa-file-word fa-4x text-primary mb-3"></i>
+                                <h5>${document.title}</h5>
+                                <p class="text-muted">لا يمكن معاينة مستندات Word مباشرة في المتصفح</p>
+                                <button class="btn btn-primary" onclick="window.location.href='/documents/${documentId}/download'">
+                                    <i class="fas fa-download me-2"></i>تحميل المستند
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        previewContent = `
+                            <div class="text-center py-5">
+                                <i class="fas fa-file fa-4x text-secondary mb-3"></i>
+                                <h5>${document.title}</h5>
+                                <p class="text-muted">لا يمكن معاينة هذا النوع من الملفات</p>
+                                <button class="btn btn-primary" onclick="window.location.href='/documents/${documentId}/download'">
+                                    <i class="fas fa-download me-2"></i>تحميل المستند
+                                </button>
+                            </div>
+                        `;
+                    }
+                    
+                    // إضافة معلومات إضافية
+                    previewContent += `
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6>معلومات المستند</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>النوع:</strong> ${getDocumentTypeLabel(document.document_type)}</p>
+                                    <p><strong>الحجم:</strong> ${formatFileSize(document.file_size)}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>تاريخ الرفع:</strong> ${new Date(document.uploaded_at).toLocaleDateString('ar-SA')}</p>
+                                    <p><strong>رافع الملف:</strong> ${document.uploaded_by?.full_name || 'غير معروف'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    $('#previewContent').html(previewContent);
+                    modal.show();
+                }
+            },
+            error: function() {
+                showNotification('خطأ', 'حدث خطأ أثناء تحميل معاينة المستند', 'danger');
+            }
+        });
+    }
+    
+    function initializeDocumentPreviews() {
+        // تنشيط معاينة الصور عند المرور بالماوس
+        $('.document-preview img').on('load', function() {
+            $(this).parent().find('.document-icon').hide();
+        }).on('error', function() {
+            // إذا فشل تحميل الصورة، عرض الأيقونة
+            $(this).hide();
+            $(this).parent().find('.document-icon').show();
+        });
+    }
+    
+    function initializeDragAndDrop() {
+        const dropzone = $('.upload-dropzone');
+        
+        if (dropzone.length) {
+            dropzone.on('dragover', function(e) {
+                e.preventDefault();
+                $(this).addClass('dragover');
+            });
+            
+            dropzone.on('dragleave', function(e) {
+                e.preventDefault();
+                $(this).removeClass('dragover');
+            });
+            
+            dropzone.on('drop', function(e) {
+                e.preventDefault();
+                $(this).removeClass('dragover');
+                
+                const files = e.originalEvent.dataTransfer.files;
+                if (files.length > 0) {
+                    // توجيه إلى صفحة الرفع مع الملفات
+                    showUploadModal(files);
+                }
+            });
+        }
+    }
+    
+    function showUploadModal(files) {
+        // يمكن إضافة نافذة منبثقة لرفع الملفات مباشرة
+        const modalHtml = `
+            <div class="modal fade" id="quickUploadModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">رفع ${files.length} ملف</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>سيتم تحويلك إلى صفحة رفع المستندات مع الملفات المحددة.</p>
+                            <div class="file-list" style="max-height: 200px; overflow-y: auto;">
+                                ${Array.from(files).map(file => `
+                                    <div class="file-item d-flex align-items-center mb-2">
+                                        <i class="fas fa-file me-2"></i>
+                                        <span>${file.name}</span>
+                                        <small class="text-muted ms-2">(${formatFileSize(file.size)})</small>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                            <button type="button" class="btn btn-primary" onclick="redirectToUpload()">
+                                <i class="fas fa-upload me-2"></i>الانتقال إلى الرفع
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('quickUploadModal'));
+        modal.show();
+        
+        // حفظ الملفات مؤقتاً
+        sessionStorage.setItem('pending_files', JSON.stringify(Array.from(files).map(f => ({
+            name: f.name,
+            size: f.size,
+            type: f.type
+        }))));
+    }
+    
+    function redirectToUpload() {
+        window.location.href = "{{ url_for('document.upload') }}";
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 بايت';
+        const k = 1024;
+        const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function getDocumentTypeLabel(type) {
+        const labels = {
+            'bill_of_quantities': 'جدول كميات',
+            'contract': 'عقد',
+            'drawing': 'رسم',
+            'specification': 'مواصفات',
+            'report': 'تقرير',
+            'invoice': 'فاتورة',
+            'other': 'أخرى'
+        };
+        return labels[type] || type;
+    }
+    
+    // تحديث القائمة تلقائياً
+    setInterval(function() {
+        $.ajax({
+            url: '/api/documents/unread-count',
+            method: 'GET',
+            success: function(response) {
+                if (response.success && response.new_documents > 0) {
+                    showNotification('مستندات جديدة', `هناك ${response.new_documents} مستند جديد`, 'info');
+                    // تحميل المستندات الجديدة
+                    loadNewDocuments();
+                }
+            }
+        });
+    }, 60000); // كل دقيقة
+    
+    function loadNewDocuments() {
+        $.ajax({
+            url: '/api/documents/recent',
+            method: 'GET',
+            success: function(response) {
+                if (response.success && response.documents.length > 0) {
+                    // يمكن تحديث الواجهة بإضافة المستندات الجديدة
+                    console.log('تم تحميل مستندات جديدة:', response.documents);
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

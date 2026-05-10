@@ -1,0 +1,71 @@
+{% extends "employee/base.html" %}
+
+{% block title %}المشاريع - نظام المهام{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">المشاريع</h2>
+        <p class="text-muted">المشاريع التي تشارك فيها</p>
+    </div>
+</div>
+
+<!-- المشاريع -->
+<div class="row">
+    {% for project in projects %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <span class="badge bg-primary mb-2">{{ project.project_code }}</span>
+                        <h5 class="card-title fw-bold">{{ project.name }}</h5>
+                    </div>
+                    <span class="badge-status {{ 'active' if project.status == 'active' else 'pending' }}">
+                        {{ project.status }}
+                    </span>
+                </div>
+                
+                <p class="card-text text-muted small mb-3">
+                    {{ project.description|truncate(100) or 'لا يوجد وصف' }}
+                </p>
+                
+                <!-- تقدم المشروع -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>تقدم المشروع</small>
+                        <small>{{ project.progress_percentage }}%</small>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-primary" style="width: {{ project.progress_percentage }}%"></div>
+                    </div>
+                </div>
+                
+                <!-- تواريخ المشروع -->
+                <div class="d-flex justify-content-between text-muted small mb-3">
+                    <span><i class="fas fa-calendar-alt me-1"></i>بداية: {{ project.dates.planned_start.strftime('%Y-%m-%d') }}</span>
+                    <span><i class="fas fa-calendar-check me-1"></i>نهاية: {{ project.dates.planned_finish.strftime('%Y-%m-%d') }}</span>
+                </div>
+                
+                <!-- رابط المشروع -->
+                <a href="{{ url_for('employee.view_project', project_id=project.id) }}" 
+                   class="btn btn-outline-primary w-100">
+                    <i class="fas fa-eye me-2"></i>عرض التفاصيل
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-project-diagram fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">لا توجد مشاريع</h5>
+                <p class="small text-muted">لم يتم إضافتك إلى أي مشروع بعد</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

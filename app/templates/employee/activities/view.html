@@ -1,0 +1,586 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ activity.activity_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .activity-header {
+        background: linear-gradient(135deg, #00b894 0%, #019874 100%);
+        border-radius: var(--radius-lg);
+        padding: 25px;
+        color: white;
+        margin-bottom: 25px;
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-sm);
+        border-left: 4px solid;
+        transition: all 0.3s ease;
+    }
+    
+    .info-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .info-card.primary { border-left-color: var(--primary-color); }
+    .info-card.success { border-left-color: var(--success-color); }
+    .info-card.warning { border-left-color: var(--warning-color); }
+    .info-card.info { border-left-color: var(--info-color); }
+    .info-card.danger { border-left-color: var(--danger-color); }
+    
+    .step-item {
+        background: #f8f9fa;
+        border-radius: var(--radius-md);
+        padding: 15px;
+        margin-bottom: 12px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .step-item.completed {
+        background: linear-gradient(135deg, #d4fc79, #96e6a1);
+    }
+    
+    .step-item.pending {
+        border-left: 3px solid var(--warning-color);
+    }
+    
+    .resource-item {
+        background: #f8f9fa;
+        border-radius: var(--radius-md);
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+    
+    .expense-item {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 12px;
+        margin-bottom: 10px;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .progress-ring {
+        width: 140px;
+        height: 140px;
+        margin: 0 auto;
+    }
+    
+    .gantt-bar {
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        border-radius: var(--radius-sm);
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        font-weight: 500;
+        position: relative;
+        margin: 5px 0;
+    }
+    
+    .gantt-bar.actual {
+        background: linear-gradient(90deg, var(--success-color), #00b894);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="activity-header">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+            <span class="badge bg-light text-dark mb-2">{{ activity.activity_id }}</span>
+            <h2 class="mb-2">{{ activity.activity_name }}</h2>
+            <div class="d-flex gap-3 flex-wrap">
+                <div><i class="fas fa-project-diagram me-2"></i> {{ activity.project.name if activity.project else '-' }}</div>
+                <div><i class="fas fa-sitemap me-2"></i> {{ activity.wbs.wbs_code if activity.wbs else '-' }}</div>
+                <div>{{ get_status_badge(activity.status) | safe }}</div>
+            </div>
+        </div>
+        <div class="text-end">
+            <div class="progress-ring">
+                <canvas id="progressRing" width="120" height="120"></canvas>
+                <div class="text-center mt-2">
+                    <span class="fw-bold">{{ activity.progress_percentage|round|int }}%</span>
+                    <br><small class="text-white-50">{{ _('emp.complete') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- معلومات النشاط -->
+        <div class="info-card primary">
+            <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i> {{ _('emp.activity_details') }}</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <small class="text-muted">{{ _('emp.planned_start') }}</small>
+                    <div class="fw-bold">{{ format_date(activity.planned_start) }}</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <small class="text-muted">{{ _('emp.planned_finish') }}</small>
+                    <div class="fw-bold">{{ format_date(activity.planned_finish) }}</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <small class="text-muted">{{ _('emp.actual_start') }}</small>
+                    <div class="fw-bold">{{ format_datetime(activity.actual_start) }}</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <small class="text-muted">{{ _('emp.actual_finish') }}</small>
+                    <div class="fw-bold">{{ format_datetime(activity.actual_finish) }}</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <small class="text-muted">{{ _('emp.duration') }}</small>
+                    <div class="fw-bold">{{ activity.original_duration|round|int }} {{ _('emp.days') }}</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <small class="text-muted">{{ _('emp.total_float') }}</small>
+                    <div class="fw-bold {% if activity.total_float <= 0 %}text-danger{% endif %}">
+                        {{ activity.total_float|round|int }} {{ _('emp.days') }}
+                    </div>
+                </div>
+                {% if activity.description %}
+                <div class="col-12">
+                    <small class="text-muted">{{ _('emp.description') }}</small>
+                    <p class="mt-1">{{ activity.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- خطوات النشاط -->
+        <div class="info-card warning">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="fas fa-list-ol me-2"></i> {{ _('emp.activity_steps') }}</h5>
+                {% if can_update %}
+                <button class="btn btn-sm btn-outline-primary" onclick="addStep()">
+                    <i class="fas fa-plus"></i> {{ _('emp.add_step') }}
+                </button>
+                {% endif %}
+            </div>
+            <div id="stepsContainer">
+                {% for step in steps %}
+                <div class="step-item {% if step.is_completed %}completed{% else %}pending{% endif %}" 
+                     onclick="toggleStep({{ step.id }}, {{ step.is_completed|lower }})">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-secondary me-2">{{ step.order }}</span>
+                            <strong>{{ step.title }}</strong>
+                            {% if step.description %}
+                            <br><small class="text-muted">{{ step.description }}</small>
+                            {% endif %}
+                        </div>
+                        <div>
+                            {% if step.is_completed %}
+                            <i class="fas fa-check-circle text-success fa-lg"></i>
+                            <small class="text-muted ms-2">{{ format_datetime(step.completed_at) }}</small>
+                            {% else %}
+                            <i class="far fa-circle text-muted fa-lg"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3 text-muted">
+                    <i class="fas fa-list fa-2x mb-2"></i>
+                    <p>{{ _('emp.no_steps_defined') }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- المهام المرتبطة -->
+        <div class="info-card info">
+            <h5 class="mb-3"><i class="fas fa-tasks me-2"></i> {{ _('emp.related_tasks') }}</h5>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>{{ _('emp.task') }}</th>
+                            <th>{{ _('emp.assigned_to') }}</th>
+                            <th>{{ _('emp.progress') }}</th>
+                            <th>{{ _('emp.status') }}</th>
+                            <th></th>
+                        </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{ task.task_name }}</div>
+                                <small class="text-muted">{{ task.task_code }}</small>
+                            </td>
+                            <td>{{ task.delegate.full_name if task.delegate else task.supervisor.full_name if task.supervisor else '-' }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress" style="width: 80px; height: 4px;">
+                                        <div class="progress-bar bg-success" style="width: {{ get_task_progress(task) }}%"></div>
+                                    </div>
+                                    <span class="small">{{ get_task_progress(task)|round|int }}%</span>
+                                </div>
+                            </td>
+                            <td>{{ get_status_badge(task.status) | safe }}</td>
+                            <td>
+                                <a href="{{ url_for('employee.view_task', task_id=task.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-3 text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>{{ _('emp.no_tasks') }}</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- تخطيط Gantt -->
+        <div class="info-card">
+            <h5 class="mb-3"><i class="fas fa-chart-gantt me-2"></i> {{ _('emp.gantt_chart') }}</h5>
+            <div id="ganttChart"></div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- التكاليف -->
+        <div class="info-card primary">
+            <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i> {{ _('emp.cost_summary') }}</h5>
+            <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <small>{{ _('emp.planned_cost') }}</small>
+                    <span class="fw-bold">{{ format_currency(stats.total_budget) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <small>{{ _('emp.actual_cost') }}</small>
+                    <span class="fw-bold">{{ format_currency(stats.actual_cost) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <small>{{ _('emp.variance') }}</small>
+                    <span class="fw-bold {% if stats.variance > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ format_currency(stats.variance) }}
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <small>{{ _('emp.variance_percentage') }}</small>
+                    <span class="fw-bold {% if stats.variance_percentage > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ "%.1f"|format(stats.variance_percentage) }}%
+                    </span>
+                </div>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between">
+                <small>{{ _('emp.cpi') }}</small>
+                <span class="fw-bold {% if activity.cpi < 1 %}text-danger{% else %}text-success{% endif %}">
+                    {{ "%.2f"|format(activity.cpi) }}
+                </span>
+            </div>
+            <div class="d-flex justify-content-between mt-1">
+                <small>{{ _('emp.spi') }}</small>
+                <span class="fw-bold {% if activity.spi < 1 %}text-danger{% else %}text-success{% endif %}">
+                    {{ "%.2f"|format(activity.spi) }}
+                </span>
+            </div>
+        </div>
+        
+        <!-- الموارد -->
+        <div class="info-card success">
+            <h5 class="mb-3"><i class="fas fa-cubes me-2"></i> {{ _('emp.resources') }}</h5>
+            {% for res in resources %}
+            <div class="resource-item">
+                <div class="d-flex justify-content-between">
+                    <div class="fw-bold">{{ res.resource.name if res.resource else '-' }}</div>
+                    <span class="badge bg-secondary">{{ res.resource.resource_type if res.resource else '-' }}</span>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <small>{{ _('emp.planned') }}: {{ res.planned_quantity }} {{ res.resource.unit if res.resource else '' }}</small>
+                    <small>{{ _('emp.actual') }}: {{ res.actual_quantity }} {{ res.resource.unit if res.resource else '' }}</small>
+                    <small>{{ _('emp.remaining') }}: {{ res.remaining_quantity }} {{ res.resource.unit if res.resource else '' }}</small>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-3 text-muted">
+                <i class="fas fa-cubes fa-2x mb-2"></i>
+                <p>{{ _('emp.no_resources') }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- المصروفات -->
+        <div class="info-card warning">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="fas fa-receipt me-2"></i> {{ _('emp.expenses') }}</h5>
+                {% if can_update %}
+                <button class="btn btn-sm btn-outline-primary" onclick="addExpense()">
+                    <i class="fas fa-plus"></i> {{ _('emp.add_expense') }}
+                </button>
+                {% endif %}
+            </div>
+            {% for expense in expenses %}
+            <div class="expense-item">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="fw-bold">{{ expense.description }}</div>
+                        <small class="text-muted">{{ expense.category }}</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold">{{ format_currency(expense.amount) }}</div>
+                        {% if expense.is_approved %}
+                        <span class="badge bg-success"><i class="fas fa-check"></i> {{ _('emp.approved') }}</span>
+                        {% else %}
+                        <span class="badge bg-warning"><i class="fas fa-clock"></i> {{ _('emp.pending') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mt-2 small text-muted">
+                    <i class="fas fa-calendar me-1"></i> {{ format_date(expense.expense_date) }}
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-3 text-muted">
+                <i class="fas fa-receipt fa-2x mb-2"></i>
+                <p>{{ _('emp.no_expenses') }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- الإجراءات -->
+        <div class="info-card danger">
+            <h5 class="mb-3"><i class="fas fa-cog me-2"></i> {{ _('emp.actions') }}</h5>
+            {% if can_start %}
+            <button class="btn btn-gradient w-100 mb-2" onclick="startActivity({{ activity.id }})">
+                <i class="fas fa-play me-2"></i> {{ _('emp.start_activity') }}
+            </button>
+            {% endif %}
+            {% if can_complete %}
+            <button class="btn btn-gradient-success w-100 mb-2" onclick="completeActivity({{ activity.id }})">
+                <i class="fas fa-check-circle me-2"></i> {{ _('emp.complete_activity') }}
+            </button>
+            {% endif %}
+            <button class="btn btn-outline-primary w-100" onclick="window.location.href='{{ url_for('employee.api_activity_progress', activity_id=activity.id) }}'">
+                <i class="fas fa-chart-line me-2"></i> {{ _('emp.progress_report') }}
+            </button>
+            <button class="btn btn-outline-success mt-2 w-100" onclick="window.location.href='{{ url_for('employee.api_activity_expenses', activity_id=activity.id) }}'">
+                <i class="fas fa-chart-pie me-2"></i> {{ _('emp.financial_report') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // رسم دائرة التقدم
+    const canvas = document.getElementById('progressRing');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        const progress = {{ activity.progress_percentage }} / 100;
+        const centerX = 60, centerY = 60, radius = 50;
+        
+        ctx.clearRect(0, 0, 120, 120);
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 8;
+        ctx.stroke();
+        
+        ctx.beginPath();
+        const endAngle = -Math.PI / 2 + (2 * Math.PI * progress);
+        ctx.arc(centerX, centerY, radius, -Math.PI / 2, endAngle);
+        ctx.strokeStyle = '#06ffa5';
+        ctx.stroke();
+    }
+    
+    function toggleStep(stepId, isCompleted) {
+        if (isCompleted) {
+            showToast('{{ _("step_already_completed") }}', 'info');
+            return;
+        }
+        
+        Swal.fire({
+            title: '{{ _("complete_step") }}',
+            text: '{{ _("confirm_complete_step") }}',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '{{ _("yes_complete") }}',
+            cancelButtonText: '{{ _("cancel") }}'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showLoading();
+                $.ajax({
+                    url: `/employee/api/activities/{{ activity.id }}/steps/${stepId}/complete`,
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('{{ _("step_completed") }}', 'success');
+                            setTimeout(() => location.reload(), 800);
+                        } else {
+                            showToast(response.error, 'danger');
+                        }
+                    },
+                    error: function() { showToast('{{ _("server_error") }}', 'danger'); },
+                    complete: function() { hideLoading(); }
+                });
+            }
+        });
+    }
+    
+    function addStep() {
+        Swal.fire({
+            title: '{{ _("add_new_step") }}',
+            html: `
+                <input type="text" id="stepTitle" class="swal2-input" placeholder="{{ _('emp.step_title') }}">
+                <textarea id="stepDesc" class="swal2-textarea" placeholder="{{ _('emp.step_description') }}"></textarea>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '{{ _("add") }}',
+            cancelButtonText: '{{ _("cancel") }}',
+            preConfirm: () => {
+                const title = document.getElementById('stepTitle').value;
+                if (!title) {
+                    Swal.showValidationMessage('{{ _("step_title_required") }}');
+                }
+                return { title: title, description: document.getElementById('stepDesc').value };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showLoading();
+                $.ajax({
+                    url: `/employee/api/activities/{{ activity.id }}/steps/add`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        title: result.value.title,
+                        description: result.value.description
+                    }),
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('{{ _("step_added") }}', 'success');
+                            location.reload();
+                        } else {
+                            showToast(response.error, 'danger');
+                        }
+                    },
+                    error: function() { showToast('{{ _("server_error") }}', 'danger'); },
+                    complete: function() { hideLoading(); }
+                });
+            }
+        });
+    }
+    
+    function addExpense() {
+        Swal.fire({
+            title: '{{ _("add_expense") }}',
+            html: `
+                <input type="text" id="expenseDesc" class="swal2-input" placeholder="{{ _('emp.description') }}">
+                <input type="number" id="expenseAmount" class="swal2-input" placeholder="{{ _('emp.amount') }}" step="0.01">
+                <select id="expenseCategory" class="swal2-select">
+                    <option value="labor">{{ _('emp.labor') }}</option>
+                    <option value="material">{{ _('emp.material') }}</option>
+                    <option value="equipment">{{ _('emp.equipment') }}</option>
+                    <option value="transport">{{ _('emp.transport') }}</option>
+                    <option value="other">{{ _('emp.other') }}</option>
+                </select>
+                <input type="date" id="expenseDate" class="swal2-input" value="{{ now.date().isoformat() }}">
+            `,
+            showCancelButton: true,
+            confirmButtonText: '{{ _("add") }}',
+            cancelButtonText: '{{ _("cancel") }}',
+            preConfirm: () => {
+                const desc = document.getElementById('expenseDesc').value;
+                const amount = document.getElementById('expenseAmount').value;
+                if (!desc || !amount) {
+                    Swal.showValidationMessage('{{ _("all_fields_required") }}');
+                }
+                return {
+                    description: desc,
+                    amount: parseFloat(amount),
+                    category: document.getElementById('expenseCategory').value,
+                    date: document.getElementById('expenseDate').value
+                };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showLoading();
+                $.ajax({
+                    url: `/employee/api/activities/{{ activity.id }}/expenses`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(result.value),
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('{{ _("expense_added") }}', 'success');
+                            location.reload();
+                        } else {
+                            showToast(response.error, 'danger');
+                        }
+                    },
+                    error: function() { showToast('{{ _("server_error") }}', 'danger'); },
+                    complete: function() { hideLoading(); }
+                });
+            }
+        });
+    }
+    
+    function startActivity(activityId) {
+        showLoading();
+        $.ajax({
+            url: `/employee/api/activities/${activityId}/start`,
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+            success: function(response) {
+                if (response.success) {
+                    showToast('{{ _("activity_started") }}', 'success');
+                    location.reload();
+                } else {
+                    showToast(response.error, 'danger');
+                }
+            },
+            error: function() { showToast('{{ _("server_error") }}', 'danger'); },
+            complete: function() { hideLoading(); }
+        });
+    }
+    
+    function completeActivity(activityId) {
+        Swal.fire({
+            title: '{{ _("complete_activity") }}',
+            text: '{{ _("complete_activity_confirmation") }}',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '{{ _("yes_complete") }}',
+            cancelButtonText: '{{ _("cancel") }}'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showLoading();
+                $.ajax({
+                    url: `/employee/api/activities/${activityId}/complete`,
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('{{ _("activity_completed") }}', 'success');
+                            location.reload();
+                        } else {
+                            showToast(response.error, 'danger');
+                        }
+                    },
+                    error: function() { showToast('{{ _("server_error") }}', 'danger'); },
+                    complete: function() { hideLoading(); }
+                });
+            }
+        });
+    }
+</script>
+{% endblock %}

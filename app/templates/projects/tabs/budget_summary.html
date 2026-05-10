@@ -1,0 +1,80 @@
+<div class="card">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-chart-pie text-primary me-2"></i>Budget Summary</h6>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <!-- Budget Section -->
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Current Budget:</th>
+                        <td class="fw-bold text-primary">
+                            {{ project.budget.current_budget|format_currency(project.base_currency) if  project.budget else '0'|format_currency(project.base_currency) }}
+                        </td>
+                        <th>Variance:</th>
+                        <td class="{% if budget_summary.current_variance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            
+                            {{ budget_summary.current_variance|format_currency(project.base_currency) if  budget_summary.current_variance else '0'|format_currency(project.base_currency) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Unallocated Budget:</th>
+                        <td class="fw-bold text-warning">
+                             {{ budget_summary.unallocated_budget|format_currency(project.base_currency) if  budget_summary.unallocated_budget else '0'|format_currency(project.base_currency) }}
+                        </td>
+                        <th>Spending Plan:</th>
+                        <td>
+                         {{ budget_summary.total_spending_plan|format_currency(project.base_currency) if  budget_summary.total_spending_plan else '0'|format_currency(project.base_currency) }}
+
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Distributed Current Budget:</th>
+                        <td class="fw-bold text-info">
+                            {{ budget_summary.distributed_budget|format_currency(project.base_currency) if  budget_summary.distributed_budget else '0'|format_currency(project.base_currency) }}
+                        </td>
+                        <th>Benefit Plan:</th>
+                        <td>
+                            {{ budget_summary.total_benefit_plan|format_currency(project.base_currency) if  budget_summary.total_benefit_plan else '0'|format_currency(project.base_currency) }}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="col-md-6">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Undistributed Variance</small>
+                                <h5 class="mb-0">
+                                    {{ budget_summary.undistributed_variance|format_currency(project.base_currency) if  budget_summary.undistributed_variance else '0'|format_currency(project.base_currency) }}
+                                </h5>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Total Spending Plan Tally</small>
+                                <h5 class="mb-0">
+                                    {{ budget_summary.total_spending_plan|format_currency(project.base_currency) if  budget_summary.total_spending_plan else '0'|format_currency(project.base_currency) }}
+                                </h5>
+                            </div>
+                            <div class="col-6 mt-3">
+                                <small class="text-muted d-block">Total Benefit Plan</small>
+                                <h5 class="mb-0">
+                                    {{ budget_summary.total_benefit_plan|format_currency(project.base_currency) if  budget_summary.total_benefit_plan else '0'|format_currency(project.base_currency) }}
+                                </h5>
+                            </div>
+                            <div class="col-6 mt-3">
+                                <small class="text-muted d-block">Total Benefit Plan Tally</small>
+                                <h5 class="mb-0">
+                                    {{ budget_summary.total_benefit_tally|format_currency(project.base_currency) if  budget_summary.total_benefit_tally else '0'|format_currency(project.base_currency) }}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

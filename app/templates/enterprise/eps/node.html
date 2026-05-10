@@ -1,0 +1,46 @@
+<div class="eps-node level-{{ node.level }}" id="eps-{{ node.id }}">
+    <div class="node-content">
+        <div class="node-icon">
+            <i class="fas fa-folder"></i>
+        </div>
+        
+        <div class="node-info">
+            <div class="node-name">
+                <span>{{ node.name }}</span>
+                <span class="node-code">{{ node.eps_code }}</span>
+            </div>
+            <div class="node-path">{{ node.path }}</div>
+            
+            <div class="node-stats">
+                <span class="stat-item">
+                    <i class="fas fa-project-diagram"></i>
+                    {{ node.projects.count() }} مشروع
+                </span>
+                {% if node.manager %}
+                <span class="stat-item">
+                    <i class="fas fa-user-tie"></i>
+                    {{ node.manager.full_name }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="node-actions">
+            <button class="action-btn" onclick="editNode({{ node.id }})" title="تعديل">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="action-btn" onclick="addChild({{ node.id }})" title="إضافة عنصر فرعي">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="action-btn delete" onclick="deleteNode({{ node.id }})" title="حذف">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+{% for child in node.children %}
+    {% with node=child %}
+        {% include 'enterprise/eps/node.html' %}
+    {% endwith %}
+{% endfor %}

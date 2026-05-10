@@ -1,0 +1,52 @@
+<!-- templates/company/bulk_requirements.html -->
+{% extends "company/base.html" %}
+
+{% block title %}إضافة متطلبات جماعية{% endblock %}
+
+{% block page_title %}إضافة متطلبات جماعية{% endblock %}
+{% block page_subtitle %}إضافة متطلبات لعدة مهام في وقت واحد{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('tracking.bulk_add_requirements') }}">
+                    <div class="mb-3">
+                        <label class="form-label">اختر المهام</label>
+                        <select name="task_ids" class="form-select" multiple size="5" required>
+                            {% for task in tasks %}
+                            <option value="{{ task.id }}">{{ task.project.name }} - {{ task.task_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">يمكنك اختيار عدة مهام بالضغط على Ctrl</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">نوع المتطلب</label>
+                        <select name="requirement_type" class="form-select" required>
+                            <option value="document">📄 وثيقة</option>
+                            <option value="photo">📷 صورة</option>
+                            <option value="safety">🛡️ فحص سلامة</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">وصف المتطلب</label>
+                        <textarea name="description" class="form-control" rows="2" required></textarea>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_mandatory" id="isMandatory" checked>
+                        <label class="form-check-label" for="isMandatory">متطلب إلزامي</label>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary-gradient">
+                        <i class="fas fa-plus-circle me-2"></i>إضافة للجميع
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

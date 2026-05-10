@@ -1,0 +1,468 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ report.report_name }}{% endblock %}
+
+{% block page_title %}{{ report.report_name }}{% endblock %}
+{% block page_subtitle %}تقرير ذكي من منصة الذكاء الاصطناعي{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.plot.ly/plotly-latest.min.css">
+<style>
+    .report-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+    }
+    
+    .report-header {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+    }
+    
+    .report-meta {
+        display: flex;
+        gap: 2rem;
+        color: #6c757d;
+        margin-top: 1rem;
+    }
+    
+    .summary-section {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 20px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #eef2f7;
+    }
+    
+    .data-section {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #eef2f7;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .insight-card {
+        background: #f8fafc;
+        border-radius: 15px;
+        padding: 1.2rem;
+        border-right: 4px solid var(--primary);
+    }
+    
+    .recommendation-card {
+        background: #fff3cd;
+        border-radius: 15px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        border-right: 4px solid var(--warning);
+    }
+    
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .data-table th {
+        background: var(--primary);
+        color: white;
+        padding: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .data-table td {
+        padding: 0.8rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .data-table tbody tr:hover {
+        background: rgba(67, 97, 238, 0.02);
+    }
+    
+    .btn-export {
+        background: var(--success);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .btn-export:hover {
+        background: #3aa85a;
+        transform: translateY(-2px);
+    }
+    
+    .btn-print {
+        background: var(--info);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .btn-print:hover {
+        background: #138496;
+        transform: translateY(-2px);
+    }
+    
+    .badge {
+        padding: 0.3rem 1rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .badge-high { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+    .badge-medium { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .badge-low { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <!-- رأس التقرير -->
+    <div class="report-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h2 class="mb-3">{{ report.report_name }}</h2>
+                <span class="badge bg-primary me-2">{{ report.report_type }}</span>
+                <span class="badge bg-info">{{ report.report_format }}</span>
+            </div>
+            <div class="btn-group">
+                <button class="btn-export me-2" onclick="exportReport('pdf')">
+                    <i class="fas fa-file-pdf me-2"></i>
+                    PDF
+                </button>
+                <button class="btn-export me-2" onclick="exportReport('excel')">
+                    <i class="fas fa-file-excel me-2"></i>
+                    Excel
+                </button>
+                <button class="btn-print" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>
+                    طباعة
+                </button>
+            </div>
+        </div>
+        
+        <div class="report-meta">
+            <div>
+                <i class="fas fa-calendar me-2"></i>
+                تاريخ الإنشاء: {{ report.created_at.strftime('%Y-%m-%d %H:%M') }}
+            </div>
+            {% if report.date_range_start and report.date_range_end %}
+            <div>
+                <i class="fas fa-clock me-2"></i>
+                الفترة: {{ report.date_range_start }} إلى {{ report.date_range_end }}
+            </div>
+            {% endif %}
+            {% if report.total_records %}
+            <div>
+                <i class="fas fa-database me-2"></i>
+                إجمالي السجلات: {{ report.total_records }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- ملخص التقرير -->
+    {% if report.report_summary %}
+    <div class="summary-section">
+        <h5 class="mb-3"><i class="fas fa-align-left me-2"></i>ملخص التقرير</h5>
+        <p class="mb-0 lead">{{ report.report_summary }}</p>
+    </div>
+    {% endif %}
+    
+    <!-- إحصائيات سريعة (إذا كانت موجودة) -->
+    {% if report.report_data and report.report_data.summary %}
+    <div class="stats-grid">
+        {% for key, value in report.report_data.summary.items() %}
+        <div class="stat-card">
+            <div class="stat-value">{{ value }}</div>
+            <div class="stat-label">{{ key }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- الرسوم البيانية -->
+    {% if report.chart_data %}
+    <div class="row">
+        {% for chart in report.chart_data %}
+        <div class="col-md-6 mb-4">
+            <div class="chart-container">
+                <h6 class="mb-3">{{ chart.title }}</h6>
+                <div id="chart-{{ chart.id }}"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- رؤى وتحليلات -->
+    {% if report.report_insights %}
+    <div class="data-section">
+        <h5 class="section-title">
+            <i class="fas fa-lightbulb text-warning"></i>
+            الرؤى والتحليلات
+        </h5>
+        <div class="insights-grid">
+            {% for insight in report.report_insights %}
+            <div class="insight-card">
+                <i class="fas fa-{{ 'check-circle' if loop.index is odd else 'info-circle' }} me-2"></i>
+                {{ insight }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- توصيات -->
+    {% if report.recommendations %}
+    <div class="data-section">
+        <h5 class="section-title">
+            <i class="fas fa-tasks text-success"></i>
+            التوصيات
+        </h5>
+        {% for rec in report.recommendations %}
+        <div class="recommendation-card">
+            <div class="d-flex">
+                <i class="fas fa-exclamation-triangle text-warning me-3 mt-1"></i>
+                <div>
+                    <h6 class="mb-2">{{ rec.title if rec.title else 'توصية' }}</h6>
+                    <p class="mb-1">{{ rec.description if rec.description else rec }}</p>
+                    {% if rec.action %}
+                    <small class="text-muted">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        {{ rec.action }}
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- البيانات التفصيلية (إذا كانت موجودة) -->
+    {% if report.report_data and report.report_data.projects %}
+    <div class="data-section">
+        <h5 class="section-title">
+            <i class="fas fa-project-diagram text-primary"></i>
+            بيانات المشاريع
+        </h5>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>الكود</th>
+                        <th>الحالة</th>
+                        <th>التقدم</th>
+                        <th>الأنشطة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in report.report_data.projects %}
+                    <tr>
+                        <td>{{ project.name }}</td>
+                        <td>{{ project.code }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if project.status == 'active' else 'info' }}">
+                                {{ project.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-2" style="height: 5px;">
+                                    <div class="progress-bar" style="width: {{ project.progress }}%"></div>
+                                </div>
+                                <small>{{ project.progress }}%</small>
+                            </div>
+                        </td>
+                        <td>{{ project.activities.total if project.activities else 0 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if report.report_data and report.report_data.resources %}
+    <div class="data-section">
+        <h5 class="section-title">
+            <i class="fas fa-tools text-success"></i>
+            بيانات الموارد
+        </h5>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>النوع</th>
+                        <th>الاستخدام</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for resource in report.report_data.resources %}
+                    <tr>
+                        <td>{{ resource.name }}</td>
+                        <td>{{ resource.type }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-2" style="height: 5px;">
+                                    <div class="progress-bar bg-{{ 'danger' if resource.utilization > 100 
+                                                              else 'warning' if resource.utilization > 70 
+                                                              else 'success' }}" 
+                                         style="width: {{ resource.utilization }}%"></div>
+                                </div>
+                                <small>{{ "%.1f"|format(resource.utilization) }}%</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ 'high' if resource.utilization > 100 
+                                                       else 'medium' if resource.utilization > 70 
+                                                       else 'low' }}">
+                                {{ resource.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- معلمات التقرير -->
+    {% if report.parameters or report.filters %}
+    <div class="data-section">
+        <h5 class="section-title">
+            <i class="fas fa-sliders-h text-info"></i>
+            معلمات التقرير
+        </h5>
+        <div class="row">
+            {% if report.parameters %}
+            <div class="col-md-6">
+                <h6 class="mb-3">المعلمات</h6>
+                <table class="table table-sm">
+                    {% for key, value in report.parameters.items() %}
+                    <tr>
+                        <th width="150">{{ key }}</th>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endif %}
+            
+            {% if report.filters %}
+            <div class="col-md-6">
+                <h6 class="mb-3">الفلاتر</h6>
+                <table class="table table-sm">
+                    {% for key, value in report.filters.items() %}
+                    <tr>
+                        <th width="150">{{ key }}</th>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- أزرار الإجراءات -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('ai.reports_list') }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-right me-2"></i>
+            العودة إلى التقارير
+        </a>
+    </div>
+</div>
+
+<!-- تضمين Plotly.js -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+// رسم الرسوم البيانية
+{% if report.chart_data %}
+    {% for chart in report.chart_data %}
+        var chartData = {{ chart.data|safe }};
+        Plotly.newPlot('chart-{{ chart.id }}', chartData.data || chartData, chartData.layout || {});
+    {% endfor %}
+{% endif %}
+
+// تصدير التقرير
+function exportReport(format) {
+    window.location.href = `/ai/api/export-report/{{ report.id }}?format=${format}`;
+}
+
+// عند تغيير حجم النافذة، إعادة رسم الرسوم البيانية
+window.addEventListener('resize', function() {
+    {% if report.chart_data %}
+        {% for chart in report.chart_data %}
+            Plotly.relayout('chart-{{ chart.id }}', {
+                'width': document.getElementById('chart-{{ chart.id }}').clientWidth
+            });
+        {% endfor %}
+    {% endif %}
+});
+</script>
+{% endblock %}

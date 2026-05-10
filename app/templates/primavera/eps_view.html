@@ -1,0 +1,558 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ eps.name }} - تفاصيل EPS{% endblock %}
+
+{% block page_title %}تفاصيل EPS{% endblock %}
+{% block page_subtitle %}{{ eps.eps_code }} - {{ eps.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .eps-detail-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+    }
+    
+    .detail-card {
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+        overflow: hidden;
+        border: 1px solid #eef2f7;
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05), rgba(67, 97, 238, 0.1));
+        padding: 2rem;
+        border-bottom: 3px solid var(--primary);
+        position: relative;
+    }
+    
+    .eps-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+    }
+    
+    .card-body {
+        padding: 2rem;
+    }
+    
+    /* إحصائيات سريعة */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-icon.primary { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .stat-icon.success { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .stat-icon.warning { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .stat-icon.info { background: rgba(72, 149, 239, 0.1); color: var(--info); }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        margin: 0;
+    }
+    
+    /* معلومات أساسية */
+    .info-section {
+        background: #f8fafc;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #eef2f7;
+    }
+    
+    .info-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px dashed #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .info-title i {
+        color: var(--primary);
+    }
+    
+    .info-row {
+        display: flex;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        width: 120px;
+        color: #6c757d;
+    }
+    
+    .info-value {
+        flex: 1;
+        font-weight: 500;
+    }
+    
+    /* العناصر الفرعية */
+    .children-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .child-item {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .child-item:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-color: var(--primary);
+    }
+    
+    .child-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 1rem;
+    }
+    
+    .child-info {
+        flex: 1;
+    }
+    
+    .child-name {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+    
+    .child-meta {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    /* جدول المشاريع */
+    .projects-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .projects-table th {
+        background: var(--primary);
+        color: white;
+        padding: 1rem;
+        font-weight: 600;
+        text-align: center;
+    }
+    
+    .projects-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #eef2f7;
+        vertical-align: middle;
+    }
+    
+    .projects-table tbody tr:hover {
+        background: rgba(67, 97, 238, 0.02);
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .status-active { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .status-planning { background: rgba(72, 149, 239, 0.1); color: var(--info); }
+    .status-completed { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .status-on_hold { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    
+    .action-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        background: #eef2f7;
+        border: none;
+        color: #6c757d;
+        transition: all 0.3s;
+        cursor: pointer;
+        margin: 0 0.2rem;
+    }
+    
+    .action-btn:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .btn-edit {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.7rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+    
+    .btn-edit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+        color: white;
+    }
+    
+    @media (max-width: 992px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .projects-table {
+            display: block;
+            overflow-x: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="eps-detail-container">
+    <div class="detail-card">
+        <!-- رأس الصفحة -->
+        <div class="card-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="eps-icon ms-4">
+                        <i class="fas fa-sitemap"></i>
+                    </div>
+                    <div>
+                        <h2 class="mb-2">{{ eps.name }}</h2>
+                        <div class="d-flex gap-3 flex-wrap">
+                            <span class="badge bg-primary">{{ eps.eps_code }}</span>
+                            <span class="text-muted">
+                                <i class="fas fa-layer-group ms-1"></i>
+                                المستوى {{ eps.level }}
+                            </span>
+                            <span class="text-muted">
+                                <i class="fas fa-user-tie ms-1"></i>
+                                {{ eps.manager.full_name if eps.manager else 'غير محدد' }}
+                            </span>
+                            <span class="text-muted">
+                                <i class="fas fa-clock ms-1"></i>
+                                {{ eps.created_at.strftime('%Y-%m-%d') if eps.created_at }}
+                            </span>
+                        </div>
+                        <p class="mt-2 text-muted small">
+                            <i class="fas fa-route ms-1"></i>
+                            {{ full_path }}
+                        </p>
+                    </div>
+                </div>
+                <a href="{{ url_for('enterprise.eps_edit', eps_id=eps.id) }}" class="btn-edit">
+                    <i class="fas fa-edit"></i>
+                    تعديل EPS
+                </a>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <!-- إحصائيات سريعة -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-sitemap"></i>
+                    </div>
+                    <h3 class="stat-value">{{ stats.total_children }}</h3>
+                    <p class="stat-label">عناصر فرعية</p>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <h3 class="stat-value">{{ stats.total_projects }}</h3>
+                    <p class="stat-label">مشاريع</p>
+                    <small class="text-muted">
+                        {{ stats.active_projects }} نشط • {{ stats.completed_projects }} مكتمل
+                    </small>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon warning">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <h3 class="stat-value">{{ stats.total_activities }}</h3>
+                    <p class="stat-label">أنشطة</p>
+                    <small class="text-muted">{{ stats.avg_activities_per_project }} نشاط/مشروع</small>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon info">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <h3 class="stat-value">{{ "{:,.0f}".format(stats.total_budget) }}</h3>
+                    <p class="stat-label">الميزانية</p>
+                    <small class="text-muted">ر.س</small>
+                </div>
+            </div>
+            
+            <!-- معلومات أساسية -->
+            <div class="info-section">
+                <h5 class="info-title">
+                    <i class="fas fa-info-circle"></i>
+                    معلومات أساسية
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-row">
+                            <span class="info-label">الوصف:</span>
+                            <span class="info-value">{{ eps.description or 'لا يوجد وصف' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">المسار:</span>
+                            <span class="info-value">{{ full_path }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-row">
+                            <span class="info-label">الحالة:</span>
+                            <span class="info-value">
+                                <span class="badge bg-{{ 'success' if eps.is_active else 'secondary' }}">
+                                    {{ 'نشط' if eps.is_active else 'غير نشط' }}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">المدير:</span>
+                            <span class="info-value">{{ eps.manager.full_name if eps.manager else 'غير محدد' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- OBS Assignments -->
+            {% if obs_assignments %}
+            <div class="info-section">
+                <h5 class="info-title">
+                    <i class="fas fa-users-cog"></i>
+                    صلاحيات OBS
+                </h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>الكود</th>
+                                <th>الاسم</th>
+                                <th>المسؤول</th>
+                                <th>الصلاحية</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for obs in obs_assignments %}
+                            <tr>
+                                <td>{{ obs.code }}</td>
+                                <td>{{ obs.name }}</td>
+                                <td>{{ obs.responsible or 'غير محدد' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if obs.permission == 'admin' 
+                                                              else 'info' if obs.permission == 'write' 
+                                                              else 'secondary' }}">
+                                        {{ obs.permission }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- العناصر الفرعية -->
+            {% if children %}
+            <div class="info-section">
+                <h5 class="info-title">
+                    <i class="fas fa-sitemap"></i>
+                    العناصر الفرعية
+                </h5>
+                
+                <ul class="children-list">
+                    {% for child in children %}
+                    <li class="child-item">
+                        <div class="child-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="child-info">
+                            <div class="child-name">{{ child.name }}</div>
+                            <div class="child-meta">
+                                <span>{{ child.eps_code }}</span>
+                                <span class="mx-2">•</span>
+                                <span>المستوى {{ child.level }}</span>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('primavera.eps_view', eps_id=child.id) }}" class="action-btn">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <!-- المشاريع المرتبطة -->
+            {% if projects %}
+            <div class="info-section">
+                <h5 class="info-title">
+                    <i class="fas fa-project-diagram"></i>
+                    المشاريع المرتبطة
+                </h5>
+                
+                <div class="table-responsive">
+                    <table class="projects-table">
+                        <thead>
+                            <tr>
+                                <th>الكود</th>
+                                <th>اسم المشروع</th>
+                                <th>الحالة</th>
+                                <th>التقدم</th>
+                                <th>الأنشطة</th>
+                                <th>الميزانية</th>
+                                <th>مدير المشروع</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in projects %}
+                            <tr>
+                                <td><strong>{{ project.project_code }}</strong></td>
+                                <td>{{ project.name }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ project.status }}">
+                                        {% if project.status == 'active' %}نشط
+                                        {% elif project.status == 'planning' %}تخطيط
+                                        {% elif project.status == 'completed' %}مكتمل
+                                        {% elif project.status == 'on_hold' %}معلق
+                                        {% else %}{{ project.status }}{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress" style="width: 80px;">
+                                            <div class="progress-bar bg-{{ 'success' if project.progress >= 70 
+                                                                         else 'warning' if project.progress >= 40 
+                                                                         else 'danger' }}" 
+                                                 style="width: {{ project.progress }}%">
+                                            </div>
+                                        </div>
+                                        <small>{{ "%.1f"|format(project.progress) }}%</small>
+                                    </div>
+                                </td>
+                                <td class="text-center">{{ project.activities_count }}</td>
+                                <td>{{ "{:,.0f}".format(project.budget) }}</td>
+                                <td>{{ project.manager_name }}</td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" 
+                                           class="action-btn" title="عرض">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('primavera.wbs_list', project_id=project.id) }}" 
+                                           class="action-btn" title="WBS">
+                                            <i class="fas fa-sitemap"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if not children and not projects %}
+            <div class="text-center py-5">
+                <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">لا توجد بيانات</h5>
+                <p class="text-muted">لم يتم إضافة عناصر فرعية أو مشاريع لهذا EPS بعد</p>
+                <div class="mt-3">
+                    <a href="{{ url_for('primavera.eps_create', parent_id=eps.id) }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        إضافة عنصر فرعي
+                    </a>
+                    <a href="{{ url_for('projects.create_project', eps_id=eps.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i>
+                        إضافة مشروع
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

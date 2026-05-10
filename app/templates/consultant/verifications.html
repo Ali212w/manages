@@ -1,0 +1,175 @@
+{% extends "consultant/base.html" %}
+
+{% block title %}طلبات التحقق - المهندس الاستشاري{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-check-double me-2"></i> طلبات التحقق</h4>
+            <a href="{{ url_for('consultant.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> العودة للوحة
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <h3 class="text-warning">{{ stats.total }}</h3>
+            <small>إجمالي الطلبات</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <h3 class="text-danger">{{ stats.urgent }}</h3>
+            <small>طلبات عاجلة</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <h3 class="text-info">{{ stats.today }}</h3>
+            <small>اليوم</small>
+        </div>
+    </div>
+</div>
+
+<!-- Verifications List -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-list me-2"></i> قائمة طلبات التحقق</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>المهمة</th>
+                        <th>المتطلب</th>
+                        <th>القيمة المقدمة</th>
+                        <th>مقدم من</th>
+                        <th>تاريخ التقديم</th>
+                        <th>الحالة</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for verification in verifications %}
+                    <tr class="{% if verification.status == 'pending' %}table-warning{% endif %}">
+                        <td>
+                            <a href="{{ url_for('consultant.project_detail', project_id=verification.task.project_id) }}#activities">
+                                {{ verification.task.task_name if verification.task else '-' }}
+                            </a>
+                        </td>
+                        <td>{{ verification.requirement.description if verification.requirement else '-' }}</td>
+                        <td>{{ verification.verified_value or '-' }}</td>
+                        <td>{{ verification.user.full_name if verification.user else '-' }}</td>
+                        <td>{{ verification.submitted_at.strftime('%Y-%m-%d %H:%M') if verification.submitted_at else '-' }}</td>
+                        <td>
+                            {% if verification.status == 'pending' %}
+                            <span class="badge bg-warning">قيد المراجعة</span>
+                            {% elif verification.status == 'verified' %}
+                            <span class="badge bg-success">موافق</span>
+                            {% else %}
+                            <span class="badge bg-danger">مرفوض</span>
+                            {% endif %}
+                         </td>
+                        <td>
+                            {% if verification.status == 'pending' %}
+                            <button class="btn btn-sm btn-outline-primary review-verification" data-id="{{ verification.id }}">
+                                <i class="fas fa-check-double"></i> مراجعة
+                            </button>
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-secondary view-verification" data-id="{{ verification.id }}">
+                                <i class="fas fa-eye"></i> عرض
+                            </button>
+                            {% endif %}
+                         </td>
+                     </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-check-circle fa-3x text-success mb-3 d-block"></i>
+                            <p class="text-muted">لا توجد طلبات تحقق معلقة</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Review Verification Modal -->
+<div class="modal fade" id="verificationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-check-double me-2"></i> مراجعة طلب التحقق</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="verificationDetails"></div>
+                <hr>
+                <div class="mb-3">
+                    <label class="form-label">ملاحظات القرار</label>
+                    <textarea id="reviewNotes" class="form-control" rows="3" placeholder="أدخل ملاحظاتك..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="rejectBtn">رفض الطلب</button>
+                <button type="button" class="btn btn-success" id="approveBtn">الموافقة على الطلب</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $('.review-verification').click(function() {
+        const verificationId = $(this).data('id');
+        showVerificationModal(verificationId);
+        $('#approveBtn').off('click').click(() => submitReview(verificationId, true));
+        $('#rejectBtn').off('click').click(() => submitReview(verificationId, false));
+    });
+    
+    function showVerificationModal(verificationId) {
+        $.get(`/api/task-verification-request/${verificationId}`, function(response) {
+            if (response.success) {
+                $('#verificationDetails').html(`
+                    <div class="mb-3">
+                        <h6>المهمة: ${response.task_name}</h6>
+                        <p class="text-muted">المشروع: ${response.project_name}</p>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>المتطلب:</strong> ${response.requirement_description}<br>
+                        <strong>القيمة المقدمة:</strong> ${response.verified_value || '-'}<br>
+                        <strong>مقدم من:</strong> ${response.submitted_by}<br>
+                        <strong>تاريخ التقديم:</strong> ${response.submitted_at}
+                    </div>
+                    ${response.notes ? `<div class="alert alert-secondary"><strong>ملاحظات مقدم الطلب:</strong><br>${response.notes}</div>` : ''}
+                `);
+                $('#verificationModal').modal('show');
+            }
+        });
+    }
+    
+    function submitReview(verificationId, approved) {
+        const notes = $('#reviewNotes').val();
+        $.ajax({
+            url: `/consultant/verifications/${verificationId}/review`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ approved: approved, notes: notes }),
+            success: function(response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert('حدث خطأ: ' + response.error);
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

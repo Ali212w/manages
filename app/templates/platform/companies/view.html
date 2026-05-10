@@ -1,0 +1,407 @@
+{# templates/platform/companies/view.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ company.name }} - {{ _('companies.title') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Back Button -->
+    <div class="mb-3">
+        <a href="{{ url_for('platform.companies') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-{{ 'right' if get_direction() == 'rtl' else 'left' }} me-2"></i>{{ _('common.back') }}
+        </a>
+    </div>
+    
+    <!-- Company Header -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div class="d-flex gap-3">
+                    <div class="bg-gradient-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fas fa-building fa-3x text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="mb-1">{{ company.name }}</h1>
+                        <p class="text-muted mb-2">
+                            <code>{{ company.org_code }}</code>
+                            {% if company.name_ar %}
+                            • {{ company.name_ar }}
+                            {% endif %}
+                        </p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% if company.is_active %}
+                            <span class="badge bg-success">{{ _('status.active') }}</span>
+                            {% else %}
+                            <span class="badge bg-danger">{{ _('status.inactive') }}</span>
+                            {% endif %}
+                            
+                            {% if company.is_verified %}
+                            <span class="badge bg-info">{{ _('companies.verified') }}</span>
+                            {% else %}
+                            <span class="badge bg-warning">{{ _('companies.unverified') }}</span>
+                            {% endif %}
+                            
+                            {% if company.subscription_status == 'active' %}
+                            <span class="badge bg-success">{{ _('subscriptions.active') }}</span>
+                            {% elif company.subscription_status == 'trial' %}
+                            <span class="badge bg-info">{{ _('subscriptions.trial') }}</span>
+                            {% else %}
+                            <span class="badge bg-danger">{{ _('subscriptions.expired') }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('platform.edit_company', company_id=company.id) }}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> {{ _('common.edit') }}
+                    </a>
+                    <button class="btn btn-success toggle-company" data-id="{{ company.id }}" data-status="{{ company.is_active }}">
+                        <i class="fas fa-power-off"></i> {{ _('companies.toggle_status') }}
+                    </button>
+                    {% if g.is_super_admin %}
+                    <button class="btn btn-danger delete-company" data-id="{{ company.id }}" data-name="{{ company.name }}">
+                        <i class="fas fa-trash"></i> {{ _('common.delete') }}
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- Company Information -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-3">
+                    <h5 class="card-title"><i class="fas fa-info-circle me-2"></i>{{ _('profile.personal_info') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-row d-flex py-2 border-bottom">
+                        <div class="label text-muted" style="width: 120px;">{{ _('companies.email') }}</div>
+                        <div class="value">{{ company.email }}</div>
+                    </div>
+                    <div class="info-row d-flex py-2 border-bottom">
+                        <div class="label text-muted" style="width: 120px;">{{ _('companies.phone') }}</div>
+                        <div class="value">{{ company.phone or '-' }}</div>
+                    </div>
+                    <div class="info-row d-flex py-2 border-bottom">
+                        <div class="label text-muted" style="width: 120px;">{{ _('companies.website') }}</div>
+                        <div class="value">
+                            {% if company.website %}
+                            <a href="{{ company.website }}" target="_blank">{{ company.website }}</a>
+                            {% else %}-{% endif %}
+                        </div>
+                    </div>
+                    <div class="info-row d-flex py-2 border-bottom">
+                        <div class="label text-muted" style="width: 120px;">{{ _('companies.address') }}</div>
+                        <div class="value">{{ company.address or '-' }}</div>
+                    </div>
+                    <div class="info-row d-flex py-2 border-bottom">
+                        <div class="label text-muted" style="width: 120px;">{{ _('companies.tax_number') }}</div>
+                        <div class="value">{{ company.tax_number or '-' }}</div>
+                    </div>
+                    <div class="info-row d-flex py-2">
+                        <div class="label text-muted" style="width: 120px;">{{ _('companies.commercial_register') }}</div>
+                        <div class="value">{{ company.commercial_register or '-' }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Subscription Info -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-transparent border-0 pt-3">
+                    <h5 class="card-title"><i class="fas fa-credit-card me-2"></i>{{ _('subscriptions.title') }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if subscriptions %}
+                    <div class="subscription-card">
+                        {% set current_sub = subscriptions|first %}
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="mb-0">{{ current_sub.plan_name or current_sub.plan }}</h6>
+                                <small class="text-muted">{{ format_date(current_sub.start_date) }} - {{ format_date(current_sub.end_date) }}</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">{{ format_currency(current_sub.amount) }}</div>
+                                <span class="badge bg-success">{{ _('subscriptions.active') }}</span>
+                            </div>
+                        </div>
+                        <div class="progress mb-3" style="height: 8px;">
+                            {% set total_days = (current_sub.end_date - current_sub.start_date).days %}
+                            {% set days_left = (current_sub.end_date - now).days %}
+                            {% set percent = (days_left / total_days * 100) if total_days > 0 else 0 %}
+                            <div class="progress-bar bg-success" style="width: {{ percent }}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small>{{ _('subscriptions.auto_renew') }}: {{ _('subscriptions.yes') if current_sub.auto_renew else _('subscriptions.no') }}</small>
+                            <small class="text-warning">{{ days_left }} {{ _('subscriptions.days_left') }}</small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">{{ _('subscriptions.no_subscriptions') }}</p>
+                        <button class="btn btn-sm btn-primary add-subscription" data-id="{{ company.id }}">
+                            <i class="fas fa-plus"></i> {{ _('subscriptions.add_new') }}
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Usage Statistics -->
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-3">
+                    <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>{{ _('companies.usage_stats') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="text-center p-3 bg-light rounded-3">
+                                <div class="display-4 fw-bold text-primary">{{ usage_stats.total_users }}</div>
+                                <div class="text-muted">{{ _('companies.quota.users') }}</div>
+                                <div class="progress mt-2" style="height: 6px;">
+                                    <div class="progress-bar bg-primary" style="width: {{ usage_stats.users_percent }}%"></div>
+                                </div>
+                                <small>{{ usage_stats.total_users }} / {{ company.max_users }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-3 bg-light rounded-3">
+                                <div class="display-4 fw-bold text-success">{{ usage_stats.total_projects }}</div>
+                                <div class="text-muted">{{ _('companies.quota.projects') }}</div>
+                                <div class="progress mt-2" style="height: 6px;">
+                                    <div class="progress-bar bg-success" style="width: {{ usage_stats.projects_percent }}%"></div>
+                                </div>
+                                <small>{{ usage_stats.total_projects }} / {{ company.max_projects }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-3 bg-light rounded-3">
+                                <div class="display-4 fw-bold text-warning">{{ (usage_stats.storage_used_mb / 1024)|round(1) }} GB</div>
+                                <div class="text-muted">{{ _('companies.quota.storage') }}</div>
+                                <div class="progress mt-2" style="height: 6px;">
+                                    <div class="progress-bar bg-warning" style="width: {{ usage_stats.storage_percent }}%"></div>
+                                </div>
+                                <small>{{ (usage_stats.storage_used_mb / 1024)|round(1) }} / {{ (company.storage_limit_mb / 1024)|round(1) }} GB</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Users List -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title"><i class="fas fa-users me-2"></i>{{ _('companies.users_count') }}</h5>
+                    <span class="badge bg-primary">{{ users|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ _('admins.name') }}</th>
+                                    <th>{{ _('companies.email') }}</th>
+                                    <th>{{ _('admins.role') }}</th>
+                                    <th>{{ _('status') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users[:10] %}
+                                <tr>
+                                    <td>{{ user.full_name }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td><span class="badge bg-secondary">{{ user.role }}</span></td>
+                                    <td>
+                                        {% if user.is_user_active %}
+                                        <span class="badge bg-success">{{ _('status.active') }}</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">{{ _('status.inactive') }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if users|length > 10 %}
+                    <div class="text-center p-3">
+                        <small class="text-muted">{{ _('common.showing') }} 10 {{ _('common.of') }} {{ users|length }} {{ _('common.items') }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Projects List -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title"><i class="fas fa-project-diagram me-2"></i>{{ _('companies.projects_count') }}</h5>
+                    <span class="badge bg-primary">{{ projects|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ _('projects.code') }}</th>
+                                    <th>{{ _('projects.name') }}</th>
+                                    <th>{{ _('projects.status') }}</th>
+                                    <th>{{ _('projects.progress') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in projects[:10] %}
+                                <tr>
+                                    <td><code>{{ project.project_code }}</code></td>
+                                    <td>{{ project.name }}</td>
+                                    <td><span class="badge bg-secondary">{{ project.status }}</span></td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                <div class="progress-bar bg-success" style="width: {{ project.get_progress() }}%"></div>
+                                            </div>
+                                            <small>{{ project.get_progress()|round }}%</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Subscription Modal -->
+<div class="modal fade" id="addSubscriptionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title">{{ _('subscriptions.add_new') }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addSubscriptionForm">
+                <input type="hidden" name="company_id" id="subscriptionCompanyId">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('subscriptions.plan') }} *</label>
+                        <select name="plan" class="form-select" required>
+                            {% for plan in available_plans %}
+                            <option value="{{ plan.id }}">{{ plan.name }} - {{ format_currency(plan.price_monthly) }}/{{ _('subscriptions.month') }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('subscriptions.duration_months') }}</label>
+                        <select name="duration_months" class="form-select">
+                            <option value="1">1 {{ _('subscriptions.month') }}</option>
+                            <option value="3">3 {{ _('subscriptions.months') }}</option>
+                            <option value="6">6 {{ _('subscriptions.months') }}</option>
+                            <option value="12" selected>12 {{ _('subscriptions.months') }}</option>
+                            <option value="24">24 {{ _('subscriptions.months') }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('subscriptions.payment_method') }}</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="manual">{{ _('subscriptions.manual') }}</option>
+                            <option value="bank_transfer">{{ _('subscriptions.bank_transfer') }}</option>
+                            <option value="credit_card">{{ _('subscriptions.credit_card') }}</option>
+                        </select>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="auto_renew" class="form-check-input" id="autoRenew" checked>
+                        <label class="form-check-label" for="autoRenew">{{ _('subscriptions.auto_renew') }}</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('common.cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ _('common.save') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Add Subscription button
+    $('.add-subscription').click(function() {
+        const companyId = $(this).data('id');
+        $('#subscriptionCompanyId').val(companyId);
+        $('#addSubscriptionModal').modal('show');
+    });
+    
+    // Add Subscription Form
+    $('#addSubscriptionForm').submit(function(e) {
+        e.preventDefault();
+        const formData = $(this).serialize();
+        
+        $.ajax({
+            url: "{{ url_for('platform.create_subscription') }}",
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    $('#addSubscriptionModal').modal('hide');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    toastr.error(response.error);
+                }
+            },
+            error: function() {
+                toastr.error('{{ _("common.error") }}');
+            }
+        });
+    });
+    
+    // Toggle Company Status
+    $('.toggle-company').click(function() {
+        const companyId = $(this).data('id');
+        
+        if (confirm('{{ _("companies.confirm_delete") }}')) {
+            $.ajax({
+                url: "{{ url_for('platform.toggle_company_status', company_id=0) }}".replace('0', companyId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                }
+            });
+        }
+    });
+    
+    // Delete Company
+    $('.delete-company').click(function() {
+        const companyId = $(this).data('id');
+        
+        if (confirm('{{ _("companies.confirm_delete") }}\n{{ _("companies.delete_warning") }}')) {
+            $.ajax({
+                url: "{{ url_for('platform.delete_company', company_id=0) }}".replace('0', companyId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(() => window.location.href = "{{ url_for('platform.companies') }}", 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

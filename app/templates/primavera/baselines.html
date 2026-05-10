@@ -1,0 +1,364 @@
+{% extends "company/base.html" %}
+
+{% block title %}خطوط الأساس - {{ project.name }}{% endblock %}
+
+{% block page_title %}خطوط الأساس (Baselines){% endblock %}
+{% block page_subtitle %}{{ project.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .baselines-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .baseline-card {
+        background: white;
+        border: 1px solid #eef2f7;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .baseline-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border-color: var(--primary);
+    }
+    
+    .baseline-card.current::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--primary);
+    }
+    
+    .baseline-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .baseline-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+    }
+    
+    .baseline-version {
+        background: #eef2f7;
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .baseline-date {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+    
+    .comparison-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eef2f7;
+    }
+    
+    .comparison-item {
+        text-align: center;
+    }
+    
+    .comparison-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .comparison-value {
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+    
+    .comparison-value.positive { color: var(--success); }
+    .comparison-value.negative { color: var(--danger); }
+    
+    .actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eef2f7;
+    }
+    
+    .action-btn {
+        flex: 1;
+        padding: 0.5rem;
+        border: 2px solid #eef2f7;
+        border-radius: 10px;
+        background: white;
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+        text-decoration: none;
+    }
+    
+    .action-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .action-btn.compare:hover {
+        border-color: var(--success);
+        color: var(--success);
+    }
+    
+    .create-btn {
+        position: fixed;
+        bottom: 2rem;
+        left: 2rem;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
+        cursor: pointer;
+        transition: all 0.3s;
+        z-index: 100;
+        border: none;
+    }
+    
+    .create-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    .timeline {
+        display: flex;
+        align-items: center;
+        margin: 2rem 0;
+        position: relative;
+    }
+    
+    .timeline-line {
+        flex: 1;
+        height: 2px;
+        background: #eef2f7;
+        position: relative;
+    }
+    
+    .timeline-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--primary);
+        position: absolute;
+        top: -5px;
+    }
+    
+    .timeline-label {
+        font-size: 0.7rem;
+        color: #6c757d;
+        position: absolute;
+        top: -20px;
+        transform: translateX(-50%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="baselines-container">
+    <!-- معلومات سريعة -->
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>ما هو خط الأساس؟</strong>
+        <p class="mb-0 mt-2">خط الأساس هو نسخة معتمدة من جدول المشروع في وقت محدد. يستخدم للمقارنة بين المخطط والمنفذ.</p>
+    </div>
+    
+    <!-- خط الأساس الحالي -->
+    {% set current_baseline = baselines|first if baselines else None %}
+    {% if current_baseline %}
+    <div class="baseline-card current">
+        <div class="baseline-header">
+            <h5 class="baseline-name">{{ current_baseline.name }}</h5>
+            <span class="baseline-version">الإصدار {{ current_baseline.version }}</span>
+        </div>
+        <div class="baseline-date">
+            <i class="fas fa-calendar me-1"></i> تم الإنشاء: {{ current_baseline.created_at.strftime('%Y-%m-%d %H:%M') }}
+        </div>
+        
+        <div class="comparison-grid">
+            <div class="comparison-item">
+                <div class="comparison-label">تاريخ البدء</div>
+                <div class="comparison-value">{{ current_baseline.planned_start.strftime('%Y-%m-%d') if current_baseline.planned_start }}</div>
+            </div>
+            <div class="comparison-item">
+                <div class="comparison-label">تاريخ الانتهاء</div>
+                <div class="comparison-value">{{ current_baseline.planned_finish.strftime('%Y-%m-%d') if current_baseline.planned_finish }}</div>
+            </div>
+            <div class="comparison-item">
+                <div class="comparison-label">المدة</div>
+                <div class="comparison-value">{{ ((current_baseline.planned_finish - current_baseline.planned_start).days) if current_baseline.planned_finish and current_baseline.planned_start else 0 }} يوم</div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <a href="{{ url_for('primavera.baseline_compare', project_id=project.id, baseline_id=current_baseline.id) }}" class="action-btn compare">
+                <i class="fas fa-chart-line me-1"></i> مقارنة
+            </a>
+            <button class="action-btn" onclick="exportBaseline({{ current_baseline.id }})">
+                <i class="fas fa-download me-1"></i> تصدير
+            </button>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- قائمة خطوط الأساس السابقة -->
+    <h5 class="mb-4 mt-4"><i class="fas fa-history me-2"></i>خطوط الأساس السابقة</h5>
+    
+    {% for baseline in baselines[1:] %}
+    <div class="baseline-card">
+        <div class="baseline-header">
+            <h6 class="baseline-name">{{ baseline.name }}</h6>
+            <span class="baseline-version">الإصدار {{ baseline.version }}</span>
+        </div>
+        <div class="baseline-date">
+            <i class="fas fa-calendar me-1"></i> {{ baseline.created_at.strftime('%Y-%m-%d %H:%M') }}
+        </div>
+        
+        <div class="comparison-grid">
+            <div class="comparison-item">
+                <div class="comparison-value">{{ baseline.planned_start.strftime('%Y-%m-%d') if baseline.planned_start }}</div>
+            </div>
+            <div class="comparison-item">
+                <div class="comparison-value">{{ baseline.planned_finish.strftime('%Y-%m-%d') if baseline.planned_finish }}</div>
+            </div>
+            <div class="comparison-item">
+                <div class="comparison-value">{{ ((baseline.planned_finish - baseline.planned_start).days) if baseline.planned_finish and baseline.planned_start else 0 }} يوم</div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <a href="{{ url_for('primavera.baseline_compare', project_id=project.id, baseline_id=baseline.id) }}" class="action-btn compare">
+                <i class="fas fa-chart-line me-1"></i> مقارنة
+            </a>
+            <button class="action-btn" onclick="setAsCurrent({{ baseline.id }})">
+                <i class="fas fa-check me-1"></i> تعيين كحالي
+            </button>
+        </div>
+    </div>
+    {% else %}
+    {% if not current_baseline %}
+    <div class="text-center py-5">
+        <i class="fas fa-history fa-4x text-muted mb-3"></i>
+        <h5 class="text-muted mb-3">لا توجد خطوط أساس</h5>
+        <p class="text-muted">قم بإنشاء خط أساس لحفظ حالة المشروع ومقارنتها لاحقاً</p>
+    </div>
+    {% endif %}
+    {% endfor %}
+    
+    <!-- خط زمني لخطوط الأساس -->
+    {% if baselines|length > 1 %}
+    <div class="timeline">
+        <div class="timeline-line">
+            {% for baseline in baselines %}
+            {% set position = ((loop.index - 1) / (baselines|length - 1) * 100) %}
+            <div class="timeline-dot" style="right: {{ position }}%;">
+                <span class="timeline-label">V{{ baseline.version }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal إنشاء خط أساس -->
+<div class="modal fade" id="createBaselineModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-save me-2 text-primary"></i>إنشاء خط أساس جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('primavera.baseline_create', project_id=project.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">اسم خط الأساس</label>
+                        <input type="text" name="name" class="form-control" 
+                               value="Baseline {{ now.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>تنبيه!</strong> إنشاء خط أساس سيحفظ حالة المشروع الحالية للمقارنة المستقبلية.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn-primary-gradient">إنشاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<button class="create-btn" onclick="showCreateModal()" title="إنشاء خط أساس جديد">
+    <i class="fas fa-save"></i>
+</button>
+
+<script>
+function showCreateModal() {
+    new bootstrap.Modal(document.getElementById('createBaselineModal')).show();
+}
+
+function exportBaseline(baselineId) {
+    Swal.fire({
+        icon: 'info',
+        title: 'جاري التحميل',
+        text: 'سيتم تحميل تقرير خط الأساس',
+        timer: 2000,
+        showConfirmButton: false
+    });
+    // TODO: تنفيذ تصدير خط الأساس
+}
+
+function setAsCurrent(baselineId) {
+    Swal.fire({
+        title: 'تعيين كخط أساس حالي',
+        text: 'هل تريد تعيين هذا الخط كخط الأساس الحالي؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // TODO: تنفيذ تعيين كحالي
+            Swal.fire('تم التحديث', '', 'success').then(() => {
+                location.reload();
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

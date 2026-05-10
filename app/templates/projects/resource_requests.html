@@ -1,0 +1,800 @@
+{% extends "company/base.html" %}
+
+{% block title %}طلبات التوريد - {{ project.name }}{% endblock %}
+
+{% block page_title %}طلبات التوريد{% endblock %}
+{% block page_subtitle %}{{ project.name }} - {{ project.project_code }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.bootstrap5.min.css">
+<style>
+    /* ===== الإحصائيات ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        margin-bottom: 0.8rem;
+    }
+    
+    .stat-icon.pending { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .stat-icon.started { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .stat-icon.completed { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .stat-icon.cancelled { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+    
+    /* ===== بطاقات الطلبات ===== */
+    .requests-container {
+        margin-top: 1rem;
+    }
+    
+    .request-card {
+        background: white;
+        border-radius: 20px;
+        margin-bottom: 1rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+        overflow: hidden;
+    }
+    
+    .request-card:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border-color: var(--primary);
+    }
+    
+    .request-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background: #f8fafc;
+        border-bottom: 1px solid #eef2f7;
+        cursor: pointer;
+    }
+    
+    .request-header:hover {
+        background: rgba(67, 97, 238, 0.02);
+    }
+    
+    .request-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .request-number {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--primary);
+        background: rgba(67, 97, 238, 0.1);
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+    }
+    
+    .request-supplier {
+        font-weight: 600;
+    }
+    
+    .request-date {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .status-badge {
+        padding: 0.3rem 1rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-pending {
+        background: rgba(248, 150, 30, 0.1);
+        color: var(--warning);
+    }
+    
+    .status-started {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+    }
+    
+    .status-completed {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .status-cancelled {
+        background: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+    }
+    
+    .request-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #eef2f7;
+        border: none;
+        color: #6c757d;
+        transition: all 0.3s;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .action-btn:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .request-details {
+        padding: 1.5rem;
+        display: none;
+        border-top: 1px solid #eef2f7;
+    }
+    
+    .request-details.show {
+        display: block;
+    }
+    
+    /* ===== جدول المواد ===== */
+    .materials-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    
+    .materials-table th {
+        background: #f8fafc;
+        padding: 0.8rem;
+        font-weight: 600;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    .materials-table td {
+        padding: 0.8rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .progress-small {
+        height: 6px;
+        background: #eef2f7;
+        border-radius: 3px;
+        overflow: hidden;
+        width: 100px;
+    }
+    
+    .progress-bar-small {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.3s;
+    }
+    
+    .delivery-timeline {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 12px;
+    }
+    
+    .timeline-step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+    }
+    
+    .timeline-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #eef2f7;
+        margin: 0 auto 0.5rem;
+        transition: all 0.3s;
+    }
+    
+    .timeline-dot.active {
+        background: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+    
+    .timeline-dot.completed {
+        background: var(--success);
+    }
+    
+    .timeline-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+    
+    .timeline-date {
+        font-size: 0.7rem;
+        color: #6c757d;
+    }
+    
+    .btn-remind {
+        background: var(--warning);
+        color: white;
+        border: none;
+        padding: 0.3rem 1rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-remind:hover {
+        background: #e68a2e;
+        transform: translateY(-2px);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem;
+        background: white;
+        border-radius: 20px;
+        border: 1px solid #eef2f7;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: #6c757d;
+        opacity: 0.3;
+        margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .request-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .request-info {
+            width: 100%;
+            justify-content: space-between;
+        }
+        
+        .request-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- رأس الصفحة -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="fas fa-truck text-primary me-2"></i>
+                طلبات التوريد
+            </h2>
+            <p class="text-muted">{{ project.name }} - {{ project.project_code }}</p>
+        </div>
+        <a href="{{ url_for('projects.create_resource_request', project_id=project.id) }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            طلب توريد مواد جديد
+        </a>
+        <a href="{{ url_for('projects.create_equipment_request', project_id=project.id) }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            طلب توريد معدات  جديد
+        </a>
+        <a href="{{ url_for('projects.project_equipment_requests', project_id=project.id) }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            طلبات توريد معدات
+        </a>
+    </div>
+    
+    <!-- إحصائيات سريعة -->
+    {% set stats = {
+        'total': requests|length,
+        'pending': requests|selectattr('status', 'equalto', 'pending')|list|length,
+        'started': requests|selectattr('status', 'equalto', 'started')|list|length,
+        'completed': requests|selectattr('status', 'equalto', 'completed')|list|length,
+        'cancelled': requests|selectattr('status', 'equalto', 'cancelled')|list|length
+    } %}
+    
+    <div class="stats-grid">
+        <div class="stat-card" onclick="filterByStatus('all')">
+            <div class="stat-icon pending">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-label">إجمالي الطلبات</div>
+        </div>
+        <div class="stat-card" onclick="filterByStatus('pending')">
+            <div class="stat-icon pending">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-value">{{ stats.pending }}</div>
+            <div class="stat-label">قيد الانتظار</div>
+        </div>
+        <div class="stat-card" onclick="filterByStatus('started')">
+            <div class="stat-icon started">
+                <i class="fas fa-play"></i>
+            </div>
+            <div class="stat-value">{{ stats.started }}</div>
+            <div class="stat-label">قيد التنفيذ</div>
+        </div>
+        <div class="stat-card" onclick="filterByStatus('completed')">
+            <div class="stat-icon completed">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-value">{{ stats.completed }}</div>
+            <div class="stat-label">مكتملة</div>
+        </div>
+    </div>
+    
+    <!-- قائمة الطلبات -->
+    <div class="requests-container">
+        {% if requests %}
+            {% for request in requests %}
+            <div class="request-card" data-status="{{ request.status }}" data-request-id="{{ request.id }}">
+                <div class="request-header" onclick="toggleDetails({{ request.id }})">
+                    <div class="request-info">
+                        <span class="request-number">طلب #{{ request.id }}</span>
+                        <span class="request-supplier">
+                            <i class="fas fa-user me-1"></i>
+                            {{ request.supplier_name or 'غير محدد' }}
+                        </span>
+                        <span class="request-date">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            {{ request.required_date }}
+                        </span>
+                        <span class="request-date">
+                            <i class="fas fa-clock me-1"></i>
+                            {{ request.created_at.strftime('%Y-%m-%d') if request.created_at }}
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="status-badge status-{{ request.status }}">
+                            {% if request.status == 'pending' %}قيد الانتظار
+                            {% elif request.status == 'started' %}قيد التنفيذ
+                            {% elif request.status == 'completed' %}مكتمل
+                            {% elif request.status == 'cancelled' %}ملغي
+                            {% endif %}
+                        </span>
+                        <div class="request-actions" onclick="event.stopPropagation()">
+                            {% if request.status == 'pending' %}
+                            <button class="action-btn" onclick="remindSupplier({{ request.id }})" title="تذكير المورد">
+                                <i class="fas fa-bell"></i>
+                            </button>
+                            {% endif %}
+                            {% if request.status in ['pending', 'started'] %}
+                            <button class="action-btn" onclick="updateStatus({{ request.id }}, 'cancelled')" title="إلغاء الطلب">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            {% endif %}
+                            <button class="action-btn" onclick="viewDeliveryHistory({{ request.id }})" title="سجل التسليمات">
+                                <i class="fas fa-history"></i>
+                            </button>
+                        </div>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="request-details" id="details-{{ request.id }}">
+                    <!-- خط سير العملية -->
+                    <div class="delivery-timeline">
+                        <div class="timeline-step">
+                            <div class="timeline-dot {% if request.status != 'pending' %}completed{% endif %}"></div>
+                            <div class="timeline-label">طلب التوريد</div>
+                            <div class="timeline-date">{{ request.created_at.strftime('%Y-%m-%d') if request.created_at }}</div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="timeline-dot {% if request.status == 'started' or request.status == 'completed' %}active{% endif %}"></div>
+                            <div class="timeline-label">بدء التنفيذ</div>
+                            <div class="timeline-date">
+                                request.started_at.strftime('%Y-%m-%d') if request.started_at
+                            </div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="timeline-dot {% if request.status == 'completed' %}completed{% endif %}"></div>
+                            <div class="timeline-label">إكمال التسليم</div>
+                            <div class="timeline-date">
+                                request.completed_at.strftime('%Y-%m-%d') if request.completed_at
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- المواد المطلوبة -->
+                    <h6 class="mt-4 mb-3">المواد المطلوبة</h6>
+                    <div class="table-responsive">
+                        <table class="materials-table">
+                            <thead>
+                                <tr>
+                                    <th>المادة</th>
+                                    <th>الكمية المطلوبة</th>
+                                    <th>الوحدة</th>
+                                    <th>الكمية المستلمة</th>
+                                    <th>المتبقي</th>
+                                    <th>نسبة الإنجاز</th>
+                                </thead>
+                                <tbody>
+                                    {% for resource in request.resources %}
+                                    <tr>
+                                        <td>{{ resource.name }}<br><small class="text-muted">{{ resource.description or '' }}</small>}
+                                         <td class="fw-bold">{{ resource.quantity }}<td>
+                                         <td>{{ resource.unit or 'قطعة' }}<td>
+                                        <td class="text-success">{{ resource.delivered or 0 }}<td>
+                                        <td class="text-warning">{{ resource.remaining or resource.quantity }}<td>
+                                         <td>
+                                            {% set percent = ((resource.delivered or 0) / resource.quantity * 100) if resource.quantity > 0 else 0 %}
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="progress-small">
+                                                    <div class="progress-bar-small bg-{{ 'success' if percent >= 100 else 'primary' }}" 
+                                                         style="width: {{ percent }}%"></div>
+                                                </div>
+                                                <small>{{ "%.0f"|format(percent) }}%</small>
+                                            </div>
+                                         </td>
+                                     </tr>
+                                    {% endfor %}
+                                </tbody>
+                             </table>
+                        </div>
+                        
+                        {% if request.notes %}
+                        <div class="alert alert-light mt-3">
+                            <i class="fas fa-sticky-note me-2"></i>
+                            <strong>ملاحظات:</strong> {{ request.notes }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <a href="{{ url_for('company.request_deliveries',request_id=request.id ) }}" class="btn btn-sm btn-outline-primary" >
+                                <i class="fas fa-box"></i> سجل التسليمات
+                            </a>
+                            {% if request.status == 'pending' %}
+                            <button class="btn btn-sm btn-warning" onclick="remindSupplier({{ request.id }})">
+                                <i class="fas fa-bell"></i> تذكير المورد
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-truck"></i>
+                <h5 class="mt-3">لا توجد طلبات توريد</h5>
+                <p class="text-muted">لم يتم إنشاء أي طلبات توريد لهذا المشروع بعد</p>
+                <a href="{{ url_for('projects.create_resource_request', project_id=project.id) }}" class="btn btn-primary mt-3">
+                    <i class="fas fa-plus me-2"></i>
+                    إنشاء طلب توريد
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- مودال سجل التسليمات -->
+<div class="modal fade" id="deliveryHistoryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-history me-2"></i>
+                    سجل التسليمات
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="deliveryHistoryContent">
+                <div class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p class="mt-2">جاري التحميل...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script>
+let currentRequestId = null;
+
+// تبديل عرض التفاصيل
+function toggleDetails(requestId) {
+    const details = document.getElementById(`details-${requestId}`);
+    const icon = document.querySelector(`.request-card[data-request-id="${requestId}"] .toggle-icon`);
+    
+    if (details.classList.contains('show')) {
+        details.classList.remove('show');
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    } else {
+        details.classList.add('show');
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    }
+}
+
+// تصفية حسب الحالة
+function filterByStatus(status) {
+    const cards = document.querySelectorAll('.request-card');
+    cards.forEach(card => {
+        if (status === 'all' || card.dataset.status === status) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// تذكير المورد
+function remindSupplier(requestId) {
+    Swal.fire({
+        title: 'تأكيد التذكير',
+        text: 'هل أنت متأكد من إرسال تذكير للمورد؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، أرسل',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/company/api/request/${requestId}/send-reminder`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الإرسال',
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+
+// تحديث حالة الطلب
+function updateStatus(requestId, status) {
+    let title = '';
+    let message = '';
+    
+    if (status === 'cancelled') {
+        title = 'تأكيد الإلغاء';
+        message = 'هل أنت متأكد من إلغاء هذا الطلب؟';
+    } else if (status === 'completed') {
+        title = 'تأكيد الإكمال';
+        message = 'هل أنت متأكد من إكمال هذا الطلب؟';
+    }
+    
+    Swal.fire({
+        title: title,
+        text: message,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، تأكيد',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/projects/api/resource-request/${requestId}/update-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ status: status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم التحديث',
+                        text: 'تم تحديث حالة الطلب بنجاح',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+
+// عرض سجل التسليمات
+function viewDeliveryHistory(requestId) {
+    currentRequestId = requestId;
+    const modal = new bootstrap.Modal(document.getElementById('deliveryHistoryModal'));
+    const content = document.getElementById('deliveryHistoryContent');
+    
+    content.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">جاري التحميل...</p></div>';
+    modal.show();
+    
+    fetch(`/company/request/${requestId}/deliveries`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.deliveries.length > 0) {
+                content.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>رقم التسليم</th>
+                                    <th>التاريخ</th>
+                                    <th>المواد المسلمة</th>
+                                    <th>الموقع</th>
+                                    <th>الحالة</th>
+                                    <th>الإجراءات</th>
+                                </thead>
+                                <tbody>
+                                    ${data.deliveries.map(d => `
+                                        <tr>
+                                            <td><strong>${d.delivery_number}</strong>\(
+                                            <td>${d.delivery_date}\(
+                                            <td>
+                                                ${d.delivered_items.map(i => `
+                                                    <span class="badge bg-light text-dark">${i.name}: ${i.quantity}</span>
+                                                `).join('')}
+                                            \(
+                                            <td>${d.delivery_location || '-'}\(
+                                            <td>
+                                                <span class="badge bg-${d.status === 'confirmed' ? 'success' : 'warning'}">
+                                                    ${d.status === 'confirmed' ? 'مؤكد' : 'قيد المراجعة'}
+                                                </span>
+                                            \(
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-info" onclick="viewDeliveryDetails(${d.id})">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            \(
+                                         </tr>
+                                    `).join('')}
+                                </tbody>
+                             </table>
+                        </div>
+                    `;
+            } else {
+                content.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                        <p>لا توجد تسليمات لهذا الطلب</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            content.innerHTML = `
+                <div class="text-center py-4 text-danger">
+                    <i class="fas fa-exclamation-circle fa-2x mb-2"></i>
+                    <p>حدث خطأ في تحميل البيانات</p>
+                </div>
+            `;
+        });
+}
+
+function viewDeliveryDetails(deliveryId) {
+    window.location.href = `/delivery/${deliveryId}`;
+}
+
+// تحديث الإحصائيات عند التصفية
+function updateStats() {
+    const cards = document.querySelectorAll('.request-card');
+    const visibleCards = Array.from(cards).filter(card => card.style.display !== 'none');
+    
+    document.getElementById('filteredCount').textContent = visibleCards.length;
+}
+
+// تهيئة الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    // إضافة أي تأثيرات إضافية
+    console.log('Resource requests page loaded');
+});
+</script>
+
+<style>
+/* تنسيقات إضافية */
+.requests-container {
+    animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.badge {
+    font-weight: normal;
+    padding: 0.3rem 0.6rem;
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+</style>
+{% endblock %}

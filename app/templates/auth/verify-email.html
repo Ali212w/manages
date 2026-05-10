@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفعيل البريد الإلكتروني - نظام إدارة المشاريع الهندسية</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #1abc9c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --danger-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --border-radius: 10px;
+            --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--dark-color);
+        }
+        
+        .verification-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+        
+        .verification-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 40px 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .verification-header::before {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            top: -50px;
+            right: -50px;
+        }
+        
+        .verification-header::after {
+            content: '';
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            bottom: -30px;
+            left: -30px;
+        }
+        
+        .verification-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2.5rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .verification-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .verification-header p {
+            font-size: 1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .verification-body {
+            padding: 40px 35px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+        
+        .alert-success {
+            background-color: rgba(39, 174, 96, 0.1);
+            color: var(--success-color);
+            border-right: 4px solid var(--success-color);
+        }
+        
+        .alert-danger {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+            border-right: 4px solid var(--danger-color);
+        }
+        
+        .alert-warning {
+            background-color: rgba(243, 156, 18, 0.1);
+            color: var(--warning-color);
+            border-right: 4px solid var(--warning-color);
+        }
+        
+        .alert-info {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: var(--secondary-color);
+            border-right: 4px solid var(--secondary-color);
+        }
+        
+        .alert i {
+            margin-left: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .verification-status {
+            margin-bottom: 30px;
+        }
+        
+        .status-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+        
+        .status-icon.success {
+            background-color: rgba(39, 174, 96, 0.1);
+            color: var(--success-color);
+        }
+        
+        .status-icon.error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .status-icon.pending {
+            background-color: rgba(243, 156, 18, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .status-message h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .status-message p {
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+        
+        .verification-steps {
+            text-align: right;
+            margin-bottom: 30px;
+        }
+        
+        .verification-steps h3 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            border-right: 4px solid #e0e6ed;
+        }
+        
+        .step.completed {
+            border-right-color: var(--success-color);
+        }
+        
+        .step.active {
+            border-right-color: var(--secondary-color);
+        }
+        
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #e0e6ed;
+            color: #7f8c8d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-left: 15px;
+            flex-shrink: 0;
+        }
+        
+        .step.completed .step-number {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .step.active .step-number {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .step-content {
+            flex-grow: 1;
+        }
+        
+        .step-content h4 {
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+        
+        .step-content p {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+        
+        .step-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .step.completed .step-icon {
+            color: var(--success-color);
+        }
+        
+        .step.active .step-icon {
+            color: var(--secondary-color);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 16px;
+            border-radius: var(--border-radius);
+            font-family: 'Cairo', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+        
+        .btn i {
+            margin-left: 8px;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #16a085;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(26, 188, 156, 0.2);
+        }
+        
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(149, 165, 166, 0.2);
+        }
+        
+        .resend-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e6ed;
+        }
+        
+        .resend-section p {
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+        
+        .btn-resend {
+            background-color: transparent;
+            color: var(--secondary-color);
+            border: 2px solid var(--secondary-color);
+        }
+        
+        .btn-resend:hover {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-resend:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #bdc3c7;
+            color: #bdc3c7;
+        }
+        
+        .btn-resend:disabled:hover {
+            background-color: transparent;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .countdown {
+            display: inline-block;
+            margin-right: 10px;
+            font-weight: 700;
+            color: var(--secondary-color);
+        }
+        
+        .instructions {
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 30px;
+            text-align: right;
+        }
+        
+        .instructions h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .instructions ul {
+            list-style: none;
+            margin-top: 10px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            padding-right: 10px;
+            position: relative;
+        }
+        
+        .instructions li::before {
+            content: '•';
+            position: absolute;
+            right: 0;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        @media (max-width: 576px) {
+            .verification-container {
+                max-width: 100%;
+            }
+            
+            .verification-body {
+                padding: 30px 25px;
+            }
+            
+            .verification-header {
+                padding: 30px 25px;
+            }
+            
+            .verification-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="verification-container">
+        <div class="verification-header">
+            <div class="verification-icon">
+                <i class="fas fa-envelope-open-text"></i>
+            </div>
+            <h1>تفعيل البريد الإلكتروني</h1>
+            <p>تفعيل حسابك في نظام إدارة المشاريع الهندسية</p>
+        </div>
+        
+        <div class="verification-body">
+            <!-- رسالة الخطأ -->
+            <div id="errorAlert" class="alert alert-danger" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="errorMessage"></span>
+            </div>
+            
+            <!-- رسالة النجاح -->
+            <div id="successAlert" class="alert alert-success" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <span id="successMessage"></span>
+            </div>
+            
+            <!-- رسالة التحذير -->
+            <div id="warningAlert" class="alert alert-warning" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="warningMessage"></span>
+            </div>
+            
+            <!-- رسالة المعلومات -->
+            <div id="infoAlert" class="alert alert-info" style="display: none;">
+                <i class="fas fa-info-circle"></i>
+                <span id="infoMessage"></span>
+            </div>
+            
+            <!-- حالة التفعيل -->
+            <div id="verificationStatus" class="verification-status">
+                <!-- سيتم تعبئتها بواسطة الجافاسكريبت -->
+            </div>
+            
+            <!-- خطوات التفعيل -->
+            <div class="verification-steps" id="verificationSteps">
+                <h3>خطوات تفعيل الحساب</h3>
+                
+                <div class="step completed" id="step1">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>إنشاء الحساب</h4>
+                        <p>تم إنشاء حسابك بنجاح</p>
+                    </div>
+                    <div class="step-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+                
+                <div class="step active" id="step2">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>تفعيل البريد الإلكتروني</h4>
+                        <p>انقر على رابط التفعيل في بريدك الإلكتروني</p>
+                    </div>
+                    <div class="step-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                </div>
+                
+                <div class="step" id="step3">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>اكتمال التفعيل</h4>
+                        <p>ابدأ باستخدام النظام</p>
+                    </div>
+                    <div class="step-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- قسم إعادة الإرسال -->
+            <div class="resend-section" id="resendSection">
+                <p>لم تستلم رابط التفعيل؟</p>
+                <button class="btn btn-resend" id="resendBtn" disabled>
+                    <span class="countdown" id="countdown">60</span>
+                    <i class="fas fa-redo"></i> إعادة إرسال رابط التفعيل
+                </button>
+            </div>
+            
+            <!-- تعليمات -->
+            <div class="instructions">
+                <h3>نصائح مهمة:</h3>
+                <ul>
+                    <li>تحقق من مجلد البريد العشوائي (Spam) إذا لم تجد الرسالة في صندوق الوارد.</li>
+                    <li>تأكد من صحة عنوان البريد الإلكتروني المسجل.</li>
+                    <li>رابط التفعيل صالح لمدة 24 ساعة فقط.</li>
+                    <li>إذا واجهت أي مشكلة، يمكنك التواصل مع الدعم الفني.</li>
+                </ul>
+            </div>
+            
+            <!-- أزرار الإجراءات -->
+            <div class="action-buttons" id="actionButtons">
+                <!-- سيتم تعبئتها بواسطة الجافاسكريبت -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // الحالة الحالية للتفعيل
+        let verificationStatus = 'pending'; // pending, success, expired, invalid, error
+        let resendTimer = null;
+        let resendTime = 60;
+        
+        // تحميل حالة التفعيل عند فتح الصفحة
+        document.addEventListener('DOMContentLoaded', async function() {
+            // الحصول على التوكن من URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            
+            if (token) {
+                // إذا كان هناك توكن في الرابط، قم بتفعيل الحساب
+                await verifyEmail(token);
+            } else {
+                // إذا لم يكن هناك توكن، عرض حالة في انتظار التفعيل
+                showPendingStatus();
+            }
+            
+            setupEventListeners();
+        });
+        
+        // إعداد مستمعي الأحداث
+        function setupEventListeners() {
+            // زر إعادة الإرسال
+            document.getElementById('resendBtn').addEventListener('click', async function() {
+                await resendVerificationEmail();
+            });
+        }
+        
+        // تفعيل البريد الإلكتروني
+        async function verifyEmail(token) {
+            try {
+                showInfo('جاري تفعيل حسابك، يرجى الانتظار...');
+                
+                // في التطبيق الحقيقي، سيكون هناك اتصال بالخادم
+                // const response = await fetch(`/auth/verify-email/${token}`);
+                // const data = await response.json();
+                
+                // محاكاة الاستجابة
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // محاكاة النجاح (في التطبيق الحقيقي، سيتم استخدام data من الخادم)
+                const success = Math.random() > 0.2; // 80% فرصة نجاح
+            
+                if (success) {
+                    verificationStatus = 'success';
+                    showSuccessStatus();
+                } else {
+                    // محاكاة انتهاء الصلاحية
+                    verificationStatus = 'expired';
+                    showExpiredStatus();
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                verificationStatus = 'error';
+                showErrorStatus();
+            }
+        }
+        
+        // إعادة إرسال بريد التفعيل
+        async function resendVerificationEmail() {
+            try {
+                showInfo('جاري إعادة إرسال رابط التفعيل...');
+                
+                // في التطبيق الحقيقي، سيكون هناك اتصال بالخادم
+                // await fetch('/auth/resend-verification', {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json'
+                //     },
+                //     body: JSON.stringify({ email: userEmail })
+                // });
+                
+                // محاكاة الاستجابة
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                showSuccess('تم إعادة إرسال رابط التفعيل بنجاح! يرجى التحقق من بريدك الإلكتروني.');
+                
+                // إعادة تعيين العداد
+                startResendTimer();
+                
+            } catch (error) {
+                showError('حدث خطأ أثناء إعادة إرسال رابط التفعيل');
+                console.error('Error:', error);
+            }
+        }
+        
+        // عرض حالة في انتظار التفعيل
+        function showPendingStatus() {
+            const statusDiv = document.getElementById('verificationStatus');
+            const actionButtons = document.getElementById('actionButtons');
+            
+            // تحديث الأيقونة والرسالة
+            statusDiv.innerHTML = `
+                <div class="status-icon pending">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="status-message">
+                    <h2>في انتظار التفعيل</h2>
+                    <p>تم إرسال رابط التفعيل إلى بريدك الإلكتروني. يرجى التحقق من بريدك والنقر على رابط التفعيل لإكمال عملية التسجيل.</p>
+                </div>
+            `;
+            
+            // تحديث أزرار الإجراءات
+            actionButtons.innerHTML = `
+                <a href="login.html" class="btn btn-secondary">
+                    <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+                </a>
+                <a href="register.html" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> إنشاء حساب جديد
+                </a>
+            `;
+            
+            // بدء عداد إعادة الإرسال
+            startResendTimer();
+            
+            // تحديث الخطوات
+            updateSteps('pending');
+        }
+        
+        // عرض حالة النجاح
+        function showSuccessStatus() {
+            const statusDiv = document.getElementById('verificationStatus');
+            const actionButtons = document.getElementById('actionButtons');
+            
+            // تحديث الأيقونة والرسالة
+            statusDiv.innerHTML = `
+                <div class="status-icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="status-message">
+                    <h2>تم التفعيل بنجاح!</h2>
+                    <p>تم تفعيل حسابك بنجاح. يمكنك الآن تسجيل الدخول والاستفادة من جميع مزايا نظام إدارة المشاريع الهندسية.</p>
+                </div>
+            `;
+            
+            // تحديث أزرار الإجراءات
+            actionButtons.innerHTML = `
+                <a href="login.html" class="btn btn-primary" style="flex: 1;">
+                    <i class="fas fa-sign-in-alt"></i> تسجيل الدخول الآن
+                </a>
+            `;
+            
+            // إخفاء قسم إعادة الإرسال
+            document.getElementById('resendSection').style.display = 'none';
+            
+            // إظهار رسالة النجاح
+            showSuccess('مبروك! تم تفعيل حسابك بنجاح.');
+            
+            // تحديث الخطوات
+            updateSteps('success');
+        }
+        
+        // عرض حالة انتهاء الصلاحية
+        function showExpiredStatus() {
+            const statusDiv = document.getElementById('verificationStatus');
+            const actionButtons = document.getElementById('actionButtons');
+            
+            // تحديث الأيقونة والرسالة
+            statusDiv.innerHTML = `
+                <div class="status-icon error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="status-message">
+                    <h2>انتهت صلاحية رابط التفعيل</h2>
+                    <p>انتهت صلاحية رابط التفعيل. يرجى طلب رابط تفعيل جديد لإكمال عملية التسجيل.</p>
+                </div>
+            `;
+            
+            // تحديث أزرار الإجراءات
+            actionButtons.innerHTML = `
+                <a href="login.html" class="btn btn-secondary">
+                    <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+                </a>
+                <button class="btn btn-primary" id="requestNewLinkBtn">
+                    <i class="fas fa-redo"></i> طلب رابط جديد
+                </button>
+            `;
+            
+            // إضافة مستمع الحدث لزر طلب رابط جديد
+            setTimeout(() => {
+                document.getElementById('requestNewLinkBtn').addEventListener('click', async function() {
+                    await resendVerificationEmail();
+                    showPendingStatus();
+                });
+            }, 100);
+            
+            // إظهار رسالة التحذير
+            showWarning('انتهت صلاحية رابط التفعيل. يرجى طلب رابط جديد.');
+            
+            // تحديث الخطوات
+            updateSteps('expired');
+        }
+        
+        // عرض حالة الخطأ
+        function showErrorStatus() {
+            const statusDiv = document.getElementById('verificationStatus');
+            
+            // تحديث الأيقونة والرسالة
+            statusDiv.innerHTML = `
+                <div class="status-icon error">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="status-message">
+                    <h2>خطأ في التفعيل</h2>
+                    <p>حدث خطأ أثناء محاولة تفعيل حسابك. يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني.</p>
+                </div>
+            `;
+            
+            // إظهار رسالة الخطأ
+            showError('حدث خطأ أثناء تفعيل حسابك. يرجى المحاولة مرة أخرى.');
+            
+            // تحديث الخطوات
+            updateSteps('error');
+        }
+        
+        // تحديث حالة الخطوات
+        function updateSteps(status) {
+            // الخطوة 1 (مكتملة دائماً)
+            document.getElementById('step1').className = 'step completed';
+            
+            // الخطوة 2 والخطوة 3 تعتمد على الحالة
+            const step2 = document.getElementById('step2');
+            const step3 = document.getElementById('step3');
+            
+            if (status === 'pending' || status === 'expired' || status === 'error') {
+                step2.className = 'step active';
+                step3.className = 'step';
+            } else if (status === 'success') {
+                step2.className = 'step completed';
+                step3.className = 'step active';
+            }
+        }
+        
+        // بدء عداد إعادة الإرسال
+        function startResendTimer() {
+            resendTime = 60;
+            
+            if (resendTimer) {
+                clearInterval(resendTimer);
+            }
+            
+            const resendBtn = document.getElementById('resendBtn');
+            const countdownEl = document.getElementById('countdown');
+            
+            resendBtn.disabled = true;
+            countdownEl.textContent = resendTime;
+            
+            resendTimer = setInterval(() => {
+                resendTime--;
+                countdownEl.textContent = resendTime;
+                
+                if (resendTime <= 0) {
+                    clearInterval(resendTimer);
+                    resendBtn.disabled = false;
+                    countdownEl.textContent = '';
+                }
+            }, 1000);
+        }
+        
+        // دوال عرض الرسائل
+        function showError(message) {
+            const errorAlert = document.getElementById('errorAlert');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            errorMessage.textContent = message;
+            errorAlert.style.display = 'flex';
+            
+            // إخفاء الرسالة بعد 10 ثوانٍ
+            setTimeout(() => {
+                errorAlert.style.display = 'none';
+            }, 10000);
+        }
+        
+        function showSuccess(message) {
+            const successAlert = document.getElementById('successAlert');
+            const successMessage = document.getElementById('successMessage');
+            
+            successMessage.textContent = message;
+            successAlert.style.display = 'flex';
+            
+            // إخفاء الرسالة بعد 5 ثوانٍ
+            setTimeout(() => {
+                successAlert.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showWarning(message) {
+            const warningAlert = document.getElementById('warningAlert');
+            const warningMessage = document.getElementById('warningMessage');
+            
+            warningMessage.textContent = message;
+            warningAlert.style.display = 'flex';
+            
+            // إخفاء الرسالة بعد 8 ثوانٍ
+            setTimeout(() => {
+                warningAlert.style.display = 'none';
+            }, 8000);
+        }
+        
+        function showInfo(message) {
+            const infoAlert = document.getElementById('infoAlert');
+            const infoMessage = document.getElementById('infoMessage');
+            
+            infoMessage.textContent = message;
+            infoAlert.style.display = 'flex';
+            
+            // إخفاء الرسالة بعد 5 ثوانٍ
+            setTimeout(() => {
+                infoAlert.style.display = 'none';
+            }, 5000);
+        }
+        
+        // إخفاء رسائل التنبيه عند النقر عليها
+        document.querySelectorAll('.alert').forEach(alert => {
+            alert.addEventListener('click', function() {
+                this.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

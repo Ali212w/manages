@@ -1,0 +1,108 @@
+{% extends "company/base.html" %}
+
+{% block title %}تعديل عنصر EPS - {{ eps.name }}{% endblock %}
+
+{% block page_title %}تعديل عنصر EPS{% endblock %}
+{% block page_subtitle %}{{ eps.eps_code }} - {{ eps.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .path-preview {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+        border-right: 4px solid var(--primary);
+    }
+    
+    .path-display {
+        font-family: monospace;
+        background: white;
+        padding: 0.5rem;
+        border-radius: 6px;
+        border: 1px solid #eef2f7;
+        direction: ltr;
+        text-align: left;
+    }
+    
+    .readonly-field {
+        background: #f8f9fa;
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <form method="POST" action="{{ url_for('enterprise.eps_edit', eps_id=eps.id) }}" id="epsForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">رمز EPS</label>
+                    <input type="text" class="form-control readonly-field" value="{{ eps.eps_code }}" readonly>
+                    <small class="text-muted">لا يمكن تعديل رمز EPS</small>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">الاسم </label>
+                    <input type="text" name="name" class="form-control" value="{{ eps.name }}" required>
+                </div>
+            </div>
+            
+            <div class="row">
+              
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">المستوى</label>
+                    <input type="text" class="form-control readonly-field" value="{{ eps.level }}" readonly>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">الوصف</label>
+                <textarea name="description" class="form-control" rows="3">{{ eps.description or '' }}</textarea>
+            </div>
+            
+            <div class="path-preview">
+                <h6 class="fw-bold mb-2"><i class="fas fa-link me-2"></i>المسار الحالي</h6>
+                <div class="path-display">{{ eps.path }}</div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">المدير المسؤول</label>
+                <select name="manager_id" class="form-select">
+                    <option value="">-- غير معين --</option>
+                    {% for manager in managers %}
+                    <option value="{{ manager.id }}" {% if eps.manager_id == manager.id %}selected{% endif %}>
+                        {{ manager.full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <hr>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('enterprise.eps_view', eps_id=eps.id) }}" class="btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-2"></i> إلغاء
+                </a>
+                <button type="submit" class="btn-primary-gradient">
+                    <i class="fas fa-save me-2"></i> حفظ التغييرات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

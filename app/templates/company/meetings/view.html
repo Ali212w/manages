@@ -1,0 +1,525 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ meeting.title }} - {{ _('meeting_details') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .meeting-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        border-radius: 20px;
+        padding: 25px;
+        color: white;
+        margin-bottom: 30px;
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .section-title i {
+        color: var(--secondary-color);
+        margin-left: 10px;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .attendee-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #e9ecef;
+        padding: 5px 12px;
+        border-radius: 20px;
+        margin: 0 5px 10px 0;
+        font-size: 0.85rem;
+    }
+    
+    .decision-item, .action-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        border-right: 3px solid var(--success-color);
+    }
+    
+    .action-item.pending {
+        border-right-color: var(--warning-color);
+    }
+    
+    .action-status {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-in-progress { background: #cce5ff; color: #004085; }
+    
+    @media print {
+        .sidebar, .top-navbar, .btn, .action-buttons {
+            display: none !important;
+        }
+        .meeting-header {
+            background: #2c3e50 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4><i class="fas fa-calendar-alt me-2"></i> {{ meeting.title }}</h4>
+                <p class="text-muted mb-0">{{ _('meeting_details') }}</p>
+            </div>
+            <div>
+                <a href="{{ url_for('company.meetings_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-2"></i> {{ _('back_to_meetings') }}
+                </a>
+                <button onclick="window.print()" class="btn btn-outline-primary ms-2">
+                    <i class="fas fa-print me-2"></i> {{ _('print') }}
+                </button>
+                {% if meeting.status == 'scheduled' %}
+                <a href="{{ url_for('company.edit_meeting', meeting_id=meeting.id) }}" class="btn btn-outline-warning ms-2">
+                    <i class="fas fa-edit me-2"></i> {{ _('edit') }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Meeting Header -->
+<div class="meeting-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h2 class="mb-2">{{ meeting.title }}</h2>
+            <p class="mb-2 opacity-75">{{ meeting.purpose or _('no_description') }}</p>
+            <div class="d-flex flex-wrap gap-3 mt-3">
+                <span class="badge bg-light text-dark">
+                    <i class="fas fa-tag me-1"></i> {{ meeting.meeting_type or _('general') }}
+                </span>
+                <span class="badge bg-light text-dark">
+                    <i class="fas fa-code-branch me-1"></i> {{ meeting.meeting_code }}
+                </span>
+                {% if meeting.status == 'completed' %}
+                <span class="badge bg-success">{{ _('completed') }}</span>
+                {% elif meeting.status == 'scheduled' %}
+                <span class="badge bg-primary">{{ _('scheduled') }}</span>
+                {% elif meeting.status == 'cancelled' %}
+                <span class="badge bg-danger">{{ _('cancelled') }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
+            <div class="bg-white bg-opacity-25 rounded-3 p-3 d-inline-block">
+                <div class="small">{{ _('meeting_code') }}</div>
+                <h4 class="mb-0">{{ meeting.meeting_code }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Meeting Information -->
+    <div class="col-md-6">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-info-circle"></i> {{ _('meeting_information') }}</h6>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('project') }}:</span>
+                <span class="info-value">
+                    <a href="{{ url_for('company.view_project', project_id=meeting.project_id) }}" class="text-decoration-none">
+                        {{ meeting.project.name if meeting.project else '-' }}
+                    </a>
+                </span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('date') }}:</span>
+                <span class="info-value">{{ meeting.scheduled_date.strftime('%Y-%m-%d') if meeting.scheduled_date else '-' }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('time') }}:</span>
+                <span class="info-value">
+                    {{ meeting.start_time.strftime('%H:%M') if meeting.start_time else '-' }} - 
+                    {{ meeting.end_time.strftime('%H:%M') if meeting.end_time else '-' }}
+                </span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('location') }}:</span>
+                <span class="info-value">
+                    {% if meeting.is_virtual %}
+                    <i class="fas fa-video me-1"></i> {{ _('virtual_meeting') }}
+                    {% if meeting.virtual_link %}
+                    - <a href="{{ meeting.virtual_link }}" target="_blank">{{ meeting.virtual_link }}</a>
+                    {% endif %}
+                    {% else %}
+                    <i class="fas fa-map-marker-alt me-1"></i> {{ meeting.location or _('not_specified') }}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        
+        <!-- Organizers -->
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-users"></i> {{ _('organizers') }}</h6>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('organizer') }}:</span>
+                <span class="info-value">
+                    <i class="fas fa-user-circle me-1"></i>
+                    {{ meeting.organizer.full_name if meeting.organizer else '-' }}
+                </span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('secretary') }}:</span>
+                <span class="info-value">
+                    {% if meeting.secretary %}
+                    <i class="fas fa-user-circle me-1"></i> {{ meeting.secretary.full_name }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendees -->
+    <div class="col-md-6">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-user-friends"></i> {{ _('attendees') }}</h6>
+            
+            {% if meeting.attendees %}
+            <div class="d-flex flex-wrap">
+                {% for attendee in meeting.attendees %}
+                <span class="attendee-badge">
+                    <i class="fas fa-user"></i> 
+                    {% if attendee is string %}
+                        {{ attendee }}
+                    {% else %}
+                        {{ attendee.name if attendee.name else attendee }}
+                    {% endif %}
+                </span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">{{ _('no_attendees') }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Agenda -->
+    <div class="col-12">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-list-ul"></i> {{ _('agenda') }}</h6>
+            
+            {% if meeting.agenda %}
+            <ol class="mb-0">
+                {% for item in meeting.agenda %}
+                <li class="mb-2">{{ item }}</li>
+                {% endfor %}
+            </ol>
+            {% else %}
+            <p class="text-muted mb-0">{{ _('no_agenda') }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Minutes -->
+    <div class="col-12">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-file-alt"></i> {{ _('minutes') }}</h6>
+            
+            {% if meeting.minutes %}
+            <div class="meeting-minutes">
+                {{ meeting.minutes|safe|linebreaks }}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">{{ _('no_minutes') }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Decisions -->
+    <div class="col-12">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-gavel"></i> {{ _('decisions') }}</h6>
+            
+            {% if meeting.decisions %}
+                {% for decision in meeting.decisions %}
+                <div class="decision-item">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    {{ decision }}
+                </div>
+                {% endfor %}
+            {% else %}
+            <p class="text-muted mb-0">{{ _('no_decisions') }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Action Items -->
+    <div class="col-12">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-tasks"></i> {{ _('action_items') }}</h6>
+            
+            {% if meeting.action_items %}
+                {% for item in meeting.action_items %}
+                <div class="action-item {% if item.status != 'completed' %}pending{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <strong>{{ _('task') }}:</strong>
+                                <span>{{ item.description if item is mapping else item }}</span>
+                            </div>
+                            <div class="row">
+                                {% if item is mapping %}
+                                <div class="col-md-4">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>
+                                        {{ _('assigned_to') }}: {{ item.assigned_to if item.assigned_to else '-' }}
+                                    </small>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        {{ _('due_date') }}: {{ item.due_date if item.due_date else '-' }}
+                                    </small>
+                                </div>
+                                <div class="col-md-4">
+                                    {% if item.status == 'completed' %}
+                                    <span class="action-status status-completed">
+                                        <i class="fas fa-check me-1"></i> {{ _('completed') }}
+                                    </span>
+                                    {% elif item.status == 'in_progress' %}
+                                    <span class="action-status status-in-progress">
+                                        <i class="fas fa-spinner me-1"></i> {{ _('in_progress') }}
+                                    </span>
+                                    {% else %}
+                                    <span class="action-status status-pending">
+                                        <i class="fas fa-clock me-1"></i> {{ _('pending') }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <p class="text-muted mb-0">{{ _('no_action_items') }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Complete Meeting Button (if pending) -->
+{% if meeting.status == 'scheduled' %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-white">
+                <h6 class="mb-0"><i class="fas fa-clock me-2"></i> {{ _('meeting_status') }}</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">{{ _('meeting_not_completed') }}</p>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#completeMeetingModal">
+                    <i class="fas fa-check-circle me-2"></i> {{ _('complete_meeting') }}
+                </button>
+                <button class="btn btn-danger cancel-meeting" data-id="{{ meeting.id }}">
+                    <i class="fas fa-times-circle me-2"></i> {{ _('cancel_meeting') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Complete Meeting Modal -->
+<div class="modal fade" id="completeMeetingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i> {{ _('complete_meeting') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ _('minutes') }}</label>
+                    <textarea id="meetingMinutes" class="form-control" rows="5" 
+                              placeholder="{{ _('enter_meeting_minutes') }}"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('decisions') }}</label>
+                    <div id="decisionsContainer">
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control decision-input" placeholder="{{ _('decision_1') }}">
+                            <button class="btn btn-outline-danger remove-decision" type="button">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="addDecision">
+                        <i class="fas fa-plus me-1"></i> {{ _('add_decision') }}
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('action_items') }}</label>
+                    <div id="actionItemsContainer">
+                        <div class="action-item-input border rounded p-3 mb-2">
+                            <input type="text" class="form-control mb-2" placeholder="{{ _('action_description') }}">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" placeholder="{{ _('assigned_to') }}">
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="date" class="form-control" placeholder="{{ _('due_date') }}">
+                                </div>
+                                <div class="col-md-1">
+                                    <button class="btn btn-danger remove-action-item">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="addActionItem">
+                        <i class="fas fa-plus me-1"></i> {{ _('add_action_item') }}
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                <button type="button" class="btn btn-primary" id="saveMeetingCompletion">{{ _('save') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Cancel meeting
+$('.cancel-meeting').click(function() {
+    const meetingId = $(this).data('id');
+    if (confirm('{{ _("confirm_cancel_meeting") }}')) {
+        $.ajax({
+            url: `/company/meetings/${meetingId}/cancel`,
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    location.reload();
+                }
+            }
+        });
+    }
+});
+
+// Decisions
+let decisionCount = 1;
+$('#addDecision').click(function() {
+    decisionCount++;
+    const newDecision = `
+        <div class="input-group mb-2">
+            <input type="text" class="form-control decision-input" placeholder="{{ _('decision') }} ${decisionCount}">
+            <button class="btn btn-outline-danger remove-decision" type="button">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    $('#decisionsContainer').append(newDecision);
+});
+
+$(document).on('click', '.remove-decision', function() {
+    $(this).closest('.input-group').remove();
+});
+
+// Action Items
+let actionCount = 1;
+$('#addActionItem').click(function() {
+    actionCount++;
+    const newAction = `
+        <div class="action-item-input border rounded p-3 mb-2">
+            <input type="text" class="form-control mb-2" placeholder="{{ _('action_description') }} ${actionCount}">
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="{{ _('assigned_to') }}">
+                </div>
+                <div class="col-md-5">
+                    <input type="date" class="form-control" placeholder="{{ _('due_date') }}">
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-danger remove-action-item">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    $('#actionItemsContainer').append(newAction);
+});
+
+$(document).on('click', '.remove-action-item', function() {
+    $(this).closest('.action-item-input').remove();
+});
+
+// Save meeting completion
+$('#saveMeetingCompletion').click(function() {
+    const minutes = $('#meetingMinutes').val();
+    const decisions = $('.decision-input').map(function() { return $(this).val(); }).get().filter(v => v);
+    const actionItems = [];
+    
+    $('.action-item-input').each(function() {
+        const description = $(this).find('input:first').val();
+        const assignedTo = $(this).find('input:eq(1)').val();
+        const dueDate = $(this).find('input:eq(2)').val();
+        if (description) {
+            actionItems.push({description, assigned_to: assignedTo, due_date: dueDate, status: 'pending'});
+        }
+    });
+    
+    $.ajax({
+        url: `/company/meetings/{{ meeting.id }}/complete`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({minutes, decisions, action_items: actionItems}),
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

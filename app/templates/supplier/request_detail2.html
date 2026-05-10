@@ -1,0 +1,749 @@
+<!-- templates/supplier/request_detail.html -->
+
+{% extends "supplier/base.html" %}
+
+{% block title %}تفاصيل الطلب - {{ resource_request.project_name }}{% endblock %}
+
+{% block content %}
+<style>
+.photo-upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #f8fafc;
+}
+
+.photo-upload-area:hover {
+    border-color: var(--primary);
+    background: rgba(67, 97, 238, 0.02);
+}
+
+.photo-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.photo-preview-item {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    border: 1px solid #eef2f7;
+    background: #f8fafc;
+}
+
+.photo-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-preview-item .remove-photo {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.photo-preview-item .remove-photo:hover {
+    background: #ef4444;
+    transform: scale(1.1);
+}
+
+.photo-preview-item .photo-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+</style>
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- معلومات الطلب -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-truck text-primary me-2"></i>
+                        طلب توريد #{{ resource_request.id }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <label class="text-muted small">المشروع</label>
+                                <div class="fw-bold">{{ resource_request.project_name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <label class="text-muted small">تاريخ الاستلام المطلوب</label>
+                                <div class="fw-bold">{{ resource_request.required_date.strftime('%Y-%m-%d') }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-2">
+                                <label class="text-muted small">موقع التسليم</label>
+                                <div class="fw-bold">{{ resource_request.site_location or 'غير محدد' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- المواد المطلوبة -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-boxes text-primary me-2"></i>
+                        المواد المطلوبة
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>المادة</th>
+                                    <th>الكمية المطلوبة</th>
+                                    <th>الوحدة</th>
+                                    <th>الكمية المسلمة</th>
+                                    <th>المتبقي</th>
+                                    <th>عرض السعر</th>
+                                    <th>حالة العرض</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr data-item-id="{{ item.id }}">
+                                    <td class="fw-bold">{{ item.resource_name }}</td>
+                                    <td>{{ item.required_quantity }}</td>
+                                    <td>{{ item.unit }}</td>
+                                    <td class="text-success">{{ item.delivered_quantity }}</td>
+                                    <td class="{% if item.remaining_quantity > 0 %}text-warning{% else %}text-success{% endif %}">
+                                        {{ item.remaining_quantity }}
+                                    </td>
+                                    <td>
+                                        {% if item.offer_status == 'pending' %}
+                                        <span class="badge bg-warning">قيد المراجعة</span>
+                                        {% elif item.offer_status == 'approved' %}
+                                        <span class="badge bg-success">معتمد</span>
+                                        {% elif item.offer_status == 'rejected' %}
+                                        <span class="badge bg-danger">مرفوض</span>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-outline-primary" onclick="showOfferModal({{ item.id }}, '{{ item.resource_name }}', {{ item.required_quantity }}, '{{ item.unit }}')">
+                                            <i class="fas fa-tag me-1"></i> تقديم عرض
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.offer_price %}
+                                        <div class="small">
+                                            <span class="fw-bold">{{ item.offer_price }}</span>
+                                            <span class="text-muted">{{ item.offer_currency }}</span>
+                                            {% if item.offer_notes %}
+                                            <i class="fas fa-sticky-note ms-1 text-muted" title="{{ item.offer_notes }}"></i>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+            </div>
+            <div class="card shadow-sm mt-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="fas fa-box-open text-warning me-2"></i>
+            المواد المتبقية للتسليم
+        </h5>
+    </div>
+    <div class="card-body">
+        {% set remaining_items = items|selectattr('remaining_quantity', 'greaterthan', 0)|list %}
+        {% if remaining_items %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>المادة</th>
+                        <th>الكمية المطلوبة</th>
+                        <th>الكمية المسلمة</th>
+                        <th>الكمية المتبقية</th>
+                        <th>سعر العرض المعتمد</th>
+                        <th></th>
+                    </thead>
+                    <tbody>
+                        {% for item in remaining_items %}
+                        <tr>
+                            <td class="fw-bold">{{ item.resource_name }}</td>
+                            <td>{{ item.required_quantity }} {{ item.unit }}</td>
+                            <td class="text-success">{{ item.delivered_quantity }} {{ item.unit }}</td>
+                            <td class="text-warning fw-bold">{{ item.remaining_quantity }} {{ item.unit }}</td>
+                            <td>
+                                {% if item.offer_price %}
+                                {{ item.offer_price }} {{ item.offer_currency }}
+                                {% else %}
+                                <span class="text-muted">لم يتم تقديم عرض</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.offer_status == 'approved' and item.remaining_quantity > 0 %}
+                                <button class="btn btn-sm btn-success" onclick="quickDeliver({{ item.id }}, {{ item.remaining_quantity }}, '{{ item.unit }}')">
+                                    <i class="fas fa-truck me-1"></i> تسليم
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>
+                إجمالي الكمية المتبقية: <strong>{{ remaining_items|sum(attribute='remaining_quantity')|round(2) }}</strong> وحدة
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <p class="text-muted">تم تسليم جميع المواد المطلوبة</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+            <!-- زر تسليم المواد (يظهر فقط بعد اعتماد العروض) -->
+            {% set all_approved = items|selectattr('offer_status', 'equalto', 'approved')|list|length == items|length %}
+            {% if all_approved and resource_request.status != 'completed' %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <button class="btn btn-success btn-lg" onclick="showDeliveryModal()">
+                        <i class="fas fa-truck me-2"></i>
+                        بدء عملية التسليم
+                    </button>
+                    <p class="text-muted mt-2 small">جميع العروض معتمدة، يمكنك الآن بدء التسليم</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal تقديم عرض السعر -->
+<div class="modal fade" id="offerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-tag text-primary me-2"></i>
+                    تقديم عرض سعر
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">المادة</label>
+                    <div class="form-control-plaintext" id="offerResourceName"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">الكمية المطلوبة</label>
+                    <div class="form-control-plaintext" id="offerQuantity"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label fw-bold">السعر لكل وحدة</label>
+                        <input type="number" id="offerPrice" class="form-control" step="0.01" min="0" placeholder="أدخل السعر">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">العملة</label>
+                        <select id="offerCurrency" class="form-select">
+                            <option value="SAR">ريال سعودي (SAR)</option>
+                            <option value="USD">دولار أمريكي (USD)</option>
+                            <option value="EUR">يورو (EUR)</option>
+                            <option value="AED">درهم إماراتي (AED)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">ملاحظات (اختياري)</label>
+                    <textarea id="offerNotes" class="form-control" rows="3" placeholder="أضف أي ملاحظات حول العرض..."></textarea>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    هذا عرض سعر فقط. بعد الموافقة سيتم إشعارك لبدء التسليم.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="submitOffer()">
+                    <i class="fas fa-paper-plane me-1"></i> إرسال العرض
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تسليم المواد -->
+<div class="modal fade" id="deliveryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-truck text-primary me-2"></i>
+                    تسليم المواد
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">موقع التسليم</label>
+                    <input type="text" id="deliveryLocation" class="form-control" placeholder="أدخل موقع التسليم">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">الإحداثيات (اختياري)</label>
+                    <div class="input-group">
+                        <input type="text" id="deliveryCoordinates" class="form-control" placeholder="مثال: 24.7136, 46.6753">
+                        <button class="btn btn-outline-secondary" type="button" onclick="getCurrentLocation()">
+                            <i class="fas fa-location-dot"></i> الحصول على الموقع
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- قسم رفع الصور المحسن -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">صور التسليم</label>
+                    <div class="photo-upload-area" onclick="document.getElementById('photoInput').click()">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-2"></i>
+                        <p class="mb-1">انقر لرفع صور التسليم</p>
+                        <small class="text-muted">يمكنك رفع عدة صور (JPG, PNG, GIF)</small>
+                        <input type="file" id="photoInput" multiple accept="image/*" style="display: none;">
+                    </div>
+                    
+                    <!-- معاينة الصور -->
+                    <div class="photo-preview-grid" id="photoPreviewGrid"></div>
+                    
+                    <!-- حقل مخفي لتخزين الصور المشفرة -->
+                    <input type="hidden" id="photosData" name="photos_data">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">ملاحظات عامة</label>
+                    <textarea id="deliveryNotes" class="form-control" rows="2" placeholder="أضف ملاحظات عن عملية التسليم..."></textarea>
+                </div>
+                
+                <h6 class="fw-bold mt-3 mb-2">المواد المسلمة</h6>
+                <div id="deliveryItemsList">
+                    {% for item in items if item.offer_status == 'approved' and item.remaining_quantity > 0 %}
+                    <div class="delivery-item card mb-2" data-item-id="{{ item.id }}">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <div class="fw-bold">{{ item.resource_name }}</div>
+                                    <small class="text-muted">الوحدة: {{ item.unit }}</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="small text-muted">الكمية المتبقية</label>
+                                    <div class="fw-bold">{{ item.remaining_quantity }}</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="small text-muted">السعر المعتمد</label>
+                                    <div class="fw-bold">{{ item.offer_price }} {{ item.offer_currency }}</div>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="small text-muted">كمية التسليم</label>
+                                    <input type="number" class="form-control form-control-sm delivery-quantity" 
+                                           data-max="{{ item.remaining_quantity }}" 
+                                           placeholder="الكمية" min="0" max="{{ item.remaining_quantity }}" step="0.01">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <label class="small text-muted">ملاحظات للمادة</label>
+                                <input type="text" class="form-control form-control-sm delivery-item-notes" placeholder="ملاحظات (اختياري)">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-success" onclick="submitDelivery()" id="submitDeliveryBtn">
+                    <i class="fas fa-check-circle me-1"></i> تأكيد التسليم
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentItemId = null;
+
+function quickDeliver(itemId, maxQuantity, unit) {
+    Swal.fire({
+        title: 'تسليم مواد',
+        html: `
+            <div class="text-start">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">الكمية المراد تسليمها</label>
+                    <input type="number" id="deliverQuantity" class="form-control" 
+                           min="0.01" max="${maxQuantity}" step="0.01" value="${maxQuantity}">
+                    <small class="text-muted">الحد الأقصى: ${maxQuantity} ${unit}</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">ملاحظات (اختياري)</label>
+                    <textarea id="deliverNotes" class="form-control" rows="2" placeholder="أضف ملاحظات عن هذه المادة..."></textarea>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'تأكيد التسليم',
+        cancelButtonText: 'إلغاء',
+        preConfirm: () => {
+            const quantity = document.getElementById('deliverQuantity').value;
+            const notes = document.getElementById('deliverNotes').value;
+            
+            if (!quantity || parseFloat(quantity) <= 0) {
+                Swal.showValidationMessage('الرجاء إدخال كمية صحيحة');
+                return false;
+            }
+            if (parseFloat(quantity) > parseFloat('${maxQuantity}')) {
+                Swal.showValidationMessage('الكمية تتجاوز الكمية المتبقية');
+                return false;
+            }
+            return { quantity: parseFloat(quantity), notes: notes };
+        }
+    }).then(result => {
+        if (result.isConfirmed) {
+            // إظهار مؤشر التحميل
+            Swal.fire({
+                title: 'جاري التسليم...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // إرسال طلب التسليم
+            fetch(`/supplier/request/{{ resource_request.id }}/deliver`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    items: [{
+                        item_id: itemId,
+                        quantity: result.value.quantity,
+                        notes: result.value.notes
+                    }],
+                    location: '',
+                    coordinates: '',
+                    notes: '',
+                    photos: []
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'حدث خطأ في الخادم');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('تم', 'تم تسجيل عملية التسليم بنجاح', 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('خطأ', data.error || 'فشل تسجيل التسليم', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('خطأ', error.message || 'حدث خطأ في الاتصال', 'error');
+            });
+        }
+    });
+}
+function submitOffer() {
+    const price = document.getElementById('offerPrice').value;
+    const currency = document.getElementById('offerCurrency').value;
+    const notes = document.getElementById('offerNotes').value;
+    
+    if (!price || parseFloat(price) <= 0) {
+        Swal.fire('تنبيه', 'الرجاء إدخال سعر صحيح', 'warning');
+        return;
+    }
+    
+    Swal.fire({
+        title: 'تأكيد إرسال العرض',
+        text: `هل أنت متأكد من تقديم عرض بسعر ${price} ${currency}؟`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، إرسال',
+        cancelButtonText: 'إلغاء'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch(`/supplier/request/{{ resource_request.id }}/submit-offer`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    items: [{
+                        item_id: currentItemId,
+                        price: parseFloat(price),
+                        currency: currency,
+                        notes: notes
+                    }]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('تم', 'تم إرسال عرض السعر بنجاح', 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('خطأ', data.error, 'error');
+                }
+            });
+        }
+    });
+}
+
+let selectedPhotos = [];
+
+// معالجة رفع الصور
+document.getElementById('photoInput').addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    
+    files.forEach(file => {
+        if (!file.type.startsWith('image/')) {
+            Swal.fire('تنبيه', 'الملف المحدد ليس صورة', 'warning');
+            return;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+            Swal.fire('تنبيه', 'حجم الصورة يجب أن لا يتجاوز 5 ميجابايت', 'warning');
+            return;
+        }
+        
+        const reader = new FileReader();
+        const fileId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        reader.onload = function(event) {
+            selectedPhotos.push({
+                id: fileId,
+                data: event.target.result,
+                file: file,
+                name: file.name
+            });
+            addPhotoPreview(fileId, event.target.result, file.name);
+        };
+        
+        reader.readAsDataURL(file);
+    });
+    
+    // إعادة تعيين input لتمكين رفع نفس الملف مرة أخرى
+    e.target.value = '';
+});
+
+function addPhotoPreview(id, dataUrl, fileName) {
+    const previewGrid = document.getElementById('photoPreviewGrid');
+    const previewItem = document.createElement('div');
+    previewItem.className = 'photo-preview-item';
+    previewItem.setAttribute('data-photo-id', id);
+    previewItem.innerHTML = `
+        <img src="${dataUrl}" alt="${fileName}">
+        <button class="remove-photo" onclick="removePhoto('${id}')">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    previewGrid.appendChild(previewItem);
+}
+
+function removePhoto(photoId) {
+    selectedPhotos = selectedPhotos.filter(p => p.id !== photoId);
+    const previewItem = document.querySelector(`.photo-preview-item[data-photo-id="${photoId}"]`);
+    if (previewItem) {
+        previewItem.remove();
+    }
+}
+
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        Swal.fire({
+            title: 'جاري الحصول على الموقع...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const coords = `${position.coords.latitude}, ${position.coords.longitude}`;
+            document.getElementById('deliveryCoordinates').value = coords;
+            Swal.close();
+            Swal.fire('تم', 'تم الحصول على الموقع بنجاح', 'success');
+        }, function(error) {
+            Swal.close();
+            Swal.fire('خطأ', 'لم نتمكن من الحصول على الموقع', 'error');
+        });
+    } else {
+        Swal.fire('غير مدعوم', 'المتصفح لا يدعم تحديد الموقع', 'warning');
+    }
+}
+
+// في واجهة المورد، قم بتعديل دالة submitDelivery
+
+// في templates/supplier/request_detail.html
+
+function submitDelivery() {
+    const location = document.getElementById('deliveryLocation').value;
+    const coordinates = document.getElementById('deliveryCoordinates').value;
+    const notes = document.getElementById('deliveryNotes').value;
+    
+    if (!location) {
+        Swal.fire('تنبيه', 'الرجاء إدخال موقع التسليم', 'warning');
+        return;
+    }
+    
+    // جمع كميات التسليم
+    const items = [];
+    let hasItems = false;
+    let errorMessage = '';
+    
+    document.querySelectorAll('.delivery-item').forEach(itemDiv => {
+        const itemId = itemDiv.dataset.itemId;
+        const quantity = itemDiv.querySelector('.delivery-quantity').value;
+        const itemNotes = itemDiv.querySelector('.delivery-item-notes').value;
+        
+        if (quantity && parseFloat(quantity) > 0) {
+            const maxQuantity = parseFloat(itemDiv.querySelector('.delivery-quantity').dataset.max);
+            if (parseFloat(quantity) > maxQuantity) {
+                errorMessage = 'الكمية المسلمة تتجاوز الكمية المتبقية';
+                hasItems = false;
+                return;
+            }
+            hasItems = true;
+            items.push({
+                item_id: parseInt(itemId),
+                quantity: parseFloat(quantity),
+                notes: itemNotes
+            });
+        }
+    });
+    
+    if (errorMessage) {
+        Swal.fire('تنبيه', errorMessage, 'warning');
+        return;
+    }
+    
+    if (!hasItems) {
+        Swal.fire('تنبيه', 'الرجاء إدخال كميات التسليم', 'warning');
+        return;
+    }
+    
+    // إظهار مؤشر التحميل
+    const submitBtn = document.getElementById('submitDeliveryBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>جاري الإرسال...';
+    
+    // إنشاء FormData
+    const formData = new FormData();
+    formData.append('location', location);
+    formData.append('coordinates', coordinates);
+    formData.append('notes', notes);
+    formData.append('items', JSON.stringify(items));
+    
+    // إضافة الصور (ملفات فقط، وليس dataURL)
+    if (selectedPhotos && selectedPhotos.length > 0) {
+        selectedPhotos.forEach(photo => {
+            if (photo.file) {
+                formData.append('photos', photo.file);
+            }
+        });
+    }
+    
+    // إرسال الطلب
+    fetch(`/supplier/request/{{ resource_request.id }}/deliver`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}',
+            // لا تضع Content-Type هنا، سيتم تعيينه تلقائياً
+        },
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.error || 'حدث خطأ في الخادم');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            Swal.fire('تم', 'تم تسجيل عملية التسليم بنجاح', 'success').then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire('خطأ', data.error || 'فشل تسجيل التسليم', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i> تأكيد التسليم';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('خطأ', error.message || 'حدث خطأ في الاتصال', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i> تأكيد التسليم';
+    });
+}
+
+// دالة لإعادة تعيين النموذج عند فتح المودال
+function showDeliveryModal() {
+    // إعادة تعيين الحقول
+    document.getElementById('deliveryLocation').value = '';
+    document.getElementById('deliveryCoordinates').value = '';
+    document.getElementById('deliveryNotes').value = '';
+    document.getElementById('photoPreviewGrid').innerHTML = '';
+    selectedPhotos = [];
+    document.querySelectorAll('.delivery-quantity').forEach(input => input.value = '');
+    document.querySelectorAll('.delivery-item-notes').forEach(input => input.value = '');
+    
+    new bootstrap.Modal(document.getElementById('deliveryModal')).show();
+}
+</script>
+{% endblock %}

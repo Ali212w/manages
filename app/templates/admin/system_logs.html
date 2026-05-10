@@ -1,0 +1,164 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}سجلات النظام - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>سجلات النظام
+                    </h1>
+                    <p class="text-muted mb-0">عرض سجلات أنشطة النظام</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="refreshLogs()">
+                        <i class="fas fa-sync-alt me-1"></i>تحديث
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <input type="date" class="form-control" id="logDate" value="{{ now.strftime('%Y-%m-%d') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="logLevel">
+                            <option value="all">جميع المستويات</option>
+                            <option value="info">معلومات</option>
+                            <option value="warning">تحذير</option>
+                            <option value="error">خطأ</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" placeholder="بحث في السجلات..." id="logSearch">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="logsContainer">
+                    {% if logs %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ والوقت</th>
+                                    <th>المستوى</th>
+                                    <th>المستخدم</th>
+                                    <th>النشاط</th>
+                                    <th>التفاصيل</th>
+                                    <th>عنوان IP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs %}
+                                <tr>
+                                    <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>
+                                        {% if log.level == 'error' %}
+                                        <span class="badge bg-danger">خطأ</span>
+                                        {% elif log.level == 'warning' %}
+                                        <span class="badge bg-warning">تحذير</span>
+                                        {% else %}
+                                        <span class="badge bg-info">معلومات</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.user_id %}
+                                        <span class="badge bg-primary">{{ log.user_id }}</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ log.activity }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                onclick="showLogDetails('{{ log.details|tojson|safe }}')">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                    </td>
+                                    <td>{{ log.ip_address or '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-database fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">لا توجد سجلات</h4>
+                        <p class="text-muted">لم يتم تسجيل أي أنشطة بعد.</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">السابق</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">التالي</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal عرض تفاصيل السجل -->
+<div class="modal fade" id="logDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تفاصيل السجل</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="logDetailsContent" class="p-3 bg-light rounded"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function refreshLogs() {
+    // يمكنك إضافة كود AJAX لتحديث السجلات
+    location.reload();
+}
+
+function showLogDetails(details) {
+    const modal = new bootstrap.Modal(document.getElementById('logDetailsModal'));
+    document.getElementById('logDetailsContent').textContent = JSON.stringify(details, null, 2);
+    modal.show();
+}
+
+// فلترة السجلات
+document.getElementById('logDate').addEventListener('change', filterLogs);
+document.getElementById('logLevel').addEventListener('change', filterLogs);
+document.getElementById('logSearch').addEventListener('input', filterLogs);
+
+function filterLogs() {
+    // يمكنك إضافة كود فلترة السجلات هنا
+    console.log('Filtering logs...');
+}
+</script>
+{% endblock %}

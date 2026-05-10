@@ -1,0 +1,150 @@
+<!-- templates/primavera/tabs/project/calculations.html -->
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-calculator text-primary"></i>
+        Calculation Settings
+    </h6>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Recalculate Durations</div>
+            <select class="field-input" id="recalcDurations">
+                <option value="Always">Always</option>
+                <option value="On Schedule">On Schedule</option>
+                <option value="Manual">Manual</option>
+            </select>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Calculate Floats</div>
+            <select class="field-input" id="calcFloats">
+                <option value="Total and Free">Total and Free</option>
+                <option value="Total Only">Total Only</option>
+                <option value="None">None</option>
+            </select>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Update Resources</div>
+            <select class="field-input" id="updateResources">
+                <option value="Automatic">Automatic</option>
+                <option value="Manual">Manual</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Critical Path Definition</div>
+            <select class="field-input" id="criticalPathDef">
+                <option value="Float">Based on Float</option>
+                <option value="Path">Longest Path</option>
+                <option value="Mixed">Mixed</option>
+            </select>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Float Threshold</div>
+            <input type="number" class="field-input" id="floatThreshold" value="0" step="0.1">
+        </div>
+    </div>
+</div>
+
+<!-- مؤشرات الأداء -->
+<div class="field-group mt-4">
+    <h6 class="field-group-title">
+        <i class="fas fa-chart-bar text-primary"></i>
+        Performance Indicators
+    </h6>
+    
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="text-center">
+                {% set spi = project.spi if project.spi is not none else 1.0 %}
+                <h3 class="{% if spi >= 1 %}text-success{% else %}text-danger{% endif %}">
+                    {{ "%.2f"|format(spi) }}
+                <small class="text-muted">SPI</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="text-center">
+                {% set cpi = project.cpi if project.cpi is not none else 1.0 %}
+                <h3 class="{% if cpi >= 1 %}text-success{% else %}text-danger{% endif %}">
+                    {{ "%.2f"|format(cpi) }}
+              
+                </h3>
+                <small class="text-muted">CPI</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="text-center">
+                {% set csi = project.csi if project.csi is not none else 1.0 %}
+                <h3 class="{% if csi >= 1 %}text-success{% else %}text-danger{% endif %}">
+                    {{ "%.2f"|format(csi) }}
+              
+                </h3>
+                <small class="text-muted">CSI</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="text-center">
+                <h3>{{ "%.2f"|format(project.eac or project.total_planned_cost) }}M</h3>
+                <small class="text-muted">EAC</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- أزرار الحسابات -->
+    <div class="mt-4 d-flex gap-2">
+        <button class="btn-primavera" onclick="runSchedule()">
+            <i class="fas fa-play me-2"></i>Run Schedule
+        </button>
+        <button class="btn-outline-primavera" onclick="calculateEVM()">
+            <i class="fas fa-chart-line me-2"></i>Calculate EVM
+        </button>
+        <button class="btn-outline-primavera" onclick="levelResources()">
+            <i class="fas fa-balance-scale me-2"></i>Level Resources
+        </button>
+    </div>
+</div>
+
+<script>
+function runSchedule() {
+    Swal.fire({
+        title: 'Running Schedule',
+        text: 'Please wait...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+    
+    fetch(`/primavera/api/project/{{ project.id }}/schedule`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.fire('تم', 'تم تحديث الجدولة', 'success');
+    });
+}
+
+function calculateEVM() {
+    fetch(`/primavera/api/project/{{ project.id }}/earned-value`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: 'Earned Value Analysis',
+                html: `
+                    <div class="text-start">
+                        <p>Planned Value: ${data.planned_value}</p>
+                        <p>Earned Value: ${data.earned_value}</p>
+                        <p>Actual Cost: ${data.actual_cost}</p>
+                        <p>SPI: ${data.spi}</p>
+                        <p>CPI: ${data.cpi}</p>
+                    </div>
+                `
+            });
+        }
+    });
+}
+</script>

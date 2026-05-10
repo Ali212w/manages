@@ -1,0 +1,862 @@
+{% extends "company/base.html" %}
+
+{% block title %}المشاريع - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}المشاريع{% endblock %}
+{% block page_subtitle %}إدارة وتتبع جميع مشاريع المؤسسة{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Stats Cards */
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+    }
+    
+    .stat-icon.bg-primary {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+    }
+    
+    .stat-icon.bg-success {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .stat-icon.bg-info {
+        background: rgba(72, 149, 239, 0.1);
+        color: var(--info);
+    }
+    
+    .stat-icon.bg-warning {
+        background: rgba(248, 150, 30, 0.1);
+        color: var(--warning);
+    }
+    
+    .stat-card h5 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-card h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+    }
+    
+    /* Filter Card */
+    .filter-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        margin-bottom: 2rem;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        transition: all 0.3s;
+        font-size: 0.95rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .search-box {
+        position: relative;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .search-box input {
+        padding-left: 2.5rem;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border: none;
+        border-radius: 12px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
+    }
+    
+    .btn-outline-secondary {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        color: #6c757d;
+        transition: all 0.3s;
+    }
+    
+    .btn-outline-secondary:hover {
+        background: #eef2f7;
+        border-color: #eef2f7;
+        color: var(--dark);
+    }
+    
+    /* Project Cards */
+    .project-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+    
+    .project-header {
+        padding: 1.5rem 1.5rem 0.5rem;
+    }
+    
+    .project-code {
+        background: #eef2f7;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .status-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-planning {
+        background: rgba(72, 149, 239, 0.1);
+        color: var(--info);
+    }
+    
+    .status-active {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .status-completed {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+    }
+    
+    .status-on_hold {
+        background: rgba(248, 150, 30, 0.1);
+        color: var(--warning);
+    }
+    
+    .status-cancelled {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+    }
+    
+    .project-card h5 {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.25rem;
+    }
+    
+    .project-card h6 {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .progress-container {
+        height: 8px;
+        background: #eef2f7;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s;
+    }
+    
+    .progress-bar.bg-success {
+        background: var(--success);
+    }
+    
+    .progress-bar.bg-info {
+        background: var(--info);
+    }
+    
+    .progress-bar.bg-warning {
+        background: var(--warning);
+    }
+    
+    .progress-bar.bg-danger {
+        background: var(--danger);
+    }
+    
+    .card-body {
+        padding: 1rem 1.5rem;
+        flex: 1;
+    }
+    
+    .card-footer {
+        padding: 1rem 1.5rem 1.5rem;
+        background: transparent;
+        border-top: none;
+    }
+    
+    .btn-sm {
+        padding: 0.4rem 1rem;
+        border-radius: 10px;
+        font-size: 0.85rem;
+    }
+    
+    .btn-outline-primary {
+        border: 2px solid var(--primary);
+        color: var(--primary);
+        background: transparent;
+        transition: all 0.3s;
+    }
+    
+    .btn-outline-primary:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .btn-outline-secondary {
+        border: 2px solid #eef2f7;
+        color: #6c757d;
+        background: transparent;
+        transition: all 0.3s;
+    }
+    
+    .btn-outline-secondary:hover {
+        background: #eef2f7;
+        color: var(--dark);
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .empty-state-icon {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 2rem;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 3rem;
+    }
+    
+    .empty-state h4 {
+        font-weight: 700;
+        color: var(--dark);
+    }
+    
+    .empty-state p {
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Quick Actions */
+    .quick-actions {
+        position: fixed;
+        bottom: 2rem;
+        left: 2rem;
+        z-index: 1000;
+    }
+    
+    .action-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .action-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+    }
+    
+    /* Modal */
+    .modal-content {
+        border: none;
+        border-radius: 20px;
+    }
+    
+    .modal-header {
+        border-bottom: 2px solid #eef2f7;
+        padding: 1.5rem;
+    }
+    
+    .modal-title {
+        font-weight: 700;
+        color: var(--dark);
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modal-footer {
+        border-top: 2px solid #eef2f7;
+        padding: 1.5rem;
+    }
+    
+    .modal .btn-secondary {
+        background: #eef2f7;
+        border: none;
+        color: #6c757d;
+        border-radius: 12px;
+        padding: 0.6rem 1.5rem;
+    }
+    
+    .modal .btn-secondary:hover {
+        background: #e2e6ea;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stat-card {
+            margin-bottom: 1rem;
+        }
+        
+        .filter-card .row > div {
+            margin-bottom: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div></div> <!-- Empty div for spacing -->
+    
+    {% if current_user.role in ['org_admin', 'project_manager'] %}
+    <a href="{{ url_for('project.create') }}" class="btn-primary-gradient">
+        <i class="fas fa-plus me-2"></i> مشروع جديد
+    </a>
+    <a href="{{ url_for('upload.upload_page') }}" class="btn-primary-gradient">
+        <i class="fas fa-plus me-2"></i> رفع ملف
+    </a>
+    {% endif %}
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5>إجمالي المشاريع</h5>
+                    <h2 class="mb-0">{{ projects|length }}</h2>
+                </div>
+                <div class="stat-icon bg-primary">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5>نشطة</h5>
+                    <h2 class="mb-0">{{ projects|selectattr('status', 'equalto', 'active')|list|length }}</h2>
+                </div>
+                <div class="stat-icon bg-success">
+                    <i class="fas fa-play-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5>قيد التخطيط</h5>
+                    <h2 class="mb-0">{{ projects|selectattr('status', 'equalto', 'planning')|list|length }}</h2>
+                </div>
+                <div class="stat-icon bg-info">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5>متأخرة</h5>
+                    <h2 class="mb-0">{{ projects|selectattr('status', 'equalto', 'on_hold')|list|length }}</h2>
+                </div>
+                <div class="stat-icon bg-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-card">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">بحث</label>
+            <div class="search-box">
+                <input type="text" class="form-control" id="searchInput" placeholder="ابحث باسم المشروع أو الرمز...">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">الحالة</label>
+            <select class="form-select" id="statusFilter">
+                <option value="">جميع الحالات</option>
+                <option value="planning">قيد التخطيط</option>
+                <option value="active">نشط</option>
+                <option value="completed">مكتمل</option>
+                <option value="on_hold">متوقف</option>
+                <option value="cancelled">ملغى</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">الترتيب</label>
+            <select class="form-select" id="sortFilter">
+                <option value="newest">الأحدث</option>
+                <option value="oldest">الأقدم</option>
+                <option value="progress">الأعلى تقدمًا</option>
+                <option value="priority">الأولوية</option>
+            </select>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-12">
+            <button class="btn-primary-gradient me-2" id="applyFilters">
+                <i class="fas fa-filter me-1"></i> تطبيق الفلاتر
+            </button>
+            <button class="btn-outline-primary" id="resetFilters">
+                <i class="fas fa-redo me-1"></i> إعادة تعيين
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Projects Grid -->
+{% if projects %}
+<div class="row g-4" id="projectsGrid">
+    {% for project in projects %}
+    <div class="col-xl-4 col-lg-6 project-item" 
+         data-status="{{ project.status }}"
+         data-progress="{{ project.progress_percentage }}"
+         data-priority="{{ project.priority }}"
+         data-id="{{ project.id }}">
+        <div class="project-card h-100">
+            <div class="project-header">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="project-code">{{ project.project_code }}</span>
+                    <span class="status-badge status-{{ project.status }}">
+                        {% if project.status == 'planning' %}قيد التخطيط
+                        {% elif project.status == 'active' %}نشط
+                        {% elif project.status == 'completed' %}مكتمل
+                        {% elif project.status == 'on_hold' %}متوقف
+                        {% elif project.status == 'cancelled' %}ملغى
+                        {% else %}{{ project.status }}{% endif %}
+                    </span>
+                </div>
+                <h5 class="mb-2">{{ project.name }}</h5>
+                {% if project.name_ar %}
+                <h6 class="text-muted mb-3">{{ project.name_ar }}</h6>
+                {% endif %}
+                <p class="text-muted small mb-3">{{ project.description[:100] }}{% if project.description|length > 100 %}...{% endif %}</p>
+                
+                <!-- Progress Bar -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted">التقدم</small>
+                        <small class="text-muted">{{ project.progress_percentage|round(1) }}%</small>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar {% if project.progress_percentage >= 80 %}bg-success{% elif project.progress_percentage >= 50 %}bg-info{% elif project.progress_percentage >= 30 %}bg-warning{% else %}bg-danger{% endif %}" 
+                             style="width: {{ project.progress_percentage }}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar text-primary ms-2" style="font-size: 0.9rem;"></i>
+                            <div>
+                                <small class="d-block text-muted">تاريخ البدء</small>
+                                <small class="fw-bold">{{ project.planned_start_date.strftime('%Y-%m-%d') if project.planned_start_date else 'غير محدد' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-flag-checkered text-success ms-2" style="font-size: 0.9rem;"></i>
+                            <div>
+                                <small class="d-block text-muted">تاريخ الانتهاء</small>
+                                <small class="fw-bold">{{ project.planned_end_date.strftime('%Y-%m-%d') if project.planned_end_date else 'غير محدد' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-tie text-info ms-2" style="font-size: 0.9rem;"></i>
+                            <div>
+                                <small class="d-block text-muted">مدير المشروع</small>
+                                <small class="fw-bold">{{ project.manager.full_name if project.manager else 'غير معين' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-money-bill-wave text-warning ms-2" style="font-size: 0.9rem;"></i>
+                            <div>
+                                <small class="d-block text-muted">القيمة</small>
+                                <small class="fw-bold">{{ "{:,.0f}".format(project.contract_value) }} ر.س</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if project.site_name %}
+                <div class="mb-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-map-marker-alt text-danger ms-2" style="font-size: 0.9rem;"></i>
+                        <div>
+                            <small class="d-block text-muted">الموقع</small>
+                            <small class="fw-bold">{{ project.site_name }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-footer">
+                <div class="d-flex justify-content-between gap-2">
+                    <a href="{{ url_for('project.view', project_id=project.id) }}" class="btn btn-sm btn-outline-primary flex-grow-1">
+                        <i class="fas fa-eye me-1"></i> عرض التفاصيل
+                    </a>
+                    {% if current_user.role in ['org_admin', 'project_manager'] %}
+                    <a href="{{ url_for('project.edit', project_id=project.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    {% endif %}
+                </div>
+                <!-- في بطاقة المشروع، أضف هذه الأزرار -->
+
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                    <!-- أضف هذه الأزرار -->
+                    {% if project.primavera_data %}
+                    <a href="{{ url_for('primavera.project_dashboard', project_id=project.primavera_data.id) }}" 
+                    class="btn btn-sm btn-outline-info" 
+                    title="لوحة تحكم Primavera">
+                        <i class="fas fa-chart-pie"></i>
+                    </a>
+                    <a href="{{ url_for('primavera.activities_list', project_id=project.primavera_data.id) }}" 
+                    class="btn btn-sm btn-outline-warning" 
+                    title="الأنشطة">
+                        <i class="fas fa-tasks"></i>
+                    </a>
+                    {% else %}
+                    <button class="btn btn-sm btn-outline-success" 
+                            onclick="convertToPrimavera({{ project.id }})"
+                            title="تحويل إلى Primavera">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    {% endif %}
+                    
+                    <!-- الأزرار الموجودة -->
+                    <a href="{{ url_for('primavera.project_detail', project_id=project.id) }}" 
+                    class="btn btn-sm btn-outline-primary flex-grow-1">
+                        <i class="fas fa-eye me-1"></i> عرض التفاصيل والتعديل
+                    </a>
+                </div>
+            
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="empty-state">
+    <div class="empty-state-icon">
+        <i class="fas fa-project-diagram"></i>
+    </div>
+    <h4 class="mb-3">لا توجد مشاريع</h4>
+    <p class="text-muted mb-4">لم يتم إنشاء أي مشاريع بعد. ابدأ بإنشاء مشروع جديد لإدارة أعمالك.</p>
+    {% if current_user.role in ['org_admin', 'project_manager'] %}
+    <a href="{{ url_for('project.create') }}" class="btn-primary-gradient">
+        <i class="fas fa-plus me-2"></i> إنشاء مشروع جديد
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Quick Actions Button -->
+{% if current_user.role in ['org_admin', 'project_manager'] %}
+<div class="quick-actions">
+    <button type="button" class="action-btn" data-bs-toggle="modal" data-bs-target="#quickProjectModal">
+        <i class="fas fa-plus"></i>
+    </button>
+</div>
+{% endif %}
+
+<!-- Quick Project Modal -->
+<div class="modal fade" id="quickProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus-circle me-2 text-primary"></i>مشروع سريع</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('project.create') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="quickName" class="form-label required-field">اسم المشروع</label>
+                        <input type="text" class="form-control" id="quickName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickCode" class="form-label required-field">رمز المشروع</label>
+                        <input type="text" class="form-control" id="quickCode" name="project_code" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickClient" class="form-label">العميل</label>
+                        <select class="form-select" id="quickClient" name="client_id">
+                            <option value="">اختر عميل</option>
+                            {% for client in clients %}
+                            <option value="{{ client.id }}">{{ client.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn-primary-gradient">إنشاء المشروع</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Filter functionality
+    $('#applyFilters').click(function() {
+        const status = $('#statusFilter').val();
+        const search = $('#searchInput').val().toLowerCase();
+        const sort = $('#sortFilter').val();
+        
+        $('.project-item').each(function() {
+            const $item = $(this);
+            const itemStatus = $item.data('status');
+            const itemText = $item.text().toLowerCase();
+            
+            let show = true;
+            
+            // Status filter
+            if (status && itemStatus !== status) {
+                show = false;
+            }
+            
+            // Search filter
+            if (search && !itemText.includes(search)) {
+                show = false;
+            }
+            
+            if (show) {
+                $item.show();
+            } else {
+                $item.hide();
+            }
+        });
+        
+        // Sort functionality
+        if (sort === 'newest') {
+            const items = $('#projectsGrid').children('.project-item').get();
+            items.sort(function(a, b) {
+                return $(b).data('id') - $(a).data('id');
+            });
+            $.each(items, function(idx, item) {
+                $('#projectsGrid').append(item);
+            });
+        } else if (sort === 'oldest') {
+            const items = $('#projectsGrid').children('.project-item').get();
+            items.sort(function(a, b) {
+                return $(a).data('id') - $(b).data('id');
+            });
+            $.each(items, function(idx, item) {
+                $('#projectsGrid').append(item);
+            });
+        } else if (sort === 'progress') {
+            const items = $('#projectsGrid').children('.project-item').get();
+            items.sort(function(a, b) {
+                return $(b).data('progress') - $(a).data('progress');
+            });
+            $.each(items, function(idx, item) {
+                $('#projectsGrid').append(item);
+            });
+        }
+    });
+    
+    $('#resetFilters').click(function() {
+        $('#statusFilter').val('');
+        $('#searchInput').val('');
+        $('#sortFilter').val('newest');
+        $('.project-item').show();
+        
+        // Reset sort to newest
+        const items = $('#projectsGrid').children('.project-item').get();
+        items.sort(function(a, b) {
+            return $(b).data('id') - $(a).data('id');
+        });
+        $.each(items, function(idx, item) {
+            $('#projectsGrid').append(item);
+        });
+    });
+    
+    // Search as you type (with debounce)
+    let searchTimeout;
+    $('#searchInput').on('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            $('#applyFilters').click();
+        }, 300);
+    });
+    
+    // Status filter change
+    $('#statusFilter').change(function() {
+        $('#applyFilters').click();
+    });
+    
+    // Sort filter change
+    $('#sortFilter').change(function() {
+        $('#applyFilters').click();
+    });
+    
+    // Initialize with default sort
+    $('#applyFilters').click();
+});
+function convertToPrimavera(projectId) {
+    Swal.fire({
+        title: 'تحويل إلى Primavera',
+        text: 'هل تريد تحويل هذا المشروع إلى نظام Primavera؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--success)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، تحويل',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/primavera/convert-project/${projectId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم التحويل',
+                        text: data.message,
+                        timer: 2000
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

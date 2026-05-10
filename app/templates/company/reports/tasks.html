@@ -1,0 +1,109 @@
+{% extends "company/base.html" %}
+
+{% block title %}تقرير المهام - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}تقرير المهام{% endblock %}
+{% block page_subtitle %}تحليلات وإحصائيات المهام{% endblock %}
+
+{% block content %}
+<!-- إحصائيات سريعة -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <h2 class="stat-value">{{ report_data|length }}</h2>
+            <p class="stat-label">إجمالي المهام</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="stat-value">{{ report_data|selectattr('status', 'equalto', 'completed')|list|length }}</h2>
+            <p class="stat-label">مهام مكتملة</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="fas fa-clock"></i>
+            </div>
+            <h2 class="stat-value">{{ report_data|selectattr('status', 'equalto', 'in_progress')|list|length }}</h2>
+            <p class="stat-label">قيد التنفيذ</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon danger">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
+            <h2 class="stat-value">{{ report_data|selectattr('status', 'equalto', 'pending')|list|length }}</h2>
+            <p class="stat-label">مهام معلقة</p>
+        </div>
+    </div>
+</div>
+
+<!-- جدول المهام -->
+<div class="table-card">
+    <div class="table-header">
+        <h5 class="table-title"><i class="fas fa-tasks me-2 text-primary"></i>تفاصيل المهام</h5>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>المهمة</th>
+                    <th>المشروع</th>
+                    <th>الحالة</th>
+                    <th>المشرف</th>
+                    <th>المنفذ</th>
+                    <th>تاريخ البداية</th>
+                    <th>تاريخ النهاية</th>
+                    <th>التقدم</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in report_data %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ task.name }}</strong></td>
+                    <td>{{ task.project }}</td>
+                    <td>
+                        <span class="badge-status 
+                            {% if task.status == 'completed' %}active
+                            {% elif task.status == 'in_progress' %}pending
+                            {% else %}inactive{% endif %}">
+                            {{ task.status }}
+                        </span>
+                    </td>
+                    <td>{{ task.supervisor }}</td>
+                    <td>{{ task.delegate or 'غير محدد' }}</td>
+                    <td>{{ task.start_date.strftime('%Y-%m-%d') if task.start_date }}</td>
+                    <td>{{ task.end_date.strftime('%Y-%m-%d') if task.end_date }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="progress flex-grow-1" style="height: 5px;">
+                                <div class="progress-bar bg-primary" style="width: {{ task.progress }}%"></div>
+                            </div>
+                            <span class="ms-2 small">{{ task.progress }}%</span>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center py-4 text-muted">
+                        <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                        <p>لا توجد مهام</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

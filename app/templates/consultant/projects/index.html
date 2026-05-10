@@ -1,0 +1,134 @@
+{% extends "consultant/base.html" %}
+
+{% block title %}المشاريع - المهندس الاستشاري{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-project-diagram me-2"></i> المشاريع</h4>
+            <div>
+                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                    <i class="fas fa-filter"></i> تصفية
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="collapse mb-4" id="filterCollapse">
+    <div class="card">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">الحالة</label>
+                    <select name="status" class="form-select">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>الكل</option>
+                        <option value="planning" {% if status_filter == 'planning' %}selected{% endif %}>قيد التخطيط</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>نشط</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>مكتمل</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">بحث</label>
+                    <input type="text" name="search" class="form-control" placeholder="اسم المشروع..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">تطبيق</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-primary">{{ stats.total }}</h3>
+            <small class="text-muted">إجمالي المشاريع</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-success">{{ stats.active }}</h3>
+            <small class="text-muted">نشطة</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-info">{{ stats.completed }}</h3>
+            <small class="text-muted">مكتملة</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-warning">{{ stats.planning }}</h3>
+            <small class="text-muted">قيد التخطيط</small>
+        </div>
+    </div>
+</div>
+
+<!-- Projects Grid -->
+<div class="row g-4">
+    {% for project in projects %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="card-title mb-1">
+                            <a href="{{ url_for('consultant.project_detail', project_id=project.id) }}" class="text-decoration-none">
+                                {{ project.name }}
+                            </a>
+                        </h5>
+                        <small class="text-muted">{{ project.project_code }}</small>
+                    </div>
+                    {{ getStatusBadge(project.status)|safe }}
+                </div>
+                
+                <p class="card-text small text-muted">{{ project.description|truncate(100) if project.description else 'لا يوجد وصف' }}</p>
+                
+                <!-- Progress -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>التقدم</small>
+                        <small class="fw-bold">{{ "%.1f"|format(project.progress.progress_percentage if project.progress else 0) }}%</small>
+                    </div>
+                    <div class="progress progress-custom">
+                        <div class="progress-bar bg-{% if project.progress.progress_percentage >= 75 %}success{% elif project.progress.progress_percentage >= 40 %}warning{% else %}info{% endif %}" 
+                             style="width: {{ project.progress.progress_percentage if project.progress else 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <!-- Dates -->
+                <div class="small text-muted mb-3">
+                    <div><i class="fas fa-calendar-alt me-1"></i> البدء: {{ project.dates.planned_start.strftime('%Y-%m-%d') if project.dates and project.dates.planned_start else 'غير محدد' }}</div>
+                    <div><i class="fas fa-calendar-check me-1"></i> الانتهاء: {{ project.dates.planned_finish.strftime('%Y-%m-%d') if project.dates and project.dates.planned_finish else 'غير محدد' }}</div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('consultant.project_detail', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> تفاصيل
+                    </a>
+                    <a href="{{ url_for('consultant.progress_reports') }}?project_id={{ project.id }}" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-chart-line"></i> تقرير التقدم
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد مشاريع حالياً</h5>
+            <p class="text-muted">سيتم عرض المشاريع المرتبطة بك هنا</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

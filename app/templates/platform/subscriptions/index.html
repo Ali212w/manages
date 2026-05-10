@@ -1,0 +1,324 @@
+{# templates/platform/subscriptions/index.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('subscriptions.title') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="page-title">{{ _('subscriptions.title') }}</h1>
+            <p class="text-muted mb-0">{{ _('subscriptions.list') }}</p>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-primary">{{ format_currency(stats.total_revenue) }}</h3>
+                <small class="text-muted">{{ _('dashboard.total_revenue') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-success">{{ stats.active_count }}</h3>
+                <small class="text-muted">{{ _('subscriptions.active') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-warning">{{ stats.trial_count }}</h3>
+                <small class="text-muted">{{ _('subscriptions.trial') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-danger">{{ stats.expiring_soon }}</h3>
+                <small class="text-muted">{{ _('dashboard.expiring_soon') }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters Bar -->
+    <div class="filters-bar">
+        <div class="row g-3 w-100">
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small text-muted">{{ _('subscriptions.filter_by_plan') }}</label>
+                <select id="planFilter" class="form-select">
+                    <option value="all" {% if filters.plan == 'all' %}selected{% endif %}>{{ _('subscriptions.all_plans') }}</option>
+                    {% for plan in available_plans %}
+                    <option value="{{ plan.id }}" {% if filters.plan == plan.id %}selected{% endif %}>{{ plan.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small text-muted">{{ _('subscriptions.filter_by_status') }}</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="all" {% if filters.status == 'all' %}selected{% endif %}>{{ _('subscriptions.all_status') }}</option>
+                    <option value="active" {% if filters.status == 'active' %}selected{% endif %}>{{ _('subscriptions.active') }}</option>
+                    <option value="trial" {% if filters.status == 'trial' %}selected{% endif %}>{{ _('subscriptions.trial') }}</option>
+                    <option value="expired" {% if filters.status == 'expired' %}selected{% endif %}>{{ _('subscriptions.expired') }}</option>
+                    <option value="cancelled" {% if filters.status == 'cancelled' %}selected{% endif %}>{{ _('subscriptions.cancelled') }}</option>
+                </select>
+            </div>
+            <div class="col-lg-4 col-md-12">
+                <label class="form-label small text-muted">{{ _('companies.search') }}</label>
+                <div class="input-group">
+                    <input type="text" id="searchInput" class="form-control" placeholder="{{ _('companies.search_placeholder') }}" value="{{ filters.search }}">
+                    <button id="applyFilters" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Subscriptions Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="subscriptionsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ _('subscriptions.company') }}</th>
+                            <th>{{ _('subscriptions.plan') }}</th>
+                            <th>{{ _('subscriptions.amount') }}</th>
+                            <th>{{ _('subscriptions.start_date') }}</th>
+                            <th>{{ _('subscriptions.end_date') }}</th>
+                            <th>{{ _('subscriptions.status') }}</th>
+                            <th>{{ _('subscriptions.auto_renew') }}</th>
+                            <th>{{ _('common.actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in subscriptions %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('platform.view_company', company_id=sub.org_id) }}" class="text-decoration-none">
+                                    <strong>{{ sub.organization.name if sub.organization else '-' }}</strong>
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ sub.plan_name or sub.plan }}</span>
+                            </td>
+                            <td>{{ format_currency(sub.amount, sub.currency) }}</td>
+                            <td>{{ format_date(sub.start_date) }}</td>
+                            <td>
+                                {{ format_date(sub.end_date) }}
+                                {% if sub.end_date and sub.end_date > now and sub.end_date <= now + timedelta(days=7) %}
+                                <span class="badge bg-warning ms-1">{{ _('dashboard.expiring_soon') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sub.status == 'active' %}
+                                <span class="badge bg-success">{{ _('subscriptions.active') }}</span>
+                                {% elif sub.status == 'trial' %}
+                                <span class="badge bg-info">{{ _('subscriptions.trial') }}</span>
+                                {% elif sub.status == 'expired' %}
+                                <span class="badge bg-danger">{{ _('subscriptions.expired') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ sub.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sub.auto_renew %}
+                                <span class="badge bg-success">{{ _('subscriptions.yes') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ _('subscriptions.no') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    {% if sub.status == 'active' %}
+                                    <button type="button" class="btn btn-sm btn-outline-warning renew-subscription" data-id="{{ sub.id }}" data-company="{{ sub.organization.name if sub.organization else '' }}" title="{{ _('subscriptions.renew') }}">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger cancel-subscription" data-id="{{ sub.id }}" data-company="{{ sub.organization.name if sub.organization else '' }}" title="{{ _('subscriptions.cancel') }}">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">{{ _('subscriptions.no_subscriptions') }}</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Renew Subscription Modal -->
+<div class="modal fade" id="renewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-warning text-white">
+                <h5 class="modal-title">{{ _('subscriptions.renew') }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="renewForm">
+                <input type="hidden" name="subscription_id" id="renewSubscriptionId">
+                <div class="modal-body">
+                    <p id="renewCompanyName" class="mb-3"></p>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('subscriptions.duration_months') }}</label>
+                        <select name="duration_months" class="form-select" id="renewDuration">
+                            <option value="3">3 {{ _('subscriptions.months') }}</option>
+                            <option value="6">6 {{ _('subscriptions.months') }}</option>
+                            <option value="12" selected>12 {{ _('subscriptions.months') }}</option>
+                            <option value="24">24 {{ _('subscriptions.months') }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('subscriptions.payment_method') }}</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="manual">{{ _('subscriptions.manual') }}</option>
+                            <option value="bank_transfer">{{ _('subscriptions.bank_transfer') }}</option>
+                            <option value="credit_card">{{ _('subscriptions.credit_card') }}</option>
+                        </select>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="auto_renew" class="form-check-input" id="renewAutoRenew" checked>
+                        <label class="form-check-label" for="renewAutoRenew">{{ _('subscriptions.auto_renew') }}</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('common.cancel') }}</button>
+                    <button type="submit" class="btn btn-warning">{{ _('subscriptions.renew') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Subscription Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-danger text-white">
+                <h5 class="modal-title">{{ _('subscriptions.cancel') }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="cancelForm">
+                <input type="hidden" name="subscription_id" id="cancelSubscriptionId">
+                <div class="modal-body">
+                    <p id="cancelCompanyName" class="mb-3"></p>
+                    <p class="text-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {{ _('subscriptions.cancel_warning') }}
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('common.cancel') }}</button>
+                    <button type="submit" class="btn btn-danger">{{ _('subscriptions.cancel') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    $('#subscriptionsTable').DataTable({
+        responsive: true,
+        ordering: true,
+        searching: false,
+        paging: true,
+        pageLength: 25,
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/{{ "ar.json" if get_current_lang() == "ar" else "en-GB.json" }}'
+        }
+    });
+    
+    // Apply Filters
+    $('#applyFilters').click(function() {
+        const plan = $('#planFilter').val();
+        const status = $('#statusFilter').val();
+        const search = $('#searchInput').val();
+        
+        window.location.href = "{{ url_for('platform.subscriptions') }}?plan=" + plan + "&status=" + status + "&search=" + encodeURIComponent(search);
+    });
+    
+    // Enter key search
+    $('#searchInput').keypress(function(e) {
+        if (e.which == 13) $('#applyFilters').click();
+    });
+    
+    // Renew Subscription
+    $('.renew-subscription').click(function() {
+        const subId = $(this).data('id');
+        const companyName = $(this).data('company');
+        $('#renewSubscriptionId').val(subId);
+        $('#renewCompanyName').text('{{ _("subscriptions.renew_for") }}: ' + companyName);
+        $('#renewModal').modal('show');
+    });
+    
+    $('#renewForm').submit(function(e) {
+        e.preventDefault();
+        const formData = $(this).serialize();
+        
+        $.ajax({
+            url: "{{ url_for('platform.renew_subscription', sub_id=0) }}".replace('0', $('#renewSubscriptionId').val()),
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    $('#renewModal').modal('hide');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    toastr.error(response.error);
+                }
+            },
+            error: function() {
+                toastr.error('{{ _("common.error") }}');
+            }
+        });
+    });
+    
+    // Cancel Subscription
+    $('.cancel-subscription').click(function() {
+        const subId = $(this).data('id');
+        const companyName = $(this).data('company');
+        $('#cancelSubscriptionId').val(subId);
+        $('#cancelCompanyName').text('{{ _("subscriptions.cancel_for") }}: ' + companyName);
+        $('#cancelModal').modal('show');
+    });
+    
+    $('#cancelForm').submit(function(e) {
+        e.preventDefault();
+        
+        if (confirm('{{ _("subscriptions.confirm_cancel") }}')) {
+            $.ajax({
+                url: "{{ url_for('platform.cancel_subscription', sub_id=0) }}".replace('0', $('#cancelSubscriptionId').val()),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        $('#cancelModal').modal('hide');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

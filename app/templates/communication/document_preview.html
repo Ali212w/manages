@@ -1,0 +1,238 @@
+{% extends "communication/base_chat.html" %}
+
+{% block title %}{{ attachment.original_filename }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .document-preview-container {
+        background: #f0f2f5;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .document-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        padding: 15px 20px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .document-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .document-icon {
+        font-size: 24px;
+    }
+    
+    .document-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .document-viewer {
+        flex: 1;
+        padding: 20px;
+        background: white;
+        margin: 20px;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        min-height: calc(100vh - 150px);
+    }
+    
+    .pdf-viewer {
+        width: 100%;
+        height: calc(100vh - 180px);
+        border: none;
+        border-radius: var(--radius-md);
+    }
+    
+    .office-viewer {
+        width: 100%;
+        height: calc(100vh - 180px);
+        border: none;
+    }
+    
+    .unsupported-message {
+        text-align: center;
+        padding: 50px;
+    }
+    
+    .unsupported-icon {
+        font-size: 80px;
+        color: #6c757d;
+        margin-bottom: 20px;
+    }
+    
+    .btn-download {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        transition: all 0.2s;
+    }
+    
+    .btn-download:hover {
+        background: rgba(255,255,255,0.3);
+        color: white;
+    }
+    
+    .btn-back {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        transition: all 0.2s;
+    }
+    
+    .btn-back:hover {
+        background: rgba(255,255,255,0.3);
+        color: white;
+    }
+    
+    @media (max-width: 768px) {
+        .document-viewer {
+            margin: 10px;
+            padding: 10px;
+        }
+        .document-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="document-preview-container">
+    <div class="document-header">
+        <div class="document-info">
+            <div class="document-icon">
+                {% set ext = attachment.file_extension|lower %}
+                {% if ext == 'pdf' %}
+                    <i class="fas fa-file-pdf fa-2x"></i>
+                {% elif ext in ['doc', 'docx'] %}
+                    <i class="fas fa-file-word fa-2x"></i>
+                {% elif ext in ['xls', 'xlsx'] %}
+                    <i class="fas fa-file-excel fa-2x"></i>
+                {% elif ext in ['ppt', 'pptx'] %}
+                    <i class="fas fa-file-powerpoint fa-2x"></i>
+                {% elif ext in ['txt', 'csv'] %}
+                    <i class="fas fa-file-alt fa-2x"></i>
+                {% else %}
+                    <i class="fas fa-file fa-2x"></i>
+                {% endif %}
+            </div>
+            <div>
+                <h5 class="mb-0">{{ attachment.original_filename }}</h5>
+                <small class="text-white-50">
+                    {% if attachment.file_size < 1024 %}
+                        {{ attachment.file_size }} Bytes
+                    {% elif attachment.file_size < 1024*1024 %}
+                        {{ (attachment.file_size / 1024)|round(1) }} KB
+                    {% else %}
+                        {{ (attachment.file_size / (1024*1024))|round(2) }} MB
+                    {% endif %}
+                    • {{ attachment.mime_type }}
+                </small>
+            </div>
+        </div>
+        <div class="document-actions">
+            <a href="{{ url_for('communication.download_attachment', attachment_id=attachment.id) }}" class="btn-download" download>
+                <i class="fas fa-download me-2"></i> {{ _('download') }}
+            </a>
+            <a href="{{ url_for('communication.chat_room', chat_id=attachment.message.chat_id) }}" class="btn-back">
+                <i class="fas fa-arrow-left me-2"></i> {{ _('back_to_chat') }}
+            </a>
+        </div>
+    </div>
+    
+    <div class="document-viewer">
+        {% set ext = attachment.file_extension|lower %}
+        
+        {% if ext == 'pdf' %}
+            <!-- عرض PDF باستخدام PDF.js أو عنصر iframe -->
+            <iframe class="pdf-viewer" src="{{ url_for('communication.download_attachment', attachment_id=attachment.id) }}#toolbar=0" frameborder="0"></iframe>
+            
+        {% elif ext in ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'] %}
+            <!-- عرض مستندات Office باستخدام Google Docs Viewer -->
+            <iframe class="office-viewer" src="https://docs.google.com/gview?url={{ url_for('communication.download_attachment', attachment_id=attachment.id, _external=True) | urlencode }}&embedded=true" frameborder="0"></iframe>
+            
+        {% elif ext in ['txt', 'csv', 'json', 'xml'] %}
+            <!-- عرض النصوص مباشرة -->
+            <div id="textContent" style="padding: 20px; font-family: monospace; white-space: pre-wrap; word-break: break-all;"></div>
+            <script>
+                fetch("{{ url_for('communication.download_attachment', attachment_id=attachment.id) }}")
+                    .then(response => response.text())
+                    .then(text => {
+                        document.getElementById('textContent').innerText = text;
+                    });
+            </script>
+            
+        {% elif ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'] %}
+            <!-- عرض الصور -->
+            <div style="text-align: center;">
+                <img src="{{ url_for('communication.download_attachment', attachment_id=attachment.id) }}" style="max-width: 100%; max-height: calc(100vh - 180px); object-fit: contain;">
+            </div>
+            
+        {% elif ext in ['mp4', 'webm', 'ogg', 'avi', 'mov'] %}
+            <!-- عرض الفيديو -->
+            <video controls style="width: 100%; max-height: calc(100vh - 180px);">
+                <source src="{{ url_for('communication.download_attachment', attachment_id=attachment.id) }}" type="{{ attachment.mime_type }}">
+                {{ _('your_browser_does_not_support_video') }}
+            </video>
+            
+        {% elif ext in ['mp3', 'wav', 'ogg', 'm4a'] %}
+            <!-- عرض الصوت -->
+            <div style="text-align: center; padding: 50px;">
+                <i class="fas fa-headphones fa-5x text-primary mb-3"></i>
+                <h5>{{ attachment.original_filename }}</h5>
+                <audio controls style="width: 100%; margin-top: 20px;">
+                    <source src="{{ url_for('communication.download_attachment', attachment_id=attachment.id) }}" type="{{ attachment.mime_type }}">
+                    {{ _('your_browser_does_not_support_audio') }}
+                </audio>
+            </div>
+            
+        {% else %}
+            <!-- أنواع غير مدعومة -->
+            <div class="unsupported-message">
+                <div class="unsupported-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h4>{{ _('preview_not_available') }}</h4>
+                <p class="text-muted">{{ _('file_type_not_supported') }}</p>
+                <a href="{{ url_for('communication.download_attachment', attachment_id=attachment.id) }}" class="btn btn-primary mt-3" download>
+                    <i class="fas fa-download me-2"></i> {{ _('download_file') }}
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // تحميل ملفات PDF باستخدام PDF.js (اختياري لتحسين الأداء)
+    {% if ext == 'pdf' %}
+    // يمكن إضافة PDF.js لتحسين عرض PDF
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        
+        const url = "{{ url_for('communication.download_attachment', attachment_id=attachment.id) }}";
+        const loadingTask = pdfjsLib.getDocument(url);
+        loadingTask.promise.then(function(pdf) {
+            // يمكن عرض عدد الصفحات
+            console.log('PDF loaded with ' + pdf.numPages + ' pages');
+        });
+    }
+    {% endif %}
+</script>
+{% endblock %}

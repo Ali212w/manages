@@ -1,0 +1,675 @@
+{% extends "company/base.html" %}
+
+{% block title %}الأدوار الوظيفية - Roles{% endblock %}
+
+{% block page_title %}الأدوار الوظيفية{% endblock %}
+{% block page_subtitle %}إدارة الأدوار والوصف الوظيفي للموارد{% endblock %}
+
+{% block extra_css %}
+<style>
+    .roles-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .roles-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .roles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .role-card {
+        background: white;
+        border: 1px solid #eef2f7;
+        border-radius: 15px;
+        padding: 1.2rem;
+        transition: all 0.3s;
+    }
+    
+    .role-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border-color: var(--primary);
+    }
+    
+    .role-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        background: rgba(156, 39, 176, 0.1);
+        color: #9c27b0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .role-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .role-code {
+        font-family: monospace;
+        background: #eef2f7;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+    }
+    
+    .role-name {
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+    
+    .role-description {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+    
+    .role-cost {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 0.8rem;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .cost-value {
+        font-weight: 700;
+        color: var(--primary);
+        font-size: 1.2rem;
+    }
+    
+    .cost-label {
+        font-size: 0.7rem;
+        color: #6c757d;
+    }
+    
+    .skills-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        margin-top: 0.5rem;
+    }
+    
+    .skill-tag {
+        background: #eef2f7;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        color: #6c757d;
+    }
+    
+    .role-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eef2f7;
+    }
+    
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: none;
+        background: #eef2f7;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .action-btn:hover {
+        background: var(--primary);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="roles-container">
+    <div class="roles-header">
+        <h5 class="mb-0"><i class="fas fa-user-tag me-2" style="color: #9c27b0;"></i>الأدوار الوظيفية</h5>
+        <button class="btn-primary-gradient" onclick="showCreateModal()">
+            <i class="fas fa-plus me-2"></i>دور جديد
+        </button>
+    </div>
+    
+    <div class="roles-grid">
+        {% for role in roles %}
+        <div class="role-card">
+            <div class="role-icon">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            
+            <div class="role-header">
+                <h6 class="role-name">{{ role.name }}</h6>
+                <span class="role-code">{{ role.role_code }}</span>
+            </div>
+            
+            <div class="role-description">{{ role.description or 'لا يوجد وصف' }}</div>
+            
+            <div class="role-cost">
+                <span class="cost-value">{{ role.default_cost_per_hour }}</span>
+                <span class="cost-label"> {{ role.currency }}/ساعة</span>
+            </div>
+            
+            {% if role.required_skills %}
+            <div>
+                <small class="text-muted d-block mb-1">المهارات المطلوبة:</small>
+                <div class="skills-list">
+                    {% for skill in role.required_skills %}
+                    <span class="skill-tag">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="role-footer">
+                <button class="action-btn" onclick="editRole({{ role.id }})" title="تعديل">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn" onclick="assignRole({{ role.id }})" title="تعيين">
+                    <i class="fas fa-user-plus"></i>
+                </button>
+                <button class="action-btn" onclick="deleteRole({{ role.id }})" title="حذف">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5" style="grid-column: 1/-1;">
+            <i class="fas fa-user-tag fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد أدوار وظيفية</h5>
+            <p class="text-muted">قم بإنشاء أدوار لاستخدامها في تخطيط الموارد</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal إنشاء دور -->
+<div class="modal fade" id="createRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus-circle me-2" style="color: #9c27b0;"></i>دور جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('enterprise.role_create') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required-field">رمز الدور</label>
+                            <input type="text" name="role_code" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required-field">الاسم</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">الوصف</label>
+                        <textarea name="description" class="form-control" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">التكلفة الافتراضية/ساعة</label>
+                            <input type="number" name="default_cost_per_hour" class="form-control" value="0" step="0.01">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">العملة</label>
+                            <select name="currency" class="form-select">
+                                <option value="SAR">ريال سعودي</option>
+                                <option value="USD">دولار أمريكي</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">المهارات المطلوبة</label>
+                        <div id="skills-container">
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" placeholder="مهارة">
+                                <button class="btn btn-outline-primary" type="button" onclick="addSkill()">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="hidden" name="skills" id="skills-input" value="[]">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn-primary-gradient">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let skills = [];
+
+function showCreateModal() {
+    new bootstrap.Modal(document.getElementById('createRoleModal')).show();
+}
+
+// متغير لتخزين المهارات
+
+function addSkill() {
+    const container = document.getElementById('skills-container');
+    const inputGroup = document.createElement('div');
+    inputGroup.className = 'input-group mb-2';
+    
+    const randomId = 'skill_' + Math.random().toString(36).substr(2, 9);
+    
+    inputGroup.innerHTML = `
+        <input type="text" class="form-control" id="${randomId}" placeholder="أدخل المهارة">
+        <button class="btn btn-outline-success" type="button" onclick="confirmAddSkill('${randomId}')">
+            <i class="fas fa-check"></i>
+        </button>
+        <button class="btn btn-outline-danger" type="button" onclick="removeSkillInput(this)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(inputGroup);
+    document.getElementById(randomId).focus();
+}
+
+function confirmAddSkill(inputId) {
+    const input = document.getElementById(inputId);
+    const skill = input.value.trim();
+    
+    if (skill) {
+        // إضافة المهارة إلى القائمة
+        skills.push(skill);
+        
+        // تحديث الحقل المخفي
+        document.getElementById('skills-input').value = JSON.stringify(skills);
+        
+        // عرض المهارة كـ tag
+        displaySkillTags();
+        
+        // إزالة حقل الإدخال
+        const inputGroup = input.closest('.input-group');
+        inputGroup.remove();
+        
+        showSuccess('تم إضافة المهارة بنجاح');
+    } else {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'الرجاء إدخال اسم المهارة'
+        });
+    }
+}
+
+function removeSkillInput(button) {
+    const inputGroup = button.closest('.input-group');
+    inputGroup.remove();
+}
+
+function displaySkillTags() {
+    const container = document.getElementById('skills-tags-container');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    skills.forEach((skill, index) => {
+        const tag = document.createElement('span');
+        tag.className = 'skill-tag';
+        tag.innerHTML = `
+            ${skill}
+            <i class="fas fa-times" onclick="removeSkill(${index})"></i>
+        `;
+        container.appendChild(tag);
+    });
+}
+
+function removeSkill(index) {
+    skills.splice(index, 1);
+    document.getElementById('skills-input').value = JSON.stringify(skills);
+    displaySkillTags();
+    showSuccess('تم حذف المهارة');
+}
+
+// تهيئة المهارات عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    // إذا كان هناك مهارات مخزنة مسبقاً
+    const skillsInput = document.getElementById('skills-input');
+    if (skillsInput && skillsInput.value) {
+        try {
+            skills = JSON.parse(skillsInput.value);
+            displaySkillTags();
+        } catch (e) {
+            console.error('خطأ في قراءة المهارات', e);
+        }
+    }
+});
+
+function editRole(id) {
+    window.location.href = `/enterprise/roles/${id}/edit`;
+}
+
+function assignRole(roleId) {
+    // الحصول على معلومات الدور
+    fetch(`/enterprise/api/role/${roleId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // عرض نافذة اختيار المورد
+                Swal.fire({
+                    title: 'تعيين دور لمورد',
+                    html: `
+                        <div class="text-start">
+                            <p><strong>الدور:</strong> ${data.role.name}</p>
+                            <p><strong>الوصف:</strong> ${data.role.description || 'لا يوجد وصف'}</p>
+                            <hr>
+                            <div class="mb-3">
+                                <label class="form-label">اختر المورد</label>
+                                <select class="form-select" id="resourceSelect">
+                                    <option value="">-- اختر مورد --</option>
+                                    ${data.resources.map(r => 
+                                        `<option value="${r.id}">${r.name} (${r.resource_type})</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">تاريخ البدء</label>
+                                <input type="date" class="form-control" id="startDate" value="${new Date().toISOString().split('T')[0]}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">تاريخ الانتهاء</label>
+                                <input type="date" class="form-control" id="endDate">
+                            </div>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'تعيين',
+                    cancelButtonText: 'إلغاء',
+                    preConfirm: () => {
+                        const resourceId = document.getElementById('resourceSelect').value;
+                        const startDate = document.getElementById('startDate').value;
+                        const endDate = document.getElementById('endDate').value;
+                        
+                        if (!resourceId) {
+                            Swal.showValidationMessage('الرجاء اختيار مورد');
+                            return false;
+                        }
+                        
+                        return { resourceId, startDate, endDate };
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // إرسال طلب التعيين
+                        fetch('/enterprise/api/assign-role', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCsrfToken()
+                            },
+                            body: JSON.stringify({
+                                role_id: roleId,
+                                resource_id: result.value.resourceId,
+                                start_date: result.value.startDate,
+                                end_date: result.value.endDate
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'تم التعيين',
+                                    text: 'تم تعيين الدور للمورد بنجاح',
+                                    timer: 2000
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطأ',
+                                    text: data.error || 'حدث خطأ أثناء التعيين'
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: 'فشل في تحميل بيانات الدور'
+            });
+        });
+}
+
+// دالة مساعدة للحصول على CSRF token
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+}
+
+function deleteRole(id) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا الدور؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/enterprise/roles/${id}/delete`, { method: 'POST' })
+                .then(() => location.reload());
+        }
+    });
+}
+// دوال إدارة الأدوار
+function editRole(roleId) {
+    window.location.href = `/enterprise/roles/${roleId}/edit`;
+}
+
+function deleteRole(roleId) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا الدور؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/enterprise/roles/${roleId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken()
+                }
+            })
+            .then(() => location.reload());
+        }
+    });
+}
+
+// دوال إدارة أكواد الموارد
+function addResourceCode() {
+    Swal.fire({
+        title: 'إضافة كود مورد جديد',
+        html: `
+            <div class="text-start">
+                <div class="mb-3">
+                    <label class="form-label">نوع الكود</label>
+                    <select class="form-select" id="codeType">
+                        <option value="department">قسم</option>
+                        <option value="skill">مهارة</option>
+                        <option value="certification">شهادة</option>
+                        <option value="location">موقع</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">قيمة الكود</label>
+                    <input type="text" class="form-control" id="codeValue" placeholder="مثال: ENG-01">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">الوصف</label>
+                    <input type="text" class="form-control" id="codeDesc" placeholder="وصف الكود">
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'إضافة',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const type = document.getElementById('codeType').value;
+            const value = document.getElementById('codeValue').value;
+            const desc = document.getElementById('codeDesc').value;
+            
+            fetch('/enterprise/api/resource-codes/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    code_type: type,
+                    code_value: value,
+                    code_description: desc
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('تم إضافة الكود بنجاح');
+                    setTimeout(() => location.reload(), 2000);
+                }
+            });
+        }
+    });
+}
+
+// دوال إدارة أكواد الأنشطة
+function addActivityCode() {
+    Swal.fire({
+        title: 'إضافة كود نشاط جديد',
+        html: `
+            <div class="text-start">
+                <div class="mb-3">
+                    <label class="form-label">النطاق</label>
+                    <select class="form-select" id="codeScope">
+                        <option value="global">عام (Global)</option>
+                        <option value="eps">EPS</option>
+                        <option value="project">مشروع</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">نوع الكود</label>
+                    <select class="form-select" id="codeType">
+                        <option value="phase">مرحلة</option>
+                        <option value="discipline">تخصص</option>
+                        <option value="location">موقع</option>
+                        <option value="responsibility">مسؤولية</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">قيمة الكود</label>
+                    <input type="text" class="form-control" id="codeValue" placeholder="مثال: DES">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">الوصف</label>
+                    <input type="text" class="form-control" id="codeDesc" placeholder="وصف الكود">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">اللون</label>
+                    <input type="color" class="form-control form-control-color" id="codeColor" value="#4361ee">
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'إضافة',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // إرسال البيانات
+            showSuccess('تم إضافة الكود بنجاح');
+        }
+    });
+}
+
+// دوال إدارة UDF
+function addUDF() {
+    Swal.fire({
+        title: 'إضافة حقل مخصص (UDF)',
+        html: `
+            <div class="text-start">
+                <div class="mb-3">
+                    <label class="form-label">النوع</label>
+                    <select class="form-select" id="udfType">
+                        <option value="activity">نشاط</option>
+                        <option value="project">مشروع</option>
+                        <option value="resource">مورد</option>
+                        <option value="wbs">WBS</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">اسم الحقل</label>
+                    <input type="text" class="form-control" id="udfName" placeholder="مثال: Risk Level">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">نوع البيانات</label>
+                    <select class="form-select" id="udfDataType">
+                        <option value="text">نص</option>
+                        <option value="number">رقم</option>
+                        <option value="date">تاريخ</option>
+                        <option value="boolean">نعم/لا</option>
+                        <option value="list">قائمة</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="listValues" style="display: none;">
+                    <label class="form-label">قيم القائمة (مفصولة بفواصل)</label>
+                    <input type="text" class="form-control" placeholder="عالي,متوسط,منخفض">
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'إضافة',
+        cancelButtonText: 'إلغاء',
+        didOpen: () => {
+            document.getElementById('udfDataType').addEventListener('change', function() {
+                document.getElementById('listValues').style.display = 
+                    this.value === 'list' ? 'block' : 'none';
+            });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            showSuccess('تم إضافة الحقل المخصص بنجاح');
+        }
+    });
+}
+</script>
+{% endblock %}

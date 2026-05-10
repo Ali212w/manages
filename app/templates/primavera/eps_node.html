@@ -1,0 +1,26 @@
+<div class="eps-node level-{{ node.level }}">
+    <div class="d-flex align-items-center">
+        <div class="eps-icon">
+            <i class="fas fa-folder"></i>
+        </div>
+        <div class="flex-grow-1">
+            <a href="{{ url_for('primavera.eps_view', eps_id=node.id) }}" class="text-decoration-none">
+                <strong>{{ node.name }}</strong>
+            </a>
+            <span class="eps-code ms-2">{{ node.eps_code }}</span>
+            <small class="text-muted d-block">{{ node.description|truncate(50) }}</small>
+        </div>
+        <div class="text-muted small">
+            <span class="me-3"><i class="fas fa-project-diagram"></i> {{ node.projects.count() }} مشروع</span>
+            {% if node.manager %}
+            <span><i class="fas fa-user-tie"></i> {{ node.manager.full_name }}</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% for child in node.children %}
+    {% with node=child %}
+        {% include 'primavera/eps_node.html' %}
+    {% endwith %}
+{% endfor %}

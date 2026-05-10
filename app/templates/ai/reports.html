@@ -1,0 +1,370 @@
+{% extends "company/base.html" %}
+
+{% block title %}التقارير الذكية{% endblock %}
+
+{% block page_title %}التقارير الذكية{% endblock %}
+{% block page_subtitle %}جميع التقارير التي تم إنشاؤها{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<style>
+    .reports-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin: 0 auto 1rem;
+    }
+    
+    .stat-icon.primary { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .stat-icon.success { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .stat-icon.warning { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .stat-icon.info { background: rgba(72, 149, 239, 0.1); color: var(--info); }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .filters-section {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #eef2f7;
+    }
+    
+    .reports-table {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        border: 1px solid #eef2f7;
+    }
+    
+    .report-card {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .report-card:hover {
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateX(-5px);
+    }
+    
+    .report-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        margin-left: 1rem;
+    }
+    
+    .report-info {
+        flex: 1;
+    }
+    
+    .report-name {
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+    }
+    
+    .report-meta {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .type-badge {
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .type-performance { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .type-summary { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .type-analysis { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .type-general { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+    
+    .btn-generate {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-generate:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+    <!-- إحصائيات سريعة -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <div class="stat-value">{{ reports|length }}</div>
+            <div class="stat-label">إجمالي التقارير</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="fas fa-calendar-week"></i>
+            </div>
+            <div class="stat-value">{{ reports|selectattr('created_at', 'ge', now - timedelta(days=7))|list|length }}</div>
+            <div class="stat-label">هذا الأسبوع</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="fas fa-file-pdf"></i>
+            </div>
+            <div class="stat-value">{{ reports|selectattr('export_formats', 'contains', 'pdf')|list|length }}</div>
+            <div class="stat-label">قابلة للتصدير</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon info">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+            <div class="stat-value">{{ reports|selectattr('chart_data')|list|length }}</div>
+            <div class="stat-label">رسوم بيانية</div>
+        </div>
+    </div>
+    
+    <!-- شريط الفلاتر -->
+    <div class="filters-section">
+        <div class="row">
+            <div class="col-md-3">
+                <select class="form-select" id="typeFilter">
+                    <option value="all">كل الأنواع</option>
+                    <option value="performance">أداء</option>
+                    <option value="summary">ملخص</option>
+                    <option value="analysis">تحليل</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="periodFilter">
+                    <option value="all">كل الفترات</option>
+                    <option value="week">آخر أسبوع</option>
+                    <option value="month">آخر شهر</option>
+                    <option value="quarter">آخر 3 شهور</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input type="text" class="form-control" id="searchInput" placeholder="🔍 بحث في التقارير...">
+            </div>
+            <div class="col-md-2">
+                <button class="btn-generate w-100" onclick="window.location.href='{{ url_for('ai.new_command') }}'">
+                    <i class="fas fa-plus me-2"></i>
+                    تقرير جديد
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- قائمة التقارير -->
+    <div class="reports-table">
+        <table class="table" id="reportsTable">
+            <thead>
+                <tr>
+                    <th>التقرير</th>
+                    <th>النوع</th>
+                    <th>تاريخ الإنشاء</th>
+                    <th>السجلات</th>
+                    <th>الرسوم البيانية</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="report-icon me-2">
+                                <i class="fas fa-{{ 'chart-line' if report.report_type == 'performance' 
+                                                    else 'list' if report.report_type == 'summary'
+                                                    else 'search' if report.report_type == 'analysis'
+                                                    else 'file-alt' }}"></i>
+                            </div>
+                            <div>
+                                <strong>{{ report.report_name }}</strong>
+                                {% if report.report_summary %}
+                                <br><small class="text-muted">{{ report.report_summary[:50] }}...</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="type-badge type-{{ report.report_type }}">
+                            {{ report.report_type }}
+                        </span>
+                    </td>
+                    <td>
+                        {{ report.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-primary">{{ report.total_records or 0 }}</span>
+                    </td>
+                    <td class="text-center">
+                        {% if report.chart_data %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-chart-pie me-1"></i>
+                            {{ report.chart_data|length }}
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{{ url_for('ai.view_report', report_id=report.id) }}" 
+                               class="btn btn-sm btn-outline-primary" title="عرض">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-success" title="تصدير PDF" onclick="exportReport({{ report.id }}, 'pdf')">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" title="تصدير Excel" onclick="exportReport({{ report.id }}, 'excel')">
+                                <i class="fas fa-file-excel"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">لا توجد تقارير</h5>
+                        <p class="text-muted">قم بإنشاء تقرير جديد باستخدام الذكاء الاصطناعي</p>
+                        <a href="{{ url_for('ai.new_command') }}" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus me-2"></i>
+                            إنشاء تقرير
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+    var table = $('#reportsTable').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/ar.json'
+        },
+        order: [[2, 'desc']],
+        pageLength: 25
+    });
+    
+    // فلترة حسب النوع
+    $('#typeFilter').on('change', function() {
+        var type = this.value;
+        if (type === 'all') {
+            table.column(1).search('').draw();
+        } else {
+            table.column(1).search(type).draw();
+        }
+    });
+    
+    // فلترة حسب الفترة
+    $('#periodFilter').on('change', function() {
+        var period = this.value;
+        var now = new Date();
+        var cutoff = new Date();
+        
+        if (period === 'week') {
+            cutoff.setDate(now.getDate() - 7);
+        } else if (period === 'month') {
+            cutoff.setMonth(now.getMonth() - 1);
+        } else if (period === 'quarter') {
+            cutoff.setMonth(now.getMonth() - 3);
+        }
+        
+        if (period === 'all') {
+            table.column(2).search('').draw();
+        } else {
+            // تطبيق فلتر مخصص
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    var date = new Date(data[2]);
+                    return date >= cutoff;
+                }
+            );
+            table.draw();
+            $.fn.dataTable.ext.search.pop();
+        }
+    });
+    
+    // البحث
+    $('#searchInput').on('keyup', function() {
+        table.search(this.value).draw();
+    });
+});
+
+function exportReport(id, format) {
+    window.location.href = `/ai/api/export-report/${id}?format=${format}`;
+}
+</script>
+{% endblock %}

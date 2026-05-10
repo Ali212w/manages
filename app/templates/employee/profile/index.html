@@ -1,0 +1,253 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ _('emp.profile') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: var(--radius-lg);
+        padding: 30px;
+        color: white;
+        margin-bottom: 25px;
+    }
+    
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        font-weight: bold;
+        margin: 0 auto 15px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 15px;
+        border-right: 1px solid #e0e0e0;
+    }
+    
+    .stat-item:last-child {
+        border-right: none;
+    }
+    
+    @media (max-width: 768px) {
+        .stat-item {
+            border-right: none;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-header">
+    <div class="row align-items-center">
+        <div class="col-md-3 text-center text-md-start">
+            <div class="profile-avatar">
+                {{ user.full_name[0] if user.full_name else 'U' }}
+            </div>
+        </div>
+        <div class="col-md-9 text-center text-md-start">
+            <h2 class="mb-2">{{ user.full_name }}</h2>
+            <div class="d-flex gap-3 flex-wrap justify-content-center justify-content-md-start">
+                <span class="badge bg-light text-dark">{{ get_status_badge(user.role) | safe }}</span>
+                <span><i class="fas fa-envelope me-2"></i> {{ user.email }}</span>
+                {% if user.phone %}
+                <span><i class="fas fa-phone me-2"></i> {{ user.phone }}</span>
+                {% endif %}
+                <span><i class="fas fa-calendar me-2"></i> {{ _('emp.member_since') }} {{ format_date(user.created_at) }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <div class="info-card">
+            <h5 class="mb-3"><i class="fas fa-chart-line me-2 text-primary"></i> {{ _('emp.statistics') }}</h5>
+            <div class="row">
+                <div class="col-6 stat-item">
+                    <div class="display-6 fw-bold text-primary">{{ stats.tasks_completed }}</div>
+                    <small class="text-muted">{{ _('emp.tasks_completed') }}</small>
+                </div>
+                <div class="col-6 stat-item">
+                    <div class="display-6 fw-bold text-success">{{ stats.days_active }}</div>
+                    <small class="text-muted">{{ _('emp.days_active') }}</small>
+                </div>
+                <div class="col-6 stat-item">
+                    <div class="display-6 fw-bold text-info">{{ stats.login_count }}</div>
+                    <small class="text-muted">{{ _('emp.login_count') }}</small>
+                </div>
+                <div class="col-6 stat-item">
+                    <div class="display-6 fw-bold text-warning">{{ stats.last_login.strftime('%Y-%m-%d') if stats.last_login else '-' }}</div>
+                    <small class="text-muted">{{ _('emp.last_login') }}</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-card">
+            <h5 class="mb-3"><i class="fas fa-info-circle me-2 text-primary"></i> {{ _('emp.personal_info') }}</h5>
+            <div class="mb-2">
+                <small class="text-muted">{{ _('emp.full_name') }}</small>
+                <div class="fw-bold">{{ user.full_name }}</div>
+            </div>
+            <div class="mb-2">
+                <small class="text-muted">{{ _('emp.email') }}</small>
+                <div class="fw-bold">{{ user.email }}</div>
+            </div>
+            {% if user.job_title %}
+            <div class="mb-2">
+                <small class="text-muted">{{ _('emp.job_title') }}</small>
+                <div class="fw-bold">{{ user.job_title }}</div>
+            </div>
+            {% endif %}
+            {% if user.department %}
+            <div class="mb-2">
+                <small class="text-muted">{{ _('emp.department') }}</small>
+                <div class="fw-bold">{{ user.department.name }}</div>
+            </div>
+            {% endif %}
+            {% if user.employee_id %}
+            <div>
+                <small class="text-muted">{{ _('emp.employee_id') }}</small>
+                <div class="fw-bold">{{ user.employee_id }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="info-card">
+            <h5 class="mb-3"><i class="fas fa-user-edit me-2 text-primary"></i> {{ _('emp.edit_profile') }}</h5>
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ _('emp.full_name') }}</label>
+                        <input type="text" name="full_name" class="form-control" value="{{ user.full_name }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ _('emp.phone') }}</label>
+                        <input type="tel" name="phone" class="form-control" value="{{ user.phone or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ _('emp.mobile') }}</label>
+                        <input type="tel" name="mobile" class="form-control" value="{{ user.mobile or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ _('emp.job_title') }}</label>
+                        <input type="text" name="job_title" class="form-control" value="{{ user.job_title or '' }}">
+                    </div>
+                </div>
+                
+                <hr class="my-3">
+                
+                <h6 class="mb-3">{{ _('emp.change_password') }}</h6>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ _('emp.current_password') }}</label>
+                        <input type="password" name="current_password" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ _('emp.new_password') }}</label>
+                        <input type="password" name="new_password" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ _('emp.confirm_password') }}</label>
+                        <input type="password" name="confirm_password" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="text-end">
+                    <button type="submit" class="btn btn-gradient">
+                        <i class="fas fa-save me-2"></i> {{ _('emp.save_changes') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- نموذج إعدادات الإشعارات -->
+        <div class="info-card">
+            <h5 class="mb-3"><i class="fas fa-bell me-2 text-primary"></i> {{ _('notification_settings') }}</h5>
+            <form action="{{ url_for('employee.update_notification_settings') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="emailNotifications" name="email_notifications" {% if current_user.email_notifications %}checked{% endif %}>
+                    <label class="form-check-label" for="emailNotifications">{{ _('email_notifications') }}</label>
+                    <small class="text-muted d-block">{{ _('receive_notifications_via_email') }}</small>
+                </div>
+                
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="pushNotifications" name="push_notifications" {% if current_user.push_notifications %}checked{% endif %}>
+                    <label class="form-check-label" for="pushNotifications">{{ _('push_notifications') }}</label>
+                    <small class="text-muted d-block">{{ _('receive_push_notifications_on_browser') }}</small>
+                </div>
+                
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="taskReminders" name="task_reminders" {% if current_user.task_reminders %}checked{% endif %}>
+                    <label class="form-check-label" for="taskReminders">{{ _('task_reminders') }}</label>
+                    <small class="text-muted d-block">{{ _('get_reminders_for_upcoming_tasks') }}</small>
+                </div>
+                
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="dailyDigest" name="daily_digest" {% if current_user.daily_digest %}checked{% endif %}>
+                    <label class="form-check-label" for="dailyDigest">{{ _('daily_digest') }}</label>
+                    <small class="text-muted d-block">{{ _('receive_daily_summary_email') }}</small>
+                </div>
+                
+                <div class="text-end mt-3">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-save me-2"></i> {{ _('save_settings') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- إعدادات المظهر -->
+        <div class="info-card mt-3">
+            <h5 class="mb-3"><i class="fas fa-palette me-2 text-primary"></i> {{ _('appearance_settings') }}</h5>
+            <form action="{{ url_for('employee.update_notification_settings') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="mb-3">
+                    <label class="form-label">{{ _('theme') }}</label>
+                    <select name="theme" class="form-select">
+                        <option value="light" {% if current_user.theme == 'light' %}selected{% endif %}>{{ _('light') }}</option>
+                        <option value="dark" {% if current_user.theme == 'dark' %}selected{% endif %}>{{ _('dark') }}</option>
+                        <option value="auto" {% if current_user.theme == 'auto' %}selected{% endif %}>{{ _('auto') }}</option>
+                    </select>
+                </div>
+                
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="sidebarCollapsed" name="sidebar_collapsed" {% if current_user.sidebar_collapsed %}checked{% endif %}>
+                    <label class="form-check-label" for="sidebarCollapsed">{{ _('collapse_sidebar') }}</label>
+                    <small class="text-muted d-block">{{ _('collapse_sidebar_by_default') }}</small>
+                </div>
+                
+                <div class="text-end mt-3">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-save me-2"></i> {{ _('save_appearance') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{_('emp.my_projects') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .project-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+        border: 1px solid #e0e0e0;
+        cursor: pointer;
+    }
+    
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .project-header {
+        padding: 20px;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+    }
+    
+    .project-body {
+        padding: 20px;
+    }
+    
+    .stat-badge {
+        background: rgba(255,255,255,0.2);
+        border-radius: 50px;
+        padding: 5px 12px;
+        font-size: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-gradient mb-1">
+            <i class="fas fa-project-diagram me-2"></i> {{_('emp.my_projects') }}
+        </h2>
+        <p class="text-muted">{{_('emp.projects_im_involved_in') }}</p>
+    </div>
+</div>
+
+<div class="row">
+    {% for project in projects %}
+    <div class="col-lg-6">
+        <div class="project-card" onclick="window.location.href='{{ url_for('employee.view_my_project', project_id=project.id) }}'">
+            <div class="project-header">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="mb-1">{{ project.name }}</h5>
+                        <span class="stat-badge">{{ project.code }}</span>
+                    </div>
+                    {{ get_status_badge(project.status) | safe }}
+                </div>
+            </div>
+            <div class="project-body">
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <div class="fw-bold text-primary">{{ project.tasks_count }}</div>
+                        <small class="text-muted">{{_('emp.tasks') }}</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold text-success">{{ project.completed_tasks }}</div>
+                        <small class="text-muted">{{_('emp.completed') }}</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold text-info">{{ project.activities_count }}</div>
+                        <small class="text-muted">{{_('emp.activities') }}</small>
+                    </div>
+                </div>
+                <div class="progress mb-2" style="height: 6px;">
+                    <div class="progress-bar bg-success" style="width: {{  project.progress.progress_percentage|default(0) if project.progress else 0}}%"></div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">{{_('emp.completion') }}</small>
+                    <small class="fw-bold">{{ "%.1f"|format( project.progress.progress_percentage|default(0) if project.progress else 0) }}%</small>
+                </div>
+                {% if project.manager %}
+                <hr>
+                <div class="small text-muted">
+                    <i class="fas fa-user-tie me-1"></i> {{_('emp.manager') }}: {{ project.manager }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">{{_('emp.no_projects') }}</h4>
+            <p class="text-muted">{{_('emp.no_projects_assigned') }}</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

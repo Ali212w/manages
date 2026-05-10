@@ -1,0 +1,114 @@
+<!-- templates/primavera/tabs/project/general.html -->
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-info-circle text-primary"></i>
+        General Information
+    </h6>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">EPS ID</div>
+            <select class="field-input" id="epsSelect">
+                {% for eps in eps_list %}
+                <option value="{{ eps.id }}" {% if project.eps_id == eps.id %}selected{% endif %}>
+                    {{ eps.eps_code }} - {{ eps.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">EPS Name</div>
+            <div class="field-value" id="epsName">
+                {{ project.eps.name if project.eps else 'Not Selected' }}
+            </div>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Status</div>
+            <select class="field-input" id="projectStatus">
+                <option value="Planned" {% if project.status == 'Planned' %}selected{% endif %}>Planned</option>
+                <option value="Active" {% if project.status == 'Active' %}selected{% endif %}>Active</option>
+                <option value="Inactive" {% if project.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                <option value="What-If" {% if project.status == 'What-If' %}selected{% endif %}>What-If</option>
+                <option value="Template" {% if project.status == 'Template' %}selected{% endif %}>Template</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Responsible Manager</div>
+            <select class="field-input" id="responsibleManager">
+                <option value="">Select Manager...</option>
+                {% for user in project_managers %}
+                <option value="{{ user.id }}" {% if project.obs and project.obs.responsible_id == user.id %}selected{% endif %}>
+                    {{ user.full_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Project Leveling Priority</div>
+            <input type="number" class="field-input" id="projectPriority" 
+                   value="{{ project.priority_level or 50 }}" min="1" max="100">
+            <small class="text-muted">1 = Highest Priority, 100 = Lowest</small>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Check Out Status</div>
+            <div class="field-value" id="checkoutStatus">
+                {% if project.checked_out_by %}
+                    Checked Out by {{ project.checked_out_by }}
+                {% else %}
+                    Not Checked Out
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Checked Out By</div>
+            <div class="field-value" id="checkedOutBy">
+                {{ project.checked_out_by or '—' }}
+            </div>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Date Checked Out</div>
+            <div class="field-value" id="dateCheckedOut">
+                {{ project.checked_out_date.strftime('%Y-%m-%d %H:%M') if project.checked_out_date else '—' }}
+            </div>
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Project Website URL</div>
+            <input type="url" class="field-input" id="projectWebsite" 
+                   value="{{ project.website or '' }}" placeholder="https://...">
+        </div>
+    </div>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Financial Period Calendar</div>
+            <select class="field-input" id="financialCalendar">
+                <option value="">Select Calendar...</option>
+                {% for cal in calendars %}
+                <option value="{{ cal.id }}" {% if project.financial_calendar_id == cal.id %}selected{% endif %}>
+                    {{ cal.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+<script>
+// تحديث اسم EPS تلقائياً عند تغيير القائمة
+document.getElementById('epsSelect').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    document.getElementById('epsName').textContent = selected.text.split(' - ')[1];
+});
+</script>

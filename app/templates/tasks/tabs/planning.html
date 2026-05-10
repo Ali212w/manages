@@ -1,0 +1,103 @@
+<div class="row">
+    <div class="col-md-6">
+        <div class="info-card">
+            <h6 class="info-card-title">
+                <i class="fas fa-calendar"></i> التواريخ المخططة
+            </h6>
+            <table class="info-table">
+                <tr>
+                    <td>تاريخ البداية المخطط:</td>
+                    <td class="fw-bold">
+                        {{ task.planning.planned_start.strftime('%Y-%m-%d') if task.planning and task.planning.planned_start else '-' }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>تاريخ النهاية المخطط:</td>
+                    <td class="fw-bold {% if task.is_delayed %}text-danger{% endif %}">
+                        {{ task.planning.planned_finish.strftime('%Y-%m-%d') if task.planning and task.planning.planned_finish else '-' }}
+                        {% if task.is_delayed %}
+                        <span class="badge bg-danger ms-2">متأخرة {{ task.get_delay_days }} يوم</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>المدة المخططة (ساعات):</td>
+                    <td>{{ task.planning.planned_duration or '-' }}</td>
+                </tr>
+                <tr>
+                    <td>الجهد المقدر (ساعة رجل):</td>
+                    <td>{{ task.planning.estimated_effort or '-' }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="info-card">
+            <h6 class="info-card-title">
+                <i class="fas fa-hourglass-half"></i> التقدم المخطط
+            </h6>
+            <div class="text-center mb-3">
+                <canvas id="plannedProgressChart" width="200" height="200"></canvas>
+            </div>
+            <div class="d-flex justify-content-between">
+                <div>
+                    <small class="text-muted">التقدم الحالي</small>
+                    <h4 class="mb-0">{{ task.progress.progress_percentage }}%</h4>
+                </div>
+                <div>
+                    <small class="text-muted">المتبقي</small>
+                    <h4 class="mb-0">{{ 100 - task.progress.progress_percentage }}%</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="info-card">
+            <h6 class="info-card-title">
+                <i class="fas fa-chart-line"></i> المسار الحرج
+            </h6>
+            {% if task.is_critical %}
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                هذه المهمة تقع على المسار الحرج للمشروع
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                هذه المهمة ليست على المسار الحرج
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('plannedProgressChart')?.getContext('2d');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['منجز', 'متبقي'],
+                datasets: [{
+                    data: [{{ task.progress.progress_percentage }}, {{ 100 - task.progress.progress_percentage }}],
+                    backgroundColor: ['#4caf50', '#eef2f7'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+});
+</script>

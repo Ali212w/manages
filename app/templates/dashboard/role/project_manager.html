@@ -1,0 +1,108 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ _('dashboard') }} — {{ _('project_manager') }}{% endblock %}
+
+{% block content %}
+<div class="role-dash" id="role-dashboard-pm">
+
+  <div class="rd-header d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+      <h1 class="rd-title">
+        <span class="rd-badge badge-pm"><i class="fas fa-user-tie me-1"></i></span>
+        {{ _('welcome_back') }}, {{ current_user.full_name or current_user.username }}
+      </h1>
+      <p class="rd-subtitle text-muted mb-0">
+        {{ _('project_manager') }} &nbsp;|&nbsp;
+        <span class="text-primary fw-semibold">{{ kpis.total_projects }} {{ _('total_projects') }}</span>
+      </p>
+    </div>
+    <a href="{{ url_for('projects.list_projects') }}" class="btn rd-btn-primary">
+      <i class="fas fa-folder-open me-1"></i> {{ _('all_projects') }}
+    </a>
+  </div>
+
+  <!-- KPIs -->
+  <div class="row g-3 mb-4">
+    {% for icon, cls, val, label in [
+      ('fa-diagram-project','kpi-indigo', kpis.total_projects,  _('total_projects')),
+      ('fa-play-circle',    'kpi-emerald',kpis.active_projects, _('active_projects')),
+      ('fa-triangle-exclamation','kpi-red',kpis.overdue_projects,_('overdue')),
+      ('fa-chart-line',    'kpi-blue',   kpis.avg_progress,    _('avg_progress')),
+    ] %}
+    <div class="col-6 col-md-3">
+      <div class="rd-kpi {{ cls }}">
+        <div class="rd-kpi-icon"><i class="fas {{ icon }}"></i></div>
+        <div class="rd-kpi-body">
+          <div class="rd-kpi-value">{{ val }}{% if label == _('avg_progress') %}%{% endif %}</div>
+          <div class="rd-kpi-label">{{ label }}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="row g-3 mb-4">
+    {% for icon, cls, val, label in [
+      ('fa-list-check',  'kpi-slate',  kpis.total_tasks,      _('total_tasks')),
+      ('fa-circle-check','kpi-emerald',kpis.completed_tasks,  _('completed_tasks')),
+      ('fa-clock',       'kpi-amber',  kpis.overdue_tasks,    _('delayed_tasks')),
+      ('fa-users',       'kpi-indigo', kpis.team_size,        _('team_members')),
+    ] %}
+    <div class="col-6 col-md-3">
+      <div class="rd-kpi {{ cls }}">
+        <div class="rd-kpi-icon"><i class="fas {{ icon }}"></i></div>
+        <div class="rd-kpi-body">
+          <div class="rd-kpi-value">{{ val }}</div>
+          <div class="rd-kpi-label">{{ label }}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Projects + Chart -->
+  <div class="row g-3">
+    <div class="col-lg-4">
+      <div class="rd-card">
+        <div class="rd-card-header"><span><i class="fas fa-pie-chart me-2 text-primary"></i>{{ _('task_status_distribution') }}</span></div>
+        <div class="rd-card-body text-center">
+          <canvas id="pmTaskChart" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div class="rd-card">
+        <div class="rd-card-header">
+          <span><i class="fas fa-folder-open me-2 text-emerald"></i>{{ _('project') }}</span>
+        </div>
+        <div class="table-responsive">
+          <table class="rd-table">
+            <thead><tr><th>{{ _('name') }}</th><th>{{ _('status') }}</th><th>{{ _('progress_percentage') }}</th><th>{{ _('budget') }}</th></tr></thead>
+            <tbody>
+              {% for p in my_projects %}
+              <tr>
+                <td><a href="{{ url_for('projects.project_detail',project_id=p.id) }}" class="rd-link">{{ p.name }}</a></td>
+                <td>{% set sc = {'active':'emerald','planning':'amber','completed':'blue','delayed':'red'} %}<span class="rd-status-badge {{ sc.get(p.status,'slate') }}">{{ _(p.status) }}</span></td>
+                <td>
+                  {% set pg = p.get_progress() %}
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="rd-mini-bar flex-grow-1"><div style="width:{{ pg }}%;background:var(--accent);height:100%;border-radius:4px"></div></div>
+                    <small>{{ pg }}%</small>
+                  </div>
+                </td>
+                <td class="small text-muted">{% if p.budget %}{{ "{:,.0f}".format(p.budget.current_budget) }} {{ _('sar') }}{% else %}—{% endif %}</td>
+              </tr>
+              {% else %}<tr><td colspan="4" class="text-center py-3 text-muted">{{ _('no_data') }}</td></tr>{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  const c=document.getElementById('pmTaskChart');
+  if(c) new Chart(c,{type:'doughnut',data:{labels:['{{ _("completed") }}','{{ _("in_progress") }}','{{ _("overdue") }}'],datasets:[{data:[{{ kpis.completed_tasks }},{{ kpis.in_progress_tasks }},{{ kpis.overdue_tasks }}],backgroundColor:['#10b981','#6366f1','#ef4444'],borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'bottom'}},cutout:'65%'}});
+});
+</script>
+{% endblock %}

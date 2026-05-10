@@ -1,0 +1,272 @@
+{# templates/platform/settings/index.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('settings.title') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="page-title">{{ _('settings.title') }}</h1>
+            <p class="text-muted mb-0">{{ _('settings.settings_description') }}</p>
+        </div>
+    </div>
+    
+    <!-- Settings Tabs -->
+    <ul class="nav nav-tabs mb-4" id="settingsTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">
+                <i class="fas fa-cog me-2"></i>{{ _('settings.general') }}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="company-tab" data-bs-toggle="tab" data-bs-target="#company" type="button" role="tab">
+                <i class="fas fa-building me-2"></i>{{ _('settings.company_info') }}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system" type="button" role="tab">
+                <i class="fas fa-server me-2"></i>{{ _('settings.system_settings') }}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="mail-tab" data-bs-toggle="tab" data-bs-target="#mail" type="button" role="tab">
+                <i class="fas fa-envelope me-2"></i>{{ _('settings.mail_settings') }}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment" type="button" role="tab">
+                <i class="fas fa-credit-card me-2"></i>{{ _('settings.payment_settings') }}
+            </button>
+        </li>
+    </ul>
+    
+    <!-- Tab Content -->
+    <form method="POST" id="settingsForm">
+        <div class="tab-content">
+            <!-- General Settings Tab -->
+            <div class="tab-pane fade show active" id="general" role="tabpanel">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.company_name') }} *</label>
+                                <input type="text" name="company_name" class="form-control" value="{{ platform.company_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.company_name_ar') }}</label>
+                                <input type="text" name="company_name_ar" class="form-control" value="{{ platform.company_name_ar or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.company_email') }} *</label>
+                                <input type="email" name="email" class="form-control" value="{{ platform.email }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.company_phone') }}</label>
+                                <input type="tel" name="phone" class="form-control" value="{{ platform.phone or '' }}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ _('settings.company_address') }}</label>
+                                <textarea name="address" class="form-control" rows="3">{{ platform.address or '' }}</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.company_website') }}</label>
+                                <input type="url" name="website" class="form-control" value="{{ platform.website or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.tax_number') }}</label>
+                                <input type="text" name="tax_number" class="form-control" value="{{ platform.tax_number or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.commercial_register') }}</label>
+                                <input type="text" name="commercial_register" class="form-control" value="{{ platform.commercial_register or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Company Info / Quota Tab -->
+            <div class="tab-pane fade" id="company" role="tabpanel">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('settings.default_max_users') }}</label>
+                                <input type="number" name="default_max_users" class="form-control" value="{{ platform.platform_settings.default_company_quota.max_users if platform.platform_settings and platform.platform_settings.default_company_quota else 50 }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('settings.default_max_projects') }}</label>
+                                <input type="number" name="default_max_projects" class="form-control" value="{{ platform.platform_settings.default_company_quota.max_projects if platform.platform_settings and platform.platform_settings.default_company_quota else 100 }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('settings.default_storage_gb') }}</label>
+                                <input type="number" name="default_storage_gb" class="form-control" value="{{ platform.platform_settings.default_company_quota.storage_gb if platform.platform_settings and platform.platform_settings.default_company_quota else 10 }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.default_plan') }}</label>
+                                <select name="default_plan" class="form-select">
+                                    <option value="trial" {% if platform.platform_settings and platform.platform_settings.default_plan == 'trial' %}selected{% endif %}>{{ _('subscriptions.trial') }}</option>
+                                    <option value="basic" {% if platform.platform_settings and platform.platform_settings.default_plan == 'basic' %}selected{% endif %}>Basic</option>
+                                    <option value="professional" {% if platform.platform_settings and platform.platform_settings.default_plan == 'professional' %}selected{% endif %}>Professional</option>
+                                    <option value="enterprise" {% if platform.platform_settings and platform.platform_settings.default_plan == 'enterprise' %}selected{% endif %}>Enterprise</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.trial_days') }}</label>
+                                <input type="number" name="trial_days" class="form-control" value="{{ platform.platform_settings.trial_days if platform.platform_settings else 30 }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Settings Tab -->
+            <div class="tab-pane fade" id="system" role="tabpanel">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="allow_multi_companies" class="form-check-input" id="allowMulti" {% if platform.platform_settings and platform.platform_settings.allow_multi_companies %}checked{% endif %}>
+                                    <label class="form-check-label" for="allowMulti">{{ _('settings.allow_multi_companies') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="require_company_verification" class="form-check-input" id="requireVerification" {% if platform.platform_settings and platform.platform_settings.require_company_verification %}checked{% endif %}>
+                                    <label class="form-check-label" for="requireVerification">{{ _('settings.require_company_verification') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="allow_public_registration" class="form-check-input" id="allowPublic" {% if platform.platform_settings and platform.platform_settings.allow_public_registration %}checked{% endif %}>
+                                    <label class="form-check-label" for="allowPublic">{{ _('settings.allow_public_registration') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="maintenance_mode" class="form-check-input" id="maintenanceMode" {% if platform.platform_settings and platform.platform_settings.maintenance_mode %}checked{% endif %}>
+                                    <label class="form-check-label" for="maintenanceMode">{{ _('settings.maintenance_mode') }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.max_companies') }}</label>
+                                <input type="number" name="max_companies" class="form-control" value="{{ platform.platform_settings.max_companies if platform.platform_settings else 100 }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mail Settings Tab -->
+            <div class="tab-pane fade" id="mail" role="tabpanel">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.smtp_server') }}</label>
+                                <input type="text" name="smtp_server" class="form-control" value="{{ platform.platform_settings.mail.smtp_server if platform.platform_settings and platform.platform_settings.mail else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.smtp_port') }}</label>
+                                <input type="number" name="smtp_port" class="form-control" value="{{ platform.platform_settings.mail.smtp_port if platform.platform_settings and platform.platform_settings.mail else 587 }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.smtp_username') }}</label>
+                                <input type="text" name="smtp_username" class="form-control" value="{{ platform.platform_settings.mail.smtp_username if platform.platform_settings and platform.platform_settings.mail else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.smtp_password') }}</label>
+                                <input type="password" name="smtp_password" class="form-control" value="{{ platform.platform_settings.mail.smtp_password if platform.platform_settings and platform.platform_settings.mail else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.mail_from') }}</label>
+                                <input type="email" name="mail_from" class="form-control" value="{{ platform.platform_settings.mail.mail_from if platform.platform_settings and platform.platform_settings.mail else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.mail_from_name') }}</label>
+                                <input type="text" name="mail_from_name" class="form-control" value="{{ platform.platform_settings.mail.mail_from_name if platform.platform_settings and platform.platform_settings.mail else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payment Settings Tab -->
+            <div class="tab-pane fade" id="payment" role="tabpanel">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.stripe_public_key') }}</label>
+                                <input type="text" name="stripe_public_key" class="form-control" value="{{ platform.platform_settings.payment.stripe_public_key if platform.platform_settings and platform.platform_settings.payment else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.stripe_secret_key') }}</label>
+                                <input type="password" name="stripe_secret_key" class="form-control" value="{{ platform.platform_settings.payment.stripe_secret_key if platform.platform_settings and platform.platform_settings.payment else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.currency') }}</label>
+                                <select name="currency" class="form-select">
+                                    <option value="SAR" {% if platform.platform_settings and platform.platform_settings.payment and platform.platform_settings.payment.currency == 'SAR' %}selected{% endif %}>SAR - {{ _('currency.sar') }}</option>
+                                    <option value="USD" {% if platform.platform_settings and platform.platform_settings.payment and platform.platform_settings.payment.currency == 'USD' %}selected{% endif %}>USD - {{ _('currency.usd') }}</option>
+                                    <option value="EUR" {% if platform.platform_settings and platform.platform_settings.payment and platform.platform_settings.payment.currency == 'EUR' %}selected{% endif %}>EUR - {{ _('currency.eur') }}</option>
+                                    <option value="GBP" {% if platform.platform_settings and platform.platform_settings.payment and platform.platform_settings.payment.currency == 'GBP' %}selected{% endif %}>GBP - {{ _('currency.gbp') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('settings.tax_rate') }} (%)</label>
+                                <input type="number" step="0.01" name="tax_rate" class="form-control" value="{{ platform.platform_settings.payment.tax_rate if platform.platform_settings and platform.platform_settings.payment else 0 }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="mt-4 d-flex justify-content-end">
+            <button type="submit" class="btn btn-gradient btn-lg px-5">
+                <i class="fas fa-save me-2"></i>{{ _('settings.save') }}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#settingsForm').submit(function(e) {
+        e.preventDefault();
+        
+        const formData = $(this).serialize();
+        
+        $.ajax({
+            url: "{{ url_for('platform.settings') }}",
+            method: 'POST',
+            data: formData,
+            beforeSend: function() {
+                $('#saveBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>{{ _("common.saving") }}...');
+            },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success('{{ _("settings.save_success") }}');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    toastr.error(response.error || '{{ _("common.error") }}');
+                }
+            },
+            error: function() {
+                toastr.error('{{ _("common.error") }}');
+            },
+            complete: function() {
+                $('#saveBtn').prop('disabled', false).html('<i class="fas fa-save me-2"></i>{{ _("settings.save") }}');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

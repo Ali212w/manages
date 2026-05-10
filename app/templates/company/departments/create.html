@@ -1,0 +1,157 @@
+{% extends "company/base.html" %}
+
+{% block title %}إضافة قسم جديد - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}إضافة قسم جديد{% endblock %}
+{% block page_subtitle %}إنشاء قسم جديد في الهيكل التنظيمي للشركة{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="table-card">
+            <form method="POST" action="{{ url_for('company.create_department') }}" id="createDeptForm">
+                <!-- معلومات القسم الأساسية -->
+                <h6 class="fw-bold mb-3"><i class="fas fa-info-circle me-2 text-primary"></i>معلومات القسم</h6>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">كود القسم <span class="text-danger">*</span></label>
+                        <input type="text" name="dept_code" class="form-control" required 
+                               placeholder="مثال: HR-001" maxlength="50">
+                        <small class="text-muted">كود فريد للقسم</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">اسم القسم <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" required 
+                               placeholder="مثال: الموارد البشرية">
+                    </div>
+                </div>
+                
+                <div class="row">
+                  
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">الميزانية</label>
+                        <div class="input-group">
+                            <input type="number" name="budget" class="form-control" 
+                                   value="0" min="0" step="1000">
+                            <span class="input-group-text">ر.س</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">وصف القسم</label>
+                    <textarea name="description" class="form-control" rows="3" 
+                              placeholder="وصف مختصر لمهام ومسؤوليات القسم"></textarea>
+                </div>
+                
+                <hr>
+                
+                <!-- الهيكل التنظيمي -->
+                <h6 class="fw-bold mb-3"><i class="fas fa-sitemap me-2 text-primary"></i>الهيكل التنظيمي</h6>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">القسم الرئيسي</label>
+                        <select name="parent_id" class="form-select select2">
+                            <option value="">-- قسم رئيسي (بدون أب) --</option>
+                            {% for dept in parent_departments %}
+                                <option value="{{ dept.id }}">{{ dept.name }} ({{ dept.dept_code }})</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">اختر إذا كان هذا القسم تابعاً لقسم آخر</small>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">مدير القسم</label>
+                        <select name="manager_id" class="form-select select2">
+                            <option value="">-- اختر مدير القسم --</option>
+                            {% for manager in managers %}
+                                <option value="{{ manager.id }}">{{ manager.full_name }} ({{ manager.job_title or 'موظف' }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- الحالة -->
+                <h6 class="fw-bold mb-3"><i class="fas fa-toggle-on me-2 text-primary"></i>الحالة</h6>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="isActive" checked>
+                            <label class="form-check-label" for="isActive">القسم نشط</label>
+                        </div>
+                        <small class="text-muted d-block">إذا كان القسم نشطاً سيظهر في القوائم</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- معاينة سريعة -->
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>معلومات:</strong> بعد إنشاء القسم، يمكنك إضافة الموظفين إليه من خلال صفحة تعديل المستخدمين.
+                </div>
+                
+                <!-- أزرار التحكم -->
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn-primary-gradient px-5">
+                        <i class="fas fa-save me-2"></i>حفظ القسم
+                    </button>
+                    <a href="{{ url_for('company.departments') }}" class="btn btn-outline-secondary ms-2 px-5">
+                        <i class="fas fa-times me-2"></i>إلغاء
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// التحقق من كود القسم عند الخروج من الحقل
+document.querySelector('input[name="dept_code"]').addEventListener('blur', function() {
+    const code = this.value;
+    if (code) {
+        fetch(`/company/api/departments/check-code?code=${code}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.exists) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'كود القسم موجود مسبقاً. الرجاء استخدام كود آخر',
+                        confirmButtonColor: '#f8961e'
+                    });
+                    this.value = '';
+                    this.focus();
+                }
+            });
+    }
+});
+
+// معاينة الميزانية بصيغة العملة
+document.querySelector('input[name="budget"]').addEventListener('input', function() {
+    const value = this.value;
+    if (value) {
+        const formatted = new Intl.NumberFormat('ar-SA', {
+            style: 'currency',
+            currency: 'SAR'
+        }).format(value);
+        // يمكن عرض المعاينة في مكان ما إذا أردت
+    }
+});
+
+// تفعيل select2
+$(document).ready(function() {
+    $('.select2').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: 'اختر...',
+        allowClear: true
+    });
+});
+</script>
+{% endblock %}

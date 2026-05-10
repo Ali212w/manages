@@ -1,0 +1,166 @@
+<!-- Defaults Tab - الإعدادات الافتراضية -->
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-clock text-primary"></i>
+        Activity Defaults
+    </h6>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Default Duration Type</div>
+            <select class="field-input" id="defaultDurationType">
+                <option value="fixed_duration">Fixed Duration</option>
+                <option value="fixed_units">Fixed Units</option>
+                <option value="fixed_work">Fixed Work</option>
+            </select>
+        </div>
+        <div class="field-col">
+            <div class="field-label">Default Duration</div>
+            <input type="number" class="field-input" id="defaultDuration" value="1" min="0.5" step="0.5">
+        </div>
+        <div class="field-col">
+            <div class="field-label">Default Duration Unit</div>
+            <select class="field-input" id="defaultDurationUnit">
+                <option value="hours">Hours</option>
+                <option value="days">Days</option>
+                <option value="weeks">Weeks</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Default Percent Complete</div>
+            <input type="number" class="field-input" id="defaultPercentComplete" value="0" min="0" max="100">
+        </div>
+        <div class="field-col">
+            <div class="field-label">Default Activity Type</div>
+            <select class="field-input" id="defaultActivityType">
+                <option value="task">Task Dependent</option>
+                <option value="resource">Resource Dependent</option>
+                <option value="level">Level of Effort</option>
+                <option value="milestone">Milestone</option>
+                <option value="start_milestone">Start Milestone</option>
+                <option value="finish_milestone">Finish Milestone</option>
+            </select>
+        </div>
+        <div class="field-col">
+            <div class="field-label">Default Calendar</div>
+            <select class="field-input" id="defaultActivityCalendar">
+                <option value="">Project Calendar</option>
+                {% for calendar in calendars %}
+                <option value="{{ calendar.id }}">{{ calendar.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-dollar-sign text-primary"></i>
+        Cost Defaults
+    </h6>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Default Price/Unit</div>
+            <input type="number" class="field-input" id="defaultPricePerUnit" value="0" step="0.01">
+        </div>
+        <div class="field-col">
+            <div class="field-label">Default Currency</div>
+            <select class="field-input" id="defaultCurrency">
+                <option value="SAR">SAR - Saudi Riyal</option>
+                <option value="USD">USD - US Dollar</option>
+                <option value="EUR">EUR - Euro</option>
+            </select>
+        </div>
+        <div class="field-col">
+            <div class="field-label">Default Overtime Factor</div>
+            <input type="number" class="field-input" id="defaultOvertimeFactor" value="1.5" step="0.1">
+        </div>
+    </div>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-checkbox">
+                <label>
+                    <input type="checkbox" id="calculateCostAutomatically"> Calculate Cost Automatically
+                </label>
+            </div>
+        </div>
+        <div class="field-col">
+            <div class="field-checkbox">
+                <label>
+                    <input type="checkbox" id="includeTax"> Include Tax
+                </label>
+            </div>
+        </div>
+        <div class="field-col">
+            <div class="field-label">Tax Rate (%)</div>
+            <input type="number" class="field-input" id="taxRate" value="15" min="0" max="100">
+        </div>
+    </div>
+</div>
+
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-tasks text-primary"></i>
+        WBS Defaults
+    </h6>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Default WBS Code Separator</div>
+            <input type="text" class="field-input" id="wbsSeparator" value="." maxlength="1">
+        </div>
+        <div class="field-col">
+            <div class="field-label">Default WBS Level</div>
+            <input type="number" class="field-input" id="wbsLevel" value="1" min="1" max="10">
+        </div>
+        <div class="field-col">
+            <div class="field-checkbox">
+                <label>
+                    <input type="checkbox" id="autoGenerateWBS"> Auto-generate WBS Codes
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-tags text-primary"></i>
+        Code Defaults
+    </h6>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Default Activity Code</div>
+            <select class="field-input" id="defaultActivityCode">
+                <option value="">-- None --</option>
+                {% for code in activity_codes %}
+                <option value="{{ code.id }}">{{ code.code_type }} - {{ code.code_value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field-col">
+            <div class="field-label">Default Resource Code</div>
+            <select class="field-input" id="defaultResourceCode">
+                <option value="">-- None --</option>
+                {% for code in resource_codes %}
+                <option value="{{ code.id }}">{{ code.code_type }} - {{ code.code_value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field-col">
+            <div class="field-label">Default Role</div>
+            <select class="field-input" id="defaultRole">
+                <option value="">-- None --</option>
+                {% for role in roles %}
+                <option value="{{ role.id }}">{{ role.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,570 @@
+{% extends "company/base.html" %}
+
+{% block title %}لوحة تحكم - {{ project.name }}{% endblock %}
+
+{% block page_title %}{{ project.name }}{% endblock %}
+{% block page_subtitle %}لوحة تحكم المشروع - إحصائيات وتحليلات{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+    
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .stat-icon.primary { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .stat-icon.success { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .stat-icon.warning { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .stat-icon.danger { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        margin: 0;
+    }
+    
+    .progress-circle {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto;
+    }
+    
+    .progress-circle svg {
+        width: 150px;
+        height: 150px;
+        transform: rotate(-90deg);
+    }
+    
+    .progress-circle-bg {
+        fill: none;
+        stroke: #eef2f7;
+        stroke-width: 8;
+    }
+    
+    .progress-circle-progress {
+        fill: none;
+        stroke: var(--primary);
+        stroke-width: 8;
+        stroke-linecap: round;
+        transition: stroke-dasharray 0.3s;
+    }
+    
+    .progress-circle-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .section-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        border-bottom: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .activity-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .activity-item.critical {
+        border-right: 3px solid var(--danger);
+    }
+    
+    .activity-status {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-left: 1rem;
+    }
+    
+    .status-not_started { background: #6c757d; }
+    .status-in_progress { background: var(--primary); }
+    .status-completed { background: var(--success); }
+    
+    .resource-item {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .resource-usage {
+        margin-right: auto;
+        width: 150px;
+    }
+    
+    .timeline {
+        position: relative;
+        padding-right: 2rem;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #eef2f7;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+    
+    .timeline-dot {
+        position: absolute;
+        right: -2.1rem;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--primary);
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px var(--primary);
+    }
+    
+    .timeline-dot.completed {
+        background: var(--success);
+        box-shadow: 0 0 0 2px var(--success);
+    }
+    
+    .timeline-dot.critical {
+        background: var(--danger);
+        box-shadow: 0 0 0 2px var(--danger);
+    }
+    
+    .quick-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .quick-action-btn {
+        flex: 1;
+        min-width: 120px;
+        padding: 0.8rem;
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        background: white;
+        color: var(--dark);
+        font-weight: 600;
+        transition: all 0.3s;
+        text-align: center;
+        text-decoration: none;
+    }
+    
+    .quick-action-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateY(-3px);
+    }
+    
+    .quick-action-btn i {
+        display: block;
+        font-size: 1.2rem;
+        margin-bottom: 0.3rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- إحصائيات سريعة -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-icon primary">
+                <i class="fas fa-tasks"></i>
+            </span>
+            <span class="badge bg-primary">{{ stats.total_activities }}</span>
+        </div>
+        <h3 class="stat-value">{{ stats.completed_activities }}/{{ stats.total_activities }}</h3>
+        <p class="stat-label">الأنشطة المكتملة</p>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-icon warning">
+                <i class="fas fa-spinner"></i>
+            </span>
+        </div>
+        <h3 class="stat-value">{{ stats.in_progress_activities }}</h3>
+        <p class="stat-label">قيد التنفيذ</p>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-icon danger">
+                <i class="fas fa-exclamation-triangle"></i>
+            </span>
+        </div>
+        <h3 class="stat-value">{{ stats.critical_activities }}</h3>
+        <p class="stat-label">أنشطة حرجة</p>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-icon success">
+                <i class="fas fa-cubes"></i>
+            </span>
+        </div>
+        <h3 class="stat-value">{{ stats.total_resources }}</h3>
+        <p class="stat-label">الموارد المستخدمة</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- العمود الأيمن - التقدم والمسار الحرج -->
+    <div class="col-lg-4">
+        <!-- دائرة التقدم -->
+        <div class="section-card text-center">
+            <h5 class="section-title">التقدم العام</h5>
+            <div class="progress-circle">
+                <svg viewBox="0 0 100 100">
+                    <circle class="progress-circle-bg" cx="50" cy="50" r="45"></circle>
+                    <circle class="progress-circle-progress" cx="50" cy="50" r="45" 
+                            stroke-dasharray="{{ stats.progress }}, 100"
+                            stroke-dashoffset="25"></circle>
+                </svg>
+                <div class="progress-circle-text">{{ stats.progress|round }}%</div>
+            </div>
+            <p class="text-muted mt-3">تقدم المشروع</p>
+            
+            <div class="mt-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>المخطط</span>
+                    <span>{{ project.project.planned_finish.strftime('%Y-%m-%d') if project.planned_finish }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>المتبقي</span>
+                    <span>{{ (project.project.planned_finish.date() - today).days if project.planned_finish else '-' }} يوم</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- المسار الحرج -->
+        <div class="section-card">
+            <h5 class="section-title">
+                <i class="fas fa-link me-2 text-danger"></i>المسار الحرج
+                <span class="badge bg-danger float-end">{{ critical_path|length }}</span>
+            </h5>
+            
+            {% if critical_path %}
+            <div class="timeline">
+                {% for activity in critical_path %}
+                <div class="timeline-item">
+                    <div class="timeline-dot critical"></div>
+                    <div class="timeline-content">
+                        <strong>{{ activity.activity_name }}</strong>
+                        <br>
+                        <small class="text-muted">
+                            {{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start }} - 
+                            {{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish }}
+                        </small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3">لا توجد أنشطة حرجة</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- العمود الأوسط - الأنشطة الحديثة -->
+    <div class="col-lg-4">
+        <div class="section-card">
+            <h5 class="section-title">
+                <i class="fas fa-history me-2 text-primary"></i>آخر الأنشطة
+            </h5>
+            
+            {% for activity in project.activities[:5] %}
+            <div class="activity-item {{ 'critical' if activity.is_critical }}">
+                <div class="activity-status status-{{ activity.status }}"></div>
+                <div class="flex-grow-1">
+                    <strong>{{ activity.activity_name }}</strong>
+                    <br>
+                    <small class="text-muted">{{ activity.activity_id }}</small>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-{{ 'success' if activity.status == 'completed' else 'primary' if activity.status == 'in_progress' else 'secondary' }}">
+                        {{ activity.progress_percentage|round }}%
+                    </span>
+                </div>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3">لا توجد أنشطة</p>
+            {% endfor %}
+        </div>
+        
+        <!-- الموارد الأكثر استخداماً -->
+        <div class="section-card">
+            <h5 class="section-title">
+                <i class="fas fa-chart-bar me-2 text-success"></i>الموارد الأكثر استخداماً
+            </h5>
+            
+            {% for resource in top_resources %}
+            <div class="resource-item">
+                <div class="flex-grow-1">
+                    <strong>{{ resource.name }}</strong>
+                </div>
+                <div class="resource-usage">
+                    <div class="progress">
+                        <div class="progress-bar" style="width: {{ resource.total_quantity / 100 * 50 }}%"></div>
+                    </div>
+                </div>
+                <div class="ms-2">{{ resource.total_quantity|round }}</div>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3">لا توجد موارد</p>
+            {% endfor %}
+        </div>
+        <div class="section-card">
+            <h5 class="section-title">
+                <i class="fas fa-tags me-2 text-warning"></i>
+                أكواد الأنشطة المطبقة
+            </h5>
+            
+            <div id="project-activity-codes">
+                <!-- سيتم تحميل أكواد الأنشطة الخاصة بالمشروع -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- العمود الأيسر - إجراءات سريعة -->
+    <div class="col-lg-4">
+        <div class="section-card">
+            <h5 class="section-title">
+                <i class="fas fa-bolt me-2 text-warning"></i>إجراءات سريعة
+            </h5>
+            
+            <div class="quick-actions">
+                <a href="{{ url_for('primavera.activities_list', project_id=project.id) }}" class="quick-action-btn">
+                    <i class="fas fa-tasks"></i>
+                    الأنشطة
+                </a>
+                <a href="{{ url_for('primavera.relationships_list', project_id=project.id) }}" class="quick-action-btn">
+                    <i class="fas fa-link"></i>
+                    العلاقات
+                </a>
+                <a href="{{ url_for('primavera.wbs_view', project_id=project.id) }}" class="quick-action-btn">
+                    <i class="fas fa-sitemap"></i>
+                    WBS
+                </a>
+                <a href="{{ url_for('primavera.baselines_list', project_id=project.id) }}" class="quick-action-btn">
+                    <i class="fas fa-history"></i>
+                    خط الأساس
+                </a>
+                <button class="quick-action-btn" onclick="runSchedule()">
+                    <i class="fas fa-play"></i>
+                    جدولة (F9)
+                </button>
+                <button class="quick-action-btn" onclick="createBaseline()">
+                    <i class="fas fa-save"></i>
+                    حفظ كـ Baseline
+                </button>
+            </div>
+        </div>
+        
+        <!-- معلومات المشروع -->
+        <div class="section-card">
+            <h5 class="section-title">
+                <i class="fas fa-info-circle me-2 text-info"></i>معلومات المشروع
+            </h5>
+            
+            <table class="table table-borderless">
+                <tr>
+                    <td class="text-muted">رمز المشروع:</td>
+                    <td class="fw-bold">{{ project.project_code }}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">تاريخ البدء:</td>
+                    <td>{{ project.project.planned_start.strftime('%Y-%m-%d') if project.planned_start }}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">تاريخ الانتهاء:</td>
+                    <td>{{ project.project.planned_finish.strftime('%Y-%m-%d') if project.project.planned_finish }}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">المدة:</td>
+                    <td>{{ (project.project.planned_finish - project.project.planned_start).days if project.project.planned_finish and project.project.planned_start }} يوم</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">التقويم:</td>
+                    <td>{{ project.calendar.name if project.calendar else 'افتراضي' }}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">EPS:</td>
+                    <td>{{ project.eps.name if project.eps else 'غير محدد' }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+let projectData = {{ project.to_dict()|tojson|safe }};
+let statsData = {{ stats|tojson|safe }};
+function runSchedule() {
+    Swal.fire({
+        title: 'تشغيل الجدولة',
+        text: 'هل تريد حساب الجدولة الزمنية للمشروع الآن؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، شغل',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/primavera/project/{{ project.id }}/schedule`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تمت الجدولة',
+                        html: `
+                            <div class="text-start">
+                                <p><strong>المدة الإجمالية:</strong> ${data.result.project_duration} يوم</p>
+                                <p><strong>الأنشطة الحرجة:</strong> ${data.result.critical_activities}</p>
+                            </div>
+                        `
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            });
+        }
+    });
+}
+
+function createBaseline() {
+    Swal.fire({
+        title: 'إنشاء خط أساس',
+        input: 'text',
+        inputLabel: 'اسم خط الأساس',
+        inputValue: 'Baseline ' + new Date().toLocaleDateString('ar-SA'),
+        showCancelButton: true,
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'إنشاء',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const formData = new FormData();
+            formData.append('name', result.value);
+            
+            fetch(`/primavera/project/{{ project.id }}/baseline/create`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الإنشاء',
+                        text: 'تم إنشاء خط الأساس بنجاح'
+                    }).then(() => {
+                        window.location.href = `/primavera/project/{{ project.id }}/baselines`;
+                    });
+                }
+            });
+        }
+    });
+}
+function loadProjectActivityCodes() {
+    const codes = {{ project.activity_code_values|tojson }};
+    const container = document.getElementById('project-activity-codes');
+    
+    if (Object.keys(codes).length > 0) {
+        let html = '<div class="list-group">';
+        for (let [type, value] of Object.entries(codes)) {
+            html += `
+                <div class="list-group-item">
+                    <small class="text-muted">${type}</small>
+                    <br><strong>${value}</strong>
+                </div>
+            `;
+        }
+        html += '</div>';
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p class="text-muted text-center">لا توجد أكواد مطبقة</p>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadProjectActivityCodes);
+</script>
+{% endblock %}

@@ -1,0 +1,98 @@
+<div class="card">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-cog text-primary me-2"></i>Project Settings</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Summarized Data -->
+            <div class="col-md-6">
+                <h6 class="fw-bold mb-3">Summarized Data</h6>
+                <div class="mb-3">
+                    <label class="form-label">Last Summarized On</label>
+                    <input type="date" class="form-control" id="last_summarized" 
+                           value="{{ project.last_summarized.strftime('%Y-%m-%d') if project.last_summarized }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Summarize to WBS Level</label>
+                    <input type="number" class="form-control" id="summarize_level" value="{{ project.summarize_level or 1 }}" min="1" max="10">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Character for separating code fields for the WBS tree</label>
+                    <input type="text" class="form-control" id="wbs_separator" value="." maxlength="1">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Fiscal year begins on the 1st day of</label>
+                    <input type="text" class="form-control" id="fiscal_year_start" value="{{ project.fiscal_year_start or '01-01' }}" placeholder="MM-DD">
+                </div>
+            </div>
+
+            <!-- Project Settings -->
+            <div class="col-md-6">
+                <h6 class="fw-bold mb-3">Project Settings</h6>
+                <div class="mb-3">
+                    <label class="form-label">Baseline for earned value calculations</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="baseline_type" id="project_baseline" value="project" checked>
+                        <label class="form-check-label">Project baseline</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="baseline_type" id="user_baseline" value="user">
+                        <label class="form-check-label">User's primary baseline</label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Define Critical activities</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="critical_definition" id="total_float" value="float" checked>
+                        <label class="form-check-label">Total Float less than or equal to:</label>
+                        <div class="mt-1">
+                            <input type="number" class="form-control" id="float_threshold" value="0" style="width: 100px;">
+                        </div>
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="critical_definition" id="longest_path" value="path">
+                        <label class="form-check-label">Longest path</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-primary" onclick="saveSettings()">
+        <i class="fas fa-save me-1"></i>Save Settings
+    </button>
+</div>
+
+<script>
+function saveSettings() {
+    const data = {
+        last_summarized: document.getElementById('last_summarized').value,
+        summarize_level: document.getElementById('summarize_level').value,
+        wbs_separator: document.getElementById('wbs_separator').value,
+        fiscal_year_start: document.getElementById('fiscal_year_start').value,
+        baseline_type: document.querySelector('input[name="baseline_type"]:checked').value,
+        critical_definition: document.querySelector('input[name="critical_definition"]:checked').value,
+        float_threshold: document.getElementById('float_threshold').value
+    };
+    
+    fetch(`/projects/api/{{ project.id }}/update-settings`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Settings updated successfully');
+        } else {
+            showError(data.error || 'Error updating settings');
+        }
+    });
+}
+</script>

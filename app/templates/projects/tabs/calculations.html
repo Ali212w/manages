@@ -1,0 +1,144 @@
+<div class="card">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-calculator text-primary me-2"></i>Calculation Settings</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Activities -->
+            <div class="col-md-6">
+                <h6 class="fw-bold mb-3">Activities</h6>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="recalculate_durations" checked>
+                        <label class="form-check-label">Recalculate durations after scheduling</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="calculate_floats" checked>
+                        <label class="form-check-label">Calculate floats</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="update_performance" checked>
+                        <label class="form-check-label">Update performance indicators (SPI, CPI)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="identify_critical" checked>
+                        <label class="form-check-label">Identify critical activities</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resource Assignments -->
+            <div class="col-md-6">
+                <h6 class="fw-bold mb-3">Resource Assignments</h6>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="level_resources" checked>
+                        <label class="form-check-label">Level resources</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="calculate_costs" checked>
+                        <label class="form-check-label">Calculate costs based on resource assignments</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="track_actuals" checked>
+                        <label class="form-check-label">Track actuals against planned</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Options -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6 class="fw-bold mb-3">Advanced Options</h6>
+                <div class="mb-3">
+                    <label class="form-label">Calculation Method</label>
+                    <select class="form-select" id="calculation_method">
+                        <option value="cpm">Critical Path Method (CPM)</option>
+                        <option value="pert">PERT (Program Evaluation Review Technique)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">When scheduling, calculate</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="schedule_calc" id="total_float_only" value="total_float">
+                        <label class="form-check-label">Total float only</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="schedule_calc" id="total_free_float" value="both" checked>
+                        <label class="form-check-label">Total and free float</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-primary" onclick="runSchedule()">
+        <i class="fas fa-play me-1"></i>Run Schedule
+    </button>
+    <button class="btn btn-outline-primary ms-2" onclick="saveCalculationSettings()">
+        <i class="fas fa-save me-1"></i>Save Settings
+    </button>
+</div>
+
+<script>
+function runSchedule() {
+    Swal.fire({
+        title: 'Running Schedule',
+        text: 'Please wait while the schedule is being calculated...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch(`/projects/api/{{ project.id }}/run-schedule`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.close();
+        if (data.success) {
+            showSuccess('Schedule completed successfully');
+        } else {
+            showError(data.error || 'Error running schedule');
+        }
+    });
+}
+
+function saveCalculationSettings() {
+    const data = {
+        recalculate_durations: document.getElementById('recalculate_durations').checked,
+        calculate_floats: document.getElementById('calculate_floats').checked,
+        update_performance: document.getElementById('update_performance').checked,
+        identify_critical: document.getElementById('identify_critical').checked,
+        level_resources: document.getElementById('level_resources').checked,
+        calculate_costs: document.getElementById('calculate_costs').checked,
+        track_actuals: document.getElementById('track_actuals').checked,
+        calculation_method: document.getElementById('calculation_method').value,
+        schedule_calc: document.querySelector('input[name="schedule_calc"]:checked').value
+    };
+    
+    fetch(`/projects/api/{{ project.id }}/update-calculation-settings`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Calculation settings saved');
+        } else {
+            showError(data.error || 'Error saving settings');
+        }
+    });
+}
+</script>

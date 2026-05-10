@@ -1,0 +1,355 @@
+<!-- create_department.html -->
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ app_name }} - إنشاء قسم جديد{% endblock %}
+
+{% block styles %}
+<style>
+    .department-form .card {
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+    
+    .department-form .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
+    
+    .department-form .form-control,
+    .department-form .form-select {
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        padding: 12px 15px;
+        transition: all 0.3s;
+    }
+    
+    .department-form .form-control:focus,
+    .department-form .form-select:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+    }
+    
+    .department-form .form-check-input:checked {
+        background-color: #3498db;
+        border-color: #3498db;
+    }
+    
+    .department-form .header-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 15px 15px 0 0;
+        margin-bottom: 30px;
+    }
+    
+    .department-form .header-section h2 {
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+    
+    .department-form .header-section .lead {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+    
+    .department-form .section-title {
+        color: #2c3e50;
+        font-weight: 700;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #3498db;
+        position: relative;
+    }
+    
+    .department-form .section-title:after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        right: 0;
+        width: 50px;
+        height: 2px;
+        background-color: #e74c3c;
+    }
+    
+    .department-form .info-card {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        border-right: 4px solid #3498db;
+        margin-bottom: 20px;
+    }
+    
+    .department-form .info-card .info-icon {
+        font-size: 2rem;
+        color: #3498db;
+        margin-bottom: 15px;
+    }
+    
+    .department-form .required-field:after {
+        content: " *";
+        color: #e74c3c;
+    }
+    
+    .department-form .btn-primary {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        border: none;
+        padding: 12px 30px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .department-form .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+    }
+    
+    .department-form .btn-secondary {
+        background: #95a5a6;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .department-form .btn-secondary:hover {
+        background: #7f8c8d;
+        transform: translateY(-2px);
+    }
+    
+    .department-form .department-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+    
+    .department-form .department-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container department-form">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="header-section">
+                    <div class="text-center">
+                        <div class="department-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <h2><i class="fas fa-plus-circle me-2"></i>إنشاء قسم جديد</h2>
+                        <p class="lead">أدخل بيانات القسم الجديد لإضافته إلى النظام</p>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('admin.create_department') }}" novalidate>
+                        <!-- المعلومات الأساسية -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h4 class="section-title">
+                                    <i class="fas fa-info-circle me-2"></i>المعلومات الأساسية
+                                </h4>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="dept_code" class="form-label required-field">
+                                    <i class="fas fa-hashtag me-1"></i>رمز القسم
+                                </label>
+                                <input type="text" class="form-control" id="dept_code" name="dept_code" 
+                                       placeholder="أدخل رمز القسم (مثال: HR001)" required>
+                                <div class="form-text">يجب أن يكون رمز القسم فريداً داخل المؤسسة</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label required-field">
+                                    <i class="fas fa-font me-1"></i>اسم القسم (الإنجليزية)
+                                </label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       placeholder="أدخل اسم القسم بالإنجليزية" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="name_ar" class="form-label">
+                                    <i class="fas fa-font me-1"></i>اسم القسم (العربية)
+                                </label>
+                                <input type="text" class="form-control" id="name_ar" name="name_ar" 
+                                       placeholder="أدخل اسم القسم بالعربية">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="budget" class="form-label">
+                                    <i class="fas fa-money-bill-wave me-1"></i>الميزانية السنوية
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">ر.س</span>
+                                    <input type="number" class="form-control" id="budget" name="budget" 
+                                           placeholder="0.00" step="0.01" min="0" value="0">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- معلومات إضافية -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h4 class="section-title">
+                                    <i class="fas fa-cogs me-2"></i>معلومات إضافية
+                                </h4>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="parent_id" class="form-label">
+                                    <i class="fas fa-sitemap me-1"></i>القسم الرئيسي
+                                </label>
+                                <select class="form-select" id="parent_id" name="parent_id">
+                                    <option value="">اختر القسم الرئيسي (اختياري)</option>
+                                    {% for dept in parent_departments %}
+                                    <option value="{{ dept.id }}">{{ dept.name }} ({{ dept.dept_code }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="manager_id" class="form-label">
+                                    <i class="fas fa-user-tie me-1"></i>مدير القسم
+                                </label>
+                                <select class="form-select" id="manager_id" name="manager_id">
+                                    <option value="">اختر مدير القسم (اختياري)</option>
+                                    {% for manager in potential_managers %}
+                                    <option value="{{ manager.id }}">
+                                        {{ manager.full_name }} - {{ manager.job_title }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label for="description" class="form-label">
+                                    <i class="fas fa-align-left me-1"></i>وصف القسم
+                                </label>
+                                <textarea class="form-control" id="description" name="description" 
+                                          rows="3" placeholder="أدخل وصفاً موجزاً للقسم"></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- الإعدادات -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h4 class="section-title">
+                                    <i class="fas fa-sliders-h me-2"></i>الإعدادات
+                                </h4>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                    <label class="form-check-label" for="is_active">
+                                        <i class="fas fa-power-off me-1"></i>تفعيل القسم
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- معلومات مساعدة -->
+                        <div class="info-card">
+                            <div class="row align-items-center">
+                                <div class="col-md-1 text-center">
+                                    <i class="fas fa-lightbulb info-icon"></i>
+                                </div>
+                                <div class="col-md-11">
+                                    <h5 class="mb-2">نصائح مهمة:</h5>
+                                    <ul class="mb-0">
+                                        <li>تأكد من أن رمز القسم غير مستخدم مسبقاً</li>
+                                        <li>يمكنك ترك القسم الرئيسي فارغاً إذا كان القسم مستقلاً</li>
+                                        <li>يمكن تعيين مدير للقسم لاحقاً إذا لم يكن متاحاً الآن</li>
+                                        <li>يمكن تفعيل/تعطيل القسم في أي وقت</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- أزرار التحكم -->
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('admin.departments') }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-right me-2"></i>رجوع
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>حفظ القسم
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // التحقق من صحة الحقول المطلوبة
+        $('#dept_code, #name').on('blur', function() {
+            if ($(this).val().trim() === '') {
+                $(this).addClass('is-invalid');
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+        
+        // تحسين تجربة المستخدم
+        $('form').on('submit', function(e) {
+            let isValid = true;
+            
+            // التحقق من الحقول المطلوبة
+            if ($('#dept_code').val().trim() === '') {
+                $('#dept_code').addClass('is-invalid');
+                isValid = false;
+            }
+            
+            if ($('#name').val().trim() === '') {
+                $('#name').addClass('is-invalid');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                showAlert('يرجى ملء جميع الحقول المطلوبة', 'danger');
+            }
+        });
+        
+        // عرض تنبيه
+        function showAlert(message, type) {
+            const alertDiv = $('<div>', {
+                'class': `alert alert-${type} alert-dismissible fade show`,
+                'role': 'alert',
+                'html': `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `
+            });
+            
+            $('.container-fluid').prepend(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.alert('close');
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,766 @@
+{% extends "supplier/base.html" %}
+
+{% block title %}طلبات التوريد{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Filters Bar */
+    .filters-bar {
+        background: white;
+        border-radius: 28px;
+        padding: 24px;
+        margin-bottom: 32px;
+        box-shadow: var(--shadow-md);
+        transition: all 0.3s;
+    }
+    
+    .filters-bar:hover {
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .filters-bar .form-label {
+        font-weight: 600;
+        font-size: 0.8rem;
+        margin-bottom: 8px;
+        color: var(--gray);
+    }
+    
+    .filters-bar .form-select,
+    .filters-bar .form-control {
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.1);
+        transition: all 0.3s;
+    }
+    
+    .filters-bar .form-select:focus,
+    .filters-bar .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    /* Request Cards */
+    .request-card {
+        background: white;
+        border-radius: 28px;
+        padding: 28px;
+        margin-bottom: 24px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,0.05);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .request-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 4px;
+        height: 100%;
+        transition: all 0.3s;
+    }
+    
+    .request-card.status-pending::after {
+        background: var(--warning);
+    }
+    
+    .request-card.status-started::after {
+        background: var(--primary);
+    }
+    
+    .request-card.status-completed::after {
+        background: var(--success);
+    }
+    
+    .request-card.status-cancelled::after {
+        background: var(--danger);
+    }
+    
+    .request-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .request-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    
+    .project-name {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--dark);
+        margin-bottom: 6px;
+    }
+    
+    .project-code {
+        font-size: 0.8rem;
+        color: var(--gray);
+    }
+    
+    .status-badge {
+        padding: 6px 16px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .status-badge.pending {
+        background: rgba(248, 150, 30, 0.1);
+        color: var(--warning);
+    }
+    
+    .status-badge.started {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+    }
+    
+    .status-badge.completed {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .status-badge.cancelled {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+    }
+    
+    .request-meta {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 20px;
+        font-size: 0.85rem;
+        color: var(--gray);
+        flex-wrap: wrap;
+    }
+    
+    .request-meta i {
+        color: var(--primary);
+        width: 20px;
+    }
+    
+    .resources-container {
+        background: linear-gradient(135deg, #f8fafc, #ffffff);
+        border-radius: 20px;
+        padding: 20px;
+        margin: 20px 0;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .resources-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 16px;
+    }
+    
+    .resource-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .resource-item:last-child {
+        border-bottom: none;
+    }
+    
+    .resource-name {
+        font-weight: 600;
+    }
+    
+    .resource-quantity {
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .resource-unit {
+        background: rgba(67, 97, 238, 0.1);
+        padding: 2px 8px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        margin-right: 8px;
+    }
+    
+    /* Timeline */
+    .timeline {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin: 20px 0;
+        padding: 16px;
+        background: linear-gradient(135deg, #f8fafc, #ffffff);
+        border-radius: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .timeline-item {
+        flex: 1;
+        text-align: center;
+        position: relative;
+        min-width: 80px;
+    }
+    
+    .timeline-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #e0e4e8;
+        margin: 0 auto 10px;
+        transition: all 0.3s;
+    }
+    
+    .timeline-dot.completed {
+        background: var(--success);
+        box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.2);
+    }
+    
+    .timeline-dot.active {
+        background: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+    }
+    
+    .timeline-label {
+        font-size: 0.7rem;
+        color: var(--gray);
+        font-weight: 500;
+    }
+    
+    .timeline-date {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin-top: 4px;
+    }
+    
+    /* Buttons */
+    .btn-action {
+        padding: 8px 20px;
+        border-radius: 14px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-start {
+        background: var(--gradient-success);
+        color: white;
+        border: none;
+    }
+    
+    .btn-start:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 201, 240, 0.4);
+        color: white;
+    }
+    
+    .btn-complete {
+        background: var(--gradient-primary);
+        color: white;
+        border: none;
+    }
+    
+    .btn-complete:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        color: white;
+    }
+    
+    .btn-delivery {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+    }
+    
+    .btn-delivery:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+    
+    .urgent-badge {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-right: 12px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 80px 40px;
+        background: white;
+        border-radius: 32px;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        background: linear-gradient(135deg, var(--gray), #adb5bd);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 20px;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    
+    @media (max-width: 768px) {
+        .filters-bar {
+            padding: 16px;
+        }
+        
+        .request-card {
+            padding: 20px;
+        }
+        
+        .request-meta {
+            gap: 12px;
+        }
+        
+        .timeline {
+            gap: 8px;
+        }
+        
+        .timeline-item {
+            min-width: 60px;
+        }
+        
+        .btn-action {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold mb-2">
+                <i class="fas fa-truck text-primary me-2"></i>
+                طلبات التوريد
+            </h2>
+            <p class="text-muted mb-0">عرض وإدارة جميع طلبات توريد الموارد للمشاريع</p>
+        </div>
+        <div>
+            <span class="badge bg-primary p-3 rounded-pill">
+                <i class="fas fa-clipboard-list me-2"></i>
+                إجمالي الطلبات: {{ requests|length }}
+            </span>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filters-bar">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">حالة الطلب</label>
+                <select class="form-select" id="statusFilter" onchange="filterRequests()">
+                    <option value="all">الكل</option>
+                    <option value="pending">معلق</option>
+                    <option value="started">قيد التنفيذ</option>
+                    <option value="completed">مكتمل</option>
+                    <option value="cancelled">ملغي</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">المشروع</label>
+                <select class="form-select" id="projectFilter" onchange="filterRequests()">
+                    <option value="all">كل المشاريع</option>
+                    {% set projects = requests|map(attribute='project_name')|unique %}
+                    {% for project in projects %}
+                    <option value="{{ project }}">{{ project }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">التاريخ</label>
+                <select class="form-select" id="dateFilter" onchange="filterRequests()">
+                    <option value="all">الكل</option>
+                    <option value="today">اليوم</option>
+                    <option value="week">هذا الأسبوع</option>
+                    <option value="month">هذا الشهر</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">بحث</label>
+                <input type="text" class="form-control" id="searchInput" placeholder="ابحث في الطلبات..." onkeyup="filterRequests()">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Requests List -->
+    <div id="requestsContainer">
+        {% if requests %}
+            {% for request in requests %}
+            <div class="request-card status-{{ request.status }}" 
+                 data-status="{{ request.status }}"
+                 data-project="{{ request.project_name }}"
+                 data-date="{{ request.required_date }}">
+                
+                <div class="request-header">
+                    <div>
+                        <div class="project-name">
+                            {{ request.project_name }}
+                            {% if request.required_date_obj and request.required_date_obj < now.date() and request.status in ['pending', 'started'] %}
+                            <span class="urgent-badge">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                متأخر {{ (now.date() - request.required_date_obj).days }} يوم
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="project-code">
+                            <i class="fas fa-code me-1"></i>
+                            {{ request.project_code }}
+                        </div>
+                    </div>
+                    <div>
+                        <span class="status-badge {{ request.status }}">
+                            <i class="fas fa-{% if request.status == 'pending' %}hourglass-half{% elif request.status == 'started' %}play{% elif request.status == 'completed' %}check-circle{% else %}times-circle{% endif %} me-1"></i>
+                            {{ request.status }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="request-meta">
+                    <span><i class="fas fa-map-marker-alt"></i> {{ request.site_location or 'موقع غير محدد' }}</span>
+                    <span><i class="fas fa-calendar-alt"></i> تاريخ الاستلام: {{ request.required_date }}</span>
+                    <span><i class="fas fa-clock"></i> تاريخ الطلب: {{ request.created_at }}</span>
+                </div>
+                
+                <div class="resources-container">
+                    <div class="resources-title">
+                        <i class="fas fa-boxes me-1"></i>
+                        الموارد المطلوبة ({{ request.resources|length }})
+                    </div>
+                    {% for resource in request.resources[:3] %}
+                    <div class="resource-item">
+                        <div>
+                            <span class="resource-name">{{ resource.name }}</span>
+                            <span class="resource-unit">{{ resource.unit }}</span>
+                        </div>
+                        <div class="resource-quantity">
+                            {{ resource.quantity }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if request.resources|length > 3 %}
+                    <div class="text-center mt-2">
+                        <small class="text-muted">+{{ request.resources|length - 3 }} مورد إضافي</small>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-dot {% if request.status != 'pending' %}completed{% endif %}"></div>
+                        <div class="timeline-label">طلب التوريد</div>
+                        <div class="timeline-date">{{ request.created_at[:10] if request.created_at }}</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot {% if request.status == 'started' %}active{% elif request.status == 'completed' %}completed{% endif %}"></div>
+                        <div class="timeline-label">بدء العملية</div>
+                        <div class="timeline-date">{{ request.started_at or '--' }}</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot {% if request.status == 'completed' %}completed{% endif %}"></div>
+                        <div class="timeline-label">إكمال العملية</div>
+                        <div class="timeline-date">{{ request.completed_at or '--' }}</div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end gap-2 mt-3 flex-wrap">
+                    <a href="{{ url_for('supplier.view_request', request_id=request.id) }}" 
+                       class="btn btn-outline-secondary btn-action">
+                        <i class="fas fa-eye me-1"></i> تفاصيل
+                    </a>
+                    
+                    <!-- ✅ استخدام request.items - أصبحت قائمة من القواميس -->
+
+                    <a href="{{ url_for('supplier.deliver_items', request_id=request.id) }}" class="btn btn-sm btn-success mt-1">
+                            <i class="fas fa-truck"></i> تسليم المواد
+                        </a>
+                    {% if request.status == 'pending' %}
+                    <button class="btn btn-start btn-action" onclick="startRequest({{ request.id }})">
+                        <i class="fas fa-play me-1"></i> بدء العملية
+                    </button>
+                    {% elif request.status == 'started' %}
+                    <button class="btn btn-complete btn-action" onclick="completeRequest({{ request.id }})">
+                        <i class="fas fa-check me-1"></i> إنهاء العملية
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-truck"></i>
+                <h5 class="mt-3 fw-bold">لا توجد طلبات توريد</h5>
+                <p class="text-muted mb-0">سيتم عرض طلبات توريد الموارد هنا عند إنشائها</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function filterRequests() {
+    const status = document.getElementById('statusFilter').value;
+    const project = document.getElementById('projectFilter').value;
+    const dateRange = document.getElementById('dateFilter').value;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    
+    const cards = document.querySelectorAll('.request-card');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    cards.forEach(card => {
+        let show = true;
+        
+        if (status !== 'all' && card.dataset.status !== status) show = false;
+        if (project !== 'all' && card.dataset.project !== project) show = false;
+        
+        if (dateRange !== 'all' && show) {
+            const cardDate = new Date(card.dataset.date);
+            if (dateRange === 'today') {
+                if (cardDate.toDateString() !== today.toDateString()) show = false;
+            } else if (dateRange === 'week') {
+                const weekAgo = new Date(today);
+                weekAgo.setDate(today.getDate() - 7);
+                if (cardDate < weekAgo) show = false;
+            } else if (dateRange === 'month') {
+                const monthAgo = new Date(today);
+                monthAgo.setMonth(today.getMonth() - 1);
+                if (cardDate < monthAgo) show = false;
+            }
+        }
+        
+        if (search && show) {
+            const text = card.textContent.toLowerCase();
+            if (!text.includes(search)) show = false;
+        }
+        
+        card.style.display = show ? 'block' : 'none';
+    });
+}
+
+function showDeliveryForm(requestId, items) {
+    // ✅ items الآن هي قائمة من القواميس
+    const remainingItems = items.filter(item => item.remaining_quantity > 0);
+    
+    if (remainingItems.length === 0) {
+        Swal.fire({
+            icon: 'info',
+            title: 'اكتمل التسليم',
+            text: 'تم استلام جميع المواد المطلوبة لهذا الطلب',
+            confirmButtonColor: '#4361ee'
+        });
+        return;
+    }
+    
+    // إنشاء محتوى النموذج
+    let html = '<div class="delivery-items">';
+    remainingItems.forEach(item => {
+        html += `
+            <div class="delivery-item mb-3 p-3 border rounded-3">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <strong>${escapeHtml(item.resource_name)}</strong>
+                        <input type="hidden" name="item_id[]" value="${item.id}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">الكمية</label>
+                        <input type="number" name="quantity[]" class="form-control" 
+                               placeholder="الكمية" step="0.01" max="${item.remaining_quantity}">
+                    </div>
+                    <div class="col-md-2">
+                        <span class="badge bg-light">${item.unit}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">المتبقي: ${item.remaining_quantity}</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    Swal.fire({
+        title: 'تسليم مواد',
+        html: html,
+        showCancelButton: true,
+        confirmButtonText: 'تسليم',
+        cancelButtonText: 'إلغاء',
+        width: '650px',
+        preConfirm: () => {
+            const quantities = document.querySelectorAll('input[name="quantity[]"]');
+            const deliveries = [];
+            
+            quantities.forEach((input, index) => {
+                const qty = parseFloat(input.value);
+                if (qty > 0) {
+                    deliveries.push({
+                        item_id: document.querySelectorAll('input[name="item_id[]"]')[index].value,
+                        quantity: qty
+                    });
+                }
+            });
+            
+            if (deliveries.length === 0) {
+                Swal.showValidationMessage('الرجاء إدخال كمية واحدة على الأقل');
+                return false;
+            }
+            
+            return deliveries;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            sendDelivery(requestId, result.value);
+        }
+    });
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return text.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+function sendDelivery(requestId, deliveries) {
+    Swal.fire({
+        title: 'جاري التسليم...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch(`/supplier/request/${requestId}/delivery`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ deliveries: deliveries })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم التسليم',
+                text: 'تم إرسال طلب التسليم بنجاح، في انتظار تأكيد المدير',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => location.reload());
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error,
+                confirmButtonColor: '#f94144'
+            });
+        }
+    });
+}
+
+function startRequest(requestId) {
+    Swal.fire({
+        title: 'بدء عملية التوريد',
+        text: 'هل أنت متأكد من بدء عملية جلب المواد للمشروع؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، بدء',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/supplier/request/${requestId}/start`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم البدء',
+                        text: 'تم بدء عملية التوريد بنجاح',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+
+function completeRequest(requestId) {
+    Swal.fire({
+        title: 'إكمال عملية التوريد',
+        text: 'هل أنت متأكد من إكمال عملية جلب المواد للمشروع؟',
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، إكمال',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/supplier/request/${requestId}/complete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الإكمال',
+                        text: 'تم إكمال عملية التوريد بنجاح',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

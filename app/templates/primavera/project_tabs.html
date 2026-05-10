@@ -1,0 +1,488 @@
+<!-- templates/primavera/project_detail.html -->
+{% extends "company/base.html" %}
+
+{% block title %}{{ project.name }} - تفاصيل المشروع{% endblock %}
+
+{% block page_title %}{{ project.name }}{% endblock %}
+{% block page_subtitle %}كود المشروع: {{ project.project_code }} | EPS: {{ project.eps.name if project.eps }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* تنسيق شريط التبويبات مثل Primavera */
+    .primavera-tabs {
+        background: white;
+        border-bottom: 2px solid #eef2f7;
+        margin-top: 1rem;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        padding: 0 1rem;
+    }
+    
+    .primavera-tabs .nav-tabs {
+        border-bottom: none;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: thin;
+    }
+    
+    .primavera-tabs .nav-tabs::-webkit-scrollbar {
+        height: 3px;
+    }
+    
+    .primavera-tabs .nav-tabs::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 3px;
+    }
+    
+    .primavera-tabs .nav-link {
+        border: none;
+        color: #64748b;
+        font-weight: 600;
+        padding: 1rem 1.25rem;
+        margin: 0 0.1rem;
+        border-radius: 8px 8px 0 0;
+        transition: all 0.2s;
+        white-space: nowrap;
+        font-size: 0.9rem;
+    }
+    
+    .primavera-tabs .nav-link:hover {
+        color: #2563eb;
+        background: #f8fafc;
+    }
+    
+    .primavera-tabs .nav-link.active {
+        color: #2563eb;
+        background: white;
+        border-bottom: 3px solid #2563eb;
+    }
+    
+    .primavera-tabs .nav-link i {
+        margin-left: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    /* تنسيق محتوى التبويبات */
+    .tab-content-container {
+        background: white;
+        border-radius: 0 0 12px 12px;
+        padding: 2rem;
+        min-height: 600px;
+    }
+    
+    /* تنسيق الحقول */
+    .field-group {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-right: 4px solid #2563eb;
+    }
+    
+    .field-group-title {
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .field-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .field-col {
+        flex: 1 1 calc(33.333% - 1rem);
+        min-width: 250px;
+    }
+    
+    .field-label {
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 0.3rem;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .field-value {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        color: #1e293b;
+        font-weight: 500;
+    }
+    
+    .field-input {
+        width: 100%;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: all 0.2s;
+    }
+    
+    .field-input:focus {
+        border-color: #2563eb;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    
+    /* تنسيق الجداول */
+    .primavera-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    
+    .primavera-table th {
+        background: #f1f5f9;
+        color: #475569;
+        font-weight: 600;
+        padding: 0.75rem 1rem;
+        text-align: right;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .primavera-table td {
+        padding: 0.75rem 1rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .primavera-table tbody tr:hover {
+        background: #f8fafc;
+    }
+    
+    /* تنسيق الأزرار */
+    .btn-primavera {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    
+    .btn-primavera:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    }
+    
+    .btn-outline-primavera {
+        background: white;
+        color: #2563eb;
+        border: 2px solid #2563eb;
+        padding: 0.6rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    
+    .btn-outline-primavera:hover {
+        background: #2563eb;
+        color: white;
+    }
+    
+    /* تنسيق شريط الأدوات */
+    .toolbar {
+        background: white;
+        border-bottom: 2px solid #eef2f7;
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .toolbar-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    /* تنسيق حالة المشروع */
+    .status-badge {
+        padding: 0.25rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    
+    .status-planned { background: #f1f5f9; color: #475569; }
+    .status-active { background: #dcfce7; color: #166534; }
+    .status-inactive { background: #fee2e2; color: #991b1b; }
+    .status-what-if { background: #fff3cd; color: #856404; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- شريط الأدوات العلوي -->
+<div class="toolbar">
+    <div class="d-flex align-items-center gap-3">
+        <h5 class="mb-0">{{ project.name }}</h5>
+        <span class="status-badge status-{{ project.status|lower }}">{{ project.status }}</span>
+    </div>
+    <div class="toolbar-actions">
+        <button class="btn-outline-primavera" onclick="saveProject()">
+            <i class="fas fa-save me-2"></i>حفظ
+        </button>
+        <button class="btn-outline-primavera" onclick="closeProject()">
+            <i class="fas fa-times me-2"></i>إغلاق
+        </button>
+        <button class="btn-primavera" onclick="addNewItem()">
+            <i class="fas fa-plus me-2"></i>جديد
+        </button>
+    </div>
+</div>
+
+<!-- شريط التبويبات مثل Primavera -->
+<div class="primavera-tabs">
+    <ul class="nav nav-tabs" id="projectTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general">
+                <i class="fas fa-info-circle"></i> General
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="notebook-tab" data-bs-toggle="tab" data-bs-target="#notebook">
+                <i class="fas fa-book"></i> Notebook
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="budget-log-tab" data-bs-toggle="tab" data-bs-target="#budget-log">
+                <i class="fas fa-history"></i> Budget Log
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="spending-plan-tab" data-bs-toggle="tab" data-bs-target="#spending-plan">
+                <i class="fas fa-chart-line"></i> Spending Plan
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="budget-summary-tab" data-bs-toggle="tab" data-bs-target="#budget-summary">
+                <i class="fas fa-calculator"></i> Budget Summary
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="dates-tab" data-bs-toggle="tab" data-bs-target="#dates">
+                <i class="fas fa-calendar-alt"></i> Dates
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="funding-tab" data-bs-toggle="tab" data-bs-target="#funding">
+                <i class="fas fa-hand-holding-usd"></i> Funding
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="codes-tab" data-bs-toggle="tab" data-bs-target="#codes">
+                <i class="fas fa-tags"></i> Codes
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="defaults-tab" data-bs-toggle="tab" data-bs-target="#defaults">
+                <i class="fas fa-sliders-h"></i> Defaults
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="resources-tab" data-bs-toggle="tab" data-bs-target="#resources">
+                <i class="fas fa-tools"></i> Resources
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="calculations-tab" data-bs-toggle="tab" data-bs-target="#calculations">
+                <i class="fas fa-calculator"></i> Calculations
+            </button>
+        </li>
+    </ul>
+</div>
+
+<!-- محتوى التبويبات -->
+<div class="tab-content-container">
+    <div class="tab-content">
+        <!-- General Tab -->
+        <div class="tab-pane fade show active" id="general">
+            {% include 'primavera/tabs/general.html' %}
+        </div>
+        
+        <!-- Notebook Tab -->
+        <div class="tab-pane fade" id="notebook">
+            {% include 'primavera/tabs/notebook.html' %}
+        </div>
+        
+        <!-- Budget Log Tab -->
+        <div class="tab-pane fade" id="budget-log">
+            {% include 'primavera/tabs/budget_log.html' %}
+        </div>
+        
+        <!-- Spending Plan Tab -->
+        <div class="tab-pane fade" id="spending-plan">
+            {% include 'primavera/tabs/spending_plan.html' %}
+        </div>
+        
+        <!-- Budget Summary Tab -->
+        <div class="tab-pane fade" id="budget-summary">
+            {% include 'primavera/tabs/budget_summary.html' %}
+        </div>
+        
+        <!-- Dates Tab -->
+        <div class="tab-pane fade" id="dates">
+            {% include 'primavera/tabs/dates.html' %}
+        </div>
+        
+        <!-- Funding Tab -->
+        <div class="tab-pane fade" id="funding">
+            {% include 'primavera/tabs/funding.html' %}
+        </div>
+        
+        <!-- Codes Tab -->
+        <div class="tab-pane fade" id="codes">
+            {% include 'primavera/tabs/codes.html' %}
+        </div>
+        
+        <!-- Defaults Tab -->
+        <div class="tab-pane fade" id="defaults">
+            {% include 'primavera/tabs/defaults.html' %}
+        </div>
+        
+        <!-- Resources Tab -->
+        <div class="tab-pane fade" id="resources">
+            {% include 'primavera/tabs/resources.html' %}
+        </div>
+        
+        <!-- Settings Tab -->
+        <div class="tab-pane fade" id="settings">
+            {% include 'primavera/tabs/settings.html' %}
+        </div>
+        
+        <!-- Calculations Tab -->
+        <div class="tab-pane fade" id="calculations">
+            {% include 'primavera/tabs/calculations.html' %}
+        </div>
+    </div>
+</div>
+
+<script>
+function saveProject() {
+    // جمع البيانات من جميع التبويبات
+    const projectData = {
+        general: collectGeneralData(),
+        notebook: collectNotebookData(),
+        dates: collectDatesData(),
+        codes: collectCodesData(),
+        resources: collectResourcesData(),
+        settings: collectSettingsData()
+    };
+    
+    fetch(`/primavera/api/project/{{ project.id }}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(projectData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire('تم', 'تم حفظ التغييرات بنجاح', 'success');
+        }
+    });
+}
+
+function collectGeneralData() {
+    return {
+        eps_id: document.getElementById('epsSelect')?.value,
+        status: document.getElementById('projectStatus')?.value,
+        responsible_manager: document.getElementById('responsibleManager')?.value,
+        priority: document.getElementById('projectPriority')?.value,
+        website: document.getElementById('projectWebsite')?.value,
+        calendar_id: document.getElementById('financialCalendar')?.value
+    };
+}
+
+function collectNotebookData() {
+    const entries = [];
+    document.querySelectorAll('.notebook-entry').forEach(entry => {
+        entries.push({
+            topic: entry.dataset.topic,
+            content: entry.querySelector('.entry-content')?.value
+        });
+    });
+    return { entries: entries };
+}
+
+function collectDatesData() {
+    return {
+        planned_start: document.getElementById('plannedStart')?.value,
+        must_finish_by: document.getElementById('mustFinishBy')?.value,
+        data_date: document.getElementById('dataDate')?.value,
+        anticipated_start: document.getElementById('anticipatedStart')?.value,
+        anticipated_finish: document.getElementById('anticipatedFinish')?.value,
+        actual_start: document.getElementById('actualStart')?.value,
+        actual_finish: document.getElementById('actualFinish')?.value
+    };
+}
+
+function collectCodesData() {
+    const codes = {};
+    document.querySelectorAll('.project-code').forEach(code => {
+        codes[code.dataset.type] = code.value;
+    });
+    return codes;
+}
+
+function collectResourcesData() {
+    return {
+        rate_type: document.getElementById('rateType')?.value,
+        drive_activity_dates: document.getElementById('driveDates')?.checked
+    };
+}
+
+function collectSettingsData() {
+    return {
+        last_summarized: document.getElementById('lastSummarized')?.value,
+        summarize_level: document.getElementById('summarizeLevel')?.value,
+        fiscal_year_start: document.getElementById('fiscalYearStart')?.value,
+        baseline_ev: document.getElementById('baselineEV')?.value,
+        critical_definition: document.getElementById('criticalDefinition')?.value
+    };
+}
+
+function closeProject() {
+    window.close();
+    // أو الرجوع للصفحة السابقة
+    history.back();
+}
+
+function addNewItem() {
+    // تحديد التبويب النشط وإضافة عنصر جديد حسب نوعه
+    const activeTab = document.querySelector('.tab-pane.active').id;
+    switch(activeTab) {
+        case 'notebook':
+            showAddNotebookModal();
+            break;
+        case 'budget-log':
+            showAddBudgetLogModal();
+            break;
+        case 'funding':
+            showAddFundingModal();
+            break;
+        case 'resources':
+            showAddResourceModal();
+            break;
+    }
+}
+</script>
+{% endblock %}

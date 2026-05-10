@@ -1,0 +1,105 @@
+# config/ai_config.yml - تكوين txtai المتكامل
+
+# إعدادات التضمين (Embeddings)
+embeddings:
+  path: sentence-transformers/all-MiniLM-L6-v2
+  content: true
+  functions:
+    - name: document_parser
+      category: text
+      model: microsoft/table-transformer-structure-recognition
+    
+    - name: arabic_processor
+      category: sequence
+      model: aubmindlab/bert-base-arabertv02
+      
+    - name: command_understanding
+      category: llm
+      model: mistralai/Mixtral-8x7B-Instruct-v0.1
+      quantize: true
+
+# إعدادات سير العمل
+workflow:
+  # سير عمل معالجة الأوامر
+  - name: process_command
+    tasks:
+      - task: document_parser
+        action: extract
+        params:
+          extract_text: true
+          extract_tables: true
+          
+      - task: command_understanding
+        action: analyze
+        params:
+          language: arabic
+          intent_detection: true
+          entity_extraction: true
+          
+      - task: embeddings
+        action: index
+        params:
+          create_vectors: true
+
+  # سير عمل التقارير
+  - name: generate_report
+    tasks:
+      - task: embeddings
+        action: search
+        params:
+          limit: 100
+          
+      - task: command_understanding
+        action: summarize
+        params:
+          max_length: 500
+          
+      - task: embeddings
+        action: cluster
+        params:
+          groups: 5
+
+# إعدادات الوكلاء (Agents)
+agents:
+  - name: project_manager
+    description: "وكيل متخصص في إدارة المشاريع"
+    skills:
+      - create_project
+      - update_project
+      - delete_project
+      - generate_project_report
+      
+  - name: resource_manager
+    description: "وكيل متخصص في إدارة الموارد"
+    skills:
+      - create_resource
+      - assign_resource
+      - track_resource_usage
+      
+  - name: task_manager
+    description: "وكيل متخصص في إدارة المهام"
+    skills:
+      - create_task
+      - assign_task
+      - update_task_progress
+      
+  - name: document_analyzer
+    description: "وكيل متخصص في تحليل المستندات"
+    skills:
+      - extract_text
+      - extract_tables
+      - classify_document
+      - detect_entities
+
+# إعدادات الذاكرة (Memory)
+memory:
+  type: vector
+  path: ../data/embeddings
+  max_size: 1000000
+  ttl: 2592000  # 30 يوم
+  
+# إعدادات التخزين المؤقت (Cache)
+cache:
+  enabled: true
+  type: redis
+  ttl: 3600  # ساعة واحدة

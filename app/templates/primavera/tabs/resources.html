@@ -1,0 +1,205 @@
+<!-- Resources Tab - الموارد المخصصة للمشروع -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h6 class="field-group-title mb-0">
+        <i class="fas fa-tools text-primary"></i>
+        Project Resources
+    </h6>
+    <button class="btn btn-sm btn-outline-primary" onclick="addResource()">
+        <i class="fas fa-plus me-1"></i> Add Resource
+    </button>
+</div>
+
+<div class="table-responsive">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Resource ID</th>
+                <th>Resource Name</th>
+                <th>Type</th>
+                <th>Allocated</th>
+                <th>Planned Qty</th>
+                <th>Actual Qty</th>
+                <th>Unit</th>
+                <th>Cost/Unit</th>
+                <th>Total Cost</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="resourcesTableBody">
+            {% for resource in project_resources %}
+            <tr class="resource-row" data-resource-id="{{ resource.id }}">
+                <td>{{ resource.resource_id }}</td>
+                <td>{{ resource.name }}</td>
+                <td>
+                    <span class="badge bg-{{ 'primary' if resource.type == 'labor' else 'success' if resource.type == 'material' else 'warning' }}">
+                        {{ resource.type }}
+                    </span>
+                </td>
+                <td>
+                    <input type="checkbox" class="resource-allocated" {% if resource.allocated %}checked{% endif %}>
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm resource-quantity" 
+                           value="{{ resource.planned_quantity }}" style="width: 100px;" step="0.01">
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" 
+                           value="{{ resource.actual_quantity }}" style="width: 100px;" readonly>
+                </td>
+                <td>{{ resource.unit }}</td>
+                <td>{{ resource.cost_per_unit }}</td>
+                <td>{{ (resource.planned_quantity * resource.cost_per_unit)|round(2) }}</td>
+                <td>
+                    <button class="btn btn-sm btn-link text-danger" onclick="removeResource(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="10" class="text-center py-4">
+                    <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No resources assigned to this project</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="field-group mt-4">
+    <h6 class="field-group-title">
+        <i class="fas fa-chart-pie text-primary"></i>
+        Resource Summary
+    </h6>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card bg-light border-0">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">{{ resource_stats.labor_count or 0 }}</h3>
+                    <p class="text-muted mb-0">Labor Resources</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light border-0">
+                <div class="card-body text-center">
+                    <h3 class="text-success">{{ resource_stats.material_count or 0 }}</h3>
+                    <p class="text-muted mb-0">Material Resources</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light border-0">
+                <div class="card-body text-center">
+                    <h3 class="text-warning">{{ resource_stats.equipment_count or 0 }}</h3>
+                    <p class="text-muted mb-0">Equipment Resources</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <div class="field-label">Total Planned Cost</div>
+            <div class="field-value currency-value">{{ resource_stats.total_planned_cost|round(2) }}</div>
+        </div>
+        <div class="col-md-6">
+            <div class="field-label">Total Actual Cost</div>
+            <div class="field-value currency-value">{{ resource_stats.total_actual_cost|round(2) }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة مورد -->
+<div class="modal fade" id="addResourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Resource to Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Resource</label>
+                    <select class="form-select" id="resourceSelect">
+                        <option value="">-- Select Resource --</option>
+                        {% for resource in all_resources %}
+                        <option value="{{ resource.id }}" 
+                                data-type="{{ resource.type }}"
+                                data-unit="{{ resource.unit }}"
+                                data-cost="{{ resource.cost_per_unit }}">
+                            {{ resource.name }} ({{ resource.resource_id }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Planned Quantity</label>
+                    <input type="number" class="form-control" id="resourceQuantity" value="1" min="0" step="0.01">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Unit</label>
+                    <input type="text" class="form-control" id="resourceUnit" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Cost per Unit</label>
+                    <input type="text" class="form-control" id="resourceCost" readonly>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmAddResource()">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addResource() {
+    new bootstrap.Modal(document.getElementById('addResourceModal')).show();
+}
+
+document.getElementById('resourceSelect').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    document.getElementById('resourceUnit').value = selected.dataset.unit || '';
+    document.getElementById('resourceCost').value = selected.dataset.cost || '0';
+});
+
+function confirmAddResource() {
+    const resourceId = document.getElementById('resourceSelect').value;
+    const quantity = document.getElementById('resourceQuantity').value;
+    
+    if (!resourceId) {
+        alert('Please select a resource');
+        return;
+    }
+    
+    // إضافة الصف إلى الجدول
+    const selected = document.getElementById('resourceSelect').options[document.getElementById('resourceSelect').selectedIndex];
+    const tbody = document.getElementById('resourcesTableBody');
+    const newRow = document.createElement('tr');
+    newRow.className = 'resource-row';
+    newRow.dataset.resourceId = resourceId;
+    newRow.innerHTML = `
+        <td>${selected.text.split(' ')[0]}</td>
+        <td>${selected.text}</td>
+        <td><span class="badge bg-primary">${selected.dataset.type}</span></td>
+        <td><input type="checkbox" class="resource-allocated" checked></td>
+        <td><input type="number" class="form-control form-control-sm resource-quantity" value="${quantity}" style="width: 100px;"></td>
+        <td><input type="number" class="form-control form-control-sm" value="0" style="width: 100px;" readonly></td>
+        <td>${selected.dataset.unit}</td>
+        <td>${selected.dataset.cost}</td>
+        <td>${(quantity * selected.dataset.cost).toFixed(2)}</td>
+        <td><button class="btn btn-sm btn-link text-danger" onclick="removeResource(this)"><i class="fas fa-trash"></i></button></td>
+    `;
+    tbody.appendChild(newRow);
+    
+    bootstrap.Modal.getInstance(document.getElementById('addResourceModal')).hide();
+}
+
+function removeResource(btn) {
+    btn.closest('tr').remove();
+}
+</script>

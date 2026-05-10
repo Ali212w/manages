@@ -1,0 +1,320 @@
+{% extends "company/base.html" %}
+
+{% block title %}تأكيد تسليم المعدات{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delivery-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 25px;
+        border: none;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    .delivery-header {
+        background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+        padding: 25px 30px;
+        color: white;
+    }
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    .equipment-item-card {
+        background: white;
+        border-radius: 14px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-left: 4px solid #f7971e;
+        transition: all 0.3s ease;
+    }
+    .equipment-item-card:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .action-buttons {
+        position: sticky;
+        bottom: 20px;
+        background: white;
+        padding: 20px;
+        border-radius: 60px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        margin-top: 30px;
+    }
+    .btn-confirm {
+        background: linear-gradient(135deg, #00b894 0%, #55efc4 100%);
+        border: none;
+        padding: 12px 35px;
+        font-weight: 600;
+        border-radius: 50px;
+    }
+    .btn-reject {
+        background: linear-gradient(135deg, #d63031 0%, #fab1a0 100%);
+        border: none;
+        padding: 12px 35px;
+        font-weight: 600;
+        border-radius: 50px;
+    }
+    .photo-gallery {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+    .photo-thumb {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    .photo-thumb:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="delivery-card">
+                <div class="delivery-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1"><i class="fas fa-check-circle me-2"></i> تأكيد تسليم المعدات</h2>
+                            <p class="mb-0 text-white-50">الطلب رقم: #{{ equipment_request.id }} | تسليم رقم: {{ delivery.delivery_number }}</p>
+                        </div>
+                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
+                            <i class="fas fa-tools fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4">
+                    <!-- معلومات التسليم -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                                        <i class="fas fa-truck text-primary"></i>
+                                    </div>
+                                    <h5 class="mb-0">معلومات التسليم</h5>
+                                </div>
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td class="text-muted">المورد:</td>
+                                        <td class="fw-bold">{{ delivery.supplier.full_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">تاريخ التسليم:</td>
+                                        <td class="fw-bold">{{ delivery.delivery_date.strftime('%Y-%m-%d %H:%M') if delivery.delivery_date else 'غير محدد' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">موقع التسليم:</td>
+                                        <td class="fw-bold">{{ delivery.delivery_location or 'غير محدد' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">حالة المعدات:</td>
+                                        <td>
+                                            <span class="badge bg-info">{{ delivery.equipment_condition|default('جيدة') }}</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="rounded-circle bg-success bg-opacity-10 p-2 me-3">
+                                        <i class="fas fa-chart-line text-success"></i>
+                                    </div>
+                                    <h5 class="mb-0">ملخص التسليم</h5>
+                                </div>
+                                <div class="text-center">
+                                    <h3 class="text-primary mb-0">{{ delivery.delivered_items|sum(attribute='quantity')|round(1) }}</h3>
+                                    <small class="text-muted">إجمالي الوحدات المسلمة</small>
+                                    <div class="mt-3">
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-success" style="width: {{ equipment_request.completion_percentage }}%"></div>
+                                        </div>
+                                        <small class="text-muted mt-1 d-block">{{ "%.1f"|format(equipment_request.completion_percentage) }}% من الطلب مكتمل</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- قائمة المعدات المسلمة -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rounded-circle bg-warning bg-opacity-10 p-2 me-3">
+                                <i class="fas fa-microchip text-warning"></i>
+                            </div>
+                            <h5 class="mb-0">المعدات المسلمة</h5>
+                        </div>
+                        
+                        {% for item in delivery.delivered_items %}
+                        <div class="equipment-item-card">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1 fw-bold">{{ item.name }}</h6>
+                                    <div class="d-flex gap-3 mt-2">
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-cubes me-1"></i> الكمية: {{ item.quantity }} {{ item.unit }}
+                                        </span>
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-tag me-1"></i> السعر: {{ item.unit_price }} {{ item.currency }}
+                                        </span>
+                                    </div>
+                                    {% if item.serial_numbers %}
+                                    <div class="mt-2">
+                                        <small class="text-muted">الأرقام المسلسلة:</small>
+                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                            {% for sn in item.serial_numbers %}
+                                            <span class="badge bg-secondary">{{ sn }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if item.notes %}
+                                    <p class="small text-muted mt-2 mb-0"><i class="fas fa-sticky-note me-1"></i> {{ item.notes }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="text-end">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input accept-item" type="checkbox" data-item-id="{{ item.item_id }}" data-quantity="{{ item.quantity }}">
+                                        <label class="form-check-label text-success">قبول</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- معرض الصور -->
+                    {% if delivery.photos %}
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rounded-circle bg-danger bg-opacity-10 p-2 me-3">
+                                <i class="fas fa-camera text-danger"></i>
+                            </div>
+                            <h5 class="mb-0">صور التسليم</h5>
+                        </div>
+                        <div class="photo-gallery">
+                            {% for photo in delivery.photos %}
+                            <img src="{{ photo }}" class="photo-thumb" onclick="openModal('{{ photo }}')">
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- ملاحظات التسليم -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-sticky-note me-2"></i> ملاحظات التأكيد
+                        </label>
+                        <textarea id="confirmation_notes" class="form-control" rows="3" placeholder="أضف ملاحظات حول جودة المعدات أو أي تفاصيل أخرى..."></textarea>
+                    </div>
+                    
+                    <!-- حالة المعدات -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-microchip me-2"></i> حالة المعدات
+                        </label>
+                        <select id="equipment_condition" class="form-select">
+                            <option value="new">جديد</option>
+                            <option value="good">جيد</option>
+                            <option value="used">مستعمل</option>
+                            <option value="needs_maintenance">بحاجة صيانة</option>
+                        </select>
+                    </div>
+                    
+                    <!-- أزرار الإجراء -->
+                    <div class="action-buttons d-flex justify-content-center gap-3">
+                        <button class="btn btn-reject" onclick="confirmDelivery('reject')">
+                            <i class="fas fa-times-circle me-2"></i> رفض التسليم
+                        </button>
+                        <button class="btn btn-confirm" onclick="confirmDelivery('confirm')">
+                            <i class="fas fa-check-circle me-2"></i> تأكيد الاستلام
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal لعرض الصور -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">صورة التسليم</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" style="max-height: 70vh;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentAction = null;
+    
+    function openModal(imageUrl) {
+        document.getElementById('modalImage').src = imageUrl;
+        new bootstrap.Modal(document.getElementById('imageModal')).show();
+    }
+    
+    function confirmDelivery(action) {
+        currentAction = action;
+        
+        let title, message;
+        if (action === 'confirm') {
+            title = 'تأكيد الاستلام';
+            message = 'هل أنت متأكد من تأكيد استلام هذه المعدات؟ سيتم تحديث المخزون وإعلام المورد.';
+        } else {
+            title = 'رفض التسليم';
+            message = 'هل أنت متأكد من رفض هذا التسليم؟ الرجاء كتابة سبب الرفض في الملاحظات.';
+        }
+        
+        if (confirm(message)) {
+            const notes = document.getElementById('confirmation_notes').value;
+            const equipmentCondition = document.getElementById('equipment_condition').value;
+            
+            fetch(`{{ url_for('company.confirm_equipment_delivery', delivery_id=delivery.id) }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    action: action,
+                    notes: notes,
+                    equipment_condition: equipmentCondition
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.href = "{{ url_for('projects.project_equipment_requests', project_id=project.id) }}";
+                } else {
+                    alert('خطأ: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('حدث خطأ في الاتصال');
+            });
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,486 @@
+{# templates/platform/admins/edit.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('admins.edit') }}: {{ admin.full_name }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="page-title">{{ _('admins.edit') }}</h1>
+            <p class="text-muted mb-0">
+                <i class="fas fa-user-shield me-1"></i> 
+                {{ _('admins.editing_admin') }}: <strong>{{ admin.full_name }}</strong>
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('platform.admins') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-{{ 'right' if get_direction() == 'rtl' else 'left' }} me-2"></i>
+                {{ _('common.back') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Form -->
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4">
+                    <h5 class="card-title">
+                        <i class="fas fa-user-edit text-primary me-2"></i>
+                        {{ _('admins.edit_information') }}
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" id="editAdminForm">
+                        <!-- Two Column Layout -->
+                        <div class="row g-4">
+                            <!-- Left Column -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('admins.full_name') }} <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-user"></i>
+                                        </span>
+                                        <input type="text" name="full_name" class="form-control" value="{{ admin.full_name }}" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('admins.full_name_ar') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-language"></i>
+                                        </span>
+                                        <input type="text" name="full_name_ar" class="form-control" value="{{ admin.full_name_ar or '' }}">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('admins.email') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-envelope"></i>
+                                        </span>
+                                        <input type="email" class="form-control bg-light" value="{{ admin.email }}" disabled>
+                                    </div>
+                                    <div class="form-text text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        {{ _('admins.email_cannot_change') }}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('admins.username') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-at"></i>
+                                        </span>
+                                        <input type="text" class="form-control bg-light" value="{{ admin.username }}" disabled>
+                                    </div>
+                                    <div class="form-text text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        {{ _('admins.username_cannot_change') }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('admins.phone') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-phone"></i>
+                                        </span>
+                                        <input type="tel" name="phone" class="form-control" value="{{ admin.phone or '' }}">
+                                    </div>
+                                </div>
+                                
+                                {% if g.is_super_admin and admin.id != current_user.id %}
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('admins.role') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-tag"></i>
+                                        </span>
+                                        <select name="role" class="form-select">
+                                            <option value="admin" {% if admin.role == 'admin' %}selected{% endif %}>
+                                                {{ _('admins.role_admin') }}
+                                            </option>
+                                            <option value="support" {% if admin.role == 'support' %}selected{% endif %}>
+                                                {{ _('admins.role_support') }}
+                                            </option>
+                                            <option value="finance" {% if admin.role == 'finance' %}selected{% endif %}>
+                                                {{ _('admins.role_finance') }}
+                                            </option>
+                                            {% if g.is_super_admin %}
+                                            <option value="super_admin" {% if admin.role == 'super_admin' %}selected{% endif %}>
+                                                {{ _('admins.role_super_admin') }}
+                                            </option>
+                                            {% endif %}
+                                        </select>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('admins.role') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-tag"></i>
+                                        </span>
+                                        <input type="text" class="form-control bg-light" value="
+                                            {% if admin.role == 'super_admin' %}{{ _('admins.role_super_admin') }}
+                                            {% elif admin.role == 'admin' %}{{ _('admins.role_admin') }}
+                                            {% elif admin.role == 'support' %}{{ _('admins.role_support') }}
+                                            {% elif admin.role == 'finance' %}{{ _('admins.role_finance') }}
+                                            {% else %}{{ admin.role }}{% endif %}
+                                        " disabled>
+                                    </div>
+                                    <div class="form-text text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        {{ _('admins.role_cannot_change') }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('admins.status') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-circle"></i>
+                                        </span>
+                                        <select name="is_active" class="form-select">
+                                            <option value="1" {% if admin.is_active %}selected{% endif %}>
+                                                <i class="fas fa-check-circle text-success"></i> {{ _('status.active') }}
+                                            </option>
+                                            <option value="0" {% if not admin.is_active %}selected{% endif %}>
+                                                <i class="fas fa-times-circle text-danger"></i> {{ _('status.inactive') }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Password Change Section -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-key text-warning me-2"></i>
+                            {{ _('admins.change_password') }}
+                        </h5>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            {{ _('admins.password_hint') }}
+                        </div>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('admins.new_password') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <input type="password" name="new_password" class="form-control" id="newPassword" autocomplete="new-password">
+                                    <button type="button" class="btn btn-outline-secondary toggle-password" data-target="#newPassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('admins.confirm_password') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <input type="password" name="confirm_password" class="form-control" id="confirmPassword" autocomplete="new-password">
+                                    <button type="button" class="btn btn-outline-secondary toggle-password" data-target="#confirmPassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div id="passwordStrength" class="mt-4"></div>
+                            </div>
+                        </div>
+
+                        <!-- Password Strength Meter -->
+                        <div class="progress mt-3" style="height: 5px; display: none;" id="passwordProgress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%;"></div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Admin Stats Section -->
+                        <h5 class="mb-3">
+                            <i class="fas fa-chart-simple text-info me-2"></i>
+                            {{ _('admins.activity_stats') }}
+                        </h5>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="bg-light rounded-3 p-3 text-center">
+                                    <div class="display-6 fw-bold text-primary">{{ admin.login_count or 0 }}</div>
+                                    <div class="text-muted">{{ _('admins.login_count') }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="bg-light rounded-3 p-3 text-center">
+                                    <div class="display-6 fw-bold text-success">
+                                        {% if admin.last_login %}
+                                            {{ format_date(admin.last_login) }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-muted">{{ _('admins.last_login') }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <hr class="my-4">
+                        <div class="d-flex justify-content-end gap-3">
+                            <a href="{{ url_for('platform.admins') }}" class="btn btn-lg btn-outline-secondary px-4">
+                                <i class="fas fa-times me-2"></i>{{ _('common.cancel') }}
+                            </a>
+                            <button type="submit" class="btn btn-lg btn-gradient px-5">
+                                <i class="fas fa-save me-2"></i>{{ _('common.save_changes') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar - Admin Info Card -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-gradient-primary text-white text-center py-4">
+                    <div class="admin-avatar mx-auto mb-3">
+                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px;">
+                            <i class="fas fa-user-shield fa-3x text-primary"></i>
+                        </div>
+                    </div>
+                    <h4 class="mb-1 text-white">{{ admin.full_name }}</h4>
+                    <p class="text-white-50 mb-0">
+                        <i class="fas fa-envelope me-1"></i> {{ admin.email }}
+                    </p>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Role Badge -->
+                    <div class="text-center mb-4">
+                        <span class="badge {% if admin.role == 'super_admin' %}bg-danger{% elif admin.role == 'admin' %}bg-primary{% elif admin.role == 'support' %}bg-info{% else %}bg-warning{% endif %} px-3 py-2 fs-6">
+                            <i class="fas 
+                                {% if admin.role == 'super_admin' %}fa-crown{% elif admin.role == 'admin' %}fa-user-tie{% elif admin.role == 'support' %}fa-headset{% else %}fa-chart-line{% endif %} me-2"></i>
+                            {% if admin.role == 'super_admin' %}{{ _('admins.role_super_admin') }}
+                            {% elif admin.role == 'admin' %}{{ _('admins.role_admin') }}
+                            {% elif admin.role == 'support' %}{{ _('admins.role_support') }}
+                            {% elif admin.role == 'finance' %}{{ _('admins.role_finance') }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="info-row d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted">{{ _('status') }}</span>
+                        <span>
+                            {% if admin.is_active %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i> {{ _('status.active') }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-times-circle me-1"></i> {{ _('status.inactive') }}
+                            </span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="info-row d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted">{{ _('admins.member_since') }}</span>
+                        <span>{{ format_date(admin.created_at) }}</span>
+                    </div>
+                    
+                    <div class="info-row d-flex justify-content-between py-2">
+                        <span class="text-muted">{{ _('admins.last_updated') }}</span>
+                        <span>{{ format_datetime(admin.updated_at) }}</span>
+                    </div>
+                </div>
+                
+                <!-- Danger Zone (for super admin only) -->
+                {% if g.is_super_admin and admin.id != current_user.id %}
+                <div class="card-footer bg-light">
+                    <div class="text-center">
+                        <button type="button" class="btn btn-outline-danger w-100 delete-admin" data-id="{{ admin.id }}" data-name="{{ admin.full_name }}">
+                            <i class="fas fa-trash-alt me-2"></i>
+                            {{ _('admins.delete_admin') }}
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Admin Modal -->
+<div class="modal fade" id="deleteAdminModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {{ _('common.confirm_delete') }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-user-minus fa-3x text-danger mb-3"></i>
+                <p id="deleteAdminMessage" class="mb-0"></p>
+                <p class="text-muted small mt-2">{{ _('admins.delete_warning') }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('common.cancel') }}</button>
+                <button type="button" id="confirmDeleteAdminBtn" class="btn btn-danger">{{ _('common.delete') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // ========== Password Strength Meter ==========
+    function checkPasswordStrength(password) {
+        let strength = 0;
+        if (password.length >= 8) strength++;
+        if (password.match(/[a-z]+/)) strength++;
+        if (password.match(/[A-Z]+/)) strength++;
+        if (password.match(/[0-9]+/)) strength++;
+        if (password.match(/[$@#&!]+/)) strength++;
+        return strength;
+    }
+    
+    function updatePasswordStrength() {
+        const password = $('#newPassword').val();
+        if (!password) {
+            $('#passwordProgress').hide();
+            $('#passwordStrength').html('');
+            return;
+        }
+        
+        const strength = checkPasswordStrength(password);
+        const percent = (strength / 5) * 100;
+        let color = '#dc3545'; // red
+        let text = '{{ _("password.weak") }}';
+        
+        if (strength >= 4) {
+            color = '#28a745'; // green
+            text = '{{ _("password.strong") }}';
+        } else if (strength >= 2) {
+            color = '#ffc107'; // yellow
+            text = '{{ _("password.medium") }}';
+        }
+        
+        $('#passwordProgress').show();
+        $('#passwordProgress .progress-bar').css({
+            'width': percent + '%',
+            'background-color': color
+        });
+        $('#passwordStrength').html(`<small class="text-${strength >= 4 ? 'success' : strength >= 2 ? 'warning' : 'danger'}">${text}</small>`);
+    }
+    
+    $('#newPassword').on('input', updatePasswordStrength);
+    
+    // ========== Toggle Password Visibility ==========
+    $('.toggle-password').click(function() {
+        const target = $($(this).data('target'));
+        const type = target.attr('type') === 'password' ? 'text' : 'password';
+        target.attr('type', type);
+        $(this).find('i').toggleClass('fa-eye fa-eye-slash');
+    });
+    
+    // ========== Form Submission ==========
+    $('#editAdminForm').submit(function(e) {
+        e.preventDefault();
+        
+        const newPassword = $('input[name="new_password"]').val();
+        const confirmPassword = $('input[name="confirm_password"]').val();
+        
+        if (newPassword && newPassword !== confirmPassword) {
+            toastr.error('{{ _("admins.password_mismatch") }}');
+            $('input[name="confirm_password"]').focus();
+            return;
+        }
+        
+        if (newPassword && newPassword.length < 8) {
+            toastr.error('{{ _("admins.password_weak") }}');
+            return;
+        }
+        
+        const formData = $(this).serialize();
+        
+        $.ajax({
+            url: window.location.href,
+            method: 'POST',
+            data: formData,
+            beforeSend: function() {
+                showLoading();
+            },
+            success: function(response) {
+                hideLoading();
+                if (response.success) {
+                    toastr.success(response.message);
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('platform.admins') }}";
+                    }, 1500);
+                } else {
+                    toastr.error(response.error);
+                }
+            },
+            error: function() {
+                hideLoading();
+                toastr.error('{{ _("common.error") }}');
+            }
+        });
+    });
+    
+    // ========== Delete Admin ==========
+    let deleteAdminId = null;
+    
+    $('.delete-admin').click(function() {
+        deleteAdminId = $(this).data('id');
+        const adminName = $(this).data('name');
+        $('#deleteAdminMessage').text('{{ _("admins.confirm_delete") }} ' + adminName + '?');
+        $('#deleteAdminModal').modal('show');
+    });
+    
+    $('#confirmDeleteAdminBtn').click(function() {
+        if (deleteAdminId) {
+            $.ajax({
+                url: "{{ url_for('platform.delete_admin', admin_id=0) }}".replace('0', deleteAdminId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        $('#deleteAdminModal').modal('hide');
+                        setTimeout(() => {
+                            window.location.href = "{{ url_for('platform.admins') }}";
+                        }, 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

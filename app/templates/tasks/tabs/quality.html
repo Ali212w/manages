@@ -1,0 +1,155 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-bold mb-0">
+        <i class="fas fa-check-double text-primary me-2"></i>فحوصات الجودة
+    </h6>
+    <button class="btn btn-sm btn-primary" onclick="showAddQualityCheckModal()">
+        <i class="fas fa-plus me-1"></i> إضافة فحص
+    </button>
+</div>
+
+<div class="table-responsive">
+    <table class="detail-table">
+        <thead>
+            <tr>
+                <th>كود الفحص</th>
+                <th>اسم الفحص</th>
+                <th>النوع</th>
+                <th>المعيار</th>
+                <th>التاريخ المخطط</th>
+                <th>التاريخ الفعلي</th>
+                <th>النتيجة</th>
+                <th>الحالة</th>
+                <th>المنفذ</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for check in quality_checks %}
+            <tr>
+                <td><span class="fw-bold text-primary">{{ check.check_code }}</span></td>
+                <td>{{ check.check_name }}</td>
+                <td>{{ check.check_type }}</td>
+                <td>{{ check.standard or '-' }}</td>
+                <td>{{ check.planned_date.strftime('%Y-%m-%d') if check.planned_date else '-' }}</td>
+                <td>{{ check.actual_date.strftime('%Y-%m-%d') if check.actual_date else '-' }}</td>
+                <td>
+                    {% if check.score %}
+                    <span class="fw-bold">{{ check.score }}%</span>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge bg-{{ 'success' if check.status == 'passed' else 'danger' if check.status == 'failed' else 'warning' if check.status == 'pending' else 'info' }}">
+                        {{ check.status }}
+                    </span>
+                </td>
+                <td>{{ check.conductor.full_name if check.conductor else '-' }}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewQualityCheck({{ check.id }})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="10" class="text-center py-4">
+                    <i class="fas fa-check-double fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">لا توجد فحوصات جودة</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal إضافة فحص جودة -->
+<div class="modal fade" id="addQualityCheckModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة فحص جودة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="qualityForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نوع الفحص</label>
+                        <select class="form-select" id="qualityType" required>
+                            <option value="inspection">تفتيش</option>
+                            <option value="test">اختبار</option>
+                            <option value="review">مراجعة</option>
+                            <option value="audit">تدقيق</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اسم الفحص</label>
+                        <input type="text" class="form-control" id="qualityName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">الوصف</label>
+                        <textarea class="form-control" id="qualityDescription" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">المعيار</label>
+                        <input type="text" class="form-control" id="qualityStandard" placeholder="ISO, ASTM, ...">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">التاريخ المخطط</label>
+                            <input type="date" class="form-control" id="qualityPlannedDate">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="addQualityCheck()">إضافة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAddQualityCheckModal() {
+    document.getElementById('qualityForm').reset();
+    new bootstrap.Modal(document.getElementById('addQualityCheckModal')).show();
+}
+
+function addQualityCheck() {
+    const data = {
+        check_type: document.getElementById('qualityType').value,
+        check_name: document.getElementById('qualityName').value,
+        description: document.getElementById('qualityDescription').value,
+        standard: document.getElementById('qualityStandard').value,
+        planned_date: document.getElementById('qualityPlannedDate').value
+    };
+    
+    if (!data.check_name) {
+        showWarning('الرجاء إدخال اسم الفحص');
+        return;
+    }
+    
+    fetch(`/projects/api/{{ task.project_id }}/quality-check`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            ...data,
+            task_id: {{ task.id }}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addQualityCheckModal')).hide();
+            showSuccess('تم إضافة فحص الجودة');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'حدث خطأ');
+        }
+    });
+}
+</script>

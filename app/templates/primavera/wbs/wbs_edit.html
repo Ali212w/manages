@@ -1,0 +1,359 @@
+{% extends "company/base.html" %}
+
+{% block title %}تعديل {{ wbs.name }}{% endblock %}
+
+{% block page_title %}تعديل عنصر WBS{% endblock %}
+{% block page_subtitle %}{{ wbs.wbs_code }} - {{ wbs.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .edit-container {
+        max-width: 800px;
+        margin: 2rem auto;
+    }
+    
+    .edit-card {
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+        overflow: hidden;
+        border: 1px solid #eef2f7;
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05), rgba(67, 97, 238, 0.1));
+        padding: 2rem;
+        border-bottom: 3px solid var(--primary);
+    }
+    
+    .card-body {
+        padding: 2rem;
+    }
+    
+    .form-section {
+        background: #f8fafc;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #eef2f7;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px dashed #eef2f7;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .form-label i {
+        color: var(--primary);
+        margin-left: 0.5rem;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.7rem 1rem;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        outline: none;
+    }
+    
+    .row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1rem;
+        border: 1px solid #eef2f7;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-row {
+        display: flex;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        width: 120px;
+        color: #6c757d;
+    }
+    
+    .info-value {
+        flex: 1;
+        font-weight: 500;
+    }
+    
+    .level-indicator {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        display: inline-block;
+        font-weight: 600;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-start;
+        margin-top: 2rem;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #eef2f7;
+        color: #6c757d;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    
+    .btn-secondary:hover {
+        background: #e2e8f0;
+    }
+    
+    .btn-danger {
+        background: var(--danger);
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    
+    .danger-zone {
+        border: 2px solid rgba(249, 65, 68, 0.2);
+        background: rgba(249, 65, 68, 0.02);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-container">
+    <form method="POST" class="edit-card">
+        <div class="card-header">
+            <h2 class="mb-0">تعديل عنصر WBS</h2>
+        </div>
+        
+        <div class="card-body">
+            <!-- معلومات سريعة -->
+            <div class="info-card">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-row">
+                            <span class="info-label">المسار:</span>
+                            <span class="info-value">{{ wbs.wbs_path }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-row">
+                            <span class="info-label">تاريخ الإنشاء:</span>
+                            <span class="info-value">{{ wbs.created_at.strftime('%Y-%m-%d') if wbs.created_at }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    المعلومات الأساسية
+                </h5>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-code"></i>
+                            كود WBS <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="wbs_code" class="form-control" 
+                               value="{{ wbs.wbs_code }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i>
+                            الاسم <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="name" class="form-control" 
+                               value="{{ wbs.name }}" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-align-left"></i>
+                        الوصف
+                    </label>
+                    <textarea name="description" class="form-control" rows="4">{{ wbs.description or '' }}</textarea>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-sitemap"></i>
+                    الهيكل الهرمي
+                </h5>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-level-up-alt"></i>
+                            العنصر الأب
+                        </label>
+                        <select name="parent_id" class="form-select" id="parentSelect" onchange="updateLevel()">
+                            <option value="">-- عنصر جذري (بدون أب) --</option>
+                            {% for item in wbs_list %}
+                            <option value="{{ item.id }}" data-level="{{ item.level }}"
+                                    {{ 'selected' if item.id == wbs.parent_id }}>
+                                {{ '—' * item.level }} {{ item.name }} ({{ item.wbs_code }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">تغيير الأب سيؤثر على المستوى والمسار</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-layer-group"></i>
+                            المستوى
+                        </label>
+                        <div class="level-indicator" id="levelDisplay">المستوى {{ wbs.level }}</div>
+                        <input type="hidden" name="level" id="levelInput" value="{{ wbs.level }}">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-coins"></i>
+                    الميزانية والتكاليف
+                </h5>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-weight-hanging"></i>
+                            الوزن (%)
+                        </label>
+                        <input type="number" name="weight" class="form-control" 
+                               step="0.1" min="0" value="{{ wbs.weight }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-coins"></i>
+                            الميزانية
+                        </label>
+                        <input type="number" name="budget" class="form-control" 
+                               step="0.01" min="0" value="{{ wbs.budget }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-chart-line"></i>
+                            التكلفة المخططة
+                        </label>
+                        <input type="number" name="planned_cost" class="form-control" 
+                               step="0.01" min="0" value="{{ wbs.planned_cost }}">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-chart-bar"></i>
+                    إحصائيات سريعة
+                </h5>
+                
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <h4 class="text-primary">{{ wbs.stats.total_activities if wbs.stats else 0 }}</h4>
+                        <small class="text-muted">أنشطة مرتبطة</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="text-success">{{ wbs.stats.children_count if wbs.stats else 0 }}</h4>
+                        <small class="text-muted">عناصر فرعية</small>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="text-warning">{{ "%.1f"|format(wbs.progress_percentage) }}%</h4>
+                        <small class="text-muted">التقدم</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save"></i>
+                    حفظ التغييرات
+                </button>
+                <a href="{{ url_for('primavera.wbs_list', project_id=wbs.project_id) }}" class="btn-secondary">
+                    <i class="fas fa-times"></i>
+                    إلغاء
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function updateLevel() {
+    const select = document.getElementById('parentSelect');
+    const selected = select.options[select.selectedIndex];
+    const levelDisplay = document.getElementById('levelDisplay');
+    const levelInput = document.getElementById('levelInput');
+    
+    if (selected && selected.value) {
+        const parentLevel = parseInt(selected.dataset.level) || 0;
+        const newLevel = parentLevel + 1;
+        levelDisplay.textContent = `المستوى ${newLevel}`;
+        levelInput.value = newLevel;
+    } else {
+        levelDisplay.textContent = 'المستوى 1';
+        levelInput.value = 1;
+    }
+}
+</script>
+{% endblock %}

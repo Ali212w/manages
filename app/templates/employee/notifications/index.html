@@ -1,0 +1,164 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ _('emp.notifications') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notifications-header {
+        background: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
+        border-radius: var(--radius-lg);
+        padding: 25px;
+        color: white;
+        margin-bottom: 25px;
+    }
+    
+    .notification-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        margin-bottom: 15px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        border-left: 4px solid;
+        cursor: pointer;
+    }
+    
+    .notification-card:hover {
+        transform: translateX(-5px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .notification-card.unread {
+        background: linear-gradient(135deg, #fff, #f0f0ff);
+    }
+    
+    .notification-card.unread {
+        border-left-color: var(--primary-color);
+    }
+    
+    .notification-card.read {
+        border-left-color: #e0e0e0;
+        opacity: 0.8;
+    }
+    
+    .notification-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+    
+    .btn-mark-all {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 50px;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-mark-all:hover {
+        background: rgba(255,255,255,0.3);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notifications-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-2"><i class="fas fa-bell me-2"></i> {{ _('emp.notifications') }}</h2>
+            <p class="mb-0 text-white-50">{{ _('emp.view_all_your_notifications') }}</p>
+        </div>
+        <div>
+            <button class="btn-mark-all" onclick="markAllRead()">
+                <i class="fas fa-check-double me-2"></i> {{ _('emp.mark_all_read') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        {% for notification in notifications %}
+        <div class="notification-card {% if not notification.is_read %}unread{% else %}read{% endif %}" 
+             data-id="{{ notification.id }}"
+             onclick="markAsRead({{ notification.id }}, '{{ notification.related_link or '#' }}')">
+            <div class="d-flex gap-3">
+                <div class="notification-icon bg-{{ notification_color(notification.notification_type) }} bg-opacity-10">
+                    <i class="{{ notification_icon(notification.notification_type) }} text-{{ notification_color(notification.notification_type) }}"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1 {% if not notification.is_read %}fw-bold{% endif %}">
+                                {{ notification.title }}
+                            </h6>
+                            <p class="mb-1 small">{{ notification.message }}</p>
+                        </div>
+                        <small class="text-muted ms-2">{{ time_ago(notification.created_at) }}</small>
+                    </div>
+                    {% if notification.related_project_id %}
+                    <div class="mt-2">
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-project-diagram me-1"></i> 
+                            {{ _('emp.project') }}: {{ notification.project.name if notification.project else '-' }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-bell-slash fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">{{ _('emp.no_notifications') }}</h4>
+            <p class="text-muted">{{ _('emp.no_notifications_message') }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function markAsRead(notificationId, redirectUrl) {
+        fetch(`/employee/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && redirectUrl && redirectUrl !== '#') {
+                window.location.href = redirectUrl;
+            } else if (redirectUrl === '#') {
+                const card = document.querySelector(`.notification-card[data-id="${notificationId}"]`);
+                card.classList.remove('unread');
+                card.classList.add('read');
+                card.querySelector('h6').classList.remove('fw-bold');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+    
+    function markAllRead() {
+        fetch('{{ url_for("employee.mark_all_notifications_read") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+</script>
+{% endblock %}

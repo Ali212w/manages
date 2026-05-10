@@ -1,0 +1,1167 @@
+{# templates/company/notifications.html #}
+
+{% extends "company/base.html" %}
+
+{% block title %}الإشعارات - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}مركز الإشعارات{% endblock %}
+{% block page_subtitle %}تابع جميع التنبيهات والتحديثات الهامة{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============================================
+       تصميم احترافي للإشعارات
+    ============================================ */
+    
+    /* أنيميشن متقدم */
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+    }
+    
+    @keyframes shimmer {
+        0% {
+            background-position: -1000px 0;
+        }
+        100% {
+            background-position: 1000px 0;
+        }
+    }
+    
+    /* الحاوية الرئيسية */
+    .notifications-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        animation: fadeInUp 0.5s ease-out;
+    }
+    
+    /* رأس الصفحة المتقدم */
+    .notifications-header-advanced {
+        background: linear-gradient(135deg, #1a2a3a 0%, #0f1a24 100%);
+        border-radius: 28px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 20px 40px -15px rgba(0,0,0,0.2);
+    }
+    
+    .notifications-header-advanced::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+        animation: pulse 8s ease-in-out infinite;
+    }
+    
+    .header-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1.5rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .stat-card-glass {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 1rem 1.5rem;
+        text-align: center;
+        min-width: 120px;
+        transition: all 0.3s;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .stat-card-glass:hover {
+        transform: translateY(-3px);
+        background: rgba(255,255,255,0.15);
+    }
+    
+    .stat-number-glass {
+        font-size: 2rem;
+        font-weight: 800;
+        color: white;
+        line-height: 1;
+    }
+    
+    .stat-label-glass {
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.7);
+        margin-top: 0.25rem;
+    }
+    
+    /* شريط الفلاتر المتقدم */
+    .filters-advanced {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .filter-btn-advanced {
+        padding: 0.6rem 1.5rem;
+        border: none;
+        border-radius: 50px;
+        background: white;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .filter-btn-advanced i {
+        font-size: 0.9rem;
+    }
+    
+    .filter-btn-advanced:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        color: var(--primary);
+    }
+    
+    .filter-btn-advanced.active {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        box-shadow: 0 8px 20px rgba(67, 97, 238, 0.3);
+    }
+    
+    /* زر تحديد الكل */
+    .mark-all-advanced {
+        background: transparent;
+        border: 2px solid #e2e8f0;
+        padding: 0.6rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .mark-all-advanced:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateY(-2px);
+    }
+    
+    /* قائمة الإشعارات */
+    .notifications-list-advanced {
+        background: white;
+        border-radius: 28px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px -15px rgba(0,0,0,0.05);
+    }
+    
+    /* بطاقة الإشعار */
+    .notification-card {
+        display: flex;
+        align-items: flex-start;
+        padding: 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.3s;
+        position: relative;
+        background: white;
+    }
+    
+    .notification-card:hover {
+        background: #fafcff;
+        transform: translateX(-5px);
+    }
+    
+    .notification-card.unread {
+        background: linear-gradient(90deg, #fef9e8 0%, white 100%);
+    }
+    
+    .notification-card.unread::before {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, var(--primary), var(--success));
+    }
+    
+    /* أيقونة الإشعار المتقدمة */
+    .notification-icon-advanced {
+        width: 56px;
+        height: 56px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        margin-left: 1.25rem;
+        flex-shrink: 0;
+        transition: all 0.3s;
+    }
+    
+    .notification-card:hover .notification-icon-advanced {
+        transform: scale(1.05) rotate(3deg);
+    }
+    
+    .notification-icon-advanced.task {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        box-shadow: 0 8px 20px rgba(59,130,246,0.3);
+    }
+    
+    .notification-icon-advanced.delivery {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+        box-shadow: 0 8px 20px rgba(139,92,246,0.3);
+    }
+    
+    .notification-icon-advanced.project {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        box-shadow: 0 8px 20px rgba(16,185,129,0.3);
+    }
+    
+    .notification-icon-advanced.verification {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        box-shadow: 0 8px 20px rgba(245,158,11,0.3);
+    }
+    
+    .notification-icon-advanced.user {
+        background: linear-gradient(135deg, #ec489a, #db2777);
+        color: white;
+        box-shadow: 0 8px 20px rgba(236,72,154,0.3);
+    }
+    
+    .notification-icon-advanced.default {
+        background: linear-gradient(135deg, #94a3b8, #64748b);
+        color: white;
+    }
+    
+    /* محتوى الإشعار */
+    .notification-content-advanced {
+        flex: 1;
+    }
+    
+    .notification-header-advanced {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .notification-title-advanced {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .notification-badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 30px;
+        font-weight: 600;
+    }
+    
+    .notification-badge.high {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .notification-badge.medium {
+        background: #fff3e0;
+        color: #f59e0b;
+    }
+    
+    .notification-badge.low {
+        background: #e6f7e6;
+        color: #10b981;
+    }
+    
+    .notification-time-advanced {
+        font-size: 0.7rem;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .notification-message-advanced {
+        color: #475569;
+        line-height: 1.6;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    /* روابط متقدمة */
+    .notification-links-advanced {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 0.75rem 0;
+    }
+    
+    .link-advanced {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 1rem;
+        border-radius: 40px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s;
+        background: #f8fafc;
+        color: #1e293b;
+    }
+    
+    .link-advanced i {
+        font-size: 0.8rem;
+    }
+    
+    .link-advanced:hover {
+        transform: translateY(-2px);
+        background: var(--primary);
+        color: white;
+    }
+    
+    .link-advanced.primary {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        box-shadow: 0 4px 12px rgba(67,97,238,0.2);
+    }
+    
+    .link-advanced.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(67,97,238,0.3);
+    }
+    
+    /* أزرار الإجراءات */
+    .notification-actions-advanced {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+    }
+    
+    .action-btn-advanced {
+        background: transparent;
+        border: none;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: #94a3b8;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .action-btn-advanced:hover {
+        background: #f1f5f9;
+        color: var(--primary);
+    }
+    
+    .action-btn-advanced.delete:hover {
+        color: #dc2626;
+        background: #fee2e2;
+    }
+    
+    /* حالة فارغة متقدمة */
+    .empty-state-advanced {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+    }
+    
+    .empty-icon-advanced {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #cbd5e1;
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    /* تأثيرات التحميل */
+    .skeleton-loader {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 1000px 100%;
+        animation: shimmer 2s infinite;
+        border-radius: 8px;
+    }
+    
+    /* استجابة للشاشات الصغيرة */
+    @media (max-width: 768px) {
+        .notification-card {
+            flex-direction: column;
+        }
+        
+        .notification-icon-advanced {
+            margin-bottom: 1rem;
+            margin-left: 0;
+        }
+        
+        .header-stats {
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .stat-card-glass {
+            flex: 1;
+            min-width: auto;
+        }
+        
+        .filters-advanced {
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            flex-wrap: nowrap;
+        }
+        
+        .filter-btn-advanced {
+            white-space: nowrap;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notifications-container">
+    <!-- رأس الصفحة المتقدم -->
+    <div class="notifications-header-advanced">
+        <div>
+            <h1 class="text-white mb-2" style="font-size: 1.8rem;">مركز الإشعارات</h1>
+            <p class="text-white-50 mb-0">تابع جميع التحديثات والتنبيهات المهمة</p>
+        </div>
+        
+        <div class="header-stats">
+            <div class="stat-card-glass">
+                <div class="stat-number-glass">{{ notifications|length }}</div>
+                <div class="stat-label-glass">إجمالي الإشعارات</div>
+            </div>
+            <div class="stat-card-glass">
+                <div class="stat-number-glass">{{ notifications|selectattr('is_read', 'equalto', False)|list|length }}</div>
+                <div class="stat-label-glass">غير مقروء</div>
+            </div>
+            <div class="stat-card-glass">
+                <div class="stat-number-glass">{{ notifications|selectattr('priority', 'equalto', 'high')|list|length + notifications|selectattr('priority', 'equalto', 'critical')|list|length }}</div>
+                <div class="stat-label-glass">هامة</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- شريط الفلاتر -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="filters-advanced">
+            <button class="filter-btn-advanced active" data-filter="all">
+                <i class="fas fa-globe"></i> الكل
+            </button>
+            <button class="filter-btn-advanced" data-filter="unread">
+                <i class="fas fa-envelope"></i> غير مقروء
+                {% set unread_count = notifications|selectattr('is_read', 'equalto', False)|list|length %}
+                {% if unread_count > 0 %}
+                <span class="badge bg-danger" style="font-size: 0.7rem;">{{ unread_count }}</span>
+                {% endif %}
+            </button>
+            <button class="filter-btn-advanced" data-filter="high">
+                <i class="fas fa-exclamation-triangle"></i> هامة
+            </button>
+            <button class="filter-btn-advanced" data-filter="tasks">
+                <i class="fas fa-tasks"></i> المهام
+            </button>
+            <button class="filter-btn-advanced" data-filter="projects">
+                <i class="fas fa-project-diagram"></i> المشاريع
+            </button>
+            <button class="filter-btn-advanced" data-filter="deliveries">
+                <i class="fas fa-truck"></i> التسليمات
+            </button>
+            <button class="filter-btn-advanced" data-filter="risks">
+                <i class="fas fa-shield-alt"></i> المخاطر
+            </button>
+            <button class="filter-btn-advanced" data-filter="issues">
+                <i class="fas fa-bug"></i> المشكلات
+            </button>
+            <button class="filter-btn-advanced" data-filter="verifications">
+                <i class="fas fa-clipboard-check"></i> التحقق
+            </button>
+            <button class="filter-btn-advanced" data-filter="resources">
+                <i class="fas fa-cubes"></i> الموارد
+            </button>
+            <button class="filter-btn-advanced" data-filter="users">
+                <i class="fas fa-users"></i> المستخدمين
+            </button>
+            <button class="filter-btn-advanced" data-filter="documents">
+                <i class="fas fa-file-alt"></i> المستندات
+            </button>
+            <button class="filter-btn-advanced" data-filter="messages">
+                <i class="fas fa-comment-dots"></i> الرسائل
+            </button>
+        </div>
+        
+        <button class="mark-all-advanced" onclick="markAllAsRead()">
+            <i class="fas fa-check-double"></i>
+            تحديد الكل كمقروء
+        </button>
+    </div>
+    
+    <!-- قائمة الإشعارات -->
+    <div class="notifications-list-advanced" id="notificationsList">
+        {% if notifications %}
+            {% for notification in notifications %}
+            <div class="notification-card {% if not notification.is_read %}unread{% endif %}" 
+                data-id="{{ notification.id }}"
+                data-type="{{ notification.notification_type }}"
+                data-priority="{{ notification.priority }}"
+                data-read="{{ notification.is_read }}"
+                style="animation: slideInRight 0.3s ease-out; animation-delay: {{ loop.index0 * 0.03 }}s;">
+                
+                <!-- أيقونة متقدمة حسب نوع الإشعار -->
+                <div class="notification-icon-advanced 
+                    {% if 'task' in notification.notification_type %}task
+                    {% elif 'delivery' in notification.notification_type %}delivery
+                    {% elif 'project' in notification.notification_type %}project
+                    {% elif 'verification' in notification.notification_type %}verification
+                    {% elif 'user' in notification.notification_type %}user
+                    {% elif 'risk' in notification.notification_type %}risk
+                    {% elif 'issue' in notification.notification_type %}issue
+                    {% elif 'document' in notification.notification_type %}document
+                    {% elif 'message' in notification.notification_type %}message
+                    {% elif 'comment' in notification.notification_type %}comment
+                    {% elif 'mention' in notification.notification_type %}mention
+                    {% elif 'resource' in notification.notification_type %}resource
+                    {% elif 'eps' in notification.notification_type %}eps
+                    {% elif 'performance' in notification.notification_type %}performance
+                    {% elif 'system' in notification.notification_type %}system
+                    {% else %}default{% endif %}">
+                    
+                    <!-- أيقونات حسب نوع الإشعار -->
+                    {% if 'task_assigned' in notification.notification_type %}
+                        <i class="fas fa-user-plus"></i>
+                    {% elif 'task_started' in notification.notification_type %}
+                        <i class="fas fa-play-circle"></i>
+                    {% elif 'task_completed' in notification.notification_type %}
+                        <i class="fas fa-check-circle"></i>
+                    {% elif 'task_overdue' in notification.notification_type %}
+                        <i class="fas fa-exclamation-triangle"></i>
+                    {% elif 'task_reminder' in notification.notification_type %}
+                        <i class="fas fa-bell"></i>
+                        
+                    {% elif 'delivery_pending' in notification.notification_type %}
+                        <i class="fas fa-clock"></i>
+                    {% elif 'delivery_submitted' in notification.notification_type %}
+                        <i class="fas fa-truck"></i>
+                    {% elif 'delivery_confirmed' in notification.notification_type %}
+                        <i class="fas fa-check-double"></i>
+                    {% elif 'delivery_rejected' in notification.notification_type %}
+                        <i class="fas fa-times-circle"></i>
+                    {% elif 'delivery_notes' in notification.notification_type %}
+                        <i class="fas fa-sticky-note"></i>
+                    {% elif 'delivery_alert' in notification.notification_type %}
+                        <i class="fas fa-bell"></i>
+                    {% elif 'remaining_items_reminder' in notification.notification_type %}
+                        <i class="fas fa-boxes"></i>
+                        
+                    {% elif 'project_created' in notification.notification_type %}
+                        <i class="fas fa-plus-circle"></i>
+                    {% elif 'project_assigned' in notification.notification_type %}
+                        <i class="fas fa-user-check"></i>
+                    {% elif 'project_started' in notification.notification_type %}
+                        <i class="fas fa-play"></i>
+                    {% elif 'project_completed' in notification.notification_type %}
+                        <i class="fas fa-trophy"></i>
+                    {% elif 'project_progress' in notification.notification_type %}
+                        <i class="fas fa-chart-line"></i>
+                    {% elif 'project_updated' in notification.notification_type %}
+                        <i class="fas fa-edit"></i>
+                        
+                    {% elif 'verification_submitted' in notification.notification_type %}
+                        <i class="fas fa-clipboard-list"></i>
+                    {% elif 'verification_result' in notification.notification_type %}
+                        <i class="fas fa-clipboard-check"></i>
+                        
+                    {% elif 'user_registered' in notification.notification_type %}
+                        <i class="fas fa-user-plus"></i>
+                    {% elif 'user_welcome' in notification.notification_type %}
+                        <i class="fas fa-smile-wink"></i>
+                    {% elif 'user_approved' in notification.notification_type %}
+                        <i class="fas fa-user-check"></i>
+                    {% elif 'user_role_changed' in notification.notification_type %}
+                        <i class="fas fa-user-cog"></i>
+                        
+                    {% elif 'risk_detected' in notification.notification_type %}
+                        <i class="fas fa-shield-alt"></i>
+                    {% elif 'risk_mitigated' in notification.notification_type %}
+                        <i class="fas fa-check-shield"></i>
+                    {% elif 'risk_alert' in notification.notification_type %}
+                        <i class="fas fa-exclamation-circle"></i>
+                        
+                    {% elif 'issue_reported' in notification.notification_type %}
+                        <i class="fas fa-bug"></i>
+                    {% elif 'issue_assigned' in notification.notification_type %}
+                        <i class="fas fa-user-tag"></i>
+                    {% elif 'issue_resolved' in notification.notification_type %}
+                        <i class="fas fa-check-circle"></i>
+                        
+                    {% elif 'document_uploaded' in notification.notification_type %}
+                        <i class="fas fa-file-upload"></i>
+                    {% elif 'document_approved' in notification.notification_type %}
+                        <i class="fas fa-file-signature"></i>
+                        
+                    {% elif 'new_message' in notification.notification_type %}
+                        <i class="fas fa-comment-dots"></i>
+                    {% elif 'new_comment' in notification.notification_type %}
+                        <i class="fas fa-comment"></i>
+                    {% elif 'mention' in notification.notification_type %}
+                        <i class="fas fa-at"></i>
+                        
+                    {% elif 'resource_low_stock' in notification.notification_type %}
+                        <i class="fas fa-box-open"></i>
+                    {% elif 'resource_request_created' in notification.notification_type %}
+                        <i class="fas fa-file-invoice"></i>
+                    {% elif 'resource_request_sent' in notification.notification_type %}
+                        <i class="fas fa-paper-plane"></i>
+                        
+                    {% elif 'eps_assigned' in notification.notification_type %}
+                        <i class="fas fa-sitemap"></i>
+                        
+                    {% elif 'performance_report' in notification.notification_type %}
+                        <i class="fas fa-chart-bar"></i>
+                    {% elif 'daily_summary' in notification.notification_type %}
+                        <i class="fas fa-calendar-day"></i>
+                        
+                    {% elif 'system_alert' in notification.notification_type %}
+                        <i class="fas fa-server"></i>
+                        
+                    {% else %}
+                        <i class="fas fa-bell"></i>
+                    {% endif %}
+                </div>
+            
+            <!-- المحتوى -->
+            <div class="notification-content-advanced">
+                <div class="notification-header-advanced">
+                    <div class="notification-title-advanced">
+                        {{ notification.title }}
+                        <span class="notification-badge {{ notification.priority }}">
+                            {% if notification.priority == 'critical' %}
+                            <i class="fas fa-skull-crosswalk"></i> حرجة
+                            {% elif notification.priority == 'high' %}
+                            <i class="fas fa-arrow-up"></i> عالية
+                            {% elif notification.priority == 'medium' %}
+                            <i class="fas fa-minus"></i> متوسطة
+                            {% else %}
+                            <i class="fas fa-arrow-down"></i> منخفضة
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="notification-time-advanced">
+                        <i class="far fa-clock"></i>
+                        {{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                </div>
+                
+                <p class="notification-message-advanced">{{ notification.message }}</p>
+                
+                <!-- روابط متقدمة حسب نوع الإشعار -->
+                <div class="notification-links-advanced">
+                    {% if notification.related_link %}
+                    <a href="{{ notification.related_link }}" class="link-advanced primary">
+                        <i class="fas fa-external-link-alt"></i>
+                        عرض التفاصيل
+                    </a>
+                    {% endif %}
+                    
+                    {% if notification.related_project_id %}
+                    <a href="{{ url_for('company.view_project', project_id=notification.related_project_id) }}" class="link-advanced">
+                        <i class="fas fa-project-diagram"></i>
+                        المشروع
+                    </a>
+                    {% endif %}
+                    
+                    {% if notification.related_task_id %}
+                    <a href="{{ url_for('company.view_task', task_id=notification.related_task_id) }}" class="link-advanced">
+                        <i class="fas fa-tasks"></i>
+                        المهمة
+                    </a>
+                    {% endif %}
+                    
+                    {% if notification.related_delivery_id %}
+                    <a href="{{ url_for('company.confirm_delivery', delivery_id=notification.related_delivery_id) }}" class="link-advanced">
+                        <i class="fas fa-truck"></i>
+                        مراجعة التسليم
+                    </a>
+                    {% endif %}
+                    
+                    {% if notification.related_request_id %}
+                    <a href="{{ url_for('supplier.view_request', request_id=notification.related_request_id) }}" class="link-advanced">
+                        <i class="fas fa-file-invoice"></i>
+                        طلب التوريد
+                    </a>
+                    {% endif %}
+                    
+                    {% if notification.related_resource_id %}
+                    <a href="{{ url_for('company.view_resource', resource_id=notification.related_resource_id) }}" class="link-advanced">
+                        <i class="fas fa-cube"></i>
+                        المورد
+                    </a>
+                    {% endif %}
+                    
+                    {% if notification.related_risk_id %}
+                    <a href="{{ url_for('company.view_risk', risk_id=notification.related_risk_id) }}" class="link-advanced">
+                        <i class="fas fa-shield-alt"></i>
+                        الخطر
+                    </a>
+                    {% endif %}
+                    
+                    {% if notification.related_issue_id %}
+                    <a href="{{ url_for('company.view_issue', issue_id=notification.related_issue_id) }}" class="link-advanced">
+                        <i class="fas fa-bug"></i>
+                        المشكلة
+                    </a>
+                    {% endif %}
+                    
+                    {% if notification.related_document_id %}
+                    <a href="{{ url_for('company.view_document', document_id=notification.related_document_id) }}" class="link-advanced">
+                        <i class="fas fa-file-alt"></i>
+                        المستند
+                    </a>
+                    {% endif %}
+                    
+                    {% if notification.related_user_id %}
+                    <a href="{{ url_for('company.view_user', user_id=notification.related_user_id) }}" class="link-advanced">
+                        <i class="fas fa-user"></i>
+                        المستخدم
+                    </a>
+                    {% endif %}
+                    
+                    {% if notification.related_eps_id %}
+                    <a href="{{ url_for('company.view_eps', eps_id=notification.related_eps_id) }}" class="link-advanced">
+                        <i class="fas fa-sitemap"></i>
+                        EPS
+                    </a>
+                    {% endif %}
+                    
+                    {% if notification.verification_request_id %}
+                    <a href="{{ url_for('tracking.verify_requirement', request_id=notification.verification_request_id) }}" class="link-advanced">
+                        <i class="fas fa-clipboard-check"></i>
+                        طلب التحقق
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <!-- معلومات إضافية حسب نوع الإشعار -->
+                <div class="notification-meta">
+                        {% if notification.notification_type == 'delivery_pending' %}
+                        <span class="badge bg-warning ms-2">
+                            <i class="fas fa-clock"></i> في انتظار التأكيد
+                        </span>
+                        {% elif notification.notification_type == 'delivery_confirmed' %}
+                        <span class="badge bg-success ms-2">
+                            <i class="fas fa-check-circle"></i> تم التأكيد
+                        </span>
+                        {% elif notification.notification_type == 'delivery_rejected' %}
+                        <span class="badge bg-danger ms-2">
+                            <i class="fas fa-times-circle"></i> مرفوض
+                        </span>
+                        {% elif notification.notification_type == 'task_overdue' %}
+                        <span class="badge bg-danger ms-2">
+                            <i class="fas fa-hourglass-end"></i> متأخر
+                        </span>
+                        {% elif notification.notification_type == 'task_completed' %}
+                        <span class="badge bg-success ms-2">
+                            <i class="fas fa-check"></i> مكتمل
+                        </span>
+                        {% elif notification.notification_type == 'risk_detected' %}
+                        <span class="badge bg-danger ms-2">
+                            <i class="fas fa-exclamation-triangle"></i> خطر جديد
+                        </span>
+                        {% elif notification.notification_type == 'risk_mitigated' %}
+                        <span class="badge bg-success ms-2">
+                            <i class="fas fa-check-shield"></i> تم التخفيف
+                        </span>
+                        {% elif notification.notification_type == 'issue_reported' %}
+                        <span class="badge bg-warning ms-2">
+                            <i class="fas fa-bug"></i> مشكلة جديدة
+                        </span>
+                        {% elif notification.notification_type == 'issue_resolved' %}
+                        <span class="badge bg-success ms-2">
+                            <i class="fas fa-check"></i> تم الحل
+                        </span>
+                        {% elif notification.notification_type == 'resource_low_stock' %}
+                        <span class="badge bg-danger ms-2">
+                            <i class="fas fa-box-open"></i> مخزون منخفض
+                        </span>
+                        {% elif notification.notification_type == 'verification_submitted' %}
+                        <span class="badge bg-info ms-2">
+                            <i class="fas fa-clipboard-list"></i> في انتظار المراجعة
+                        </span>
+                        {% elif notification.notification_type == 'verification_result' %}
+                            {% if 'تمت الموافقة' in notification.message %}
+                            <span class="badge bg-success ms-2">
+                                <i class="fas fa-check-circle"></i> تمت الموافقة
+                            </span>
+                            {% else %}
+                            <span class="badge bg-danger ms-2">
+                                <i class="fas fa-times-circle"></i> مرفوض
+                            </span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    
+                    <!-- أزرار الإجراءات -->
+                    <div class="notification-actions-advanced">
+                        {% if not notification.is_read %}
+                        <button class="action-btn-advanced mark-read" onclick="markAsRead({{ notification.id }}, this)">
+                            <i class="fas fa-check-circle"></i>
+                            تحديد كمقروء
+                        </button>
+                        {% endif %}
+                        <button class="action-btn-advanced delete" onclick="deleteNotification({{ notification.id }}, this)">
+                            <i class="fas fa-trash-alt"></i>
+                            حذف
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- حالة فارغة متقدمة -->
+            <div class="empty-state-advanced">
+                <div class="empty-icon-advanced">
+                    <i class="far fa-bell-slash"></i>
+                </div>
+                <h4 class="mb-2">لا توجد إشعارات</h4>
+                <p class="text-muted mb-4">ليس لديك أي إشعارات جديدة حالياً</p>
+                <a href="{{ url_for('company.dashboard') }}" class="link-advanced primary">
+                    <i class="fas fa-home"></i>
+                    العودة للرئيسية
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+
+// ============================================
+// الفلترة المتقدمة مع أنيميشن
+// ============================================
+// تحديث الفلاتر لتدعم جميع أنواع الإشعارات
+document.querySelectorAll('.filter-btn-advanced').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn-advanced').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentFilter = this.dataset.filter;
+        filterNotifications();
+    });
+});
+
+function filterNotifications() {
+    const notifications = document.querySelectorAll('.notification-card');
+    
+    notifications.forEach(notif => {
+        const type = notif.dataset.type;
+        const priority = notif.dataset.priority;
+        const isRead = notif.dataset.read === 'True';
+        
+        let show = true;
+        
+        switch(currentFilter) {
+            case 'unread':
+                show = !isRead;
+                break;
+            case 'high':
+                show = priority === 'high' || priority === 'critical';
+                break;
+            case 'tasks':
+                show = type.includes('task');
+                break;
+            case 'projects':
+                show = type.includes('project');
+                break;
+            case 'deliveries':
+                show = type.includes('delivery');
+                break;
+            case 'risks':
+                show = type.includes('risk');
+                break;
+            case 'issues':
+                show = type.includes('issue');
+                break;
+            case 'verifications':
+                show = type.includes('verification');
+                break;
+            case 'resources':
+                show = type.includes('resource');
+                break;
+            case 'users':
+                show = type.includes('user');
+                break;
+            case 'documents':
+                show = type.includes('document');
+                break;
+            case 'messages':
+                show = type.includes('message') || type.includes('comment') || type.includes('mention');
+                break;
+        }
+        
+        notif.style.display = show ? 'flex' : 'none';
+    });
+    
+}
+
+// ============================================
+// تحديد إشعار كمقروء مع تأثير
+// ============================================
+function markAsRead(notificationId) {
+    fetch(`/notifications/api/mark-read/${notificationId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const notification = document.querySelector(`.notification-card[data-id="${notificationId}"]`);
+            if (notification) {
+                notification.classList.remove('unread');
+                notification.dataset.read = 'True';
+            }
+            updateUnreadCount();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'تم',
+                text: 'تم تحديث الإشعار',
+                timer: 1500,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم',
+            timer: 2000
+        });
+    });
+}
+
+// ============================================
+// تحديد الكل كمقروء
+// ============================================
+// في صفحة notifications.html
+
+function markAllAsRead() {
+    Swal.fire({
+        title: 'تأكيد',
+        text: 'هل تريد تحديد جميع الإشعارات كمقروءة؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم',
+        cancelButtonText: 'إلغاء',
+        confirmButtonColor: '#4361ee'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/notifications/api/mark-all-read', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelectorAll('.notification-card').forEach(notif => {
+                        notif.classList.remove('unread');
+                        notif.dataset.read = 'True';
+                        const markReadBtn = notif.querySelector('.mark-read');
+                        if (markReadBtn) markReadBtn.style.display = 'none';
+                    });
+                    updateUnreadCount();
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم',
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ',
+                    text: 'حدث خطأ في الاتصال بالخادم'
+                });
+            });
+        }
+    });
+}
+
+// ============================================
+// حذف إشعار
+// ============================================
+function deleteNotification(notificationId) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا الإشعار؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء',
+        confirmButtonColor: '#dc2626'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/notifications/api/delete/${notificationId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const notification = document.querySelector(`.notification-card[data-id="${notificationId}"]`);
+                    if (notification) notification.remove();
+                    
+                    updateUnreadCount();
+                    
+                    // إذا لم يتبق إشعارات
+                    if (document.querySelectorAll('.notification-card').length === 0) {
+                        location.reload();
+                    }
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم',
+                        text: 'تم حذف الإشعار',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ',
+                    text: 'حدث خطأ في الاتصال بالخادم'
+                });
+            });
+        }
+    });
+}
+
+// ============================================
+// تحديث عدد الإشعارات
+// ============================================
+function updateUnreadCount() {
+    fetch('/notifications/api/unread-count')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.querySelector('.notification-badge');
+            const headerUnread = document.querySelector('.filter-btn-advanced[data-filter="unread"] .badge');
+            const statsUnread = document.querySelector('.stat-card-glass:nth-child(2) .stat-number-glass');
+            
+            if (badge) {
+                if (data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+            
+            if (headerUnread) {
+                if (data.count > 0) {
+                    headerUnread.textContent = data.count;
+                    headerUnread.style.display = 'inline-block';
+                } else {
+                    headerUnread.style.display = 'none';
+                }
+            }
+            
+            if (statsUnread) {
+                statsUnread.textContent = data.count;
+            }
+        })
+        .catch(error => console.error('Error updating unread count:', error));
+}
+
+// ============================================
+// تهيئة الصفحة
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    updateUnreadCount();
+});
+</script>
+{% endblock %}
+{% endblock %}

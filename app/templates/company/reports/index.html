@@ -1,0 +1,148 @@
+{% extends "company/base.html" %}
+
+{% block title %}التقارير - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}التقارير والتحليلات{% endblock %}
+{% block page_subtitle %}نظرة شاملة على أداء الشركة{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- بطاقات التقارير -->
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="stat-icon primary mx-auto mb-3" style="width: 80px; height: 80px;">
+                    <i class="fas fa-project-diagram fa-3x"></i>
+                </div>
+                <h4 class="fw-bold">تقرير المشاريع</h4>
+                <p class="text-muted mb-4">عرض تحليلات المشاريع والتقدم ونسب الإنجاز</p>
+                <div class="d-grid">
+                    <a href="{{ url_for('company.projects_report') }}" class="btn-primary-gradient">
+                        <i class="fas fa-chart-bar me-2"></i>عرض التقرير
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="stat-icon success mx-auto mb-3" style="width: 80px; height: 80px;">
+                    <i class="fas fa-tasks fa-3x"></i>
+                </div>
+                <h4 class="fw-bold">تقرير المهام</h4>
+                <p class="text-muted mb-4">إحصائيات المهام وإنجازات الفريق</p>
+                <div class="d-grid">
+                    <a href="{{ url_for('company.tasks_report') }}" class="btn-primary-gradient">
+                        <i class="fas fa-chart-bar me-2"></i>عرض التقرير
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="stat-icon warning mx-auto mb-3" style="width: 80px; height: 80px;">
+                    <i class="fas fa-users fa-3x"></i>
+                </div>
+                <h4 class="fw-bold">تقرير المستخدمين</h4>
+                <p class="text-muted mb-4">تحليلات المستخدمين والأداء</p>
+                <div class="d-grid">
+                    <a href="{{ url_for('company.users_report') }}" class="btn-primary-gradient">
+                        <i class="fas fa-chart-bar me-2"></i>عرض التقرير
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- التقارير السريعة -->
+<div class="table-card mt-4">
+    <div class="table-header">
+        <h5 class="table-title"><i class="fas fa-bolt me-2 text-primary"></i>تقارير سريعة</h5>
+    </div>
+    
+    <div class="row g-3">
+        <div class="col-md-3">
+            <a href="#" class="text-decoration-none">
+                <div class="p-3 bg-light rounded text-center">
+                    <i class="fas fa-file-pdf text-danger fa-2x mb-2"></i>
+                    <h6 class="mb-0">تصدير PDF</h6>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="#" class="text-decoration-none">
+                <div class="p-3 bg-light rounded text-center">
+                    <i class="fas fa-file-excel text-success fa-2x mb-2"></i>
+                    <h6 class="mb-0">تصدير Excel</h6>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="#" class="text-decoration-none">
+                <div class="p-3 bg-light rounded text-center">
+                    <i class="fas fa-print text-primary fa-2x mb-2"></i>
+                    <h6 class="mb-0">طباعة</h6>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="#" class="text-decoration-none">
+                <div class="p-3 bg-light rounded text-center">
+                    <i class="fas fa-envelope text-info fa-2x mb-2"></i>
+                    <h6 class="mb-0">إرسال بالبريد</h6>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+<!-- في قسم التقارير، أضف هذه الكروت -->
+<div class="row g-4 mt-2">
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm" onclick="window.location.href='{{ url_for('primavera.reports', project_id=project.id) }}'">
+            <div class="card-body text-center p-4">
+                <div class="stat-icon primary mx-auto mb-3" style="width: 80px; height: 80px;">
+                    <i class="fas fa-chart-line fa-3x"></i>
+                </div>
+                <h5 class="fw-bold">تقارير Primavera</h5>
+                <p class="text-muted small">تقارير متقدمة للمسار الحرج والموارد والتكاليف</p>
+                <span class="badge bg-primary">جديد</span>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- إحصائيات سريعة -->
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="table-card">
+            <div class="table-header">
+                <h5 class="table-title"><i class="fas fa-chart-line me-2 text-primary"></i>ملخص سريع</h5>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-3 text-center">
+                    <h3 class="text-primary">78%</h3>
+                    <p class="text-muted">نسبة إنجاز المشاريع</p>
+                </div>
+                <div class="col-md-3 text-center">
+                    <h3 class="text-success">156</h3>
+                    <p class="text-muted">مهام مكتملة هذا الشهر</p>
+                </div>
+                <div class="col-md-3 text-center">
+                    <h3 class="text-warning">23</h3>
+                    <p class="text-muted">مهام قيد التنفيذ</p>
+                </div>
+                <div class="col-md-3 text-center">
+                    <h3 class="text-info">45</h3>
+                    <p class="text-muted">مستخدم نشط</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+<div class="card">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-flag text-primary me-2"></i>معالم المشروع</h6>
+        <button class="btn btn-sm btn-primary" onclick="showAddMilestoneModal()">
+            <i class="fas fa-plus me-1"></i>إضافة معلم
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>كود المعلم</th>
+                        <th>الاسم</th>
+                        <th>النوع</th>
+                        <th>التاريخ المخطط</th>
+                        <th>التاريخ الفعلي</th>
+                        <th>الحالة</th>
+                        <th>الوزن</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for milestone in milestones %}
+                    <tr>
+                        <td><span class="fw-bold">{{ milestone.milestone_code }}</span></td>
+                        <td>{{ milestone.name }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'primary' if milestone.milestone_type == 'contractual' else 'success' if milestone.milestone_type == 'technical' else 'info' }}">
+                                {{ milestone.milestone_type }}
+                            </span>
+                        </td>
+                        <td>{{ milestone.planned_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ milestone.actual_date.strftime('%Y-%m-%d') if milestone.actual_date else '-' }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if milestone.status == 'achieved' else 'warning' if milestone.status == 'pending' else 'danger' }}">
+                                {{ milestone.status }}
+                            </span>
+                        </td>
+                        <td>{{ milestone.weight }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-success" onclick="updateMilestoneStatus({{ milestone.id }}, 'achieved')" {% if milestone.status == 'achieved' %}disabled{% endif %}>
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editMilestone({{ milestone.id }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-3">لا توجد معالم</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

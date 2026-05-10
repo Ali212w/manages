@@ -1,0 +1,118 @@
+{% extends "client/base.html" %}
+
+{% block title %}الاجتماعات - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4><i class="fas fa-calendar-alt me-2"></i> اجتماعات المشروع</h4>
+                <p class="text-muted mb-0">{{ project.name }}</p>
+            </div>
+            <a href="{{ url_for('client.project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> العودة للمشروع
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-primary">{{ stats.total }}</h3>
+            <small>إجمالي الاجتماعات</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-success">{{ stats.completed }}</h3>
+            <small>منعقدة</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-warning">{{ stats.scheduled }}</h3>
+            <small>مجدولة</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-info">{{ stats.upcoming }}</h3>
+            <small>قادمة</small>
+        </div>
+    </div>
+</div>
+
+<!-- Meetings List -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-list me-2"></i> قائمة الاجتماعات</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+            {% for meeting in meetings %}
+            <a href="{{ url_for('client.view_meeting', project_id=project.id, meeting_id=meeting.id) }}" class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <h6 class="mb-0">{{ meeting.title }}</h6>
+                            {% if meeting.status == 'completed' %}
+                            <span class="badge bg-success">منعقد</span>
+                            {% elif meeting.status == 'scheduled' %}
+                            <span class="badge bg-primary">مجدول</span>
+                            {% elif meeting.status == 'cancelled' %}
+                            <span class="badge bg-danger">ملغي</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ meeting.status }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    التاريخ: {{ meeting.scheduled_date.strftime('%Y-%m-%d') }}
+                                </small>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    الوقت: {{ meeting.start_time.strftime('%H:%M') if meeting.start_time else '-' }} - {{ meeting.end_time.strftime('%H:%M') if meeting.end_time else '-' }}
+                                </small>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    الموقع: {{ meeting.location or 'غير محدد' }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>
+                                المنظم: {{ meeting.organizer.full_name if meeting.organizer else '-' }}
+                            </small>
+                            {% if meeting.is_virtual and meeting.virtual_link %}
+                            <span class="badge bg-info ms-2">
+                                <i class="fas fa-video"></i> اجتماع افتراضي
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="text-end mt-2 mt-md-0">
+                        <i class="fas fa-chevron-left text-muted"></i>
+                    </div>
+                </div>
+            </a>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-alt fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">لا توجد اجتماعات مسجلة</h5>
+                <p class="text-muted">سيتم عرض اجتماعات المشروع هنا عند إضافتها</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

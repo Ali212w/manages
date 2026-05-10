@@ -1,0 +1,385 @@
+{% extends "employee/base.html" %}
+
+{% block title %}الأنشطة الخاصة بي{% endblock %}
+
+{% block page_title %}الأنشطة{% endblock %}
+{% block page_subtitle %}إدارة ومتابعة الأنشطة الموكلة إليك{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.25rem;
+        text-align: center;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08);
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+    
+    .activity-card {
+        background: white;
+        border-radius: 20px;
+        margin-bottom: 1rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+        overflow: hidden;
+    }
+    
+    .activity-card:hover {
+        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1);
+    }
+    
+    .activity-header {
+        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, #f8fafc, #ffffff);
+        border-bottom: 1px solid #eef2f7;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .activity-code {
+        font-family: monospace;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .activity-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .status-not_started { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+    .status-in_progress { background: rgba(67, 97, 238, 0.1); color: #4361ee; }
+    .status-completed { background: rgba(76, 175, 80, 0.1); color: #4caf50; }
+    .status-delayed { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    
+    .activity-body {
+        padding: 1.5rem;
+    }
+    
+    .progress-section {
+        margin: 1rem 0;
+    }
+    
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .progress-track {
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+    
+    .activity-footer {
+        padding: 1rem 1.5rem;
+        background: #f8fafc;
+        border-top: 1px solid #eef2f7;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .cost-info {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .cost-item {
+        font-size: 0.8rem;
+    }
+    
+    .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        transition: all 0.3s;
+    }
+    
+    .filter-bar {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-chip {
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        background: white;
+        border: 1px solid #eef2f7;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .filter-chip.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    
+    .filter-chip:hover:not(.active) {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .activity-footer {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .cost-info {
+            justify-content: space-between;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- إحصائيات سريعة -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value text-primary">{{ stats.total }}</div>
+            <div class="stat-label">إجمالي الأنشطة</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-warning">{{ stats.in_progress }}</div>
+            <div class="stat-label">قيد التنفيذ</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-success">{{ stats.completed }}</div>
+            <div class="stat-label">مكتملة</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-info">{{ "%.0f"|format(stats.progress) }}%</div>
+            <div class="stat-label">متوسط التقدم</div>
+        </div>
+    </div>
+    
+    <!-- شريط الفلترة -->
+    <div class="filter-bar">
+        <button class="filter-chip active" data-filter="all">الكل</button>
+        <button class="filter-chip" data-filter="not_started">لم يبدأ</button>
+        <button class="filter-chip" data-filter="in_progress">قيد التنفيذ</button>
+        <button class="filter-chip" data-filter="completed">مكتمل</button>
+        <button class="filter-chip" data-filter="delayed">متأخر</button>
+    </div>
+    
+    <!-- قائمة الأنشطة -->
+    <div id="activitiesList">
+        {% for activity in activities %}
+        <div class="activity-card" data-status="{{ activity.status }}" data-id="{{ activity.id }}">
+            <div class="activity-header">
+                <div>
+                    <span class="activity-code">{{ activity.activity_id }}</span>
+                    <h5 class="mb-0 mt-1">{{ activity.activity_name }}</h5>
+                </div>
+                <div>
+                    <span class="activity-status status-{{ activity.status }}">
+                        {% if activity.status == 'not_started' %}لم يبدأ
+                        {% elif activity.status == 'in_progress' %}قيد التنفيذ
+                        {% elif activity.status == 'completed' %}مكتمل
+                        {% elif activity.status == 'delayed' %}متأخر
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="activity-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">المشروع</small>
+                        <div class="fw-bold">{{ activity.project.name }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">تاريخ البدء المخطط</small>
+                        <div>{{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start else 'غير محدد' }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">تاريخ الانتهاء المخطط</small>
+                        <div>{{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish else 'غير محدد' }}</div>
+                    </div>
+                </div>
+                
+                <div class="progress-section">
+                    <div class="progress-label">
+                        <span>تقدم التنفيذ</span>
+                        <span class="fw-bold">{{ "%.1f"|format(activity.progress_percentage) }}%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill bg-primary" style="width: {{ activity.progress_percentage }}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="activity-footer">
+                <div class="cost-info">
+                    <div class="cost-item">
+                        <small class="text-muted">الميزانية</small>
+                        <div class="fw-bold">{{ "{:,.2f}".format(activity.planned_cost or 0) }} ريال</div>
+                    </div>
+                    <div class="cost-item">
+                        <small class="text-muted">التكلفة الفعلية</small>
+                        <div class="fw-bold {% if (activity.actual_cost or 0) > (activity.planned_cost or 0) %}text-danger{% else %}text-success{% endif %}">
+                             {{ "{:,.2f}".format(activity.actual_cost or 0) }}ريال
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('employee.view_activity', activity_id=activity.id) }}" class="btn btn-primary btn-action">
+                        <i class="fas fa-eye me-1"></i> عرض التفاصيل
+                    </a>
+                    {% if activity.status == 'in_progress' %}
+                    <button class="btn btn-success btn-action" onclick="updateProgress({{ activity.id }})">
+                        <i class="fas fa-chart-line me-1"></i> تحديث التقدم
+                    </button>
+                    {% endif %}
+                    {% if activity.status == 'not_started' and _can_start(activity, current_user) %}
+                    <button class="btn btn-warning btn-action" onclick="startActivity({{ activity.id }})">
+                        <i class="fas fa-play me-1"></i> بدء التنفيذ
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+let currentFilter = 'all';
+
+document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        currentFilter = this.dataset.filter;
+        filterActivities();
+    });
+});
+
+function filterActivities() {
+    const activities = document.querySelectorAll('.activity-card');
+    activities.forEach(activity => {
+        if (currentFilter === 'all' || activity.dataset.status === currentFilter) {
+            activity.style.display = 'block';
+        } else {
+            activity.style.display = 'none';
+        }
+    });
+}
+
+function startActivity(activityId) {
+    Swal.fire({
+        title: 'بدء النشاط',
+        text: 'هل أنت متأكد من بدء تنفيذ هذا النشاط؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، بدء',
+        cancelButtonText: 'إلغاء'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch(`/employee/api/activities/${activityId}/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('تم', 'تم بدء النشاط بنجاح', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('خطأ', data.error, 'error');
+                }
+            });
+        }
+    });
+}
+
+function updateProgress(activityId) {
+    Swal.fire({
+        title: 'تحديث التقدم',
+        input: 'range',
+        inputLabel: 'نسبة الإنجاز',
+        inputAttributes: {
+            min: 0,
+            max: 100,
+            step: 1
+        },
+        inputValue: 0,
+        showCancelButton: true,
+        confirmButtonText: 'حفظ',
+        cancelButtonText: 'إلغاء'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch(`/employee/api/activities/${activityId}/progress`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ progress: result.value })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('تم', 'تم تحديث التقدم بنجاح', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('خطأ', data.error, 'error');
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

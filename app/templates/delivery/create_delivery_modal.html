@@ -1,0 +1,207 @@
+<!-- templates/delivery/create_delivery_modal.html -->
+<div class="modal fade" id="createDeliveryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-truck me-2"></i>
+                    تسليم مواد للمشروع
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="deliveryForm">
+                    <input type="hidden" id="requestId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">المواد المسلمة</label>
+                        <div id="deliveryItemsContainer"></div>
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addDeliveryItem()">
+                            <i class="fas fa-plus"></i> إضافة مادة
+                        </button>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">موقع التسليم</label>
+                        <input type="text" class="form-control" id="deliveryLocation" placeholder="أدخل موقع التسليم">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">صور</label>
+                        <input type="file" class="form-control" id="deliveryPhotos" multiple accept="image/*">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ملاحظات</label>
+                        <textarea class="form-control" id="deliveryNotes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="submitDelivery()">إرسال التسليم</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let deliveryItems = [];
+
+function loadDeliveryForm(requestId, remainingItems) {
+    document.getElementById('requestId').value = requestId;
+    deliveryItems = [];
+    updateDeliveryItemsList(remainingItems);
+}
+
+function addDeliveryItem() {
+    const container = document.getElementById('deliveryItemsContainer');
+    const itemId = Date.now();
+    
+    const div = document.createElement('div');
+    div.className = 'delivery-item mb-2 p-2 border rounded';
+    div.id = `delivery-item-${itemId}`;
+    div.innerHTML = `
+        <div class="row g-2">
+            <div class="col-md-5">
+                <input type="text" class="form-control" placeholder="اسم المادة" id="item-name-${itemId}">
+            </div>
+            <div class="col-md-3">
+                <input type="number" class="form-control" placeholder="الكمية" id="item-qty-${itemId}">
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" placeholder="الوحدة" id="item-unit-${itemId}">
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeDeliveryItem(${itemId})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+    
+    deliveryItems.push({
+        id: itemId,
+        nameInput: `item-name-${itemId}`,
+        qtyInput: `item-qty-${itemId}`,
+        unitInput: `item-unit-${itemId}`
+    });
+}
+
+function removeDeliveryItem(itemId) {
+    const element = document.getElementById(`delivery-item-${itemId}`);
+    element.remove();
+    deliveryItems = deliveryItems.filter(item => item.id !== itemId);
+}
+
+function updateDeliveryItemsList(remainingItems) {
+    const container = document.getElementById('deliveryItemsContainer');
+    container.innerHTML = '';
+    deliveryItems = [];
+    
+    remainingItems.forEach(item => {
+        const itemId = Date.now() + Math.random();
+        const div = document.createElement('div');
+        div.className = 'delivery-item mb-2 p-2 border rounded bg-light';
+        div.id = `delivery-item-${itemId}`;
+        div.innerHTML = `
+            <div class="row g-2 align-items-center">
+                <div class="col-md-5">
+                    <strong>${item.resource_name}</strong>
+                    <input type="hidden" id="item-resource-id-${itemId}" value="${item.resource_id || 0}">
+                    <input type="hidden" id="item-name-${itemId}" value="${item.resource_name}">
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="form-control" placeholder="الكمية" id="item-qty-${itemId}" 
+                           max="${item.remaining}" step="0.01">
+                    <small class="text-muted">المتبقي: ${item.remaining}</small>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" class="form-control" id="item-unit-${itemId}" value="${item.unit}" readonly>
+                </div>
+                <div class="col-md-2">
+                    <span class="badge bg-info">${item.unit}</span>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+        
+        deliveryItems.push({
+            id: itemId,
+            resourceId: `item-resource-id-${itemId}`,
+            nameInput: `item-name-${itemId}`,
+            qtyInput: `item-qty-${itemId}`,
+            unitInput: `item-unit-${itemId}`
+        });
+    });
+}
+
+function submitDelivery() {
+    const requestId = document.getElementById('requestId').value;
+    const location = document.getElementById('deliveryLocation').value;
+    const notes = document.getElementById('deliveryNotes').value;
+    
+    const deliveredItems = [];
+    let hasError = false;
+    
+    for (const item of deliveryItems) {
+        const name = document.getElementById(item.nameInput).value;
+        const qty = parseFloat(document.getElementById(item.qtyInput).value);
+        const unit = document.getElementById(item.unitInput).value;
+        
+        if (!name || isNaN(qty) || qty <= 0) {
+            alert(`يرجى إدخال كمية صالحة للمادة: ${name}`);
+            hasError = true;
+            break;
+        }
+        
+        deliveredItems.push({
+            name: name,
+            quantity: qty,
+            unit: unit,
+            notes: notes
+        });
+    }
+    
+    if (hasError) return;
+    
+    if (deliveredItems.length === 0) {
+        alert('يرجى إضافة مادة واحدة على الأقل');
+        return;
+    }
+    
+    fetch('/delivery/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            request_id: requestId,
+            delivered_items: deliveredItems,
+            delivery_location: location,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('createDeliveryModal')).hide();
+            Swal.fire({
+                icon: 'success',
+                title: 'تم الإرسال',
+                text: 'تم إرسال طلب التسليم بنجاح. في انتظار تأكيد المدير.',
+                timer: 3000,
+                showConfirmButton: false
+            }).then(() => location.reload());
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error
+            });
+        }
+    });
+}
+</script>

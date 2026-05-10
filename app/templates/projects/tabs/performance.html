@@ -1,0 +1,103 @@
+<div class="card">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-chart-line text-primary me-2"></i>مؤشرات الأداء</h6>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="mb-3">مؤشر أداء الجدول (SPI)</h5>
+                        <h2 class="{% if project.performance.spi >= 1 %}text-success{% else %}text-danger{% endif %}">
+                            {{ "%.2f"|format(project.performance.spi) if project.performance and project.performance.spi else '1.00' }}
+                        </h2>
+                        <p class="text-muted mb-0">
+                            {% if project.performance.spi >= 1 %}
+                            <i class="fas fa-check-circle text-success"></i> متقدم على الجدول
+                            {% else %}
+                            <i class="fas fa-exclamation-circle text-danger"></i> متأخر عن الجدول
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="mb-3">مؤشر أداء التكلفة (CPI)</h5>
+                        <h2 class="{% if project.performance.cpi >= 1 %}text-success{% else %}text-danger{% endif %}">
+                            {{ "%.2f"|format(project.performance.cpi) if project.performance and project.performance.cpi else '1.00' }}
+                        </h2>
+                        <p class="text-muted mb-0">
+                            {% if project.performance.cpi >= 1 %}
+                            <i class="fas fa-check-circle text-success"></i> تحت الميزانية
+                            {% else %}
+                            <i class="fas fa-exclamation-circle text-danger"></i> فوق الميزانية
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="mb-3">مؤشر الأداء المركب (CSI)</h5>
+                        <h2 class="{% if project.performance.csi >= 1 %}text-success{% else %}text-warning{% endif %}">
+                            {{ "%.2f"|format(project.performance.csi) if project.performance and project.performance.csi else '1.00' }}
+                        </h2>
+                        <p class="text-muted mb-0">مؤشر شامل للأداء</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="fw-bold mb-3">القيمة المكتسبة</h6>
+                <table class="table table-borderless">
+                    <tr>
+                        <th>القيمة المخططة (PV):</th>
+                        <td>
+                            {{ project.performance.planned_value|format_currency(project.base_currency) if project.performance and project.performance.planned_value else '0'|format_currency(project.base_currency) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>القيمة المكتسبة (EV):</th>
+                        <td class="fw-bold text-primary">
+                            {{ project.performance.earned_value|format_currency(project.base_currency) if  project.performance and project.performance.earned_value else '0'|format_currency(project.base_currency) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>التكلفة الفعلية (AC):</th>
+                        <td>
+                            {{ project.performance.actual_cost|format_currency(project.base_currency) if project.performance and project.performance.actual_cost else '0'|format_currency(project.base_currency) }}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="fw-bold mb-3">التوقعات</h6>
+                <table class="table table-borderless">
+                    <tr>
+                        <th>التكلفة التقديرية عند الإنجاز (EAC):</th>
+                        <td class="fw-bold">
+                            {{ project.performance.eac|format_currency(project.base_currency) if project.performance and project.performance.eac else '0'|format_currency(project.base_currency) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>التكلفة المتبقية (ETC):</th>
+                        <td>
+                            {{ project.performance.etc|format_currency(project.base_currency) if project.performance and project.performance.etc else '0'|format_currency(project.base_currency) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>الانحراف عند الإنجاز (VAC):</th>
+                        <td class="{% if project.performance.vac and project.performance.vac < 0 %}text-danger{% else %}text-success{% endif %}">
+=                            {{ project.performance.vac|format_currency(project.base_currency) if project.performance and project.performance.vac else '0'|format_currency(project.base_currency) }}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

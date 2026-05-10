@@ -1,0 +1,925 @@
+{% extends "company/base.html" %}
+
+{% block title %}أكواد المشاريع - Primavera Style{% endblock %}
+
+{% block page_title %}أكواد المشاريع{% endblock %}
+{% block page_subtitle %}إدارة أكواد تصنيف المشاريع مثل Primavera{% endblock %}
+
+{% block extra_css %}
+<style>
+    .primavera-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+    }
+    
+    /* شريط الأدوات - مثل Primavera */
+    .primavera-toolbar {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 12px;
+        padding: 0.8rem 1.5rem;
+        margin-bottom: 2rem;
+        display: flex;
+        gap: 0.5rem;
+        border-bottom: 2px solid var(--primary);
+    }
+    
+    .toolbar-btn {
+        padding: 0.5rem 1.2rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: white;
+        color: var(--dark);
+        border: 1px solid #dee2e6;
+    }
+    
+    .toolbar-btn:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+    
+    .toolbar-btn.primary {
+        background: var(--primary);
+        color: white;
+    }
+    
+    /* قائمة الأكواد - مثل Primavera */
+    .codes-list {
+        background: white;
+        border-radius: 15px;
+        padding: 1rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    
+    .code-dictionary {
+        margin-bottom: 2rem;
+        border: 1px solid #eef2f7;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .dictionary-header {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.1), rgba(67, 97, 238, 0.05));
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        border-bottom: 2px solid var(--primary);
+        transition: all 0.3s;
+    }
+    
+    .dictionary-header:hover {
+        background: rgba(67, 97, 238, 0.15);
+    }
+    
+    .dictionary-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .dictionary-title h5 {
+        margin: 0;
+        font-weight: 700;
+    }
+    
+    .dictionary-title small {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+    
+    .expand-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .expand-icon:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .dictionary-content {
+        padding: 1.5rem;
+        display: none;
+    }
+    
+    .dictionary-content.expanded {
+        display: block;
+    }
+    
+    /* هيكل الشجرة - مثل Primavera */
+    .code-tree {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .code-tree li {
+        margin: 0.3rem 0;
+    }
+    
+    .code-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0.5rem 0.5rem 0;
+        background: #f8fafc;
+        border-radius: 8px;
+        margin-bottom: 0.2rem;
+        border-right: 4px solid;
+        transition: all 0.3s;
+    }
+    
+    .code-item:hover {
+        background: white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transform: translateX(-5px);
+    }
+    
+    .code-level-indent {
+        width: 30px;
+        height: 100%;
+        margin-left: 0.5rem;
+        background: repeating-linear-gradient(90deg, transparent, transparent 10px, #eef2f7 10px, #eef2f7 20px);
+    }
+    
+    .code-color-indicator {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        margin-left: 0.8rem;
+    }
+    
+    .code-info {
+        flex: 1;
+    }
+    
+    .code-value {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+    
+    .code-value small {
+        color: #6c757d;
+        font-size: 0.8rem;
+        margin-right: 0.5rem;
+    }
+    
+    .code-description {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .code-actions {
+        display: flex;
+        gap: 0.3rem;
+        margin-left: 0.5rem;
+    }
+    
+    .action-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        background: white;
+        border: 1px solid #eef2f7;
+        color: #6c757d;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .action-btn:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .btn-add-child {
+        background: var(--success);
+        color: white;
+        border: none;
+        padding: 0.2rem 0.8rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-add-child:hover {
+        background: #3aa85a;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+        background: #f8fafc;
+        border-radius: 12px;
+    }
+    
+    /* مودال Primavera */
+    .primavera-modal .modal-header {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+    }
+    
+    .primavera-modal .modal-title i {
+        margin-left: 0.5rem;
+    }
+    
+    .primavera-modal .form-section {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .primavera-modal .form-section h6 {
+        margin-bottom: 1rem;
+        color: var(--primary);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="primavera-container">
+    <!-- شريط الأدوات - مثل Primavera -->
+    <div class="primavera-toolbar">
+        <button class="toolbar-btn primary" onclick="showAddDictionaryModal()">
+            <i class="fas fa-folder-plus"></i>
+            إضافة قاموس جديد
+        </button>
+        <button class="toolbar-btn" onclick="expandAll()">
+            <i class="fas fa-expand-alt"></i>
+            توسيع الكل
+        </button>
+        <button class="toolbar-btn" onclick="collapseAll()">
+            <i class="fas fa-compress-alt"></i>
+            طي الكل
+        </button>
+    </div>
+    
+    <!-- قائمة الأكواد -->
+    <div class="codes-list">
+        {% for dict_data in dictionaries %}
+        <div class="code-dictionary" id="dictionary-{{ dict_data.dictionary.id }}">
+            <div class="dictionary-header" onclick="toggleDictionary({{ dict_data.dictionary.id }})">
+                <div class="dictionary-title">
+                    <i class="fas fa-folder-open" style="color: var(--primary);"></i>
+                    <div>
+                        <h5>{{ dict_data.dictionary.dict_name }}</h5>
+                        <small>{{ dict_data.total_codes }} قيمة • {{ dict_data.dictionary.description }}</small>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn-add-child" onclick="showAddCodeModal({{ dict_data.dictionary.id }}, null, event)">
+                        <i class="fas fa-plus"></i> إضافة قيمة
+                    </button>
+                    <span class="expand-icon" onclick="toggleDictionary({{ dict_data.dictionary.id }}, event)">
+                        <i class="fas fa-chevron-down"></i>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="dictionary-content" id="content-{{ dict_data.dictionary.id }}">
+                {% if dict_data.root_codes %}
+                <ul class="code-tree">
+                    {% for code in dict_data.root_codes %}
+                        {% include 'codes/project_code_tree_primavera.html' with context %}
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-tags fa-3x mb-3"></i>
+                    <h6>لا توجد قيم</h6>
+                    <p class="text-muted">انقر على "إضافة قيمة" لإنشاء قيم جديدة</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-folder-open fa-4x mb-3"></i>
+            <h4>لا توجد قواميس أكواد</h4>
+            <p class="text-muted">ابدأ بإضافة قاموس جديد لأكواد المشاريع</p>
+            <button class="toolbar-btn primary mt-3" onclick="showAddDictionaryModal()">
+                <i class="fas fa-plus"></i> إضافة قاموس
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- مودال إضافة قاموس جديد -->
+<div class="modal fade primavera-modal" id="addDictionaryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-folder-plus"></i>
+                    إضافة قاموس أكواد جديد
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addDictionaryForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اسم القاموس <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="dictName" required>
+                        <small class="text-muted">مثال: Sector، Region، Client Type</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">الوصف</label>
+                        <textarea class="form-control" id="dictDescription" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h6>إعدادات متقدمة</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">أقصى طول</label>
+                                <input type="number" class="form-control" id="maxLength" value="20" min="1" max="50">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" id="isHierarchical">
+                                    <label class="form-check-label" for="isHierarchical">
+                                        قاموس هرمي
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-2" id="delimiterField" style="display: none;">
+                            <label class="form-label">الفاصل</label>
+                            <input type="text" class="form-control" id="delimiter" value="." maxlength="1">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> إلغاء
+                </button>
+                <button type="button" class="btn btn-primary" onclick="createDictionary()">
+                    <i class="fas fa-save"></i> حفظ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال إضافة قيمة كود جديدة -->
+<div class="modal fade primavera-modal" id="addCodeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-tag"></i>
+                    إضافة قيمة كود
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCodeForm">
+                    <input type="hidden" id="codeDictionaryId">
+                    <input type="hidden" id="codeParentId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">القاموس</label>
+                        <input type="text" class="form-control" id="codeDictionaryName" readonly>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h6>معلومات الكود</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">قيمة الكود <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="codeValue" required>
+                            <small class="text-muted">مثال: Government، Private، Semi-Government</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">الوصف</label>
+                            <textarea class="form-control" id="codeDescription" rows="2"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h6>إعدادات العرض</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">اللون</label>
+                                <input type="color" class="form-control" id="codeColor" value="#4361ee">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">ترتيب العرض</label>
+                                <input type="number" class="form-control" id="displaySequence" value="0">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% raw %}
+                    <div class="mb-3" id="parentField">
+                        <label class="form-label fw-bold">الكود الأب (للهياكل الهرمية)</label>
+                        <select class="form-select" id="parentCodeSelect">
+                            <option value="">-- بدون أب --</option>
+                        </select>
+                    </div>
+                    {% endraw %}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> إلغاء
+                </button>
+                <button type="button" class="btn btn-success" onclick="createCode()">
+                    <i class="fas fa-save"></i> حفظ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال تعديل كود -->
+<div class="modal fade primavera-modal" id="editCodeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit"></i>
+                    تعديل قيمة الكود
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCodeForm">
+                    <input type="hidden" id="editCodeId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">قيمة الكود <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editCodeValue" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">الوصف</label>
+                        <textarea class="form-control" id="editCodeDescription" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">اللون</label>
+                            <input type="color" class="form-control" id="editCodeColor" value="#4361ee">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">ترتيب العرض</label>
+                            <input type="number" class="form-control" id="editDisplaySequence" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="editIsActive" checked>
+                            <label class="form-check-label" for="editIsActive">نشط</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> إلغاء
+                </button>
+                <button type="button" class="btn btn-warning" onclick="updateCode()">
+                    <i class="fas fa-save"></i> تحديث
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال تأكيد الحذف -->
+<div class="modal fade primavera-modal" id="deleteCodeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    تأكيد الحذف
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>هل أنت متأكد من حذف هذا الكود؟</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    هذا الإجراء لا يمكن التراجع عنه.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> إلغاء
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> حذف
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// متغيرات عامة
+let currentDictionaryId = null;
+let currentCodeId = null;
+
+// دوال التوسيع والطي
+function toggleDictionary(dictId, event) {
+    if (event) event.stopPropagation();
+    
+    const content = document.getElementById(`content-${dictId}`);
+    const icon = document.querySelector(`#dictionary-${dictId} .expand-icon i`);
+    
+    content.classList.toggle('expanded');
+    
+    if (content.classList.contains('expanded')) {
+        icon.className = 'fas fa-chevron-up';
+    } else {
+        icon.className = 'fas fa-chevron-down';
+    }
+}
+
+function expandAll() {
+    document.querySelectorAll('.dictionary-content').forEach(content => {
+        content.classList.add('expanded');
+    });
+    document.querySelectorAll('.expand-icon i').forEach(icon => {
+        icon.className = 'fas fa-chevron-up';
+    });
+}
+
+function collapseAll() {
+    document.querySelectorAll('.dictionary-content').forEach(content => {
+        content.classList.remove('expanded');
+    });
+    document.querySelectorAll('.expand-icon i').forEach(icon => {
+        icon.className = 'fas fa-chevron-down';
+    });
+}
+
+// دوال القواميس
+function showAddDictionaryModal() {
+    document.getElementById('addDictionaryForm').reset();
+    document.getElementById('delimiterField').style.display = 'none';
+    new bootstrap.Modal(document.getElementById('addDictionaryModal')).show();
+}
+
+document.getElementById('isHierarchical').addEventListener('change', function(e) {
+    document.getElementById('delimiterField').style.display = e.target.checked ? 'block' : 'none';
+});
+
+function createDictionary() {
+    const data = {
+        dict_name: document.getElementById('dictName').value.trim(),
+        description: document.getElementById('dictDescription').value.trim(),
+        max_length: parseInt(document.getElementById('maxLength').value),
+        is_hierarchical: document.getElementById('isHierarchical').checked,
+        delimiter: document.getElementById('delimiter').value || '.'
+    };
+    
+    if (!data.dict_name) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'يرجى إدخال اسم القاموس'
+        });
+        return;
+    }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    fetch('/codes/project/dictionary/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken || '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addDictionaryModal')).hide();
+            Swal.fire({
+                icon: 'success',
+                title: 'نجاح',
+                text: 'تم إنشاء القاموس بنجاح',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error || 'حدث خطأ غير معروف'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم'
+        });
+    });
+}
+
+// ✅ دالة إضافة كود فرعي - معدلة
+function showAddCodeModal(dictionaryId, parentId, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    currentDictionaryId = dictionaryId;
+    
+    Swal.fire({
+        title: 'جاري التحميل...',
+        text: 'الرجاء الانتظار',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch(`/codes/project/dictionary/${dictionaryId}/codes`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            Swal.close();
+            
+            if (data.success) {
+                document.getElementById('codeDictionaryId').value = dictionaryId;
+                document.getElementById('codeDictionaryName').value = data.dictionary.name || data.dictionary.name_ar;
+                document.getElementById('codeParentId').value = parentId || '';
+                
+                // تعبئة قائمة الأكواد الأب
+                const parentSelect = document.getElementById('parentCodeSelect');
+                parentSelect.innerHTML = '<option value="">-- بدون أب --</option>';
+                
+                function addCodeOptions(codes, level = 0) {
+                    codes.forEach(code => {
+                        const option = document.createElement('option');
+                        option.value = code.id;
+                        const indent = '—'.repeat(level);
+                        option.textContent = indent + ' ' + code.code_value;
+                        if (code.id === parentId) {
+                            option.selected = true;
+                        }
+                        parentSelect.appendChild(option);
+                        
+                        if (code.children) {
+                            addCodeOptions(code.children, level + 1);
+                        }
+                    });
+                }
+                
+                addCodeOptions(data.codes);
+                
+                // مسح حقول الإدخال
+                document.getElementById('codeValue').value = '';
+                document.getElementById('codeDescription').value = '';
+                document.getElementById('codeColor').value = '#4361ee';
+                document.getElementById('displaySequence').value = '0';
+                
+                const modal = new bootstrap.Modal(document.getElementById('addCodeModal'));
+                modal.show();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ',
+                    text: data.error || 'حدث خطأ في تحميل البيانات'
+                });
+            }
+        })
+        .catch(error => {
+            Swal.close();
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: 'حدث خطأ في الاتصال بالخادم'
+            });
+        });
+}
+
+// ✅ دالة عرض مودال التعديل - معدلة لاستقبال 6 معاملات
+function showEditCodeModal(codeId, codeValue, description, color, sequence, isActive) {
+    currentCodeId = codeId;
+    
+    document.getElementById('editCodeId').value = codeId;
+    document.getElementById('editCodeValue').value = codeValue || '';
+    document.getElementById('editCodeDescription').value = description || '';
+    document.getElementById('editCodeColor').value = color || '#4361ee';
+    document.getElementById('editDisplaySequence').value = sequence || 0;
+    document.getElementById('editIsActive').checked = isActive === true || isActive === 'true';
+    
+    const modal = new bootstrap.Modal(document.getElementById('editCodeModal'));
+    modal.show();
+}
+
+// دالة تحديث الكود
+function updateCode() {
+    const data = {
+        code_value: document.getElementById('editCodeValue').value.trim(),
+        description: document.getElementById('editCodeDescription').value.trim(),
+        display_color: document.getElementById('editCodeColor').value,
+        display_sequence: parseInt(document.getElementById('editDisplaySequence').value),
+        is_active: document.getElementById('editIsActive').checked
+    };
+    
+    if (!data.code_value) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'يرجى إدخال قيمة الكود'
+        });
+        return;
+    }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    fetch(`/codes/project/code/${currentCodeId}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken || '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editCodeModal')).hide();
+            Swal.fire({
+                icon: 'success',
+                title: 'تم التحديث',
+                text: 'تم تحديث الكود بنجاح',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error || 'حدث خطأ غير معروف'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم'
+        });
+    });
+}
+
+// دالة إنشاء كود جديد
+function createCode() {
+    const data = {
+        dictionary_id: parseInt(document.getElementById('codeDictionaryId').value),
+        code_value: document.getElementById('codeValue').value.trim(),
+        description: document.getElementById('codeDescription').value.trim(),
+        display_color: document.getElementById('codeColor').value,
+        display_sequence: parseInt(document.getElementById('displaySequence').value),
+        parent_id: document.getElementById('parentCodeSelect').value || null
+    };
+    
+    if (!data.code_value) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'يرجى إدخال قيمة الكود'
+        });
+        return;
+    }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    fetch('/codes/project/code/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken || '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addCodeModal')).hide();
+            Swal.fire({
+                icon: 'success',
+                title: 'نجاح',
+                text: 'تم إنشاء الكود بنجاح',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error || 'حدث خطأ غير معروف'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم'
+        });
+    });
+}
+
+// دوال الحذف
+function showDeleteModal(codeId) {
+    currentCodeId = codeId;
+    const modal = new bootstrap.Modal(document.getElementById('deleteCodeModal'));
+    modal.show();
+}
+
+// تأكيد الحذف
+document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+    if (!currentCodeId) {
+        bootstrap.Modal.getInstance(document.getElementById('deleteCodeModal')).hide();
+        return;
+    }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    fetch(`/codes/project/code/${currentCodeId}/delete`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken || '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('deleteCodeModal')).hide();
+            Swal.fire({
+                icon: 'success',
+                title: 'تم الحذف',
+                text: 'تم حذف الكود بنجاح',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error || 'حدث خطأ غير معروف'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم'
+        });
+    });
+});
+</script>
+{% endblock %}

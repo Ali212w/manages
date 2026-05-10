@@ -1,0 +1,354 @@
+<!-- templates/projects/create_resource_request.html -->
+{% extends "company/base.html" %}
+
+{% block title %}إنشاء طلب توريد - {{ project.name }}{% endblock %}
+
+{% block page_title %}إنشاء طلب توريد{% endblock %}
+{% block page_subtitle %}{{ project.name }} - {{ project.project_code }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .form-card {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+    }
+    
+    .materials-list {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #eef2f7;
+        border-radius: 15px;
+        padding: 1rem;
+    }
+    
+    .material-item {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        border-bottom: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .material-item:hover {
+        background: rgba(67, 97, 238, 0.02);
+    }
+    
+    .material-item:last-child {
+        border-bottom: none;
+    }
+    
+    .material-info {
+        flex: 1;
+    }
+    
+    .material-name {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+    
+    .material-details {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .quantity-input {
+        width: 120px;
+        padding: 0.4rem;
+        border: 2px solid #eef2f7;
+        border-radius: 8px;
+        text-align: center;
+    }
+    
+    .quantity-input:focus {
+        border-color: var(--primary);
+        outline: none;
+    }
+    
+    .select-all {
+        background: #f8fafc;
+        padding: 0.8rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+    
+    .supplier-select {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.8rem;
+        width: 100%;
+    }
+    
+    .date-input {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.8rem;
+        width: 100%;
+    }
+    
+    .btn-submit {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .empty-materials {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .badge-available {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <form method="POST" action="{{ url_for('projects.create_resource_request',project_id=project.id) }}" id="requestForm">
+            <!-- اختيار المواد -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-cube text-primary me-2"></i>
+                    المواد المطلوبة <span class="text-danger">*</span>
+                </label>
+                
+                {% if materials %}
+                <div class="select-all mb-2">
+                    <input type="checkbox" id="selectAllMaterials" onchange="toggleSelectAll()">
+                    <label for="selectAllMaterials" class="ms-2">تحديد الكل</label>
+                    <span class="float-start text-muted small">اختر المواد التي تريد طلبها</span>
+                </div>
+                
+                <div class="materials-list" id="materialsList">
+                    {% for material in materials %}
+                    <div class="material-item">
+                        <input type="checkbox" name="material_ids" value="{{ material.id }}" 
+                               class="material-checkbox me-3" onchange="toggleMaterial(this)">
+                        <div class="material-info">
+                            <div class="material-name">
+                                {{ material.name }}
+                                {% if material.name_ar %}
+                                <small class="text-muted">({{ material.name_ar }})</small>
+                                {% endif %}
+                            </div>
+                            <div class="material-details">
+                                <span><i class="fas fa-barcode"></i> {{ material.resource_id }}</span>
+                                <span class="mx-2">•</span>
+                                <span><i class="fas fa-ruler"></i> {{ material.unit }}</span>
+                                <span class="mx-2">•</span>
+                                <span><i class="fas fa-box"></i> المتاح: {{ material.available_quantity }}</span>
+                            </div>
+                        </div>
+                        <div class="quantity-field" style="display: none;">
+                            <input type="number" name="quantities" class="quantity-input" 
+                                   placeholder="الكمية" step="0.01" min="0" 
+                                   value="{{ material.minimum_quantity }}" readonly>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-materials">
+                    <i class="fas fa-cube fa-3x text-muted mb-3"></i>
+                    <h6>لا توجد مواد مطلوبة</h6>
+                    <p class="text-muted">لم يتم العثور على مواد في هذا المشروع تحتاج  إلى توريد</p>
+                    <a href="{{ url_for('resource.bulk_add') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus me-1"></i> إضافة مواد
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- اختيار المورد -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-truck text-primary me-2"></i>
+                    المورد <span class="text-danger">*</span>
+                </label>
+                <select name="supplier_id" class="supplier-select" required>
+                    <option value="">-- اختر المورد --</option>
+                    {% for supplier in suppliers %}
+                    <option value="{{ supplier.id }}">
+                        {{ supplier.full_name }} ({{ supplier.email }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">اختر المورد الذي ستقوم بتوريد المواد</small>
+            </div>
+            
+            <!-- تاريخ الاستلام -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-calendar-alt text-primary me-2"></i>
+                    تاريخ الاستلام المطلوب <span class="text-danger">*</span>
+                </label>
+                <input type="date" name="required_date" class="date-input" 
+                       value="{{ default_date_str }}" required>
+                <small class="text-muted">التاريخ الذي ترغب في استلام المواد فيه</small>
+            </div>
+            
+            <!-- موقع التسليم -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                    موقع التسليم
+                </label>
+                <input type="text" name="site_location" class="date-input" 
+                       value="{{ project.location.site_name }}" placeholder="أدخل موقع تسليم المواد">
+                <small class="text-muted">مكان تسليم المواد في المشروع</small>
+            </div>
+            
+            <!-- ملاحظات -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-sticky-note text-primary me-2"></i>
+                    ملاحظات
+                </label>
+                <textarea name="notes" class="form-control" rows="3" 
+                          placeholder="أي ملاحظات إضافية (مواصفات خاصة، تعليمات...)"
+                          style="border: 2px solid #eef2f7; border-radius: 12px;"></textarea>
+            </div>
+            
+            <!-- أزرار الإجراءات -->
+            <div class="d-flex gap-3 mt-4">
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i class="fas fa-save me-2"></i> إنشاء طلب التوريد
+                </button>
+                <a href="{{ url_for('projects.project_resource_requests', project_id=project.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i> إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// تحديد/إلغاء تحديد الكل
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAllMaterials');
+    const checkboxes = document.querySelectorAll('.material-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+        toggleMaterial(checkbox);
+    });
+}
+
+// إظهار/إخفاء حقل الكمية عند تحديد مادة
+function toggleMaterial(checkbox) {
+    const materialItem = checkbox.closest('.material-item');
+    const quantityField = materialItem.querySelector('.quantity-field');
+    const quantityInput = quantityField.querySelector('.quantity-input');
+    
+    if (checkbox.checked) {
+        quantityField.style.display = 'block';
+        quantityInput.required = true;
+    } else {
+        quantityField.style.display = 'none';
+        quantityInput.required = false;
+        quantityInput.value = '';
+    }
+    
+    updateSubmitButton();
+}
+
+// تحديث حالة زر الإرسال
+function updateSubmitButton() {
+    const checkboxes = document.querySelectorAll('.material-checkbox:checked');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (checkboxes.length === 0) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.6';
+        submitBtn.style.cursor = 'not-allowed';
+    } else {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.cursor = 'pointer';
+    }
+}
+
+// التحقق من صحة النموذج قبل الإرسال
+document.getElementById('requestForm').addEventListener('submit', function(e) {
+    const selectedMaterials = [];
+    const quantities = [];
+    
+    document.querySelectorAll('.material-checkbox:checked').forEach(checkbox => {
+        const materialItem = checkbox.closest('.material-item');
+        const quantityInput = materialItem.querySelector('.quantity-input');
+        const quantity = parseFloat(quantityInput.value);
+        
+        if (!quantity || quantity <= 0) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'warning',
+                title: 'تنبيه',
+                text: 'الرجاء إدخال كمية صحيحة للمواد المختارة'
+            });
+            return;
+        }
+        
+        selectedMaterials.push(checkbox.value);
+        quantities.push(quantity);
+    });
+    
+    if (selectedMaterials.length === 0) {
+        e.preventDefault();
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'الرجاء اختيار مادة واحدة على الأقل'
+        });
+        return;
+    }
+    
+    // إضافة الحقول المخفية للكميات
+    const form = e.target;
+    
+    // إزالة أي حقول قديمة
+    document.querySelectorAll('input[name="material_ids[]"]').forEach(el => el.remove());
+    document.querySelectorAll('input[name="quantities[]"]').forEach(el => el.remove());
+    
+    // إضافة حقول جديدة
+    selectedMaterials.forEach((materialId, index) => {
+        const materialInput = document.createElement('input');
+        materialInput.type = 'hidden';
+        materialInput.name = 'material_ids[]';
+        materialInput.value = materialId;
+        form.appendChild(materialInput);
+        
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'hidden';
+        qtyInput.name = 'quantities[]';
+        qtyInput.value = quantities[index];
+        form.appendChild(qtyInput);
+    });
+});
+
+// تهيئة الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    updateSubmitButton();
+});
+</script>
+{% endblock %}

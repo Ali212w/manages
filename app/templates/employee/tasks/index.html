@@ -1,0 +1,452 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ _('emp.my_tasks') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-bar {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .filter-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .filter-badge:hover {
+        transform: translateY(-2px);
+    }
+    
+    .filter-badge.active {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .task-table tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .task-table tbody tr:hover {
+        background: rgba(67,97,238,0.05);
+        transform: scale(1.01);
+    }
+    
+    .task-progress {
+        width: 100px;
+    }
+    
+    .task-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+    
+    .task-actions .btn {
+        padding: 5px 10px;
+        border-radius: var(--radius-sm);
+    }
+    
+    .stat-summary {
+        background: linear-gradient(135deg, #f8f9fa, #fff);
+        border-radius: var(--radius-lg);
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .stat-summary-item {
+        text-align: center;
+        border-right: 1px solid #e0e0e0;
+    }
+    
+    .stat-summary-item:last-child {
+        border-right: none;
+    }
+    
+    @media (max-width: 768px) {
+        .stat-summary-item {
+            border-right: none;
+            margin-bottom: 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-gradient mb-1">
+            <i class="fas fa-tasks me-2"></i> {{ _('emp.my_tasks') }}
+        </h2>
+        <p class="text-muted">{{ _('emp.manage_and_track_your_tasks') }}</p>
+    </div>
+    <div>
+        <button class="btn btn-gradient" onclick="exportTasks()">
+            <i class="fas fa-file-excel me-2"></i> {{ _('emp.export') }}
+        </button>
+    </div>
+</div>
+
+<!-- ملخص الإحصائيات -->
+<div class="stat-summary mb-4">
+    <div class="row">
+        <div class="col-3 stat-summary-item">
+            <div class="display-6 fw-bold text-primary">{{ stats.total }}</div>
+            <small class="text-muted">{{ _('emp.total') }}</small>
+        </div>
+        <div class="col-3 stat-summary-item">
+            <div class="display-6 fw-bold text-warning">{{ stats.pending }}</div>
+            <small class="text-muted">{{ _('emp.pending') }}</small>
+        </div>
+        <div class="col-3 stat-summary-item">
+            <div class="display-6 fw-bold text-info">{{ stats.in_progress }}</div>
+            <small class="text-muted">{{ _('emp.in_progress') }}</small>
+        </div>
+        <div class="col-3 stat-summary-item">
+            <div class="display-6 fw-bold text-success">{{ stats.completed }}</div>
+            <small class="text-muted">{{ _('emp.completed') }}</small>
+        </div>
+    </div>
+</div>
+
+<!-- شريط التصفية -->
+<div class="filter-bar">
+    <div class="row align-items-center">
+        <div class="col-md-6 mb-3 mb-md-0">
+            <div class="d-flex gap-2 flex-wrap">
+                <span class="filter-badge {% if status_filter == 'all' %}active{% endif %}" onclick="filterByStatus('all')">
+                    <i class="fas fa-list me-1"></i> {{ _('emp.all') }}
+                </span>
+                <span class="filter-badge {% if status_filter == 'pending' %}active{% endif %}" onclick="filterByStatus('pending')">
+                    <i class="fas fa-clock me-1"></i> {{ _('emp.pending') }}
+                </span>
+                <span class="filter-badge {% if status_filter == 'in_progress' %}active{% endif %}" onclick="filterByStatus('in_progress')">
+                    <i class="fas fa-play-circle me-1"></i> {{ _('emp.in_progress') }}
+                </span>
+                <span class="filter-badge {% if status_filter == 'completed' %}active{% endif %}" onclick="filterByStatus('completed')">
+                    <i class="fas fa-check-circle me-1"></i> {{ _('emp.completed') }}
+                </span>
+                <span class="filter-badge {% if status_filter == 'overdue' %}active{% endif %}" onclick="filterByStatus('overdue')">
+                    <i class="fas fa-exclamation-triangle me-1"></i> {{ _('emp.overdue') }}
+                </span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="input-group">
+                <input type="text" id="searchInput" class="form-control" placeholder="{{ _('emp.search_tasks') }}..." value="{{ search_query }}">
+                <button class="btn btn-outline-primary" onclick="searchTasks()">
+                    <i class="fas fa-search"></i>
+                </button>
+                <select id="sortSelect" class="form-select w-auto" onchange="changeSort(this.value)">
+                    <option value="date" {% if sort_by == 'date' %}selected{% endif %}>{{ _('emp.sort_by_date') }}</option>
+                    <option value="priority" {% if sort_by == 'priority' %}selected{% endif %}>{{ _('emp.sort_by_priority') }}</option>
+                    <option value="status" {% if sort_by == 'status' %}selected{% endif %}>{{ _('emp.sort_by_status') }}</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- قائمة المهام -->
+<div class="card-modern">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table task-table mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>{{ _('emp.task_name') }}</th>
+                        <th>{{ _('emp.project') }}</th>
+                        <th>{{ _('emp.deadline') }}</th>
+                        <th>{{ _('emp.progress') }}</th>
+                        <th>{{ _('emp.priority') }}</th>
+                        <th>{{ _('emp.status') }}</th>
+                        <th style="width: 120px;">{{ _('emp.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr class="task-row" data-status="{{ task.status }}">
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input task-checkbox" type="checkbox" value="{{ task.id }}">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ task.task_name }}</div>
+                            <small class="text-muted">{{ task.task_code }}</small>
+                        </td>
+                        <td>{{ task.project.name if task.project else '-' }}</td>
+                        <td>
+                            {% set planned_end = get_task_planned_end(task) %}
+                            {% if planned_end %}
+                                <span class="{% if planned_end < now.date() and task.status != 'completed' %}text-danger{% endif %}">
+                                    {{ format_date(planned_end) }}
+                                </span>
+                                {% if planned_end < now.date() and task.status != 'completed' %}
+                                <i class="fas fa-exclamation-circle text-danger ms-1" title="{{ _('emp.overdue') }}"></i>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress task-progress" style="height: 6px;">
+                                    <div class="progress-bar bg-success" style="width: {{ get_task_progress(task) }}%"></div>
+                                </div>
+                                <span class="small">{{ get_task_progress(task)|round|int }}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            {{ get_priority_badge(task.priority) | safe }}
+                        </td>
+                        <td>
+                            {{ get_status_badge(task.status) | safe }}
+                        </td>
+                        <td class="task-actions">
+                            <a href="{{ url_for('employee.view_task', task_id=task.id) }}" class="btn btn-sm btn-outline-primary" title="{{ _('emp.view') }}">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if task.status == 'pending' and can_start_task(task) %}
+                            <button class="btn btn-sm btn-outline-success" onclick="startTask({{ task.id }})" title="{{ _('emp.start') }}">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            {% endif %}
+                            {% if task.status == 'in_progress' %}
+                            <button class="btn btn-sm btn-outline-info" onclick="updateProgress({{ task.id }})" title="{{ _('emp.update_progress') }}">
+                                <i class="fas fa-chart-line"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="completeTask({{ task.id }})" title="{{ _('emp.complete') }}">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="mb-0 text-muted">{{ _('emp.no_tasks_found') }}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- أزرار الإجراءات الجماعية -->
+{% if tasks %}
+<div class="mt-3 d-flex justify-content-between align-items-center">
+    <div>
+        <button class="btn btn-sm btn-outline-secondary" onclick="selectAll()">
+            <i class="fas fa-check-double me-1"></i> {{ _('emp.select_all') }}
+        </button>
+        <button class="btn btn-sm btn-outline-success ms-2" onclick="bulkStart()">
+            <i class="fas fa-play me-1"></i> {{ _('emp.bulk_start') }}
+        </button>
+    </div>
+    <div class="text-muted small">
+        {{ tasks|length }} {{ _('emp.tasks') }}
+    </div>
+</div>
+{% endif %}
+
+<script>
+    let selectedTasks = [];
+    
+    function filterByStatus(status) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('status', status);
+        window.location.href = url.toString();
+    }
+    
+    function searchTasks() {
+        const query = document.getElementById('searchInput').value;
+        const url = new URL(window.location.href);
+        url.searchParams.set('search', query);
+        window.location.href = url.toString();
+    }
+    
+    function changeSort(sort) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('sort', sort);
+        window.location.href = url.toString();
+    }
+    
+    function selectAll() {
+        const checkboxes = document.querySelectorAll('.task-checkbox');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+        updateSelectedTasks();
+    }
+    
+    function updateSelectedTasks() {
+        selectedTasks = [];
+        document.querySelectorAll('.task-checkbox:checked').forEach(cb => {
+            selectedTasks.push(parseInt(cb.value));
+        });
+    }
+    
+    function bulkStart() {
+        if (selectedTasks.length === 0) {
+            showToast('{{ _("emp.select_tasks_to_start") }}', 'warning');
+            return;
+        }
+        
+        showLoading();
+        $.ajax({
+            url: '{{ url_for("employee.api_tasks_bulk_start") }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ task_ids: selectedTasks }),
+            headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+            success: function(response) {
+                if (response.success) {
+                    showToast(response.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(response.error || '{{ _("emp.error_occurred") }}', 'danger');
+                }
+            },
+            error: function() {
+                showToast('{{ _("emp.server_error") }}', 'danger');
+            },
+            complete: function() {
+                hideLoading();
+            }
+        });
+    }
+    
+    function startTask(taskId) {
+        showLoading();
+        $.ajax({
+            url: `/employee/api/tasks/${taskId}/start`,
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+            success: function(response) {
+                if (response.success) {
+                    showToast('{{ _("emp.task_started_success") }}', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else if (response.pending_requirements) {
+                    Swal.fire({
+                        title: '{{ _("emp.pending_requirements") }}',
+                        html: response.error,
+                        icon: 'warning',
+                        confirmButtonText: '{{ _("ok") }}'
+                    });
+                } else {
+                    showToast(response.error, 'danger');
+                }
+            },
+            error: function() { showToast('{{ _("emp.server_error") }}', 'danger'); },
+            complete: function() { hideLoading(); }
+        });
+    }
+    
+    function completeTask(taskId) {
+        Swal.fire({
+            title: '{{ _("emp.complete_task") }}',
+            text: '{{ _("emp.complete_task_confirmation") }}',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '{{ _("emp.yes_complete") }}',
+            cancelButtonText: '{{ _("emp.cancel") }}',
+            input: 'select',
+            inputOptions: {
+                'excellent': '{{ _("emp.excellent") }}',
+                'good': '{{ _("emp.good") }}',
+                'fair': '{{ _("emp.fair") }}',
+                'poor': '{{ _("emp.poor") }}'
+            },
+            inputPlaceholder: '{{ _("emp.select_quality") }}',
+            preConfirm: (quality) => {
+                if (!quality) {
+                    Swal.showValidationMessage('{{ _("emp.select_quality_required") }}');
+                }
+                return { quality: quality };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showLoading();
+                $.ajax({
+                    url: `/employee/api/tasks/${taskId}/complete`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ quality: result.value.quality }),
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('{{ _("emp.task_completed_success") }}', 'success');
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showToast(response.error, 'danger');
+                        }
+                    },
+                    error: function() { showToast('{{ _("emp.server_error") }}', 'danger'); },
+                    complete: function() { hideLoading(); }
+                });
+            }
+        });
+    }
+    
+    function updateProgress(taskId) {
+        Swal.fire({
+            title: '{{ _("emp.update_progress") }}',
+            input: 'range',
+            inputLabel: '{{ _("emp.progress_percentage") }}',
+            inputAttributes: {
+                min: 0,
+                max: 100,
+                step: 5
+            },
+            inputValue: 0,
+            showCancelButton: true,
+            confirmButtonText: '{{ _("emp.update") }}',
+            cancelButtonText: '{{ _("emp.cancel") }}'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const progress = result.value;
+                showLoading();
+                $.ajax({
+                    url: `/employee/api/tasks/${taskId}/progress`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ progress: progress }),
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('{{ _("emp.progress_updated") }}', 'success');
+                            setTimeout(() => location.reload(), 500);
+                        } else {
+                            showToast(response.error, 'danger');
+                        }
+                    },
+                    error: function() { showToast('{{ _("emp.server_error") }}', 'danger'); },
+                    complete: function() { hideLoading(); }
+                });
+            }
+        });
+    }
+    
+    function exportTasks() {
+        window.location.href = '{{ url_for("employee.export_my_tasks") }}';
+    }
+    
+    // تحديث المهام المختارة عند تغيير checkbox
+    document.querySelectorAll('.task-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateSelectedTasks);
+    });
+</script>
+{% endblock %}

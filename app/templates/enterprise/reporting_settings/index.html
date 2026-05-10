@@ -1,0 +1,320 @@
+{% extends "company/base.html" %}
+
+{% block title %}إعدادات التقارير{% endblock %}
+
+{% block page_title %}إعدادات التقارير{% endblock %}
+{% block page_subtitle %}تخصيص إعدادات التقارير المؤسسية{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .settings-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        margin-bottom: 2rem;
+    }
+    
+    .setting-item {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .setting-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .setting-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+    
+    .setting-description {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 0.3rem;
+    }
+    
+    .column-selector {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .column-item {
+        display: flex;
+        align-items: center;
+        padding: 0.3rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .column-item:last-child {
+        border-bottom: none;
+    }
+    
+    .template-preview {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .template-icon {
+        font-size: 3rem;
+        color: var(--primary);
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <form method="POST" action="{{ url_for('enterprise.reporting_settings') }}">
+        <!-- Default Columns -->
+        <div class="settings-card">
+            <h5 class="mb-4"><i class="fas fa-columns me-2 text-primary"></i>الأعمدة الافتراضية</h5>
+            
+            <div class="setting-item">
+                <div class="setting-label">تقارير المشاريع</div>
+                <div class="column-selector">
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox" checked>
+                        <label>اسم المشروع</label>
+                    </div>
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox" checked>
+                        <label>رمز المشروع</label>
+                    </div>
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox" checked>
+                        <label>الحالة</label>
+                    </div>
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox" checked>
+                        <label>مدير المشروع</label>
+                    </div>
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox" checked>
+                        <label>تاريخ البدء</label>
+                    </div>
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox">
+                        <label>تاريخ الانتهاء</label>
+                    </div>
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox">
+                        <label>الميزانية</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-label">تقارير المهام</div>
+                <div class="column-selector">
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox" checked>
+                        <label>رمز المهمة</label>
+                    </div>
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox" checked>
+                        <label>اسم المهمة</label>
+                    </div>
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox" checked>
+                        <label>الحالة</label>
+                    </div>
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox" checked>
+                        <label>التقدم</label>
+                    </div>
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox" checked>
+                        <label>المسؤول</label>
+                    </div>
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox">
+                        <label>تاريخ البدء</label>
+                    </div>
+                    <div class="column-item">
+                        <input class="form-check-input me-2" type="checkbox">
+                        <label>تاريخ الانتهاء</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Report Templates -->
+        <div class="settings-card">
+            <h5 class="mb-4"><i class="fas fa-file-alt me-2 text-primary"></i>قوالب التقارير</h5>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="template-preview">
+                        <div class="template-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h6>تقرير التقدم</h6>
+                        <small class="text-muted">آخر تحديث: اليوم</small>
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-primary">تخصيص</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="template-preview">
+                        <div class="template-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h6>تقرير التأخيرات</h6>
+                        <small class="text-muted">آخر تحديث: أمس</small>
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-primary">تخصيص</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="template-preview">
+                        <div class="template-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h6>تقرير الموارد</h6>
+                        <small class="text-muted">آخر تحديث: 3 أيام</small>
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-primary">تخصيص</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Export Settings -->
+        <div class="settings-card">
+            <h5 class="mb-4"><i class="fas fa-download me-2 text-primary"></i>إعدادات التصدير</h5>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" checked>
+                        <label class="form-check-label">
+                            تضمين الرسوم البيانية في PDF
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" checked>
+                        <label class="form-check-label">
+                            تصدير Excel مع الصيغ
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox">
+                        <label class="form-check-label">
+                            إضافة تذييل للصفحة
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" checked>
+                        <label class="form-check-label">
+                            ترقيم الصفحات
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox">
+                        <label class="form-check-label">
+                            تضمين الملخص التنفيذي
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label class="form-label">صيغة التصدير الافتراضية</label>
+                    <select class="form-select">
+                        <option value="pdf">PDF</option>
+                        <option value="excel">Excel</option>
+                        <option value="csv">CSV</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label">جودة الصور</label>
+                    <select class="form-select">
+                        <option value="high">عالية</option>
+                        <option value="medium" selected>متوسطة</option>
+                        <option value="low">منخفضة</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Schedule Reports -->
+        <div class="settings-card">
+            <h5 class="mb-4"><i class="fas fa-clock me-2 text-primary"></i>جدولة التقارير</h5>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">تقرير التقدم</label>
+                    <select class="form-select">
+                        <option value="daily">يومي</option>
+                        <option value="weekly" selected>أسبوعي</option>
+                        <option value="monthly">شهري</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">تقرير التأخيرات</label>
+                    <select class="form-select">
+                        <option value="daily" selected>يومي</option>
+                        <option value="weekly">أسبوعي</option>
+                        <option value="monthly">شهري</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">تقرير الموارد</label>
+                    <select class="form-select">
+                        <option value="daily">يومي</option>
+                        <option value="weekly">أسبوعي</option>
+                        <option value="monthly" selected>شهري</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label class="form-label">وقت الإرسال</label>
+                    <input type="time" class="form-control" value="08:00">
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label">البريد الإلكتروني للتسليم</label>
+                    <input type="email" class="form-control" placeholder="admin@company.com">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Save Button -->
+        <div class="text-center">
+            <button type="submit" class="btn-primary-gradient px-5">
+                <i class="fas fa-save me-2"></i> حفظ الإعدادات
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

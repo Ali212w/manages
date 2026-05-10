@@ -1,0 +1,817 @@
+<!-- templates/primavera/activity_tabs/resources.html -->
+
+<!-- شريط العنوان مع إحصائيات سريعة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <h6 class="field-group-title mb-0">
+            <i class="fas fa-tools text-primary"></i>
+            Assigned Resources
+        </h6>
+        <span class="badge bg-primary" id="resourceCount">{{ activity_resources|length }}</span>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="addResourceToActivity()">
+        <i class="fas fa-plus me-1"></i> Assign Resource
+    </button>
+</div>
+
+<!-- جدول الموارد -->
+<div class="table-responsive">
+    <table class="activity-table">
+        <thead>
+            <tr>
+                <th>Resource ID</th>
+                <th>Resource Name</th>
+                <th>Type</th>
+                <th>Unit</th>
+                <th>Planned Qty</th>
+                <th>Actual Qty</th>
+                <th>Planned Cost</th>
+                <th>Actual Cost</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="activityResourcesTable">
+            {% if activity_resources and activity_resources|length > 0 %}
+                {% for resource in activity_resources %}
+                <tr class="resource-row" data-resource-id="{{ resource.id }}" data-planned-cost="{{ resource.planned_cost }}" data-actual-cost="{{ resource.actual_cost }}">
+                    <td><span class="fw-bold">{{ resource.resource_id }}</span></td>
+                    <td>{{ resource.name }}</td>
+                    <td>
+                        <span class="badge bg-{% if resource.type == 'labor' %}primary{% elif resource.type == 'material' %}success{% elif resource.type == 'equipment' %}warning{% else %}secondary{% endif %}">
+                            <i class="fas fa-{% if resource.type == 'labor' %}user{% elif resource.type == 'material' %}box{% elif resource.type == 'equipment' %}cog{% else %}tag{% endif %} me-1"></i>
+                            {{ resource.type|title }}
+                        </span>
+                    </td>
+                    <td>{{ resource.unit }}</td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm resource-planned-qty" 
+                               value="{{ resource.planned_quantity }}" 
+                               style="width: 90px;" min="0" step="0.01"
+                               onchange="updateResourceCost(this, 'planned')">
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm resource-actual-qty" 
+                               value="{{ resource.actual_quantity }}" 
+                               style="width: 90px;" min="0" step="0.01" 
+                               onchange="updateResourceCost(this, 'actual')">
+                    </td>
+                    <td class="planned-cost fw-bold text-primary">${{ "%.2f"|format(resource.planned_cost|default(0)) }}</td>
+                    <td class="actual-cost fw-bold {% if resource.actual_cost > resource.planned_cost %}text-danger{% else %}text-success{% endif %}">
+                        ${{ "%.2f"|format(resource.actual_cost|default(0)) }}
+                    </td>
+                    <td class="text-center">
+                        <button class="btn btn-icon btn-outline-danger" onclick="removeActivityResource(this)" title="Remove Resource">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+            <tr class="empty-state">
+                <td colspan="9" class="text-center py-5">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-tools fa-3x text-muted"></i>
+                    </div>
+                    <h6 class="text-muted mt-3">No resources assigned to this activity</h6>
+                    <p class="text-muted small mb-3">Click the "Assign Resource" button to add resources</p>
+                    <button class="btn btn-outline-primary btn-sm" onclick="addResourceToActivity()">
+                        <i class="fas fa-plus me-1"></i> Assign First Resource
+                    </button>
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ملخص الموارد -->
+<div class="info-card mt-4">
+    <h6 class="info-card-title">
+        <i class="fas fa-calculator text-primary"></i>
+        Resource Summary
+    </h6>
+    
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="summary-card labor">
+                <div class="summary-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-value" id="laborCount">{{ resource_stats.labor_count|default(0) }}</div>
+                    <div class="summary-label">Labor Resources</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card material">
+                <div class="summary-icon">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-value" id="materialCount">{{ resource_stats.material_count|default(0) }}</div>
+                    <div class="summary-label">Material Resources</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card equipment">
+                <div class="summary-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-value" id="equipmentCount">{{ resource_stats.equipment_count|default(0) }}</div>
+                    <div class="summary-label">Equipment Resources</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card total">
+                <div class="summary-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-value" id="totalUnits">{{ "%.2f"|format(resource_stats.total_quantity|default(0)) }}</div>
+                    <div class="summary-label">Total Units</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="cost-card planned">
+                <div class="cost-header">
+                    <i class="fas fa-chart-line me-1"></i>
+                    Total Planned Cost
+                </div>
+                <div class="cost-value" id="totalPlannedCost">
+                    ${{ "%.2f"|format(resource_stats.total_planned_cost|default(0)) }}
+                </div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar bg-primary" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="cost-card actual">
+                <div class="cost-header">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    Total Actual Cost
+                </div>
+                <div class="cost-value {% if (resource_stats.total_actual_cost|default(0)) > (resource_stats.total_planned_cost|default(0)) %}text-danger{% else %}text-success{% endif %}" 
+                     id="totalActualCost">
+                    ${{ "%.2f"|format(resource_stats.total_actual_cost|default(0)) }}
+                </div>
+                {% set variance = (resource_stats.total_actual_cost|default(0)) - (resource_stats.total_planned_cost|default(0)) %}
+                {% set variance_percent = (variance / resource_stats.total_planned_cost|default(1) * 100) if resource_stats.total_planned_cost|default(0) > 0 else 0 %}
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar {% if variance <= 0 %}bg-success{% else %}bg-danger{% endif %}" 
+                         style="width: {{ 100 - variance_percent|abs }}%"></div>
+                </div>
+                <small class="text-muted mt-1 d-block">
+                    Variance: 
+                    <span class="{% if variance <= 0 %}text-success{% else %}text-danger{% endif %}">
+                        ${{ "%.2f"|format(variance|abs) }} ({{ "%.1f"|format(variance_percent|abs) }}%)
+                    </span>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة مورد للنشاط -->
+<div class="modal fade" id="addActivityResourceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle text-primary me-2"></i>
+                    Assign Resource to Activity
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addResourceForm">
+                    <!-- اختيار المورد -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-cube me-1 text-muted"></i>
+                            Resource
+                        </label>
+                        <select class="form-select" id="activityResourceSelect" required>
+                            <option value="">-- Select Resource --</option>
+                            {% for resource in all_resources %}
+                            <option value="{{ resource.id }}" 
+                                    data-code="{{ resource.resource_id }}"
+                                    data-name="{{ resource.name }}"
+                                    data-type="{{ resource.resource_type }}"
+                                    data-unit="{{ resource.unit }}"
+                                    data-cost="{{ resource.cost_per_unit }}">
+                                {{ resource.name }} ({{ resource.resource_id }}) - {{ resource.resource_type|title }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- معلومات المورد -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small">Unit</label>
+                            <input type="text" class="form-control bg-light" id="activityResourceUnit" readonly>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Cost per Unit</label>
+                            <input type="text" class="form-control bg-light" id="activityResourceCost" readonly>
+                        </div>
+                    </div>
+                    
+                    <!-- الكمية والتكلفة -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-calculator me-1 text-muted"></i>
+                            Planned Quantity
+                        </label>
+                        <input type="number" class="form-control" id="activityResourceQuantity" 
+                               value="1.00" min="0" step="0.01" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-dollar-sign me-1 text-muted"></i>
+                            Total Planned Cost
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="text" class="form-control fw-bold text-primary" id="activityResourceTotalCost" 
+                                   value="0.00" readonly>
+                        </div>
+                    </div>
+                    
+                    <!-- ملخص سريع -->
+                    <div class="alert alert-info bg-opacity-10 mb-0" id="resourcePreview" style="display: none;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <div>
+                                <strong id="previewName"></strong><br>
+                                <small class="text-muted" id="previewDetails"></small>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="confirmAddActivityResource()">
+                    <i class="fas fa-check me-1"></i>Assign Resource
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تأكيد الحذف -->
+<div class="modal fade" id="deleteResourceConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <h6 class="mb-2">Remove Resource</h6>
+                <p class="text-muted small mb-3">Are you sure you want to remove this resource from the activity?</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button class="btn btn-danger btn-sm" id="confirmDeleteResourceBtn">
+                        <i class="fas fa-trash me-1"></i>Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* تنسيق بطاقات الملخص */
+.summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid #eef2f7;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.summary-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+}
+
+.summary-card.labor .summary-icon { background: rgba(67, 97, 238, 0.1); color: #4361ee; }
+.summary-card.material .summary-icon { background: rgba(76, 175, 80, 0.1); color: #4caf50; }
+.summary-card.equipment .summary-icon { background: rgba(255, 152, 0, 0.1); color: #ff9800; }
+.summary-card.total .summary-icon { background: rgba(156, 39, 176, 0.1); color: #9c27b0; }
+
+.summary-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.summary-content {
+    flex: 1;
+}
+
+.summary-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #1e293b;
+}
+
+.summary-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* تنسيق بطاقات التكلفة */
+.cost-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid #eef2f7;
+}
+
+.cost-card.planned { border-left: 4px solid #4361ee; }
+.cost-card.actual { border-left: 4px solid #4caf50; }
+
+.cost-header {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+}
+
+.cost-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* تنسيق الجدول */
+.activity-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 0.5rem;
+}
+
+.activity-table thead th {
+    background: #f8fafc;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border: none;
+}
+
+.activity-table tbody tr {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    transition: all 0.2s;
+}
+
+.activity-table tbody tr:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.activity-table td {
+    padding: 0.75rem 1rem;
+    border: none;
+    vertical-align: middle;
+}
+
+/* تنسيق الحالة الفارغة */
+.empty-state {
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* تنسيق حقول الإدخال */
+.form-control-sm {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.form-control-sm:focus {
+    border-color: #4361ee;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+/* تنسيق الأزرار */
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.btn-outline-danger {
+    border: 2px solid #fee2e2;
+    color: #dc3545;
+    background: white;
+}
+
+.btn-outline-danger:hover {
+    background: #dc3545;
+    color: white;
+    border-color: #dc3545;
+    transform: scale(1.1);
+}
+
+/* تنسيق الشارات */
+.badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+/* تنسيق الشريط العلوي */
+.field-group-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* تنسيق بطاقات المعلومات */
+.info-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid #eef2f7;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.info-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 2px solid #eef2f7;
+    padding-bottom: 0.75rem;
+}
+
+/* تنسيق الـ Modal */
+.modal-content {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.modal-header {
+    border-bottom: 1px solid #eef2f7;
+    padding: 1rem 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #eef2f7;
+    padding: 1rem 1.5rem;
+}
+
+/* تحسين التجاوب */
+@media (max-width: 768px) {
+    .summary-card {
+        padding: 1rem;
+    }
+    
+    .summary-value {
+        font-size: 1.25rem;
+    }
+    
+    .cost-value {
+        font-size: 1.25rem;
+    }
+    
+    .activity-table td {
+        min-width: 120px;
+    }
+}
+</style>
+
+<script>
+// متغيرات عامة
+let deleteResourceCallback = null;
+
+// إضافة مورد
+function addResourceToActivity() {
+    // إعادة تعيين النموذج
+    document.getElementById('addResourceForm').reset();
+    document.getElementById('activityResourceUnit').value = '';
+    document.getElementById('activityResourceCost').value = '';
+    document.getElementById('activityResourceTotalCost').value = '0.00';
+    document.getElementById('resourcePreview').style.display = 'none';
+    
+    new bootstrap.Modal(document.getElementById('addActivityResourceModal')).show();
+}
+
+// تحديث معلومات المورد عند الاختيار
+document.getElementById('activityResourceSelect').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    
+    if (this.value) {
+        const unit = selected.dataset.unit || '';
+        const cost = parseFloat(selected.dataset.cost) || 0;
+        const quantity = parseFloat(document.getElementById('activityResourceQuantity').value) || 1;
+        
+        document.getElementById('activityResourceUnit').value = unit;
+        document.getElementById('activityResourceCost').value = cost.toFixed(2);
+        document.getElementById('activityResourceTotalCost').value = (quantity * cost).toFixed(2);
+        
+        // عرض معاينة
+        document.getElementById('previewName').textContent = selected.dataset.name;
+        document.getElementById('previewDetails').textContent = 
+            `${selected.dataset.type} | ${unit} | $${cost.toFixed(2)} per unit`;
+        document.getElementById('resourcePreview').style.display = 'block';
+    } else {
+        document.getElementById('activityResourceUnit').value = '';
+        document.getElementById('activityResourceCost').value = '';
+        document.getElementById('activityResourceTotalCost').value = '0.00';
+        document.getElementById('resourcePreview').style.display = 'none';
+    }
+});
+
+// تحديث التكلفة عند تغيير الكمية
+document.getElementById('activityResourceQuantity').addEventListener('input', function() {
+    const selected = document.getElementById('activityResourceSelect').options[document.getElementById('activityResourceSelect').selectedIndex];
+    if (selected && selected.value) {
+        const cost = parseFloat(selected.dataset.cost) || 0;
+        const quantity = parseFloat(this.value) || 0;
+        document.getElementById('activityResourceTotalCost').value = (quantity * cost).toFixed(2);
+    }
+});
+
+// تأكيد إضافة المورد
+function confirmAddActivityResource() {
+    const select = document.getElementById('activityResourceSelect');
+    const resourceId = select.value;
+    const quantity = document.getElementById('activityResourceQuantity').value;
+    
+    if (!resourceId) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Warning',
+            text: 'Please select a resource'
+        });
+        return;
+    }
+    
+    if (!quantity || quantity <= 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Warning',
+            text: 'Please enter a valid quantity'
+        });
+        return;
+    }
+    
+    const selected = select.options[select.selectedIndex];
+    const resourceData = {
+        id: resourceId,
+        code: selected.dataset.code,
+        name: selected.dataset.name,
+        type: selected.dataset.type,
+        unit: selected.dataset.unit,
+        cost: parseFloat(selected.dataset.cost),
+        quantity: parseFloat(quantity)
+    };
+    
+    // إضافة الصف إلى الجدول
+    addResourceRow(resourceData);
+    
+    // إغلاق المودال
+    bootstrap.Modal.getInstance(document.getElementById('addActivityResourceModal')).hide();
+    
+    // تحديث الملخص
+    updateResourceSummary();
+    
+    // رسالة نجاح
+    Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Resource assigned successfully',
+        timer: 1500,
+        showConfirmButton: false
+    });
+}
+
+// إضافة صف جديد للجدول
+function addResourceRow(data) {
+    const tbody = document.getElementById('activityResourcesTable');
+    
+    // إزالة صف الحالة الفارغة إذا موجود
+    const emptyRow = tbody.querySelector('.empty-state');
+    if (emptyRow) {
+        emptyRow.remove();
+    }
+    
+    const newRow = document.createElement('tr');
+    newRow.className = 'resource-row';
+    newRow.dataset.resourceId = data.id;
+    newRow.dataset.plannedCost = (data.quantity * data.cost).toFixed(2);
+    newRow.dataset.actualCost = '0.00';
+    
+    newRow.innerHTML = `
+        <td><span class="fw-bold">${data.code}</span></td>
+        <td>${data.name}</td>
+        <td>
+            <span class="badge bg-${data.type === 'labor' ? 'primary' : data.type === 'material' ? 'success' : 'warning'}">
+                <i class="fas fa-${data.type === 'labor' ? 'user' : data.type === 'material' ? 'box' : 'cog'} me-1"></i>
+                ${data.type.charAt(0).toUpperCase() + data.type.slice(1)}
+            </span>
+        </td>
+        <td>${data.unit}</td>
+        <td>
+            <input type="number" class="form-control form-control-sm resource-planned-qty" 
+                   value="${data.quantity}" style="width: 90px;" min="0" step="0.01"
+                   onchange="updateResourceCost(this, 'planned')">
+        </td>
+        <td>
+            <input type="number" class="form-control form-control-sm resource-actual-qty" 
+                   value="0" style="width: 90px;" min="0" step="0.01"
+                   onchange="updateResourceCost(this, 'actual')">
+        </td>
+        <td class="planned-cost fw-bold text-primary">$${(data.quantity * data.cost).toFixed(2)}</td>
+        <td class="actual-cost fw-bold text-success">$0.00</td>
+        <td class="text-center">
+            <button class="btn btn-icon btn-outline-danger" onclick="removeActivityResource(this)" title="Remove Resource">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(newRow);
+    
+    // تحديث عداد الموارد
+    updateResourceCount();
+}
+
+// تحديث تكلفة المورد
+function updateResourceCost(input, type) {
+    const row = input.closest('tr');
+    const quantity = parseFloat(input.value) || 0;
+    const costPerUnit = parseFloat(row.dataset.costPerUnit) || 0;
+    
+    if (type === 'planned') {
+        const totalCost = (quantity * costPerUnit).toFixed(2);
+        row.querySelector('.planned-cost').textContent = '$' + totalCost;
+        row.dataset.plannedCost = totalCost;
+    } else {
+        const totalCost = (quantity * costPerUnit).toFixed(2);
+        row.querySelector('.actual-cost').textContent = '$' + totalCost;
+        row.dataset.actualCost = totalCost;
+    }
+    
+    updateResourceSummary();
+}
+
+// إزالة مورد
+function removeActivityResource(btn) {
+    const row = btn.closest('tr');
+    const resourceName = row.cells[1].textContent;
+    
+    // إعداد callback للحذف
+    deleteResourceCallback = function() {
+        row.remove();
+        updateResourceSummary();
+        updateResourceCount();
+        
+        // إظهار الحالة الفارغة إذا لم يبقى موارد
+        if (document.querySelectorAll('.resource-row').length === 0) {
+            const tbody = document.getElementById('activityResourcesTable');
+            tbody.innerHTML = `
+                <tr class="empty-state">
+                    <td colspan="9" class="text-center py-5">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-tools fa-3x text-muted"></i>
+                        </div>
+                        <h6 class="text-muted mt-3">No resources assigned to this activity</h6>
+                        <p class="text-muted small mb-3">Click the "Assign Resource" button to add resources</p>
+                        <button class="btn btn-outline-primary btn-sm" onclick="addResourceToActivity()">
+                            <i class="fas fa-plus me-1"></i> Assign First Resource
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Removed',
+            text: 'Resource removed successfully',
+            timer: 1500,
+            showConfirmButton: false
+        });
+    };
+    
+    // إظهار مودال التأكيد
+    const modal = new bootstrap.Modal(document.getElementById('deleteResourceConfirmModal'));
+    modal.show();
+}
+
+// تأكيد حذف المورد
+document.getElementById('confirmDeleteResourceBtn').addEventListener('click', function() {
+    if (deleteResourceCallback) {
+        deleteResourceCallback();
+        bootstrap.Modal.getInstance(document.getElementById('deleteResourceConfirmModal')).hide();
+    }
+});
+
+// تحديث ملخص الموارد
+function updateResourceSummary() {
+    let laborCount = 0, materialCount = 0, equipmentCount = 0;
+    let totalPlannedCost = 0, totalActualCost = 0, totalQuantity = 0;
+    
+    document.querySelectorAll('.resource-row').forEach(row => {
+        const type = row.querySelector('.badge').textContent.trim().toLowerCase();
+        const plannedQty = parseFloat(row.querySelector('.resource-planned-qty').value) || 0;
+        const actualQty = parseFloat(row.querySelector('.resource-actual-qty').value) || 0;
+        const plannedCost = parseFloat(row.dataset.plannedCost) || 0;
+        const actualCost = parseFloat(row.dataset.actualCost) || 0;
+        
+        if (type.includes('labor')) laborCount++;
+        else if (type.includes('material')) materialCount++;
+        else if (type.includes('equipment')) equipmentCount++;
+        
+        totalPlannedCost += plannedCost;
+        totalActualCost += actualCost;
+        totalQuantity += plannedQty;
+    });
+    
+    // تحديث القيم المعروضة
+    document.getElementById('laborCount').textContent = laborCount;
+    document.getElementById('materialCount').textContent = materialCount;
+    document.getElementById('equipmentCount').textContent = equipmentCount;
+    document.getElementById('totalUnits').textContent = totalQuantity.toFixed(2);
+    document.getElementById('totalPlannedCost').innerHTML = '$' + totalPlannedCost.toFixed(2);
+    document.getElementById('totalActualCost').innerHTML = '$' + totalActualCost.toFixed(2);
+    
+    // تحديث لون التكلفة الفعلية
+    const actualCostEl = document.getElementById('totalActualCost');
+    if (totalActualCost > totalPlannedCost) {
+        actualCostEl.className = 'cost-value text-danger';
+    } else {
+        actualCostEl.className = 'cost-value text-success';
+    }
+}
+
+// تحديث عداد الموارد
+function updateResourceCount() {
+    const count = document.querySelectorAll('.resource-row').length;
+    document.getElementById('resourceCount').textContent = count;
+}
+
+// تحديث أولي عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    updateResourceSummary();
+    updateResourceCount();
+});
+</script>

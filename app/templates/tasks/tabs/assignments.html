@@ -1,0 +1,567 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-bold mb-0">
+        <i class="fas fa-users text-primary me-2"></i>المستخدمون المعينون
+    </h6>
+    <button class="btn btn-sm btn-primary" onclick="showAssignUserModal()">
+        <i class="fas fa-user-plus me-1"></i> تعيين مستخدمين
+    </button>
+</div>
+
+<div class="table-responsive">
+    <table class="detail-table">
+        <thead>
+            <tr>
+                <th width="50">
+                    <input type="checkbox" id="selectAllAssignments" onclick="toggleAllAssignments()">
+                </th>
+                <th>المستخدم</th>
+                <th>تاريخ التعيين</th>
+                <th>الحالة</th>
+                <th>تاريخ القبول</th>
+                <th>تاريخ الإنجاز</th>
+                <th>تقييم الجودة</th>
+                <th>تقييم الكفاءة</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody id="assignmentsTableBody">
+            {% for assignment in assignments %}
+            <tr data-assignment-id="{{ assignment.id }}" data-user-id="{{ assignment.user.id }}">
+                <td>
+                    <input type="checkbox" class="assignment-select" value="{{ assignment.id }}">
+                </td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="user-avatar" style="width: 30px; height: 30px; background-color: {{ assignment.user.color or '#4361ee' }};">
+                            {{ assignment.user.full_name[0] }}
+                        </span>
+                        <span class="fw-bold user-name">{{ assignment.user.full_name }}</span>
+                    </div>
+                </td>
+                <td>{{ assignment.assigned_at.strftime('%Y-%m-%d') if assignment.assigned_at else '-' }}</td>
+                <td>
+                    <span class="badge bg-{{ 'success' if assignment.status == 'completed' else 'info' if assignment.status == 'accepted' else 'warning' if assignment.status == 'assigned' else 'secondary' }}">
+                        {{ assignment.status }}
+                    </span>
+                </td>
+                <td>{{ assignment.acceptance_date.strftime('%Y-%m-%d') if assignment.acceptance_date else '-' }}</td>
+                <td>{{ assignment.completion_date.strftime('%Y-%m-%d') if assignment.completion_date else '-' }}</td>
+                <td class="text-center">
+                    {% if assignment.quality_rating %}
+                    <span class="text-warning">★ {{ assignment.quality_rating }}/5</span>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if assignment.efficiency_rating %}
+                    <span>{{ assignment.efficiency_rating }}/5</span>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-danger" onclick="confirmRemoveSingleAssignment({{ assignment.id }}, '{{ assignment.user.full_name }}')" title="إزالة المستخدم">
+                            <i class="fas fa-user-minus"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="viewAssignmentDetails({{ assignment.id }})" title="عرض التفاصيل">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" class="text-center py-4">
+                    <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">لم يتم تعيين أي مستخدمين بعد</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- شريط الإجراءات الجماعية -->
+<div class="d-flex justify-content-between align-items-center mt-3" id="bulkActions" style="display: none !important;">
+    <div>
+        <span class="text-muted" id="selectedCount">0</span> مستخدم محدد
+    </div>
+    <div>
+        <button class="btn btn-sm btn-outline-danger" onclick="confirmRemoveMultipleAssignments()">
+            <i class="fas fa-user-times me-1"></i> إزالة المحددين
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="clearSelection()">
+            <i class="fas fa-times me-1"></i> إلغاء التحديد
+        </button>
+    </div>
+</div>
+
+<!-- Modal تعيين مستخدمين متعددين -->
+<div class="modal fade" id="assignUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>
+                    تعيين مستخدمين
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">المستخدمين</label>
+                        <select class="form-select" id="assignUserIds" multiple size="5" required>
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.full_name }} ({{ user.role }})</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">يمكنك اختيار أكثر من مستخدم (Ctrl+Click)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ملاحظات</label>
+                        <textarea class="form-control" id="assignmentNotes" rows="2" placeholder="ملاحظات إضافية (اختياري)"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="assignMultipleUsers()">
+                    <i class="fas fa-save me-1"></i> تعيين
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تفاصيل التعيين -->
+<div class="modal fade" id="assignmentDetailsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    تفاصيل التعيين
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="assignmentDetailsContent">
+                <!-- يتم تعبئتها عبر JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    /* أضف هذا إلى ملف CSS الخاص بك */
+.assignment-select {
+    cursor: pointer;
+}
+
+#bulkActions {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.user-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+</style>
+<script>
+let selectedAssignments = [];
+let taskId = {{ task.id }};
+
+// ============================================
+// دوال تحديد المستخدمين
+// ============================================
+function toggleAllAssignments() {
+    const checkboxes = document.querySelectorAll('.assignment-select');
+    const selectAll = document.getElementById('selectAllAssignments');
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll.checked;
+        updateSelection(cb);
+    });
+}
+
+function updateSelection(checkbox) {
+    const assignmentId = checkbox.value;
+    if (checkbox.checked) {
+        if (!selectedAssignments.includes(assignmentId)) {
+            selectedAssignments.push(assignmentId);
+        }
+    } else {
+        selectedAssignments = selectedAssignments.filter(id => id !== assignmentId);
+    }
+    
+    updateSelectionUI();
+}
+
+function updateSelectionUI() {
+    const countSpan = document.getElementById('selectedCount');
+    const bulkActions = document.getElementById('bulkActions');
+    
+    if (countSpan) {
+        countSpan.textContent = selectedAssignments.length;
+    }
+    
+    if (bulkActions) {
+        if (selectedAssignments.length > 0) {
+            bulkActions.style.display = 'flex';
+        } else {
+            bulkActions.style.display = 'none';
+        }
+    }
+}
+
+function clearSelection() {
+    document.querySelectorAll('.assignment-select').forEach(cb => {
+        cb.checked = false;
+    });
+    selectedAssignments = [];
+    updateSelectionUI();
+}
+
+// ============================================
+// دوال تعيين المستخدمين
+// ============================================
+function showAssignUserModal() {
+    document.getElementById('assignUserIds').value = '';
+    document.getElementById('assignmentNotes').value = '';
+    new bootstrap.Modal(document.getElementById('assignUserModal')).show();
+}
+
+function assignMultipleUsers() {
+    const selectElement = document.getElementById('assignUserIds');
+    const selectedOptions = Array.from(selectElement.selectedOptions).map(opt => opt.value);
+    const notes = document.getElementById('assignmentNotes').value;
+    
+    if (selectedOptions.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'الرجاء اختيار مستخدم واحد على الأقل'
+        });
+        return;
+    }
+    
+    Swal.fire({
+        title: 'تأكيد التعيين',
+        html: `هل أنت متأكد من تعيين <strong>${selectedOptions.length}</strong> مستخدم لهذه المهمة؟`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'نعم، تعيين',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            performAssignUsers(selectedOptions, notes);
+        }
+    });
+}
+
+function performAssignUsers(userIds, notes) {
+    Swal.fire({
+        title: 'جاري التعيين',
+        html: 'الرجاء الانتظار...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch(`/tasks/api/${taskId}/assign-multiple`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            user_ids: userIds,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('assignUserModal')).hide();
+            Swal.fire({
+                icon: 'success',
+                title: 'تم التعيين',
+                text: `تم تعيين ${data.assigned_count} مستخدمين بنجاح`,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error || 'حدث خطأ أثناء التعيين'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم'
+        });
+    });
+}
+
+// ============================================
+// دوال إزالة المستخدمين
+// ============================================
+function confirmRemoveSingleAssignment(assignmentId, userName) {
+    Swal.fire({
+        title: 'تأكيد الإزالة',
+        html: `
+            <div class="text-center">
+                <i class="fas fa-user-times fa-4x text-danger mb-3"></i>
+                <h5>إزالة المستخدم</h5>
+                <p class="text-muted">هل أنت متأكد من إزالة المستخدم <strong>"${userName}"</strong> من هذه المهمة؟</p>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'نعم، إزالة',
+        cancelButtonText: 'إلغاء',
+        reverseButtons: true,
+        customClass: {
+            confirmButton: 'btn btn-danger px-4',
+            cancelButton: 'btn btn-secondary px-4',
+            popup: 'rounded-4'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            removeSingleAssignment(assignmentId);
+        }
+    });
+}
+
+function confirmRemoveMultipleAssignments() {
+    if (selectedAssignments.length === 0) return;
+    
+    Swal.fire({
+        title: 'تأكيد الإزالة الجماعية',
+        html: `
+            <div class="text-center">
+                <i class="fas fa-user-times fa-4x text-danger mb-3"></i>
+                <h5>إزالة المستخدمين المحددين</h5>
+                <p class="text-muted">هل أنت متأكد من إزالة <strong>${selectedAssignments.length}</strong> مستخدم من هذه المهمة؟</p>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'نعم، إزالة الكل',
+        cancelButtonText: 'إلغاء',
+        reverseButtons: true,
+        customClass: {
+            confirmButton: 'btn btn-danger px-4',
+            cancelButton: 'btn btn-secondary px-4',
+            popup: 'rounded-4'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            removeMultipleAssignments(selectedAssignments);
+        }
+    });
+}
+
+function removeSingleAssignment(assignmentId) {
+    Swal.fire({
+        title: 'جاري الإزالة',
+        html: 'الرجاء الانتظار...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch(`/tasks/api/assignment/${assignmentId}/remove`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم الإزالة',
+                text: 'تم إزالة المستخدم بنجاح',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error || 'حدث خطأ أثناء الإزالة'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم'
+        });
+    });
+}
+
+function removeMultipleAssignments(assignmentIds) {
+    Swal.fire({
+        title: 'جاري الإزالة',
+        html: 'الرجاء الانتظار...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch(`/tasks/api/assignments/remove-multiple`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ assignment_ids: assignmentIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم الإزالة',
+                text: `تم إزالة ${data.removed_count} مستخدمين بنجاح`,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error || 'حدث خطأ أثناء الإزالة'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم'
+        });
+    });
+}
+
+// ============================================
+// دوال عرض التفاصيل
+// ============================================
+function viewAssignmentDetails(assignmentId) {
+    fetch(`/tasks/api/assignment/${assignmentId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const a = data.assignment;
+                const content = document.getElementById('assignmentDetailsContent');
+                content.innerHTML = `
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="120">المستخدم:</th>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="user-avatar me-2" style="width:30px; height:30px; background-color: ${a.user_color || '#4361ee'};">${a.user_name[0]}</span>
+                                    <strong>${a.user_name}</strong>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>الحالة:</th>
+                            <td><span class="badge bg-${a.status_badge}">${a.status}</span></td>
+                        </tr>
+                        <tr>
+                            <th>تاريخ التعيين:</th>
+                            <td>${a.assigned_at || '-'}</td>
+                        </tr>
+                        <tr>
+                            <th>تاريخ القبول:</th>
+                            <td>${a.acceptance_date || '-'}</td>
+                        </tr>
+                        <tr>
+                            <th>تاريخ الإنجاز:</th>
+                            <td>${a.completion_date || '-'}</td>
+                        </tr>
+                        <tr>
+                            <th>تقييم الجودة:</th>
+                            <td>${a.quality_rating ? '★'.repeat(a.quality_rating) + '☆'.repeat(5-a.quality_rating) : '-'}</td>
+                        </tr>
+                        <tr>
+                            <th>تقييم الكفاءة:</th>
+                            <td>${a.efficiency_rating ? a.efficiency_rating + '/5' : '-'}</td>
+                        </tr>
+                        <tr>
+                            <th>ملاحظات:</th>
+                            <td>${a.notes || '-'}</td>
+                        </tr>
+                    </table>
+                `;
+                new bootstrap.Modal(document.getElementById('assignmentDetailsModal')).show();
+            }
+        });
+}
+
+// ============================================
+// تهيئة الصفحة
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // إضافة event listeners لخانات الاختيار
+    document.querySelectorAll('.assignment-select').forEach(cb => {
+        cb.addEventListener('change', function() {
+            updateSelection(this);
+        });
+    });
+});
+</script>

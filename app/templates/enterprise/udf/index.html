@@ -1,0 +1,1505 @@
+{% extends "company/base.html" %}
+
+{% block title %}User Defined Fields - UDF{% endblock %}
+
+{% block page_title %}User Defined Fields (UDF){% endblock %}
+{% block page_subtitle %}الحقول المخصصة التي يمكن إضافتها للأنشطة والمشاريع والموارد{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== المتغيرات الأساسية ===== */
+    :root {
+        --udf-primary: #9c27b0;
+        --udf-primary-dark: #7b1fa2;
+        --udf-primary-light: #ba68c8;
+        --udf-bg: linear-gradient(135deg, #f8f9fa, #ffffff);
+        --udf-shadow: 0 10px 30px rgba(156, 39, 176, 0.1);
+        --udf-border: rgba(156, 39, 176, 0.2);
+    }
+
+    /* ===== الحاوية الرئيسية ===== */
+    .udf-container {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03), 0 10px 20px rgba(156, 39, 176, 0.05);
+        border: 1px solid #eef2f7;
+        animation: slideInUp 0.5s ease;
+    }
+
+    /* ===== رأس الصفحة ===== */
+    .udf-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 3px solid #eef2f7;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .header-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, var(--udf-primary), var(--udf-primary-dark));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        box-shadow: 0 10px 25px rgba(156, 39, 176, 0.3);
+    }
+
+    .header-text h2 {
+        font-size: 2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--dark), var(--udf-primary-dark));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0;
+    }
+
+    .header-text p {
+        color: #6c757d;
+        margin: 0.3rem 0 0;
+    }
+
+    .btn-add {
+        background: linear-gradient(135deg, var(--udf-primary), var(--udf-primary-dark));
+        border: none;
+        padding: 0.9rem 2rem;
+        border-radius: 16px;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.8rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 20px rgba(156, 39, 176, 0.3);
+        cursor: pointer;
+    }
+
+    .btn-add:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(156, 39, 176, 0.4);
+    }
+
+    .btn-add i {
+        font-size: 1.2rem;
+    }
+
+    /* ===== إحصائيات سريعة ===== */
+    .stats-mini {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-mini-item {
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 0.8rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border: 1px solid #eef2f7;
+    }
+
+    .stat-mini-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(156, 39, 176, 0.1);
+        color: var(--udf-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .stat-mini-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-mini-value {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: var(--dark);
+    }
+
+    .stat-mini-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ===== تبويبات UDF ===== */
+    .udf-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #eef2f7;
+        padding-bottom: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .udf-tab {
+        padding: 0.7rem 2rem;
+        border-radius: 40px;
+        border: none;
+        background: transparent;
+        color: #6c757d;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .udf-tab::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 3px;
+        background: var(--udf-primary);
+        transform: translateX(-50%);
+        transition: width 0.3s ease;
+    }
+
+    .udf-tab:hover {
+        background: #f8fafc;
+        color: var(--udf-primary);
+    }
+
+    .udf-tab.active {
+        background: linear-gradient(135deg, var(--udf-primary), var(--udf-primary-dark));
+        color: white;
+        box-shadow: 0 5px 15px rgba(156, 39, 176, 0.3);
+    }
+
+    .udf-tab.active::before {
+        display: none;
+    }
+
+    .udf-tab i {
+        margin-left: 0.5rem;
+    }
+
+    /* ===== لوحات المحتوى ===== */
+    .udf-panel {
+        display: none;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .udf-panel.active {
+        display: block;
+    }
+
+    /* ===== بطاقة ملخص النوع ===== */
+    .type-summary {
+        background: linear-gradient(135deg, rgba(156, 39, 176, 0.05), rgba(156, 39, 176, 0.02));
+        border-radius: 20px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid var(--udf-border);
+    }
+
+    .type-count {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .type-count i {
+        color: var(--udf-primary);
+        font-size: 1.2rem;
+    }
+
+    .count-number {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: var(--udf-primary);
+    }
+
+    /* ===== جدول UDF ===== */
+    .udf-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 0.75rem;
+    }
+
+    .udf-table thead th {
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        font-weight: 700;
+        color: var(--dark);
+        font-size: 0.9rem;
+        border: none;
+        white-space: nowrap;
+    }
+
+    .udf-table thead th:first-child {
+        border-radius: 0 16px 16px 0;
+    }
+
+    .udf-table thead th:last-child {
+        border-radius: 16px 0 0 16px;
+    }
+
+    .udf-table tbody tr {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        transition: all 0.3s ease;
+        border: 1px solid #eef2f7;
+    }
+
+    .udf-table tbody tr:hover {
+        box-shadow: 0 8px 20px rgba(156, 39, 176, 0.1);
+        border-color: var(--udf-border);
+        transform: translateY(-2px);
+    }
+
+    .udf-table td {
+        padding: 1.2rem 1.5rem;
+        border: none;
+        vertical-align: middle;
+    }
+
+    .udf-table td:first-child {
+        border-radius: 0 16px 16px 0;
+    }
+
+    .udf-table td:last-child {
+        border-radius: 16px 0 0 16px;
+    }
+
+    /* ===== معلومات الحقل ===== */
+    .field-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .field-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        background: rgba(156, 39, 176, 0.1);
+        color: var(--udf-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    .field-details {
+        flex: 1;
+    }
+
+    .field-name {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .field-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    /* ===== شارات نوع البيانات ===== */
+    .data-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .type-text { 
+        background: rgba(67, 97, 238, 0.1); 
+        color: var(--primary); 
+    }
+    .type-number { 
+        background: rgba(76, 201, 240, 0.1); 
+        color: var(--success); 
+    }
+    .type-date { 
+        background: rgba(248, 150, 30, 0.1); 
+        color: var(--warning); 
+    }
+    .type-boolean { 
+        background: rgba(156, 39, 176, 0.1); 
+        color: #9c27b0; 
+    }
+    .type-list { 
+        background: rgba(0, 150, 136, 0.1); 
+        color: #009688; 
+    }
+
+    /* ===== شارات الحالة ===== */
+    .required-badge {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .optional-badge {
+        background: #eef2f7;
+        color: #6c757d;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    /* ===== قيم القائمة ===== */
+    .list-values {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .list-value-tag {
+        background: #eef2f7;
+        color: #6c757d;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+    }
+
+    /* ===== أزرار الإجراءات ===== */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 2px solid #eef2f7;
+        background: white;
+        color: #6c757d;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .action-btn.edit:hover {
+        border-color: var(--udf-primary);
+        background: var(--udf-primary);
+        color: white;
+    }
+
+    .action-btn.delete:hover {
+        border-color: var(--danger);
+        background: var(--danger);
+        color: white;
+    }
+
+    /* ===== الحالة الفارغة ===== */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: #f8fafc;
+        border-radius: 30px;
+        border: 2px dashed #eef2f7;
+    }
+
+    .empty-state-icon {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(156, 39, 176, 0.1);
+        color: var(--udf-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin: 0 auto 1.5rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+
+    /* ===== الرسوم المتحركة ===== */
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* ===== تنسيق متجاوب ===== */
+    @media (max-width: 768px) {
+        .udf-container {
+            padding: 1rem;
+        }
+
+        .udf-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .btn-add {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .udf-table {
+            font-size: 0.9rem;
+        }
+
+        .udf-table td {
+            padding: 1rem;
+        }
+
+        .field-info {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .stats-mini {
+            flex-direction: column;
+        }
+
+        .stat-mini-item {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="udf-container">
+    <!-- رأس الصفحة -->
+    <div class="udf-header">
+        <div class="header-title">
+            <div class="header-icon">
+                <i class="fas fa-database"></i>
+            </div>
+            <div class="header-text">
+                <h2>User Defined Fields</h2>
+                <p>الحقول المخصصة للأنشطة والمشاريع والموارد</p>
+            </div>
+        </div>
+        <button class="btn-add" onclick="addUDF()">
+            <i class="fas fa-plus-circle"></i>
+            إضافة حقل جديد
+        </button>
+    </div>
+
+    <!-- إحصائيات سريعة -->
+    <div class="stats-mini">
+        {% set total_udfs = 0 %}
+        {% for type, udfs in grouped_udfs.items() %}
+            {% set total_udfs = total_udfs + udfs|length %}
+        {% endfor %}
+        
+        <div class="stat-mini-item">
+            <div class="stat-mini-icon">
+                <i class="fas fa-cubes"></i>
+            </div>
+            <div class="stat-mini-info">
+                <span class="stat-mini-value">{{ total_udfs }}</span>
+                <span class="stat-mini-label">إجمالي الحقول</span>
+            </div>
+        </div>
+        
+        <div class="stat-mini-item">
+            <div class="stat-mini-icon">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="stat-mini-info">
+                <span class="stat-mini-value">{{ grouped_udfs|length }}</span>
+                <span class="stat-mini-label">أنواع الحقول</span>
+            </div>
+        </div>
+        
+        <div class="stat-mini-item">
+            <div class="stat-mini-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="stat-mini-info">
+                {% set required_count = 0 %}
+                {% for type, udfs in grouped_udfs.items() %}
+                    {% for udf in udfs %}
+                        {% if udf.is_required %}
+                            {% set required_count = required_count + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+                <span class="stat-mini-value">{{ required_count }}</span>
+                <span class="stat-mini-label">حقول إلزامية</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- تبويبات UDF -->
+    <div class="udf-tabs">
+        <button class="udf-tab {% if active_tab == 'activity' %}active{% endif %}" onclick="showUDFTab('activity')">
+            <i class="fas fa-tasks"></i>
+            الأنشطة
+            <span class="badge bg-white text-dark ms-2">{{ grouped_udfs.activity|length }}</span>
+        </button>
+        <button class="udf-tab {% if active_tab == 'project' %}active{% endif %}" onclick="showUDFTab('project')">
+            <i class="fas fa-project-diagram"></i>
+            المشاريع
+            <span class="badge bg-white text-dark ms-2">{{ grouped_udfs.project|length }}</span>
+        </button>
+        <button class="udf-tab {% if active_tab == 'resource' %}active{% endif %}" onclick="showUDFTab('resource')">
+            <i class="fas fa-users"></i>
+            الموارد
+            <span class="badge bg-white text-dark ms-2">{{ grouped_udfs.resource|length }}</span>
+        </button>
+        <button class="udf-tab {% if active_tab == 'wbs' %}active{% endif %}" onclick="showUDFTab('wbs')">
+            <i class="fas fa-sitemap"></i>
+            WBS
+            <span class="badge bg-white text-dark ms-2">{{ grouped_udfs.wbs|length }}</span>
+        </button>
+    </div>
+
+    <!-- Activity UDFs -->
+    <div class="udf-panel {% if active_tab == 'activity' %}active{% endif %}" id="panel-activity">
+        {% if grouped_udfs.activity %}
+        <div class="type-summary">
+            <div class="type-count">
+                <i class="fas fa-tasks"></i>
+                <span class="count-number">{{ grouped_udfs.activity|length }}</span>
+                <span>حقل مخصص للأنشطة</span>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="udf-table">
+                <thead>
+                    <tr>
+                        <th>الحقل</th>
+                        <th>نوع البيانات</th>
+                        <th>القيمة الافتراضية</th>
+                        <th>قيم القائمة</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for udf in grouped_udfs.activity %}
+                    <tr id="udf-{{ udf.id }}">
+                        <td>
+                            <div class="field-info">
+                                <div class="field-icon">
+                                    <i class="fas fa-cube"></i>
+                                </div>
+                                <div class="field-details">
+                                    <div class="field-name">
+                                        {{ udf.udf_name }}
+                                        {% if udf.udf_label %}
+                                        <small class="text-muted">({{ udf.udf_label }})</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="data-type-badge type-{{ udf.data_type }}">
+                                <i class="fas fa-{% if udf.data_type == 'text' %}font{% elif udf.data_type == 'number' %}hashtag{% elif udf.data_type == 'date' %}calendar{% elif udf.data_type == 'boolean' %}toggle-on{% else %}list{% endif %}"></i>
+                                {{ udf.data_type|title }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if udf.default_value %}
+                                {% if udf.data_type == 'boolean' %}
+                                    {% if udf.default_value == 'true' or udf.default_value == '1' %}
+                                    <span class="badge bg-success">نعم</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">لا</span>
+                                    {% endif %}
+                                {% elif udf.data_type == 'date' and udf.default_value %}
+                                    {{ udf.default_value }}
+                                {% else %}
+                                    {{ udf.default_value }}
+                                {% endif %}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if udf.data_type == 'list' and udf.list_values %}
+                            <div class="list-values">
+                                {% for value in udf.list_values %}
+                                <span class="list-value-tag">{{ value }}</span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if udf.is_required %}
+                            <span class="required-badge">
+                                <i class="fas fa-exclamation-circle"></i>
+                                إلزامي
+                            </span>
+                            {% else %}
+                            <span class="optional-badge">
+                                <i class="fas fa-check-circle"></i>
+                                اختياري
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn edit" onclick="editUDF({{ udf.id }})" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn delete" onclick="deleteUDF({{ udf.id }})" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <h3>لا توجد حقول مخصصة للأنشطة</h3>
+            <p>قم بإضافة حقول مخصصة لجمع معلومات إضافية عن الأنشطة</p>
+            <button class="btn-add" onclick="addUDF('activity')">
+                <i class="fas fa-plus-circle"></i>
+                إضافة أول حقل
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Project UDFs -->
+    <div class="udf-panel {% if active_tab == 'project' %}active{% endif %}" id="panel-project">
+        {% if grouped_udfs.project %}
+        <div class="type-summary">
+            <div class="type-count">
+                <i class="fas fa-project-diagram"></i>
+                <span class="count-number">{{ grouped_udfs.project|length }}</span>
+                <span>حقل مخصص للمشاريع</span>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="udf-table">
+                <thead>
+                    <tr>
+                        <th>الحقل</th>
+                        <th>نوع البيانات</th>
+                        <th>القيمة الافتراضية</th>
+                        <th>قيم القائمة</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for udf in grouped_udfs.project %}
+                    <tr id="udf-{{ udf.id }}">
+                        <td>
+                            <div class="field-info">
+                                <div class="field-icon">
+                                    <i class="fas fa-cube"></i>
+                                </div>
+                                <div class="field-details">
+                                    <div class="field-name">
+                                        {{ udf.udf_name }}
+                                        {% if udf.udf_label %}
+                                        <small class="text-muted">({{ udf.udf_label }})</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="data-type-badge type-{{ udf.data_type }}">
+                                <i class="fas fa-{% if udf.data_type == 'text' %}font{% elif udf.data_type == 'number' %}hashtag{% elif udf.data_type == 'date' %}calendar{% elif udf.data_type == 'boolean' %}toggle-on{% else %}list{% endif %}"></i>
+                                {{ udf.data_type|title }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if udf.default_value %}
+                                {% if udf.data_type == 'boolean' %}
+                                    {% if udf.default_value == 'true' or udf.default_value == '1' %}
+                                    <span class="badge bg-success">نعم</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">لا</span>
+                                    {% endif %}
+                                {% else %}
+                                    {{ udf.default_value }}
+                                {% endif %}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if udf.data_type == 'list' and udf.list_values %}
+                            <div class="list-values">
+                                {% for value in udf.list_values %}
+                                <span class="list-value-tag">{{ value }}</span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if udf.is_required %}
+                            <span class="required-badge">
+                                <i class="fas fa-exclamation-circle"></i>
+                                إلزامي
+                            </span>
+                            {% else %}
+                            <span class="optional-badge">
+                                <i class="fas fa-check-circle"></i>
+                                اختياري
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn edit" onclick="editUDF({{ udf.id }})" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn delete" onclick="deleteUDF({{ udf.id }})" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <h3>لا توجد حقول مخصصة للمشاريع</h3>
+            <p>قم بإضافة حقول مخصصة لجمع معلومات إضافية عن المشاريع</p>
+            <button class="btn-add" onclick="addUDF('project')">
+                <i class="fas fa-plus-circle"></i>
+                إضافة أول حقل
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Resource UDFs -->
+    <div class="udf-panel {% if active_tab == 'resource' %}active{% endif %}" id="panel-resource">
+        {% if grouped_udfs.resource %}
+        <div class="type-summary">
+            <div class="type-count">
+                <i class="fas fa-users"></i>
+                <span class="count-number">{{ grouped_udfs.resource|length }}</span>
+                <span>حقل مخصص للموارد</span>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="udf-table">
+                <thead>
+                    <tr>
+                        <th>الحقل</th>
+                        <th>نوع البيانات</th>
+                        <th>القيمة الافتراضية</th>
+                        <th>قيم القائمة</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for udf in grouped_udfs.resource %}
+                    <tr id="udf-{{ udf.id }}">
+                        <td>
+                            <div class="field-info">
+                                <div class="field-icon">
+                                    <i class="fas fa-cube"></i>
+                                </div>
+                                <div class="field-details">
+                                    <div class="field-name">
+                                        {{ udf.udf_name }}
+                                        {% if udf.udf_label %}
+                                        <small class="text-muted">({{ udf.udf_label }})</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="field-label">{{ udf.udf_label_ar or '' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="data-type-badge type-{{ udf.data_type }}">
+                                <i class="fas fa-{% if udf.data_type == 'text' %}font{% elif udf.data_type == 'number' %}hashtag{% elif udf.data_type == 'date' %}calendar{% elif udf.data_type == 'boolean' %}toggle-on{% else %}list{% endif %}"></i>
+                                {{ udf.data_type|title }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if udf.default_value %}
+                                {% if udf.data_type == 'boolean' %}
+                                    {% if udf.default_value == 'true' or udf.default_value == '1' %}
+                                    <span class="badge bg-success">نعم</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">لا</span>
+                                    {% endif %}
+                                {% else %}
+                                    {{ udf.default_value }}
+                                {% endif %}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if udf.data_type == 'list' and udf.list_values %}
+                            <div class="list-values">
+                                {% for value in udf.list_values %}
+                                <span class="list-value-tag">{{ value }}</span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if udf.is_required %}
+                            <span class="required-badge">
+                                <i class="fas fa-exclamation-circle"></i>
+                                إلزامي
+                            </span>
+                            {% else %}
+                            <span class="optional-badge">
+                                <i class="fas fa-check-circle"></i>
+                                اختياري
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn edit" onclick="editUDF({{ udf.id }})" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn delete" onclick="deleteUDF({{ udf.id }})" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3>لا توجد حقول مخصصة للموارد</h3>
+            <p>قم بإضافة حقول مخصصة لجمع معلومات إضافية عن الموارد</p>
+            <button class="btn-add" onclick="addUDF('resource')">
+                <i class="fas fa-plus-circle"></i>
+                إضافة أول حقل
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- WBS UDFs -->
+    <div class="udf-panel {% if active_tab == 'wbs' %}active{% endif %}" id="panel-wbs">
+        {% if grouped_udfs.wbs %}
+        <div class="type-summary">
+            <div class="type-count">
+                <i class="fas fa-sitemap"></i>
+                <span class="count-number">{{ grouped_udfs.wbs|length }}</span>
+                <span>حقل مخصص لـ WBS</span>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="udf-table">
+                <thead>
+                    <tr>
+                        <th>الحقل</th>
+                        <th>نوع البيانات</th>
+                        <th>القيمة الافتراضية</th>
+                        <th>قيم القائمة</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for udf in grouped_udfs.wbs %}
+                    <tr id="udf-{{ udf.id }}">
+                        <td>
+                            <div class="field-info">
+                                <div class="field-icon">
+                                    <i class="fas fa-cube"></i>
+                                </div>
+                                <div class="field-details">
+                                    <div class="field-name">
+                                        {{ udf.udf_name }}
+                                        {% if udf.udf_label %}
+                                        <small class="text-muted">({{ udf.udf_label }})</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="field-label">{{ udf.udf_label_ar or '' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="data-type-badge type-{{ udf.data_type }}">
+                                <i class="fas fa-{% if udf.data_type == 'text' %}font{% elif udf.data_type == 'number' %}hashtag{% elif udf.data_type == 'date' %}calendar{% elif udf.data_type == 'boolean' %}toggle-on{% else %}list{% endif %}"></i>
+                                {{ udf.data_type|title }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if udf.default_value %}
+                                {% if udf.data_type == 'boolean' %}
+                                    {% if udf.default_value == 'true' or udf.default_value == '1' %}
+                                    <span class="badge bg-success">نعم</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">لا</span>
+                                    {% endif %}
+                                {% else %}
+                                    {{ udf.default_value }}
+                                {% endif %}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if udf.data_type == 'list' and udf.list_values %}
+                            <div class="list-values">
+                                {% for value in udf.list_values %}
+                                <span class="list-value-tag">{{ value }}</span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if udf.is_required %}
+                            <span class="required-badge">
+                                <i class="fas fa-exclamation-circle"></i>
+                                إلزامي
+                            </span>
+                            {% else %}
+                            <span class="optional-badge">
+                                <i class="fas fa-check-circle"></i>
+                                اختياري
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn edit" onclick="editUDF({{ udf.id }})" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn delete" onclick="deleteUDF({{ udf.id }})" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-sitemap"></i>
+            </div>
+            <h3>لا توجد حقول مخصصة لـ WBS</h3>
+            <p>قم بإضافة حقول مخصصة لجمع معلومات إضافية عن عناصر WBS</p>
+            <button class="btn-add" onclick="addUDF('wbs')">
+                <i class="fas fa-plus-circle"></i>
+                إضافة أول حقل
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal إضافة/تعديل حقل مخصص -->
+<div class="modal fade" id="udfModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus-circle text-primary me-2"></i>
+                    إضافة حقل مخصص جديد
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="udfForm">
+                    <input type="hidden" id="udfId" value="">
+                    <input type="hidden" id="udfType" value="">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">نوع الحقل</label>
+                            <select class="form-select" id="udfTypeSelect" required>
+                                <option value="">اختر النوع</option>
+                                <option value="activity">الأنشطة</option>
+                                <option value="project">المشاريع</option>
+                                <option value="resource">الموارد</option>
+                                <option value="wbs">WBS</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">نوع البيانات</label>
+                            <select class="form-select" id="udfDataType" required>
+                                <option value="text">نص (Text)</option>
+                                <option value="number">رقم (Number)</option>
+                                <option value="date">تاريخ (Date)</option>
+                                <option value="boolean">منطقي (Boolean)</option>
+                                <option value="list">قائمة (List)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">اسم الحقل</label>
+                            <input type="text" class="form-control" id="udfName" 
+                                   placeholder="مثال: risk_level" required>
+                            <small class="text-muted">اسم تقني للحقل (بدون مسافات)</small>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">التسمية</label>
+                            <input type="text" class="form-control" id="udfLabel" 
+                                   placeholder="مستوى المخاطرة">
+                        </div>
+                        
+                        
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">القيمة الافتراضية</label>
+                            <input type="text" class="form-control" id="udfDefaultValue" 
+                                   placeholder="قيمة افتراضية">
+                        </div>
+                        
+                        <div class="col-12" id="listValuesContainer" style="display: none;">
+                            <label class="form-label fw-bold">قيم القائمة</label>
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="listValueInput" 
+                                       placeholder="أدخل قيمة">
+                                <button class="btn btn-outline-primary" type="button" onclick="addListValue()">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="list-values-editor" id="listValuesList"></div>
+                            <input type="hidden" id="listValues">
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="udfRequired">
+                                <label class="form-check-label" for="udfRequired">
+                                    <strong>حقل إلزامي</strong>
+                                    <small class="text-muted d-block">يجب ملء هذا الحقل عند إدخال البيانات</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>إلغاء
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveUDF()">
+                    <i class="fas fa-save me-1"></i>حفظ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentEditId = null;
+let listValues = [];
+let activeTab = '{{ active_tab|default("activity") }}';
+
+// تبديل التبويبات
+function showUDFTab(tab) {
+    activeTab = tab;
+    
+    // تحديث التبويبات
+    document.querySelectorAll('.udf-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.udf-panel').forEach(p => p.classList.remove('active'));
+    
+    event.target.classList.add('active');
+    document.getElementById(`panel-${tab}`).classList.add('active');
+}
+
+// إضافة حقل جديد
+function addUDF(type) {
+    currentEditId = null;
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle text-primary me-2"></i>إضافة حقل مخصص جديد';
+    document.getElementById('udfForm').reset();
+    document.getElementById('udfId').value = '';
+    document.getElementById('listValuesContainer').style.display = 'none';
+    listValues = [];
+    
+    if (type) {
+        document.getElementById('udfTypeSelect').value = type;
+    }
+    
+    new bootstrap.Modal(document.getElementById('udfModal')).show();
+}
+
+// تعديل حقل
+function editUDF(id) {
+    currentEditId = id;
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit text-warning me-2"></i>تعديل الحقل المخصص';
+    
+    // إظهار مؤشر التحميل
+    Swal.fire({
+        title: 'جاري التحميل...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // جلب بيانات الحقل
+    fetch(`/enterprise/api/udf/${id}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.text();
+        })
+        .then(text => {
+            Swal.close();
+            
+            if (!text || text.trim() === '') {
+                throw new Error('Empty response');
+            }
+            
+            try {
+                const data = JSON.parse(text);
+                if (data.success) {
+                    document.getElementById('udfTypeSelect').value = data.udf.udf_type;
+                    document.getElementById('udfDataType').value = data.udf.data_type;
+                    document.getElementById('udfName').value = data.udf.udf_name;
+                    document.getElementById('udfLabel').value = data.udf.udf_label || '';
+                    document.getElementById('udfDefaultValue').value = data.udf.default_value || '';
+                    document.getElementById('udfRequired').checked = data.udf.is_required || false;
+                    document.getElementById('udfId').value = id;
+                    
+                    if (data.udf.data_type === 'list' && data.udf.list_values) {
+                        listValues = data.udf.list_values || [];
+                        document.getElementById('listValuesContainer').style.display = 'block';
+                        updateListValuesDisplay();
+                    }
+                    
+                    new bootstrap.Modal(document.getElementById('udfModal')).show();
+                } else {
+                    showError(data.error || 'فشل تحميل بيانات الحقل');
+                }
+            } catch (e) {
+                console.error('JSON Parse Error:', e);
+                showError('خطأ في تحميل بيانات الحقل');
+            }
+        })
+        .catch(error => {
+            Swal.close();
+            console.error('Error:', error);
+            showError('حدث خطأ في الاتصال');
+        });
+}
+
+// حذف حقل
+function deleteUDF(id) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا الحقل المخصص؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // إظهار مؤشر التحميل
+            Swal.fire({
+                title: 'جاري الحذف...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            fetch(`/enterprise/api/udf/${id}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
+            .then(text => {
+                Swal.close();
+                
+                if (!text || text.trim() === '') {
+                    throw new Error('Empty response');
+                }
+                
+                try {
+                    const data = JSON.parse(text);
+                    if (data.success) {
+                        document.getElementById(`udf-${id}`).remove();
+                        showSuccess('تم حذف الحقل المخصص بنجاح');
+                        
+                        // تحديث العدادات
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showError(data.error || 'حدث خطأ أثناء الحذف');
+                    }
+                } catch (e) {
+                    console.error('JSON Parse Error:', e);
+                    showError('خطأ في استجابة الخادم');
+                }
+            })
+            .catch(error => {
+                Swal.close();
+                console.error('Error:', error);
+                showError('حدث خطأ في الاتصال');
+            });
+        }
+    });
+}
+
+// حفظ الحقل
+function saveUDF() {
+    const udfType = document.getElementById('udfTypeSelect').value;
+    const dataType = document.getElementById('udfDataType').value;
+    const udfName = document.getElementById('udfName').value.trim();
+    const udfLabel = document.getElementById('udfLabel').value.trim();
+    const udfLabelAr = document.getElementById('udfLabelAr').value.trim();
+    const udfDefaultValue = document.getElementById('udfDefaultValue').value.trim();
+    const udfRequired = document.getElementById('udfRequired').checked;
+    const udfId = document.getElementById('udfId').value;
+    
+    if (!udfType || !dataType || !udfName) {
+        showWarning('يرجى إدخال نوع الحقل واسم الحقل');
+        return;
+    }
+    
+    const url = udfId ? 
+        `/enterprise/api/udf/${udfId}/update` : 
+        '/enterprise/api/udf/add';
+    
+    const method = 'POST';
+    
+    // إغلاق المودال
+    bootstrap.Modal.getInstance(document.getElementById('udfModal')).hide();
+    
+    // إظهار مؤشر التحميل
+    Swal.fire({
+        title: udfId ? 'جاري التحديث...' : 'جاري الإضافة...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            udf_type: udfType,
+            data_type: dataType,
+            udf_name: udfName,
+            udf_label: udfLabel,
+            udf_label_ar: udfLabelAr,
+            default_value: udfDefaultValue,
+            list_values: dataType === 'list' ? listValues : [],
+            is_required: udfRequired
+        })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.text();
+    })
+    .then(text => {
+        Swal.close();
+        
+        if (!text || text.trim() === '') {
+            throw new Error('Empty response');
+        }
+        
+        try {
+            const data = JSON.parse(text);
+            if (data.success) {
+                showSuccess(udfId ? 'تم تحديث الحقل بنجاح' : 'تم إضافة الحقل بنجاح');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.error || 'حدث خطأ');
+            }
+        } catch (e) {
+            console.error('JSON Parse Error:', e);
+            showError('خطأ في استجابة الخادم');
+        }
+    })
+    .catch(error => {
+        Swal.close();
+        console.error('Error:', error);
+        showError('حدث خطأ في الاتصال');
+    });
+}
+
+// إدارة قيم القائمة
+function addListValue() {
+    const input = document.getElementById('listValueInput');
+    const value = input.value.trim();
+    
+    if (value && !listValues.includes(value)) {
+        listValues.push(value);
+        updateListValuesDisplay();
+        input.value = '';
+    }
+}
+
+function removeListValue(index) {
+    listValues.splice(index, 1);
+    updateListValuesDisplay();
+}
+
+function updateListValuesDisplay() {
+    const container = document.getElementById('listValuesList');
+    const hiddenInput = document.getElementById('listValues');
+    
+    container.innerHTML = '';
+    listValues.forEach((value, index) => {
+        const tag = document.createElement('span');
+        tag.className = 'list-value-tag me-1 mb-1 p-2 bg-light rounded';
+        tag.innerHTML = `
+            ${value}
+            <i class="fas fa-times ms-1 text-danger" style="cursor: pointer;" onclick="removeListValue(${index})"></i>
+        `;
+        container.appendChild(tag);
+    });
+    
+    hiddenInput.value = JSON.stringify(listValues);
+}
+
+// تحديث عرض حقل القائمة بناءً على نوع البيانات
+document.getElementById('udfDataType').addEventListener('change', function() {
+    if (this.value === 'list') {
+        document.getElementById('listValuesContainer').style.display = 'block';
+    } else {
+        document.getElementById('listValuesContainer').style.display = 'none';
+    }
+});
+
+// دوال مساعدة
+function showSuccess(message) {
+    Swal.fire({
+        icon: 'success',
+        title: 'تم بنجاح',
+        text: message,
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
+
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'خطأ',
+        text: message
+    });
+}
+
+function showWarning(message) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'تنبيه',
+        text: message
+    });
+}
+</script>
+{% endblock %}

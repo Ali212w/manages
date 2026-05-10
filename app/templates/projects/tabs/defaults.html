@@ -1,0 +1,161 @@
+<div class="card">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-sliders-h text-primary me-2"></i>Defaults for New Activities</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Duration Type</label>
+                <select class="form-select" id="duration_type">
+                    <option value="Fixed Duration">Fixed Duration</option>
+                    <option value="Fixed Units">Fixed Units</option>
+                    <option value="Fixed Duration & Units">Fixed Duration & Units</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Percent Complete Type</label>
+                <select class="form-select" id="percent_complete_type">
+                    <option value="Duration">Duration</option>
+                    <option value="Physical">Physical</option>
+                    <option value="Units">Units</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Activity Type</label>
+                <select class="form-select" id="activity_type">
+                    <option value="Task Dependent">Task Dependent</option>
+                    <option value="Resource Dependent">Resource Dependent</option>
+                    <option value="Level of Effort">Level of Effort</option>
+                    <option value="Start Milestone">Start Milestone</option>
+                    <option value="Finish Milestone">Finish Milestone</option>
+                    <option value="WBS Summary">WBS Summary</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Cost Account</label>
+                <input type="text" class="form-control" id="cost_account" placeholder="Cost Account">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Calendar</label>
+                <select class="form-select" id="default_calendar">
+                    <option value="">Project Default</option>
+                    {% for cal in calendars %}
+                    <option value="{{ cal.id }}">{{ cal.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-sort-numeric-up text-primary me-2"></i>Auto-numbering Defaults</h6>
+    </div>
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Activity ID Prefix</label>
+                <input type="text" class="form-control" id="id_prefix" value="A">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Activity ID Suffix</label>
+                <input type="text" class="form-control" id="id_suffix">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Increment</label>
+                <input type="number" class="form-control" id="id_increment" value="1">
+            </div>
+            <div class="col-md-3">
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" id="increment_based_on_activity">
+                    <label class="form-check-label">
+                        Increment Activity ID based on selected activity
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-tools text-primary me-2"></i>Resource Assignment Defaults</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Default Rate Type for new assignments</label>
+                    <select class="form-select" id="rate_type">
+                        <option value="Standard Rate">Standard Rate</option>
+                        <option value="Overtime Rate">Overtime Rate</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" id="drive_activity_dates">
+                    <label class="form-check-label">
+                        Drive activity dates by default
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-md-6">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="allow_multiple_assignments">
+                    <label class="form-check-label">
+                        Resources can be assigned to the same activity more than once
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-end mt-3">
+    <button class="btn btn-primary" onclick="saveDefaults()">
+        <i class="fas fa-save me-1"></i>Save Defaults
+    </button>
+</div>
+
+<script>
+function saveDefaults() {
+    const data = {
+        duration_type: document.getElementById('duration_type').value,
+        percent_complete_type: document.getElementById('percent_complete_type').value,
+        activity_type: document.getElementById('activity_type').value,
+        calendar_id: document.getElementById('default_calendar').value,
+        cost_account: document.getElementById('cost_account').value,
+        id_prefix: document.getElementById('id_prefix').value,
+        id_suffix: document.getElementById('id_suffix').value,
+        id_increment: document.getElementById('id_increment').value,
+        rate_type: document.getElementById('rate_type').value,
+        drive_activity_dates: document.getElementById('drive_activity_dates').checked,
+        allow_multiple_assignments: document.getElementById('allow_multiple_assignments').checked
+    };
+    
+    fetch(`/projects/api/{{ project.id }}/update-defaults`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Defaults updated successfully');
+        } else {
+            showError(data.error || 'Error updating defaults');
+        }
+    });
+}
+</script>

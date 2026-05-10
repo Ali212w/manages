@@ -1,0 +1,276 @@
+{# templates/platform/plans/index.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('plans.title') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="page-title">{{ _('plans.title') }}</h1>
+            <p class="text-muted mb-0">{{ _('plans.list') }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('platform.create_plan') }}" class="btn btn-gradient">
+                <i class="fas fa-plus-circle me-2"></i>{{ _('plans.add_new') }}
+            </a>
+        </div>
+    </div>
+    
+    <!-- Plans Cards -->
+    <div class="row g-4" id="plansContainer">
+        {% for plan in plans %}
+        <div class="col-xl-3 col-md-6" data-plan-id="{{ plan.id }}" data-order="{{ plan.display_order }}">
+            <div class="card border-0 shadow-sm h-100 plan-card {% if plan.is_featured %}featured-plan{% endif %}">
+                {% if plan.is_featured %}
+                <div class="ribbon">
+                    <span>{{ _('plans.featured') }}</span>
+                </div>
+                {% endif %}
+                <div class="card-body p-4 text-center">
+                    <div class="plan-icon mb-3">
+                        <div class="bg-gradient-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                            <i class="fas fa-layer-group fa-2x text-white"></i>
+                        </div>
+                    </div>
+                    <h3 class="mb-1">{{ plan.name }}</h3>
+                  
+                    
+                    <div class="plan-price my-3">
+                        <span class="display-5 fw-bold text-primary">{{ format_currency(plan.price_monthly,plan.currency) }}</span>
+                        <span class="text-muted">/ {{ _('subscriptions.month') }}</span>
+                    </div>
+                    <div class="plan-price-yearly text-muted small mb-3">
+                        {{ _('plans.price_yearly') }}: {{ format_currency(plan.price_yearly,plan.currency) }}
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="plan-features text-start mt-3">
+                        <div class="mb-2">
+                            <i class="fas fa-users text-primary me-2"></i>
+                            <strong>{{ _('plans.max_users') }}:</strong>
+                            {% if plan.max_users == 0 %}
+                            {{ _('plans.unlimited') }}
+                            {% else %}
+                            {{ plan.max_users }}
+                            {% endif %}
+                        </div>
+                        <div class="mb-2">
+                            <i class="fas fa-project-diagram text-primary me-2"></i>
+                            <strong>{{ _('plans.max_projects') }}:</strong>
+                            {% if plan.max_projects == 0 %}
+                            {{ _('plans.unlimited') }}
+                            {% else %}
+                            {{ plan.max_projects }}
+                            {% endif %}
+                        </div>
+                        <div class="mb-2">
+                            <i class="fas fa-database text-primary me-2"></i>
+                            <strong>{{ _('plans.storage_gb') }}:</strong>
+                            {% if plan.storage_gb == 0 %}
+                            {{ _('plans.unlimited') }}
+                            {% else %}
+                            {{ plan.storage_gb }} GB
+                            {% endif %}
+                        </div>
+                        <hr>
+                        {% for feature in plan.features[:4] %}
+                        <div class="small mb-1">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            {{ feature }}
+                        </div>
+                        {% endfor %}
+                        {% if plan.features|length > 4 %}
+                        <div class="small text-muted mt-1">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            {{ _('plans.more_features') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0 pb-4">
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a href="{{ url_for('platform.edit_plan', plan_id=plan.id) }}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-edit"></i> {{ _('common.edit') }}
+                        </a>
+                        {% if not plan.is_default %}
+                        <button class="btn btn-outline-info btn-sm set-default-plan" data-id="{{ plan.id }}" data-name="{{ plan.name }}">
+                            <i class="fas fa-star"></i> {{ _('plans.set_default') }}
+                        </button>
+                        {% else %}
+                        <span class="badge bg-success py-2 px-3">
+                            <i class="fas fa-check-circle"></i> {{ _('plans.default') }}
+                        </span>
+                        {% endif %}
+                        <button class="btn btn-outline-danger btn-sm toggle-plan-status" data-id="{{ plan.id }}" data-name="{{ plan.name }}" data-active="{{ plan.is_active }}">
+                            <i class="fas fa-power-off"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm delete-plan" data-id="{{ plan.id }}" data-name="{{ plan.name }}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+            <p class="text-muted">{{ _('plans.no_plans') }}</p>
+            <a href="{{ url_for('platform.create_plan') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> {{ _('plans.add_new') }}
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Sortable Hint -->
+    <div class="alert alert-info mt-4">
+        <i class="fas fa-arrows-alt me-2"></i>
+        {{ _('plans.drag_to_reorder') }}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.plan-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.plan-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 35px -10px rgba(0,0,0,0.2);
+}
+.featured-plan {
+    border: 2px solid var(--primary-color);
+    transform: scale(1.02);
+}
+.featured-plan:hover {
+    transform: scale(1.02) translateY(-5px);
+}
+.ribbon {
+    position: absolute;
+    top: 15px;
+    {{ 'right: -30px;' if get_direction() == 'rtl' else 'left: -30px;' }}
+    transform: rotate({{ '45deg' if get_direction() == 'rtl' else '-45deg' }});
+    background: var(--gradient-primary);
+    color: white;
+    padding: 5px 40px;
+    font-size: 12px;
+    font-weight: bold;
+    width: 120px;
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Make plans sortable
+    const container = document.getElementById('plansContainer');
+    if (container) {
+        new Sortable(container, {
+            animation: 300,
+            handle: '.plan-card',
+            onEnd: function() {
+                const order = [];
+                $('#plansContainer .col-xl-3').each(function(index) {
+                    order.push($(this).data('plan-id'));
+                });
+                
+                $.ajax({
+                    url: "{{ url_for('platform.reorder_plans') }}",
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({order: order}),
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success('{{ _("plans.reorder_success") }}');
+                        }
+                    }
+                });
+            }
+        });
+    }
+    
+    // Toggle Plan Status
+    $('.toggle-plan-status').click(function() {
+        const planId = $(this).data('id');
+        const planName = $(this).data('name');
+        const isActive = $(this).data('active');
+        const newStatus = isActive ? '{{ _("status.inactive") }}' : '{{ _("status.active") }}';
+        
+        if (confirm('{{ _("plans.confirm_status_change") }} ' + planName + ' ' + newStatus + '?')) {
+            $.ajax({
+                url: "{{ url_for('platform.toggle_plan_status', plan_id=0) }}".replace('0', planId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+    
+    // Set Default Plan
+    $('.set-default-plan').click(function() {
+        const planId = $(this).data('id');
+        const planName = $(this).data('name');
+        
+        if (confirm('{{ _("plans.confirm_set_default") }} ' + planName + '?')) {
+            $.ajax({
+                url: "{{ url_for('platform.set_default_plan', plan_id=0) }}".replace('0', planId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+    
+    // Delete Plan
+    $('.delete-plan').click(function() {
+        const planId = $(this).data('id');
+        const planName = $(this).data('name');
+        
+        if (confirm('{{ _("plans.confirm_delete") }}\n{{ _("plans.delete_warning") }}')) {
+            $.ajax({
+                url: "{{ url_for('platform.delete_plan', plan_id=0) }}".replace('0', planId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

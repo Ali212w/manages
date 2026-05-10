@@ -1,0 +1,430 @@
+/* ============================================================
+   effects.css — Glassmorphism, micro-animations, premium UI
+   ============================================================ */
+
+/* ── Glassmorphism ───────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}
+
+.glass-primary {
+  background: rgba(99, 102, 241, 0.15);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: #4f46e5;
+}
+
+/* ── Neumorphism cards (subtle) ──────────────────────────── */
+.neuro-card {
+  background: #f1f5f9;
+  border-radius: 16px;
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.07),
+    -6px -6px 12px rgba(255, 255, 255, 0.85);
+  border: none;
+  transition: all 0.22s ease;
+}
+.neuro-card:hover {
+  box-shadow:
+    8px 8px 18px rgba(0, 0, 0, 0.1),
+    -8px -8px 18px rgba(255, 255, 255, 0.9);
+}
+
+/* ── Gradient border card ────────────────────────────────── */
+.gradient-border {
+  position: relative;
+  border-radius: 16px;
+  padding: 2px;
+  background: linear-gradient(135deg, #6366f1, #a78bfa, #ec4899);
+}
+.gradient-border > * {
+  background: #fff;
+  border-radius: 14px;
+}
+
+/* ── Shimmer skeleton ────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -1000px 0; }
+  100% { background-position:  1000px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f1f5f9 25%,
+    #e2e8f0 50%,
+    #f1f5f9 75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 1.6s infinite linear;
+  border-radius: 6px;
+}
+.skeleton-text  { height: 14px; margin-bottom: 8px; border-radius: 4px; }
+.skeleton-title { height: 22px; width: 60%; margin-bottom: 12px; border-radius: 6px; }
+.skeleton-card  { height: 120px; border-radius: 14px; }
+.skeleton-circle{ border-radius: 50%; }
+
+/* ── Floating label inputs ───────────────────────────────── */
+.float-label-group {
+  position: relative;
+  margin-bottom: 1.2rem;
+}
+.float-label-group input,
+.float-label-group select,
+.float-label-group textarea {
+  width: 100%;
+  padding: 1rem 1rem .35rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: .9rem;
+  transition: all .22s ease;
+  background: #fff;
+}
+.float-label-group label {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 1rem;
+  font-size: .9rem;
+  color: #94a3b8;
+  pointer-events: none;
+  transition: all .22s ease;
+  background: #fff;
+  padding: 0 4px;
+}
+body[dir="ltr"] .float-label-group label { right: auto; left: 1rem; }
+
+.float-label-group input:focus,
+.float-label-group input:not(:placeholder-shown),
+.float-label-group select:focus {
+  border-color: #6366f1;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+  padding-top: 1.3rem;
+  padding-bottom: .1rem;
+}
+.float-label-group input:focus ~ label,
+.float-label-group input:not(:placeholder-shown) ~ label,
+.float-label-group select:focus ~ label {
+  top: 0;
+  font-size: .7rem;
+  color: #6366f1;
+  font-weight: 600;
+}
+
+/* ── Hover reveal buttons ────────────────────────────────── */
+.btn-hover-reveal {
+  position: relative;
+  overflow: hidden;
+}
+.btn-hover-reveal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.2), transparent);
+  transform: translateX(-100%) skewX(-20deg);
+  transition: transform .4s ease;
+}
+.btn-hover-reveal:hover::after { transform: translateX(150%) skewX(-20deg); }
+
+/* ── Ripple effect ───────────────────────────────────────── */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+.ripple-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,.35);
+  width: 10px; height: 10px;
+  transform: scale(0);
+  animation: ripple-anim .6s linear;
+  pointer-events: none;
+}
+@keyframes ripple-anim {
+  to { transform: scale(40); opacity: 0; }
+}
+
+/* ── Pulse glow ──────────────────────────────────────────── */
+@keyframes pulse-glow {
+  0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,.4); }
+  50%      { box-shadow: 0 0 0 10px rgba(99,102,241,0); }
+}
+.pulse-glow { animation: pulse-glow 2s infinite; }
+
+/* ── Floating action chip ────────────────────────────────── */
+.action-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: .35rem .9rem;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 600;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.action-chip-primary {
+  background: rgba(99,102,241,.1);
+  color: #6366f1;
+  border-color: rgba(99,102,241,.2);
+}
+.action-chip-primary:hover {
+  background: #6366f1;
+  color: #fff;
+  transform: translateY(-2px);
+}
+.action-chip-success {
+  background: rgba(16,185,129,.1);
+  color: #10b981;
+  border-color: rgba(16,185,129,.2);
+}
+.action-chip-success:hover { background: #10b981; color: #fff; }
+.action-chip-danger {
+  background: rgba(239,68,68,.1);
+  color: #ef4444;
+  border-color: rgba(239,68,68,.2);
+}
+.action-chip-danger:hover { background: #ef4444; color: #fff; }
+
+/* ── Status dots ─────────────────────────────────────────── */
+.status-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.status-dot.online  { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.25); }
+.status-dot.busy    { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.25); }
+.status-dot.offline { background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,.25); }
+
+@keyframes blink-dot {
+  0%,100% { opacity: 1; } 50% { opacity: .4; }
+}
+.status-dot.online { animation: blink-dot 2s infinite; }
+
+/* ── Page header ─────────────────────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+.page-header-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.page-header-title .icon-box {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  box-shadow: 0 6px 16px rgba(99,102,241,.35);
+}
+.page-breadcrumb { font-size: .8rem; color: #94a3b8; margin-top: 2px; }
+
+/* ── Info card ───────────────────────────────────────────── */
+.info-card {
+  background: linear-gradient(135deg, rgba(99,102,241,.08), rgba(79,70,229,.04));
+  border: 1px solid rgba(99,102,241,.18);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.info-card-icon { font-size: 1.3rem; color: #6366f1; flex-shrink: 0; margin-top: 2px; }
+
+/* ── Modal enhancements ──────────────────────────────────── */
+.modal-content {
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(0,0,0,.2);
+  overflow: hidden;
+}
+.modal-header {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 1.25rem 1.5rem;
+  background: #fff;
+}
+.modal-header .modal-title { font-weight: 700; color: #1e293b; }
+.modal-footer {
+  border-top: 1px solid #f1f5f9;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+}
+
+/* ── Tooltip overrides ───────────────────────────────────── */
+.tooltip .tooltip-inner {
+  background: #1e293b;
+  border-radius: 8px;
+  font-size: .78rem;
+  padding: .4rem .75rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+  font-weight: 500;
+}
+
+/* ── Form switch ─────────────────────────────────────────── */
+.form-check-input:checked {
+  background-color: #6366f1;
+  border-color: #6366f1;
+}
+.form-check-input:focus {
+  box-shadow: 0 0 0 3px rgba(99,102,241,.2);
+  border-color: #6366f1;
+}
+
+/* ── Input groups ────────────────────────────────────────── */
+.input-group .input-group-text {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  color: #64748b;
+  font-size: .85rem;
+}
+.input-group .form-control {
+  border: 1.5px solid #e2e8f0;
+}
+.input-group:focus-within .input-group-text,
+.input-group:focus-within .form-control {
+  border-color: #6366f1;
+}
+.input-group:focus-within {
+  box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+  border-radius: 10px;
+}
+
+/* ── List group ──────────────────────────────────────────── */
+.list-group-item {
+  border-color: #f1f5f9;
+  transition: all .18s ease;
+}
+.list-group-item:hover { background: rgba(99,102,241,.04); }
+.list-group-item.active {
+  background: linear-gradient(135deg,#6366f1,#4f46e5);
+  border-color: transparent;
+}
+
+/* ── Pagination ──────────────────────────────────────────── */
+.page-link {
+  border-radius: 8px !important;
+  margin: 0 2px;
+  border: 1.5px solid #e2e8f0;
+  color: #475569;
+  font-weight: 500;
+  font-size: .85rem;
+  transition: all .18s ease;
+}
+.page-link:hover { background: #6366f1; color: #fff; border-color: #6366f1; transform: translateY(-1px); }
+.page-item.active .page-link { background: linear-gradient(135deg,#6366f1,#4f46e5); border-color: transparent; }
+
+/* ── Accordion ───────────────────────────────────────────── */
+.accordion-item { border: 1px solid #e2e8f0; border-radius: 12px !important; margin-bottom: 8px; overflow: hidden; }
+.accordion-button {
+  font-weight: 600;
+  color: #1e293b;
+  background: #fff;
+  border-radius: 12px !important;
+}
+.accordion-button:not(.collapsed) {
+  background: linear-gradient(135deg, rgba(99,102,241,.08), rgba(79,70,229,.04));
+  color: #6366f1;
+  box-shadow: none;
+}
+.accordion-button:focus { box-shadow: none; border-color: transparent; }
+.accordion-button::after { filter: hue-rotate(220deg); }
+
+/* ── Select2 overrides ───────────────────────────────────── */
+.select2-container--bootstrap-5 .select2-selection {
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  font-size: .875rem;
+  transition: all .22s ease;
+}
+.select2-container--bootstrap-5 .select2-selection:focus,
+.select2-container--bootstrap-5.select2-container--focus .select2-selection {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.15) !important;
+}
+
+/* ── Flatpickr overrides ─────────────────────────────────── */
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover {
+  background: #6366f1;
+  border-color: #6366f1;
+}
+.flatpickr-day:hover { background: rgba(99,102,241,.1); color: #6366f1; }
+
+/* ── Loading overlay ─────────────────────────────────────── */
+.loading-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+}
+.loading-overlay.active { display: flex; }
+
+.loading-ring {
+  width: 52px; height: 52px;
+  border: 4px solid rgba(255,255,255,.2);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
+}
+.loading-text { color: rgba(255,255,255,.8); font-size: .875rem; font-weight: 500; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Back to top button ──────────────────────────────────── */
+.back-to-top {
+  position: fixed;
+  bottom: 28px;
+  inset-inline-end: 28px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(99,102,241,.4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  opacity: 0; pointer-events: none;
+  transform: translateY(12px);
+  transition: all .3s ease;
+  z-index: 990;
+}
+.back-to-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.back-to-top:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(99,102,241,.5); }
+
+/* ── Smooth page transitions ─────────────────────────────── */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.main-content, .dashboard-container { animation: page-in .4s ease; }

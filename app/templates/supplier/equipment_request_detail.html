@@ -1,0 +1,370 @@
+{% extends "supplier/base.html" %}
+
+{% block title %}تفاصيل طلب المعدات #{{ resource_request.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        border-radius: 20px;
+        padding: 25px 30px;
+        color: white;
+        margin-bottom: 30px;
+    }
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        border-left: 4px solid #3498db;
+    }
+    .item-card {
+        background: white;
+        border-radius: 14px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    .item-card:hover {
+        border-color: #3498db;
+        box-shadow: 0 5px 15px rgba(52,152,219,0.1);
+    }
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, #3498db 0%, #2ecc71 100%);
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 25px;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -22px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #3498db;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #3498db;
+    }
+    .timeline-item.completed::before {
+        background: #2ecc71;
+        box-shadow: 0 0 0 2px #2ecc71;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="detail-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-2"><i class="fas fa-tools me-2"></i> طلب معدات #{{ resource_request.id }}</h2>
+                <p class="mb-0 text-white-50">المشروع: {{ resource_request.project.name }}</p>
+            </div>
+            <div>
+                <span class="status-badge status-{{ resource_request.status }} px-3 py-2 rounded-pill bg-white bg-opacity-20">
+                    {% if resource_request.status == 'pending' %}
+                        <i class="fas fa-clock me-1"></i> في انتظار العرض
+                    {% elif resource_request.status == 'started' %}
+                        <i class="fas fa-play-circle me-1"></i> قيد التنفيذ
+                    {% elif resource_request.status == 'completed' %}
+                        <i class="fas fa-check-circle me-1"></i> مكتمل
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- معلومات الطلب -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="fas fa-info-circle text-primary me-2"></i> معلومات الطلب</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <span class="text-muted">تاريخ الإنشاء:</span>
+                        <span class="fw-bold">{{ resource_request.created_at.strftime('%Y-%m-%d %H:%M') if resource_request.created_at else 'غير محدد' }}</span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <span class="text-muted">التسليم المطلوب بحلول:</span>
+                        <span class="fw-bold">{{ resource_request.required_date.strftime('%Y-%m-%d') if resource_request.required_date else 'غير محدد' }}</span>
+                    </div>
+                    <div class="col-md-12 mb-2">
+                        <span class="text-muted">موقع التسليم:</span>
+                        <span class="fw-bold">{{ resource_request.site_location or 'غير محدد' }}</span>
+                    </div>
+                    {% if resource_request.notes %}
+                    <div class="col-md-12">
+                        <span class="text-muted">ملاحظات:</span>
+                        <p class="mt-1">{{ resource_request.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- المعدات المطلوبة -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="fas fa-microchip text-primary me-2"></i> المعدات المطلوبة</h5>
+                {% for item in items %}
+                <div class="item-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1 fw-bold">{{ item.equipment_name }}</h6>
+                            <div class="d-flex gap-3 mt-2">
+                                <span class="badge bg-secondary">المطلوب: {{ item.required_quantity }} {{ item.unit }}</span>
+                                <span class="badge bg-success">المسلم: {{ item.delivered_quantity }} {{ item.unit }}</span>
+                                <span class="badge bg-warning">المتبقي: {{ item.remaining_quantity }} {{ item.unit }}</span>
+                            </div>
+                            {% if item.offer_price %}
+                            <div class="mt-2">
+                                <span class="text-muted small">عرض السعر:</span>
+                                <span class="fw-bold">{{ item.offer_price }} {{ item.offer_currency }}</span>
+                                {% if item.offer_status == 'approved' %}
+                                    <span class="badge bg-success ms-2">معتمد</span>
+                                {% elif item.offer_status == 'pending' %}
+                                    <span class="badge bg-warning ms-2">في انتظار الموافقة</span>
+                                {% elif item.offer_status == 'rejected' %}
+                                    <span class="badge bg-danger ms-2">مرفوض</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            {% if item.offer_status == 'approved' and item.remaining_quantity > 0 %}
+                                <button class="btn btn-sm btn-success" onclick="prepareDelivery({{ item.id }}, '{{ item.equipment_name }}', {{ item.remaining_quantity }})">
+                                    <i class="fas fa-truck me-1"></i> تسليم
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- خط سير التحديثات -->
+            {% if updates %}
+            <div class="info-card">
+                <h5 class="mb-3"><i class="fas fa-history text-primary me-2"></i> سجل التحديثات</h5>
+                <div class="timeline">
+                    {% for update in updates %}
+                    <div class="timeline-item {% if update.new_status == 'completed' %}completed{% endif %}">
+                        <div class="mb-1">
+                            <span class="badge bg-primary">{{ update.new_status }}</span>
+                            <small class="text-muted ms-2">{{ update.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                        <div>{{ update.message }}</div>
+                        <small class="text-muted">بواسطة: {{ update.updater.full_name if update.updater else 'نظام' }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- بطاقة الإجراءات -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="fas fa-cog text-primary me-2"></i> الإجراءات المتاحة</h5>
+                
+                {% if resource_request.status == 'pending' %}
+                    <button class="btn btn-primary w-100 mb-2" onclick="openOfferModal()">
+                        <i class="fas fa-file-invoice-dollar me-2"></i> تقديم عرض سعر
+                    </button>
+                {% endif %}
+                
+                {% if resource_request.status == 'pending' %}
+                    <button class="btn btn-outline-primary w-100 mb-2" onclick="startRequest()">
+                        <i class="fas fa-play me-2"></i> بدء عملية التوريد
+                    </button>
+                {% endif %}
+                
+                {% if resource_request.status == 'started' %}
+                    <button class="btn btn-success w-100 mb-2" onclick="completeRequest()">
+                        <i class="fas fa-check-circle me-2"></i> إكمال الطلب
+                    </button>
+                {% endif %}
+                
+                <hr>
+                <a href="{{ url_for('supplier.equipment_requests_list') }}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-arrow-right me-2"></i> العودة إلى القائمة
+                </a>
+            </div>
+            
+            <!-- إحصائيات سريعة -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="fas fa-chart-line text-primary me-2"></i> الإحصائيات</h5>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>نسبة الإنجاز</small>
+                        <small class="text-success">{{ "%.1f"|format(resource_request.completion_percentage) }}%</small>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ resource_request.completion_percentage }}%"></div>
+                    </div>
+                </div>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h4 class="text-primary mb-0">{{ items|sum(attribute='required_quantity')|round(1) }}</h4>
+                        <small class="text-muted">المطلوب</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-success mb-0">{{ items|sum(attribute='delivered_quantity')|round(1) }}</h4>
+                        <small class="text-muted">المسلم</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-warning mb-0">{{ items|sum(attribute='remaining_quantity')|round(1) }}</h4>
+                        <small class="text-muted">المتبقي</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: تقديم عرض سعر -->
+<div class="modal fade" id="offerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">تقديم عرض سعر</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="offerContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="submitOffer()">إرسال العرض</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentItemId = null;
+    
+    function openOfferModal() {
+        const container = document.getElementById('offerContent');
+        container.innerHTML = `
+            {% for item in items %}
+            <div class="border rounded p-3 mb-3">
+                <h6 class="fw-bold">{{ item.equipment_name }}</h6>
+                <div class="row">
+                    <div class="col-12 mb-2">
+                        <label class="form-label small">السعر المقترح (لكل {{ item.unit }})</label>
+                        <div class="input-group">
+                            <input type="number" id="price_{{ item.id }}" class="form-control" step="0.01" placeholder="السعر">
+                            <span class="input-group-text">SAR</span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small">ملاحظات</label>
+                        <input type="text" id="notes_{{ item.id }}" class="form-control" placeholder="ملاحظات">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        `;
+        new bootstrap.Modal(document.getElementById('offerModal')).show();
+    }
+    
+    function submitOffer() {
+        const items = [];
+        {% for item in items %}
+        const price = document.getElementById('price_{{ item.id }}').value;
+        if (price && parseFloat(price) > 0) {
+            items.push({
+                item_id: {{ item.id }},
+                price: parseFloat(price),
+                notes: document.getElementById('notes_{{ item.id }}').value
+            });
+        }
+        {% endfor %}
+        
+        if (items.length === 0) {
+            alert('الرجاء إدخال سعر لواحدة على الأقل من المعدات');
+            return;
+        }
+        
+        fetch('{{ url_for("supplier.submit_equipment_offer", request_id=resource_request.id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ items: items })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('تم إرسال عرض السعر بنجاح');
+                location.reload();
+            } else {
+                alert('خطأ: ' + data.error);
+            }
+        });
+    }
+    
+    function startRequest() {
+        if (confirm('هل أنت متأكد من بدء عملية توريد هذه المعدات؟')) {
+            fetch('{{ url_for("supplier.start_equipment_request", request_id=resource_request.id) }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('خطأ: ' + data.error);
+                }
+            });
+        }
+    }
+    
+    function completeRequest() {
+        if (confirm('هل أنت متأكد من إكمال هذا الطلب؟ (يجب أن تكون جميع الكميات قد تم تسليمها)')) {
+            fetch('{{ url_for("supplier.complete_equipment_request", request_id=resource_request.id) }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('خطأ: ' + data.error);
+                }
+            });
+        }
+    }
+    
+    function prepareDelivery(itemId, itemName, maxQuantity) {
+        const quantity = prompt(`أدخل كمية التسليم لـ ${itemName} (الحد الأقصى: ${maxQuantity})`, maxQuantity);
+        if (quantity && parseFloat(quantity) > 0 && parseFloat(quantity) <= maxQuantity) {
+            const serialNumbers = prompt('أدخل الأرقام المسلسلة للمعدات (مفصولة بفواصل):');
+            // يمكن إضافة منطق التسليم المباشر هنا
+            alert('سيتم فتح صفحة التسليم الكاملة قريباً');
+        }
+    }
+</script>
+{% endblock %}

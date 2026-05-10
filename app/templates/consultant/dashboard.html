@@ -1,0 +1,434 @@
+{% extends "consultant/base.html" %}
+
+{% block title %}لوحة التحكم - المهندس الاستشاري{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-gradient-primary text-white" style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-1">مرحباً {{ current_user.full_name }}</h3>
+                        <p class="mb-0 opacity-75">مرحباً بك في لوحة تحكم المهندس الاستشاري</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="fas fa-hard-hat fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-muted mb-1">إجمالي المشاريع</h6>
+                    <h2 class="mb-0">{{ stats.total_projects }}</h2>
+                    <small class="text-success">{{ stats.active_projects }} نشط</small>
+                </div>
+                <div class="icon bg-primary bg-opacity-10 text-primary">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-muted mb-1">متوسط التقدم</h6>
+                    <h2 class="mb-0">{{ "%.1f"|format(stats.avg_progress) }}%</h2>
+                    <div class="progress progress-custom mt-2" style="width: 100px;">
+                        <div class="progress-bar bg-success" style="width: {{ stats.avg_progress }}%"></div>
+                    </div>
+                </div>
+                <div class="icon bg-success bg-opacity-10 text-success">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-muted mb-1">مراجعات معلقة</h6>
+                    <h2 class="mb-0 text-warning">{{ stats.pending_reviews }}</h2>
+                    <small>بحاجة للمراجعة</small>
+                </div>
+                <div class="icon bg-warning bg-opacity-10 text-warning">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-muted mb-1">طلب تحقق معلق</h6>
+                    <h2 class="mb-0 text-info">{{ stats.pending_verifications }}</h2>
+                    <small>في انتظار المراجعة</small>
+                </div>
+                <div class="icon bg-info bg-opacity-10 text-info">
+                    <i class="fas fa-check-double"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Projects Progress -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-chart-simple me-2"></i> تقدم المشاريع</h6>
+            </div>
+            <div class="card-body">
+                {% for project in projects_progress %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>
+                            <a href="{{ url_for('consultant.project_detail', project_id=project.id) }}" class="text-decoration-none">
+                                {{ project.name }}
+                            </a>
+                        </span>
+                        <span class="fw-bold">{{ "%.1f"|format(project.progress) }}%</span>
+                    </div>
+                    <div class="progress progress-custom">
+                        <div class="progress-bar bg-{% if project.progress >= 75 %}success{% elif project.progress >= 40 %}warning{% else %}info{% endif %}" 
+                             style="width: {{ project.progress }}%"></div>
+                    </div>
+                    <small class="text-muted">{{ getStatusBadge(project.status)|safe }}</small>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لا توجد مشاريع حالياً</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-tasks me-2"></i> المهام التي تحتاج مراجعة</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if pending_reviews %}
+                <div class="list-group list-group-flush">
+                    {% for review in pending_reviews %}
+                    <div class="list-group-item review-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ review.task.task_name if review.task else '-' }}</h6>
+                                <small class="text-muted">
+                                    المشروع: {{ review.task.project.name if review.task and review.task.project else '-' }} |
+                                    تم الإرسال: {{ review.created_at.strftime('%Y-%m-%d') if review.created_at else '-' }}
+                                </small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary review-btn" data-review-id="{{ review.id }}">
+                                مراجعة
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="text-muted">لا توجد مهام بحاجة للمراجعة</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Verifications & Open Issues -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-check-double me-2 text-info"></i> طلبات التحقق المعلقة</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if pending_verifications %}
+                <div class="list-group list-group-flush">
+                    {% for verification in pending_verifications %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ verification.requirement.description if verification.requirement else '-' }}</h6>
+                                <small class="text-muted">
+                                    المهمة: {{ verification.task.task_name if verification.task else '-' }} |
+                                    مقدم من: {{ verification.user.full_name if verification.user else '-' }}
+                                </small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-info verify-btn" data-verification-id="{{ verification.id }}">
+                                مراجعة
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="text-muted">لا توجد طلبات تحقق معلقة</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-bug me-2 text-danger"></i> القضايا المفتوحة</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if open_issues %}
+                <div class="list-group list-group-flush">
+                    {% for issue in open_issues %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ issue.title }}</h6>
+                                <small class="text-muted">
+                                    المشروع: {{ issue.project.name }} |
+                                    الأولوية: 
+                                    {% if issue.priority == 'critical' %}
+                                    <span class="badge bg-danger">حرجة</span>
+                                    {% elif issue.priority == 'high' %}
+                                    <span class="badge bg-warning">عالية</span>
+                                    {% else %}
+                                    <span class="badge bg-info">متوسطة</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <a href="{{ url_for('consultant.issues_list') }}" class="btn btn-sm btn-outline-danger">
+                                عرض
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="text-muted">لا توجد قضايا مفتوحة</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Meetings & Milestones -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i> الاجتماعات القادمة</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if upcoming_meetings %}
+                <div class="list-group list-group-flush">
+                    {% for meeting in upcoming_meetings %}
+                    <a href="{{ url_for('consultant.view_meeting', meeting_id=meeting.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ meeting.title }}</strong>
+                                <br>
+                                <small class="text-muted">{{ meeting.scheduled_date.strftime('%Y-%m-%d %H:%M') if meeting.scheduled_date else '-' }}</small>
+                            </div>
+                            <i class="fas fa-chevron-left"></i>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لا توجد اجتماعات قادمة</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-flag-checkered me-2 text-success"></i> المعالم القادمة</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if upcoming_milestones %}
+                <div class="list-group list-group-flush">
+                    {% for milestone in upcoming_milestones %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ milestone.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ milestone.planned_date.strftime('%Y-%m-%d') if milestone.planned_date else '-' }}</small>
+                            </div>
+                            <span class="badge bg-warning">{{ (milestone.planned_date - now.date()).days }} يوم متبقي</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-flag-checkered fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لا توجد معالم قادمة</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">مراجعة المهمة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="reviewDetails"></div>
+                <div class="mb-3">
+                    <label class="form-label">ملاحظات</label>
+                    <textarea id="reviewNotes" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="rejectReviewBtn">رفض</button>
+                <button type="button" class="btn btn-success" id="approveReviewBtn">موافقة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Verification Modal -->
+<div class="modal fade" id="verificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">مراجعة طلب التحقق</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="verificationDetails"></div>
+                <div class="mb-3">
+                    <label class="form-label">ملاحظات</label>
+                    <textarea id="verificationNotes" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="rejectVerificationBtn">رفض</button>
+                <button type="button" class="btn btn-success" id="approveVerificationBtn">موافقة</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Review Modal
+    $('.review-btn').click(function() {
+        const reviewId = $(this).data('review-id');
+        showReviewModal(reviewId);
+        $('#approveReviewBtn').off('click').click(() => submitReview(reviewId, true));
+        $('#rejectReviewBtn').off('click').click(() => submitReview(reviewId, false));
+    });
+    
+    function showReviewModal(reviewId) {
+        $.get(`/api/task-verification/${reviewId}`, function(response) {
+            if (response.success) {
+                $('#reviewDetails').html(`
+                    <h6>${response.task_name}</h6>
+                    <p class="text-muted">${response.description || 'لا يوجد وصف'}</p>
+                    <hr>
+                    <div class="alert alert-info">
+                        <small>تم الإرسال بواسطة: ${response.submitted_by}</small>
+                    </div>
+                `);
+                $('#reviewModal').modal('show');
+            }
+        });
+    }
+    
+    function submitReview(reviewId, approved) {
+        const notes = $('#reviewNotes').val();
+        $.ajax({
+            url: `/consultant/reviews/${reviewId}/approve`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ approved: approved, notes: notes }),
+            success: function(response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert('حدث خطأ: ' + response.error);
+                }
+            }
+        });
+    }
+    
+    // Verification Modal
+    $('.verify-btn').click(function() {
+        const verificationId = $(this).data('verification-id');
+        showVerificationModal(verificationId);
+        $('#approveVerificationBtn').off('click').click(() => submitVerification(verificationId, true));
+        $('#rejectVerificationBtn').off('click').click(() => submitVerification(verificationId, false));
+    });
+    
+    function showVerificationModal(verificationId) {
+        $.get(`/api/task-verification-request/${verificationId}`, function(response) {
+            if (response.success) {
+                $('#verificationDetails').html(`
+                    <h6>${response.requirement_description}</h6>
+                    <p class="text-muted">القيمة المقدمة: ${response.verified_value || '-'}</p>
+                    <hr>
+                    <div class="alert alert-info">
+                        <small>مقدم من: ${response.submitted_by}</small>
+                    </div>
+                `);
+                $('#verificationModal').modal('show');
+            }
+        });
+    }
+    
+    function submitVerification(verificationId, approved) {
+        const notes = $('#verificationNotes').val();
+        $.ajax({
+            url: `/consultant/verifications/${verificationId}/review`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ approved: approved, notes: notes }),
+            success: function(response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert('حدث خطأ: ' + response.error);
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

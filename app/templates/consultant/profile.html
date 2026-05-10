@@ -1,0 +1,287 @@
+{% extends "consultant/base.html" %}
+
+{% block title %}{{ _('profile') }} - {{ _('consultant_portal') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        border-radius: 20px;
+        padding: 30px;
+        color: white;
+        margin-bottom: 30px;
+    }
+    
+    .avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid white;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .info-value {
+        color: #2b2d42;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-user-circle me-2"></i> {{ _('profile') }}</h4>
+            <a href="{{ url_for('consultant.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> {{ _('back_to_dashboard') }}
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Header -->
+<div class="profile-header">
+    <div class="row align-items-center">
+        <div class="col-md-3 text-center text-md-start">
+            {% if user.profile_image and user.profile_image != 'default.jpg' %}
+            <img src="{{ url_for('static', filename='uploads/profiles/' + user.profile_image) }}" 
+                 class="avatar" alt="{{ user.full_name }}">
+            {% else %}
+            <div class="avatar bg-white d-flex align-items-center justify-content-center mx-auto mx-md-0">
+                <i class="fas fa-user fa-4x text-primary"></i>
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-md-6 text-center text-md-start mt-3 mt-md-0">
+            <h2 class="mb-1">{{ user.full_name }}</h2>
+            <p class="mb-2 opacity-75">
+                <i class="fas fa-envelope me-2"></i> {{ user.email }}
+                {% if user.phone %}
+                <span class="mx-2">|</span>
+                <i class="fas fa-phone me-2"></i> {{ user.phone }}
+                {% endif %}
+            </p>
+            <p class="mb-0 opacity-75">
+                <i class="fas fa-calendar-alt me-2"></i> {{ _('member_since') }}: {{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '-' }}
+            </p>
+        </div>
+        <div class="col-md-3 text-center text-md-end mt-3 mt-md-0">
+            <span class="badge bg-light text-dark fs-6 px-3 py-2">
+                <i class="fas fa-hard-hat me-2"></i> {{ _('consultant') }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Personal Information -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-user me-2 text-primary"></i> {{ _('personal_information') }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-label">{{ _('full_name') }}:</span>
+                    <span class="info-value">{{ user.full_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">{{ _('email') }}:</span>
+                    <span class="info-value">{{ user.email }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">{{ _('phone') }}:</span>
+                    <span class="info-value">{{ user.phone or '-' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">{{ _('mobile') }}:</span>
+                    <span class="info-value">{{ user.mobile or '-' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">{{ _('job_title') }}:</span>
+                    <span class="info-value">{{ user.job_title or _('consultant') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Account Information -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-shield-alt me-2 text-primary"></i> {{ _('account_information') }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-label">{{ _('username') }}:</span>
+                    <span class="info-value">{{ user.username }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">{{ _('role') }}:</span>
+                    <span class="info-value"><span class="badge bg-info">{{ _('consultant') }}</span></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">{{ _('last_login') }}:</span>
+                    <span class="info-value">{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else '-' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">{{ _('login_count') }}:</span>
+                    <span class="info-value">{{ user.login_count or 0 }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">{{ _('member_since') }}:</span>
+                    <span class="info-value">{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '-' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Change Password -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-key me-2 text-primary"></i> {{ _('change_password') }}</h6>
+            </div>
+            <div class="card-body">
+                <form id="changePasswordForm">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('current_password') }}</label>
+                        <input type="password" class="form-control" id="currentPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('new_password') }}</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                        <small class="text-muted">{{ _('password_requirements') }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('confirm_password') }}</label>
+                        <input type="password" class="form-control" id="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> {{ _('update_password') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Preferences -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-globe me-2 text-primary"></i> {{ _('preferences') }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ _('language') }}</label>
+                    <select class="form-select" id="languageSelect">
+                        <option value="ar" {% if user.language == 'ar' %}selected{% endif %}>العربية</option>
+                        <option value="en" {% if user.language == 'en' %}selected{% endif %}>English</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="emailNotifications" 
+                               {% if user.settings and user.settings.get('email_notifications') %}checked{% endif %}>
+                        <label class="form-check-label">{{ _('email_notifications') }}</label>
+                    </div>
+                </div>
+                <button class="btn btn-outline-primary" id="savePreferences">
+                    <i class="fas fa-save me-2"></i> {{ _('save_preferences') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Change Password
+$('#changePasswordForm').submit(function(e) {
+    e.preventDefault();
+    
+    const currentPassword = $('#currentPassword').val();
+    const newPassword = $('#newPassword').val();
+    const confirmPassword = $('#confirmPassword').val();
+    
+    if (newPassword !== confirmPassword) {
+        alert('{{ _("password_mismatch") }}');
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        alert('{{ _("password_too_short") }}');
+        return;
+    }
+    
+    $.ajax({
+        url: '/consultant/change-password',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword,
+            confirm_password: confirmPassword
+        }),
+        success: function(response) {
+            if (response.success) {
+                alert('{{ _("password_changed_success") }}');
+                $('#changePasswordForm')[0].reset();
+            } else {
+                alert('{{ _("error_occurred") }}: ' + response.error);
+            }
+        }
+    });
+});
+
+// Save Preferences
+$('#savePreferences').click(function() {
+    const language = $('#languageSelect').val();
+    const emailNotifications = $('#emailNotifications').is(':checked');
+    
+    $.ajax({
+        url: '/consultant/update-preferences',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            language: language,
+            email_notifications: emailNotifications
+        }),
+        success: function(response) {
+            if (response.success) {
+                alert('{{ _("preferences_saved") }}');
+                if (language !== '{{ user.language }}') {
+                    location.reload();
+                }
+            } else {
+                alert('{{ _("error_occurred") }}: ' + response.error);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,97 @@
+{# templates/platform/notifications/detail.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ notification.get_title() }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="{{ notification.get_icon_class() }} me-2"></i>
+                            {{ notification.get_title() }}
+                        </h4>
+                        {{ notification.get_priority_badge()|safe }}
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="notification-meta mb-4 pb-3 border-bottom">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ format_datetime(notification.created_at) }}
+                                </small>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <small class="text-muted">
+                                    <i class="fas fa-tag me-1"></i>
+                                    {{ _('platform.notification_type_' + notification.notification_type) if _('platform.notification_type_' + notification.notification_type) != 'platform.notification_type_' + notification.notification_type else notification.notification_type }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="notification-message mb-4">
+                        <p class="fs-5">{{ notification.get_message() }}</p>
+                    </div>
+                    
+                    {% if notification.data %}
+                    <div class="notification-data mb-4">
+                        <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>تفاصيل إضافية</h6>
+                        <div class="bg-light p-3 rounded-3">
+                            <pre class="mb-0 small">{{ notification.data|tojson(indent=2) }}</pre>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between gap-2">
+                        {% if notification.action_url %}
+                        <a href="{{ notification.action_url }}" class="btn btn-primary">
+                            <i class="fas fa-external-link-alt me-2"></i>
+                            {{ notification.get_action_text() }}
+                        </a>
+                        {% endif %}
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('platform.platform_notifications') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-right me-2"></i>
+                                {{ _('common.back') }}
+                            </a>
+                            <button class="btn btn-outline-danger delete-notif-btn" data-id="{{ notification.id }}">
+                                <i class="fas fa-trash-alt me-2"></i>
+                                {{ _('common.delete') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('.delete-notif-btn').click(function() {
+        const notifId = $(this).data('id');
+        
+        if (confirm('{{ _("platform.confirm_delete_notification") }}')) {
+            $.ajax({
+                url: "{{ url_for('platform.platform_delete_notification', notif_id=0) }}".replace('0', notifId),
+                method: 'DELETE',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success('{{ _("platform.notification_deleted") }}');
+                        setTimeout(function() {
+                            window.location.href = "{{ url_for('platform.platform_notifications') }}";
+                        }, 1000);
+                    }
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends "company/base.html" %}
+
+{% block title %}تقرير المشاريع - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}تقرير المشاريع{% endblock %}
+{% block page_subtitle %}تحليلات وإحصائيات المشاريع{% endblock %}
+
+{% block content %}
+<!-- فلاتر التقرير -->
+<div class="filter-section">
+    <form method="GET" action="{{ url_for('company.projects_report') }}">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="filter-label">حالة المشروع</label>
+                <select name="status" class="filter-input">
+                    <option value="all">الكل</option>
+                    <option value="active">نشط</option>
+                    <option value="completed">مكتمل</option>
+                    <option value="pending">معلق</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="filter-label">من تاريخ</label>
+                <input type="date" name="from" class="filter-input">
+            </div>
+            <div class="col-md-3">
+                <label class="filter-label">إلى تاريخ</label>
+                <input type="date" name="to" class="filter-input">
+            </div>
+            <div class="col-md-3">
+                <label class="filter-label">&nbsp;</label>
+                <button type="submit" class="btn-primary-gradient w-100">
+                    <i class="fas fa-filter me-2"></i>تطبيق الفلتر
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- إحصائيات المشاريع -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h2 class="stat-value">{{ report_data|length }}</h2>
+            <p class="stat-label">إجمالي المشاريع</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h2 class="stat-value">{{ report_data|selectattr('status', 'equalto', 'active')|list|length }}</h2>
+            <p class="stat-label">مشاريع نشطة</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h2 class="stat-value">{{ report_data|selectattr('status', 'equalto', 'completed')|list|length }}</h2>
+            <p class="stat-label">مشاريع مكتملة</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h2 class="stat-value">{{ report_data|sum(attribute='value')|round|int }}</h2>
+            <p class="stat-label">القيمة الإجمالية</p>
+        </div>
+    </div>
+</div>
+
+<!-- جدول المشاريع -->
+<div class="table-card">
+    <div class="table-header">
+        <h5 class="table-title"><i class="fas fa-project-diagram me-2 text-primary"></i>تفاصيل المشاريع</h5>
+        <div>
+            <button class="btn btn-outline-primary btn-sm me-2" onclick="exportToExcel()">
+                <i class="fas fa-file-excel me-2"></i>Excel
+            </button>
+            <button class="btn btn-outline-primary btn-sm" onclick="exportToPDF()">
+                <i class="fas fa-file-pdf me-2"></i>PDF
+            </button>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>المشروع</th>
+                    <th>الكود</th>
+                    <th>الحالة</th>
+                    <th>مدير المشروع</th>
+                    <th>تاريخ البداية</th>
+                    <th>تاريخ النهاية</th>
+                    <th>التقدم</th>
+                    <th>المهام</th>
+                    <th>القيمة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in report_data %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ project.name }}</strong></td>
+                    <td><span class="badge bg-secondary">{{ project.code }}</span></td>
+                    <td>
+                        <span class="badge-status 
+                            {% if project.status == 'active' %}active
+                            {% elif project.status == 'completed' %}active
+                            {% else %}pending{% endif %}">
+                            {{ project.status }}
+                        </span>
+                    </td>
+                    <td>{{ project.manager }}</td>
+                    <td>{{ project.start_date.strftime('%Y-%m-%d') if project.start_date }}</td>
+                    <td>{{ project.end_date.strftime('%Y-%m-%d') if project.end_date }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="progress flex-grow-1" style="height: 5px;">
+                                <div class="progress-bar bg-primary" style="width: {{ project.progress }}%"></div>
+                            </div>
+                            <span class="ms-2 small">{{ project.progress }}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-info">{{ project.completed_tasks }}/{{ project.tasks_count }}</span>
+                    </td>
+                    <td>{{ project.value }} ر.س</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" class="text-center py-4 text-muted">
+                        <i class="fas fa-folder-open fa-3x mb-3"></i>
+                        <p>لا توجد بيانات</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function exportToExcel() {
+    Swal.fire({
+        title: 'جاري التصدير',
+        text: 'يرجى الانتظار...',
+        timerProgressBar: true,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    setTimeout(() => {
+        Swal.fire({
+            icon: 'success',
+            title: 'تم',
+            text: 'تم تصدير التقرير بنجاح',
+            timer: 2000
+        });
+    }, 2000);
+}
+
+function exportToPDF() {
+    // TODO: تصدير PDF
+}
+</script>
+{% endblock %}

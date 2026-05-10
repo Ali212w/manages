@@ -1,0 +1,221 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}إنشاء مستخدم جديد - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-user-plus me-2"></i>إنشاء مستخدم جديد
+                    </h1>
+                    <p class="text-muted mb-0">إضافة مستخدم جديد للنظام</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right me-1"></i>العودة للقائمة
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">معلومات المستخدم</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.create_user') }}">
+                    <div class="row">
+                        <!-- المعلومات الأساسية -->
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">اسم المستخدم *</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">البريد الإلكتروني *</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="full_name" class="form-label">الاسم الكامل *</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="full_name_ar" class="form-label">الاسم الكامل (عربي)</label>
+                            <input type="text" class="form-control" id="full_name_ar" name="full_name_ar">
+                        </div>
+                        
+                        <!-- المعلومات الشخصية -->
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">الهاتف</label>
+                            <input type="text" class="form-control" id="phone" name="phone">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="mobile" class="form-label">الجوال</label>
+                            <input type="text" class="form-control" id="mobile" name="mobile">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="job_title" class="form-label">المسمى الوظيفي</label>
+                            <input type="text" class="form-control" id="job_title" name="job_title">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="job_title_ar" class="form-label">المسمى الوظيفي (عربي)</label>
+                            <input type="text" class="form-control" id="job_title_ar" name="job_title_ar">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="employee_id" class="form-label">الرقم الوظيفي</label>
+                            <input type="text" class="form-control" id="employee_id" name="employee_id">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="national_id" class="form-label">رقم الهوية</label>
+                            <input type="text" class="form-control" id="national_id" name="national_id">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="birth_date" class="form-label">تاريخ الميلاد</label>
+                            <input type="date" class="form-control" id="birth_date" name="birth_date">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="hire_date" class="form-label">تاريخ التعيين</label>
+                            <input type="date" class="form-control" id="hire_date" name="hire_date" 
+                                   value="{{ now.strftime('%Y-%m-%d') }}">
+                        </div>
+                        
+                        <!-- الدور والصلاحيات -->
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">الدور *</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="employee">موظف</option>
+                                <option value="delegate">مندوب</option>
+                                <option value="supervisor">مشرف</option>
+                                <option value="project_manager">مدير مشروع</option>
+                                <option value="admin">مدير</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="dept_id" class="form-label">القسم</label>
+                            <select class="form-select" id="dept_id" name="dept_id">
+                                <option value="">اختر القسم</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- كلمة المرور -->
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">كلمة المرور *</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <small class="text-muted">يجب أن تحتوي على 8 أحرف على الأقل</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="confirm_password" class="form-label">تأكيد كلمة المرور *</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                        
+                        <!-- الحالة -->
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                <label class="form-check-label" for="is_active">حساب نشط</label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_verified" name="is_verified" checked>
+                                <label class="form-check-label" for="is_verified">حساب موثق</label>
+                            </div>
+                        </div>
+                        
+                        <!-- الصلاحيات -->
+                        <div class="col-12 mb-4">
+                            <label class="form-label">الصلاحيات</label>
+                            <div class="row">
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="permission_view_projects" 
+                                               name="permission_view_projects" checked>
+                                        <label class="form-check-label" for="permission_view_projects">
+                                            عرض المشاريع
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="permission_create_tasks" 
+                                               name="permission_create_tasks">
+                                        <label class="form-check-label" for="permission_create_tasks">
+                                            إنشاء مهام
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="permission_approve_expenses" 
+                                               name="permission_approve_expenses">
+                                        <label class="form-check-label" for="permission_approve_expenses">
+                                            اعتماد المصروفات
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="permission_manage_users" 
+                                               name="permission_manage_users">
+                                        <label class="form-check-label" for="permission_manage_users">
+                                            إدارة المستخدمين
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="permission_view_reports" 
+                                               name="permission_view_reports" checked>
+                                        <label class="form-check-label" for="permission_view_reports">
+                                            عرض التقارير
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="permission_upload_documents" 
+                                               name="permission_upload_documents" checked>
+                                        <label class="form-check-label" for="permission_upload_documents">
+                                            رفع المستندات
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- أزرار -->
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <button type="reset" class="btn btn-secondary">إعادة تعيين</button>
+                                <button type="submit" class="btn btn-primary">إنشاء المستخدم</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

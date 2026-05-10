@@ -1,0 +1,646 @@
+{% extends "communication/base_chat.html" %}
+
+{% block title %}محادثة المشروع - {{ chat.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: calc(100vh - 200px);
+        display: flex;
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    
+    /* قائمة المشاركين */
+    .participants-sidebar {
+        width: 260px;
+        background: #f8f9fa;
+        border-left: 1px solid #eef2f7;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .participants-header {
+        padding: 20px;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .participants-header h6 {
+        margin: 0;
+        color: var(--dark);
+        font-weight: 600;
+    }
+    
+    .participants-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+    }
+    
+    .participant-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-radius: 12px;
+        margin-bottom: 5px;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .participant-item:hover {
+        background: #eef2f7;
+    }
+    
+    .participant-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-left: 12px;
+        position: relative;
+    }
+    
+    .online-indicator {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #4caf50;
+        border: 2px solid white;
+    }
+    
+    .participant-info {
+        flex: 1;
+    }
+    
+    .participant-name {
+        font-weight: 600;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+    
+    .participant-role {
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+    
+    .participant-badge {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: var(--primary);
+        color: white;
+    }
+    
+    /* منطقة المحادثة الرئيسية */
+    .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chat-header {
+        padding: 20px;
+        border-bottom: 1px solid #eef2f7;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .chat-title h4 {
+        margin: 0;
+        font-weight: 700;
+    }
+    
+    .chat-title small {
+        color: #6c757d;
+    }
+    
+    .online-count {
+        background: #e8f5e9;
+        color: #4caf50;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    /* منطقة الرسائل */
+    .messages-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: #ffffff;
+    }
+    
+    .message {
+        display: flex;
+        margin-bottom: 20px;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    .message-own {
+        flex-direction: row-reverse;
+    }
+    
+    .message-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin: 0 10px;
+        flex-shrink: 0;
+    }
+    
+    .message-content {
+        max-width: 70%;
+    }
+    
+    .message-bubble {
+        background: #f0f2f5;
+        padding: 12px 16px;
+        border-radius: 18px;
+        border-top-right-radius: 4px;
+        position: relative;
+    }
+    
+    .message-own .message-bubble {
+        background: var(--primary);
+        color: white;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 18px;
+    }
+    
+    .message-sender {
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 4px;
+        color: var(--primary);
+    }
+    
+    .message-own .message-sender {
+        color: rgba(255,255,255,0.9);
+    }
+    
+    .message-text {
+        margin: 0;
+        line-height: 1.5;
+    }
+    
+    .message-time {
+        font-size: 0.7rem;
+        color: #6c757d;
+        margin-top: 4px;
+        text-align: left;
+    }
+    
+    .message-own .message-time {
+        color: rgba(255,255,255,0.7);
+    }
+    
+    .message-mention {
+        background: #fff3cd;
+        color: #856404;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+    
+    /* منطقة الإدخال */
+    .chat-input-area {
+        padding: 20px;
+        border-top: 1px solid #eef2f7;
+        background: white;
+    }
+    
+    .input-group-custom {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+    }
+    
+    .message-input {
+        flex: 1;
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 12px 16px;
+        resize: none;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+        max-height: 120px;
+    }
+    
+    .message-input:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .send-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border: none;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .send-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
+    }
+    
+    .attach-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: #eef2f7;
+        border: none;
+        color: #6c757d;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .attach-btn:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    /* قائمة الاقتراحات للإشارات */
+    .mentions-dropdown {
+        position: absolute;
+        bottom: 100%;
+        right: 0;
+        left: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1000;
+    }
+    
+    .mention-item {
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .mention-item:hover {
+        background: #f0f2f5;
+    }
+    
+    .mention-item.selected {
+        background: var(--primary);
+        color: white;
+    }
+    
+    /* أنيميشن */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* شريط التمرير */
+    .messages-area::-webkit-scrollbar,
+    .participants-list::-webkit-scrollbar {
+        width: 5px;
+    }
+    
+    .messages-area::-webkit-scrollbar-track,
+    .participants-list::-webkit-scrollbar-track {
+        background: #eef2f7;
+    }
+    
+    .messages-area::-webkit-scrollbar-thumb,
+    .participants-list::-webkit-scrollbar-thumb {
+        background: var(--primary);
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <!-- قائمة المشاركين -->
+    <div class="participants-sidebar">
+        <div class="participants-header">
+            <h6><i class="fas fa-users me-2"></i>المشاركون ({{ participants|length }})</h6>
+            <small class="text-muted">{{ online_count }} متصل الآن</small>
+        </div>
+        
+        <div class="participants-list" id="participantsList">
+            {% for participant in participants %}
+            <div class="participant-item" onclick="mentionUser('{{ participant.user.username }}')">
+                <div class="participant-avatar">
+                    {{ participant.user.full_name[0] }}
+                    {% if participant.last_seen and participant.last_seen >= now - timedelta(minutes=5) %}
+                    <span class="online-indicator"></span>
+                    {% endif %}
+                </div>
+                <div class="participant-info">
+                    <div class="participant-name">{{ participant.user.full_name }}</div>
+                    <div class="participant-role">
+                        {% if participant.role == 'admin' %}
+                            <span class="badge bg-primary">مدير</span>
+                        {% elif participant.role == 'moderator' %}
+                            <span class="badge bg-success">مشرف</span>
+                        {% endif %}
+                        {{ participant.user.job_title or '' }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- منطقة المحادثة الرئيسية -->
+    <div class="chat-main">
+        <div class="chat-header">
+            <div class="chat-title">
+                <h4>{{ chat.name }}</h4>
+                <small><i class="fas fa-hashtag me-1"></i>محادثة عامة</small>
+            </div>
+            <div class="online-count">
+                <i class="fas fa-circle me-1"></i> {{ online_count }} متصل
+            </div>
+        </div>
+        
+        <!-- منطقة الرسائل -->
+        <div class="messages-area" id="messagesArea">
+            {% for message in messages %}
+            <div class="message {% if message.sender_id == current_user.id %}message-own{% endif %}" id="message-{{ message.id }}">
+                <div class="message-avatar">
+                    {{ message.sender.full_name[0] }}
+                </div>
+                <div class="message-content">
+                    <div class="message-bubble">
+                        {% if message.sender_id != current_user.id %}
+                        <div class="message-sender">{{ message.sender.full_name }}</div>
+                        {% endif %}
+                        <p class="message-text">{{ message.content|safe }}</p>
+                    </div>
+                    <div class="message-time">
+                        {{ message.created_at.strftime('%H:%M') }}
+                        {% if message.is_read and message.sender_id == current_user.id %}
+                        <i class="fas fa-check-double text-primary me-1"></i>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-5">
+                <i class="far fa-comment-dots fa-4x mb-3"></i>
+                <h5>لا توجد رسائل بعد</h5>
+                <p>كن أول من يرسل رسالة!</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- منطقة الإدخال -->
+        <div class="chat-input-area">
+            <div class="position-relative">
+                <div class="mentions-dropdown" id="mentionsDropdown"></div>
+                <div class="input-group-custom">
+                    <button class="attach-btn" onclick="uploadFile()" type="button">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <textarea class="message-input" id="messageInput" 
+                              placeholder="اكتب رسالتك... استخدم @ لذكر شخص" 
+                              rows="1"></textarea>
+                    <button class="send-btn" onclick="sendMessage()" type="button">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نموذج رفع ملف مخفي -->
+<input type="file" id="fileInput" style="display: none;" onchange="handleFileSelect()">
+
+<script>
+let lastMessageId = {{ messages[-1].id if messages else 0 }};
+let typingTimer;
+let doneTypingInterval = 1000;
+let mentionSearchTimeout;
+let currentMentionIndex = -1;
+let mentionResults = [];
+
+// التمرير لآخر رسالة
+function scrollToBottom() {
+    const messagesArea = document.getElementById('messagesArea');
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+}
+scrollToBottom();
+
+// إرسال رسالة
+function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    fetch('/communication/api/chat/{{ chat.id }}/messages', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            addMessageToChat(data.message);
+            hideMentions();
+        }
+    });
+}
+
+// إضافة رسالة جديدة للواجهة
+function addMessageToChat(message) {
+    const messagesArea = document.getElementById('messagesArea');
+    const messageHtml = `
+        <div class="message message-own" id="message-${message.id}">
+            <div class="message-avatar">${message.sender_avatar}</div>
+            <div class="message-content">
+                <div class="message-bubble">
+                    <p class="message-text">${message.content}</p>
+                </div>
+                <div class="message-time">
+                    ${message.created_at}
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // إزالة رسالة "لا توجد رسائل" إذا موجودة
+    const emptyMessage = messagesArea.querySelector('.text-center');
+    if (emptyMessage) emptyMessage.remove();
+    
+    messagesArea.insertAdjacentHTML('beforeend', messageHtml);
+    scrollToBottom();
+    lastMessageId = message.id;
+}
+
+// جلب الرسائل الجديدة
+function fetchNewMessages() {
+    fetch(`/communication/api/chat/{{ chat.id }}/messages?last_id=${lastMessageId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.messages.length > 0) {
+                data.messages.forEach(message => {
+                    addMessageToChat(message);
+                });
+            }
+        });
+}
+
+// تحديث كل 3 ثواني
+setInterval(fetchNewMessages, 3000);
+
+// البحث عن مستخدمين للإشارة
+document.getElementById('messageInput').addEventListener('input', function(e) {
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const atIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (atIndex !== -1 && atIndex === cursorPos - 1) {
+        // بدأ كتابة إشارة جديدة
+        showMentions('');
+    } else if (atIndex !== -1) {
+        // كتابة اسم بعد @
+        const query = textBeforeCursor.substring(atIndex + 1);
+        showMentions(query);
+    } else {
+        hideMentions();
+    }
+});
+
+// عرض قائمة الاقتراحات
+function showMentions(query) {
+    clearTimeout(mentionSearchTimeout);
+    mentionSearchTimeout = setTimeout(() => {
+        fetch(`/communication/api/search-users?q=${query}&project_id={{ project_id }}`)
+            .then(response => response.json())
+            .then(data => {
+                mentionResults = data.results;
+                const dropdown = document.getElementById('mentionsDropdown');
+                
+                if (mentionResults.length > 0) {
+                    dropdown.innerHTML = mentionResults.map((user, index) => `
+                        <div class="mention-item" onclick="insertMention('${user.username}')">
+                            <div class="participant-avatar me-2" style="width: 30px; height: 30px;">
+                                ${user.avatar}
+                            </div>
+                            <div>
+                                <strong>${user.full_name}</strong>
+                                <small class="d-block text-muted">@${user.username}</small>
+                            </div>
+                        </div>
+                    `).join('');
+                    dropdown.style.display = 'block';
+                } else {
+                    hideMentions();
+                }
+            });
+    }, 300);
+}
+
+function hideMentions() {
+    document.getElementById('mentionsDropdown').style.display = 'none';
+    currentMentionIndex = -1;
+}
+
+function insertMention(username) {
+    const input = document.getElementById('messageInput');
+    const value = input.value;
+    const cursorPos = input.selectionStart;
+    const atIndex = value.lastIndexOf('@', cursorPos - 1);
+    
+    const newValue = value.substring(0, atIndex) + `@${username} ` + value.substring(cursorPos);
+    input.value = newValue;
+    input.focus();
+    hideMentions();
+}
+
+function mentionUser(username) {
+    insertMention(username);
+}
+
+// رفع ملفات
+function uploadFile() {
+    document.getElementById('fileInput').click();
+}
+
+function handleFileSelect() {
+    const fileInput = document.getElementById('fileInput');
+    const file = fileInput.files[0];
+    
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('chat_id', '{{ chat.id }}');
+    
+    fetch('/communication/api/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // إرسال رسالة مع الملف
+            const message = `📎 أرسل ملف: ${data.attachment.filename}`;
+            document.getElementById('messageInput').value = message;
+            sendMessage();
+        }
+    });
+}
+
+// ضبط ارتفاع textarea تلقائياً
+document.getElementById('messageInput').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+});
+
+// إرسال بالضغط على Enter (مع Shift للسطر الجديد)
+document.getElementById('messageInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+</script>
+{% endblock %}

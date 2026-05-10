@@ -1,0 +1,729 @@
+{% extends "company/base.html" %}
+
+{% block title %}رفع وتحليل الملفات - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}رفع وتحليل الملفات بالذكاء الاصطناعي{% endblock %}
+{% block page_subtitle %}قم برفع ملفات مشروعك وسيقوم النظام باستخراج البيانات تلقائياً وإنشاء المشروع والمهام{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .upload-area {
+        background: white;
+        border: 3px dashed #eef2f7;
+        border-radius: 30px;
+        padding: 4rem 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .upload-area:hover {
+        border-color: var(--primary);
+        background: rgba(67, 97, 238, 0.02);
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    
+    .upload-area.dragover {
+        border-color: var(--primary);
+        background: rgba(67, 97, 238, 0.05);
+    }
+    
+    .upload-icon {
+        font-size: 5rem;
+        color: var(--primary);
+        margin-bottom: 1.5rem;
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    .upload-info {
+        color: #6c757d;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .supported-formats {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+    }
+    
+    .format-badge {
+        padding: 0.5rem 1rem;
+        background: #f8f9fa;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .format-badge i {
+        margin-left: 0.3rem;
+        color: var(--primary);
+    }
+    
+    .files-list {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .file-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        margin-bottom: 0.8rem;
+        transition: all 0.3s;
+    }
+    
+    .file-item:hover {
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .file-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        margin-left: 1rem;
+    }
+    
+    .file-info {
+        flex: 1;
+    }
+    
+    .file-name {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+    
+    .file-size {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .file-remove {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .file-remove:hover {
+        background: var(--danger);
+        color: white;
+        transform: rotate(90deg);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    
+    .btn-analyze {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 1rem 3rem;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-analyze:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+    }
+    
+    .btn-analyze:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .preview-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    .project-info-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .info-item {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1rem;
+    }
+    
+    .info-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0.3rem;
+    }
+    
+    .info-value {
+        font-weight: 600;
+        color: var(--dark);
+    }
+    
+    .tasks-preview {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .task-preview-item {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .task-preview-item:last-child {
+        border-bottom: none;
+    }
+    
+    .task-index {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-left: 1rem;
+    }
+    
+    .progress-container {
+        margin-top: 2rem;
+        text-align: center;
+    }
+    
+    .progress-bar-container {
+        height: 10px;
+        background: #eef2f7;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 5px;
+        transition: width 0.3s;
+    }
+    
+    @media (max-width: 768px) {
+        .project-info-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- بجانب عنوان الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">رفع وتحليل الملفات</h2>
+        <p class="text-muted">قم برفع ملفات مشروعك أو استخدم قالباً جاهزاً</p>
+    </div>
+    <a href="{{ url_for('template.template_page') }}" class="btn-outline-primary">
+        <i class="fas fa-download me-2"></i> تحميل قالب جاهز
+    </a>
+</div>
+
+<div class="upload-container">
+    <!-- Upload Area -->
+    <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">
+            <i class="fas fa-cloud-upload-alt"></i>
+        </div>
+        <h3>اسحب وأفلت الملفات هنا</h3>
+        <p>أو</p>
+        <button class="btn-primary-gradient" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-folder-open me-2"></i> اختر ملفات
+        </button>
+        <input type="file" id="fileInput" multiple style="display: none;" 
+               accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.jpg,.jpeg,.png">
+        <p class="upload-info">يدعم جميع أنواع الملفات - PDF, Word, Excel, CSV, TXT, JPG, PNG (حتى 500MB)</p>
+        
+        <div class="supported-formats">
+            <span class="format-badge"><i class="fas fa-file-pdf"></i> PDF</span>
+            <span class="format-badge"><i class="fas fa-file-word"></i> Word</span>
+            <span class="format-badge"><i class="fas fa-file-excel"></i> Excel</span>
+            <span class="format-badge"><i class="fas fa-file-csv"></i> CSV</span>
+            <span class="format-badge"><i class="fas fa-file-alt"></i> TXT</span>
+            <span class="format-badge"><i class="fas fa-file-image"></i> صور</span>
+        </div>
+    </div>
+    
+    <!-- Files List -->
+    <div class="files-list" id="filesList" style="display: none;">
+        <h5 class="mb-3"><i class="fas fa-list ms-2"></i>الملفات المختارة</h5>
+        <div id="filesContainer"></div>
+        
+        <div class="action-buttons">
+            <button class="btn-analyze" id="analyzeBtn" onclick="analyzeFiles()">
+                <i class="fas fa-brain me-2"></i>
+                تحليل واستخراج البيانات
+            </button>
+            <button class="btn-outline-secondary" onclick="clearFiles()">
+                <i class="fas fa-times me-2"></i>
+                إلغاء
+            </button>
+        </div>
+    </div>
+    
+    <!-- Analysis Progress -->
+    <div class="preview-card" id="progressCard" style="display: none;">
+        <div class="progress-container">
+            <h5 class="mb-3"><i class="fas fa-cog fa-spin ms-2"></i>جاري التحليل...</h5>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            <p id="progressStatus">بدء التحليل...</p>
+        </div>
+    </div>
+    
+    <!-- Preview Card -->
+    <div class="preview-card" id="previewCard" style="display: none;">
+        <div class="preview-header">
+            <h5 class="mb-0"><i class="fas fa-eye ms-2 text-primary"></i>معاينة البيانات المستخرجة</h5>
+            <button class="btn-primary-gradient" onclick="createProject()">
+                <i class="fas fa-check me-2"></i>
+                تأكيد وإنشاء المشروع
+            </button>
+        </div>
+        
+        <div class="project-info-grid" id="projectInfo">
+            <!-- يتم تعبئتها ديناميكياً -->
+        </div>
+        
+        <h6 class="mb-3"><i class="fas fa-tasks ms-2"></i>المهام المستخرجة</h6>
+        <div class="tasks-preview" id="tasksPreview">
+            <!-- يتم تعبئتها ديناميكياً -->
+        </div>
+    </div>
+    
+    <!-- Manual Entry Card -->
+    <div class="preview-card mt-4">
+        <div class="preview-header">
+            <h5 class="mb-0"><i class="fas fa-pen ms-2 text-primary"></i>إدخال يدوي</h5>
+        </div>
+        <p class="text-muted mb-3">يمكنك لصق نص المشروع هنا لتحليله وإنشاء المشروع مباشرة</p>
+        <textarea class="form-control mb-3" id="manualText" rows="5" 
+                  placeholder="الصق نص المشروع هنا..."></textarea>
+        <button class="btn-primary-gradient" onclick="manualCreate()">
+            <i class="fas fa-magic me-2"></i>
+            تحليل وإنشاء من النص
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedFiles = [];
+
+// ============================================
+// إدارة رفع الملفات
+// ============================================
+function initializeUploadArea() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+    
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
+}
+
+function handleFiles(files) {
+    for (let file of files) {
+        if (file.size > 500 * 1024 * 1024) {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: 'حجم الملف ' + file.name + ' يتجاوز 500 ميجابايت'
+            });
+            continue;
+        }
+        selectedFiles.push(file);
+        displayFile(file);
+    }
+    
+    document.getElementById('filesList').style.display = 'block';
+}
+
+function displayFile(file) {
+    const container = document.getElementById('filesContainer');
+    const fileIcon = getFileIcon(file.name);
+    const fileSize = formatFileSize(file.size);
+    
+    const fileElement = document.createElement('div');
+    fileElement.className = 'file-item';
+    fileElement.innerHTML = `
+        <div class="file-icon">
+            <i class="fas ${fileIcon}"></i>
+        </div>
+        <div class="file-info">
+            <div class="file-name">${file.name}</div>
+            <div class="file-size">${fileSize}</div>
+        </div>
+        <div class="file-remove" onclick="removeFile('${file.name}')">
+            <i class="fas fa-times"></i>
+        </div>
+    `;
+    
+    container.appendChild(fileElement);
+}
+
+function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const icons = {
+        'pdf': 'fa-file-pdf',
+        'docx': 'fa-file-word',
+        'doc': 'fa-file-word',
+        'xlsx': 'fa-file-excel',
+        'xls': 'fa-file-excel',
+        'csv': 'fa-file-csv',
+        'txt': 'fa-file-alt',
+        'jpg': 'fa-file-image',
+        'jpeg': 'fa-file-image',
+        'png': 'fa-file-image'
+    };
+    return icons[ext] || 'fa-file';
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function removeFile(filename) {
+    selectedFiles = selectedFiles.filter(f => f.name !== filename);
+    document.getElementById('filesContainer').innerHTML = '';
+    selectedFiles.forEach(f => displayFile(f));
+    
+    if (selectedFiles.length === 0) {
+        document.getElementById('filesList').style.display = 'none';
+    }
+}
+
+function clearFiles() {
+    selectedFiles = [];
+    document.getElementById('filesContainer').innerHTML = '';
+    document.getElementById('filesList').style.display = 'none';
+    document.getElementById('previewCard').style.display = 'none';
+}
+
+// ============================================
+// تحليل الملفات
+// ============================================
+async function analyzeFiles() {
+    if (selectedFiles.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'الرجاء اختيار ملفات أولاً'
+        });
+        return;
+    }
+    
+    const formData = new FormData();
+    selectedFiles.forEach(file => formData.append('files', file));
+    
+    document.getElementById('progressCard').style.display = 'block';
+    document.getElementById('progressBar').style.width = '30%';
+    document.getElementById('progressStatus').textContent = 'جاري رفع الملفات...';
+    
+    try {
+        const response = await fetch('/upload/api/preview', {
+            method: 'POST',
+            body: formData
+        });
+        
+        document.getElementById('progressBar').style.width = '70%';
+        document.getElementById('progressStatus').textContent = 'جاري تحليل البيانات...';
+        
+        const result = await response.json();
+        
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('progressStatus').textContent = 'اكتمل التحليل!';
+        
+        if (result.success) {
+            setTimeout(() => {
+                document.getElementById('progressCard').style.display = 'none';
+                displayPreview(result.preview);
+            }, 500);
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: result.error || 'فشل تحليل الملفات'
+            });
+            document.getElementById('progressCard').style.display = 'none';
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم'
+        });
+        document.getElementById('progressCard').style.display = 'none';
+    }
+}
+
+// ============================================
+// عرض المعاينة
+// ============================================
+function displayPreview(preview) {
+    const projectInfo = document.getElementById('projectInfo');
+    const tasksPreview = document.getElementById('tasksPreview');
+    
+    // عرض معلومات المشروع
+    projectInfo.innerHTML = `
+        <div class="info-item">
+            <div class="info-label">اسم المشروع</div>
+            <div class="info-value">${preview.project_info.name || 'غير محدد'}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">رمز المشروع</div>
+            <div class="info-value">${preview.project_info.code || 'غير محدد'}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">الميزانية</div>
+            <div class="info-value">${preview.project_info.budget ? preview.project_info.budget + ' ر.س' : 'غير محدد'}</div>
+        </div>
+    `;
+    
+    // عرض المهام
+    tasksPreview.innerHTML = '';
+    if (preview.tasks_preview && preview.tasks_preview.length > 0) {
+        preview.tasks_preview.forEach((task, index) => {
+            tasksPreview.innerHTML += `
+                <div class="task-preview-item">
+                    <div class="task-index">${index + 1}</div>
+                    <div class="flex-grow-1">
+                        <strong>${task.name || 'مهمة غير مسماة'}</strong>
+                        ${task.description ? `<br><small class="text-muted">${task.description}</small>` : ''}
+                    </div>
+                    ${task.assigned_to ? `<span class="badge bg-primary">${task.assigned_to}</span>` : ''}
+                </div>
+            `;
+        });
+    } else {
+        tasksPreview.innerHTML = '<p class="text-muted text-center py-3">لا توجد مهام مستخرجة</p>';
+    }
+    
+    document.getElementById('previewCard').style.display = 'block';
+}
+
+// ============================================
+// إنشاء المشروع
+// ============================================
+async function createProject() {
+    if (selectedFiles.length === 0) return;
+    
+    const formData = new FormData();
+    selectedFiles.forEach(file => formData.append('files', file));
+    
+    Swal.fire({
+        title: 'جاري إنشاء المشروع',
+        text: 'يرجى الانتظار...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    try {
+        const response = await fetch('/upload/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم بنجاح!',
+                html: `
+                    <strong>${result.project.name}</strong><br>
+                    تم إنشاء المشروع و ${result.tasks_count} مهام
+                `,
+                confirmButtonText: 'عرض المشروع',
+                showCancelButton: true,
+                cancelButtonText: 'رفع المزيد'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/company/projects/${result.project.id}`;
+                } else {
+                    clearFiles();
+                }
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: result.error || 'فشل إنشاء المشروع'
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم'
+        });
+    }
+}
+
+// ============================================
+// إنشاء يدوي من النص
+// ============================================
+async function manualCreate() {
+    const text = document.getElementById('manualText').value.trim();
+    
+    if (!text) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'الرجاء إدخال نص المشروع'
+        });
+        return;
+    }
+    
+    Swal.fire({
+        title: 'جاري التحليل',
+        text: 'يرجى الانتظار...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    try {
+        const response = await fetch('/upload/api/manual-create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: text })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم بنجاح!',
+                text: `تم إنشاء المشروع و ${result.tasks_count} مهام`,
+                confirmButtonText: 'عرض المشروع'
+            }).then(() => {
+                window.location.href = `/company/projects/${result.project.id}`;
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: result.error || 'فشل إنشاء المشروع'
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ في الاتصال بالخادم'
+        });
+    }
+}
+
+// ============================================
+// تهيئة الصفحة
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    initializeUploadArea();
+});
+</script>
+{% endblock %}

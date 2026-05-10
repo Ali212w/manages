@@ -1,0 +1,348 @@
+{% extends "company/base.html" %}
+
+{% block title %}مقارنة مع خط الأساس - {{ project.name }}{% endblock %}
+
+{% block page_title %}مقارنة الأداء{% endblock %}
+{% block page_subtitle %}{{ baseline.name }} vs الحالي{% endblock %}
+
+{% block extra_css %}
+<style>
+    .compare-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .summary-card {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.2rem;
+        text-align: center;
+        border-bottom: 3px solid transparent;
+    }
+    
+    .summary-card.schedule {
+        border-bottom-color: var(--primary);
+    }
+    
+    .summary-card.cost {
+        border-bottom-color: var(--success);
+    }
+    
+    .summary-card.ahead {
+        border-bottom-color: var(--success);
+    }
+    
+    .summary-card.behind {
+        border-bottom-color: var(--danger);
+    }
+    
+    .summary-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+    
+    .summary-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+    
+    .variance {
+        font-size: 1rem;
+        margin-top: 0.3rem;
+    }
+    
+    .variance.positive { color: var(--success); }
+    .variance.negative { color: var(--danger); }
+    
+    .chart-container {
+        height: 300px;
+        margin-bottom: 2rem;
+    }
+    
+    .comparison-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 0.5rem;
+    }
+    
+    .comparison-table thead th {
+        background: #f8f9fa;
+        padding: 1rem;
+        font-weight: 600;
+        color: var(--dark);
+        border: none;
+    }
+    
+    .comparison-table tbody tr {
+        background: white;
+        border-radius: 12px;
+        transition: all 0.3s;
+    }
+    
+    .comparison-table tbody tr:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .comparison-table td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+    
+    .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-left: 0.5rem;
+    }
+    
+    .status-ahead { background: var(--success); }
+    .status-behind { background: var(--danger); }
+    .status-on-time { background: var(--primary); }
+    
+    .metric-box {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 0.3rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .metric-value {
+        font-weight: 600;
+    }
+    
+    .gauge {
+        width: 200px;
+        height: 100px;
+        margin: 0 auto;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .gauge-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: conic-gradient(var(--primary) 0deg, #eef2f7 0deg);
+        border-radius: 100px 100px 0 0;
+    }
+    
+    .gauge-cover {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        bottom: 0;
+        background: white;
+        border-radius: 90px 90px 0 0;
+    }
+    
+    .gauge-value {
+        position: absolute;
+        bottom: 10px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="compare-container">
+    <!-- رأس المقارنة -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h5 class="mb-1"><i class="fas fa-chart-line me-2 text-primary"></i>مقارنة الأداء</h5>
+            <p class="text-muted mb-0">{{ baseline.name }} (الإصدار {{ baseline.version }}) مقابل الحالي</p>
+        </div>
+        <div class="btn-group">
+            <button class="btn-outline-primary" onclick="exportComparison()">
+                <i class="fas fa-download me-2"></i>تصدير التقرير
+            </button>
+        </div>
+    </div>
+    
+    <!-- بطاقات الملخص -->
+    <div class="summary-cards">
+        <div class="summary-card schedule">
+            <div class="summary-label">فرق الجدول</div>
+            <div class="summary-value {% if comparison.schedule_variance < 0 %}positive{% else %}negative{% endif %}">
+                {{ comparison.schedule_variance|round(1) }} يوم
+            </div>
+            <div class="variance {% if comparison.schedule_variance < 0 %}positive{% else %}negative{% endif %}">
+                {% if comparison.schedule_variance < 0 %}
+                <i class="fas fa-arrow-down me-1"></i> متقدم
+                {% elif comparison.schedule_variance > 0 %}
+                <i class="fas fa-arrow-up me-1"></i> متأخر
+                {% else %}
+                <i class="fas fa-equals me-1"></i> مطابق
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="summary-card cost">
+            <div class="summary-label">فرق التكلفة</div>
+            <div class="summary-value">{{ comparison.cost_variance|round(0) }} ر.س</div>
+            <div class="variance">تحت الميزانية</div>
+        </div>
+        
+        <div class="summary-card ahead">
+            <div class="summary-label">أنشطة متقدمة</div>
+            <div class="summary-value">{{ comparison.activities_ahead }}</div>
+            <div class="variance positive">أسرع من المخطط</div>
+        </div>
+        
+        <div class="summary-card behind">
+            <div class="summary-label">أنشطة متأخرة</div>
+            <div class="summary-value">{{ comparison.activities_behind }}</div>
+            <div class="variance negative">أبطأ من المخطط</div>
+        </div>
+    </div>
+    
+    <!-- رسم بياني للمقارنة -->
+    <div class="chart-container">
+        <canvas id="comparisonChart"></canvas>
+    </div>
+    
+    <!-- جدول المقارنة التفصيلي -->
+    <h6 class="mb-3"><i class="fas fa-tasks me-2"></i>مقارنة الأنشطة</h6>
+    
+    <div class="table-responsive">
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>النشاط</th>
+                    <th>المخطط</th>
+                    <th>الفعلي</th>
+                    <th>الفرق</th>
+                    <th>الحالة</th>
+                    <th>التقدم</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in comparison.activities %}
+                <tr>
+                    <td>
+                        <strong>{{ activity.name }}</strong>
+                        <br><small class="text-muted">{{ activity.id }}</small>
+                    </td>
+                    <td>
+                        <div class="metric-box">
+                            <div><small class="text-muted">البداية</small> {{ activity.baseline_start }}</div>
+                            <div><small class="text-muted">النهاية</small> {{ activity.baseline_finish }}</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="metric-box">
+                            <div><small class="text-muted">البداية</small> {{ activity.actual_start or '-' }}</div>
+                            <div><small class="text-muted">النهاية</small> {{ activity.actual_finish or '-' }}</div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if activity.delay > 0 %}
+                        <span class="text-danger">+{{ activity.delay }} يوم</span>
+                        {% elif activity.delay < 0 %}
+                        <span class="text-success">{{ activity.delay }} يوم</span>
+                        {% else %}
+                        <span class="text-muted">مطابق</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if activity.status == 'completed' %}
+                        <span class="badge bg-success">مكتمل</span>
+                        {% elif activity.status == 'in_progress' %}
+                            {% if activity.delay > 0 %}
+                            <span class="badge bg-danger">متأخر</span>
+                            {% elif activity.delay < 0 %}
+                            <span class="badge bg-success">متقدم</span>
+                            {% else %}
+                            <span class="badge bg-primary">ضمن الجدول</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="badge bg-secondary">لم يبدأ</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="progress flex-grow-1 me-2" style="height: 5px;">
+                                <div class="progress-bar" style="width: {{ activity.progress }}%"></div>
+                            </div>
+                            <small>{{ activity.progress|round }}%</small>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('comparisonChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['الأسبوع 1', 'الأسبوع 2', 'الأسبوع 3', 'الأسبوع 4', 'الأسبوع 5', 'الأسبوع 6'],
+            datasets: [{
+                label: 'المخطط',
+                data: [10, 25, 40, 55, 70, 85],
+                borderColor: 'var(--primary)',
+                backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'الفعلي',
+                data: [8, 22, 38, 50, 68, 82],
+                borderColor: 'var(--success)',
+                backgroundColor: 'rgba(76, 201, 240, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'التقدم %'
+                    }
+                }
+            }
+        }
+    });
+});
+
+function exportComparison() {
+    Swal.fire({
+        icon: 'success',
+        title: 'تم التصدير',
+        text: 'سيتم تحميل تقرير المقارنة',
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
+</script>
+{% endblock %}

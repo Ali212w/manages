@@ -1,0 +1,545 @@
+{% extends "consultant/base.html" %}
+
+{% block title %}{{ meeting.title }} - {{ _('meeting_details') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .meeting-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        border-radius: 20px;
+        padding: 25px;
+        color: white;
+        margin-bottom: 30px;
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .info-value {
+        color: #2b2d42;
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .section-title i {
+        color: var(--secondary-color);
+        margin-left: 10px;
+    }
+    
+    .agenda-list, .decisions-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .agenda-list li, .decisions-list li {
+        padding: 10px 0;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+    }
+    
+    .agenda-list li:last-child, .decisions-list li:last-child {
+        border-bottom: none;
+    }
+    
+    .agenda-list li i, .decisions-list li i {
+        color: var(--secondary-color);
+        margin-left: 10px;
+        font-size: 1rem;
+    }
+    
+    .action-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+        transition: all 0.3s;
+    }
+    
+    .action-item:hover {
+        background: #e9ecef;
+        transform: translateX(-5px);
+    }
+    
+    .action-status {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .status-completed {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-in-progress {
+        background: #cce5ff;
+        color: #004085;
+    }
+    
+    .attendee-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #e9ecef;
+        padding: 5px 12px;
+        border-radius: 20px;
+        margin: 0 5px 10px 0;
+        font-size: 0.85rem;
+    }
+    
+    .attendee-badge i {
+        margin-left: 5px;
+        color: var(--secondary-color);
+    }
+    
+    .document-link {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--dark-color);
+        transition: all 0.3s;
+        margin: 0 10px 10px 0;
+    }
+    
+    .document-link:hover {
+        background: var(--secondary-color);
+        color: white;
+    }
+    
+    .document-link i {
+        margin-left: 8px;
+    }
+    
+    @media print {
+        .sidebar, .top-navbar, .btn, .action-buttons {
+            display: none !important;
+        }
+        .main-content {
+            margin-right: 0 !important;
+        }
+        .meeting-header {
+            background: #2c3e50;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4><i class="fas fa-calendar-alt me-2"></i> {{ meeting.title }}</h4>
+                <p class="text-muted mb-0">{{ _('meeting_details') }}</p>
+            </div>
+            <div>
+                <a href="{{ url_for('consultant.meetings_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-2"></i> {{ _('back_to_meetings') }}
+                </a>
+                <button onclick="window.print()" class="btn btn-outline-primary ms-2">
+                    <i class="fas fa-print me-2"></i> {{ _('print') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Meeting Header -->
+<div class="meeting-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h2 class="mb-2">{{ meeting.title }}</h2>
+            <p class="mb-2 opacity-75">{{ meeting.purpose or _('no_description') }}</p>
+            <div class="d-flex flex-wrap gap-3 mt-3">
+                <span class="badge bg-light text-dark">
+                    <i class="fas fa-tag me-1"></i> {{ meeting.meeting_type or _('general') }}
+                </span>
+                <span class="badge bg-light text-dark">
+                    <i class="fas fa-code-branch me-1"></i> {{ meeting.meeting_code or '-' }}
+                </span>
+                {% if meeting.status == 'completed' %}
+                <span class="badge bg-success">{{ _('completed') }}</span>
+                {% elif meeting.status == 'scheduled' %}
+                <span class="badge bg-primary">{{ _('scheduled') }}</span>
+                {% elif meeting.status == 'cancelled' %}
+                <span class="badge bg-danger">{{ _('cancelled') }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
+            <div class="bg-white bg-opacity-25 rounded-3 p-3 d-inline-block">
+                <div class="small">{{ _('meeting_code') }}</div>
+                <h4 class="mb-0">{{ meeting.meeting_code or '-' }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Meeting Information -->
+    <div class="col-md-6">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-info-circle"></i> {{ _('meeting_information') }}</h6>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('project') }}:</span>
+                <span class="info-value">
+                    <a href="{{ url_for('consultant.project_detail', project_id=meeting.project_id) }}" class="text-decoration-none">
+                        {{ meeting.project.name if meeting.project else '-' }}
+                    </a>
+                </span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('date') }}:</span>
+                <span class="info-value">{{ meeting.scheduled_date.strftime('%Y-%m-%d') if meeting.scheduled_date else '-' }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('time') }}:</span>
+                <span class="info-value">
+                    {{ meeting.start_time.strftime('%H:%M') if meeting.start_time else '-' }} - 
+                    {{ meeting.end_time.strftime('%H:%M') if meeting.end_time else '-' }}
+                </span>
+            </div>
+            
+            {% if meeting.actual_start_time %}
+            <div class="info-row">
+                <span class="info-label">{{ _('actual_start') }}:</span>
+                <span class="info-value">{{ meeting.actual_start_time.strftime('%Y-%m-%d %H:%M') if meeting.actual_start_time else '-' }}</span>
+            </div>
+            {% endif %}
+            
+            {% if meeting.actual_end_time %}
+            <div class="info-row">
+                <span class="info-label">{{ _('actual_end') }}:</span>
+                <span class="info-value">{{ meeting.actual_end_time.strftime('%Y-%m-%d %H:%M') if meeting.actual_end_time else '-' }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('location') }}:</span>
+                <span class="info-value">
+                    {% if meeting.is_virtual %}
+                    <i class="fas fa-video me-1"></i> {{ _('virtual_meeting') }}
+                    {% if meeting.virtual_link %}
+                    - <a href="{{ meeting.virtual_link }}" target="_blank">{{ meeting.virtual_link }}</a>
+                    {% endif %}
+                    {% else %}
+                    <i class="fas fa-map-marker-alt me-1"></i> {{ meeting.location or _('not_specified') }}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        
+        <!-- Organizers -->
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-users"></i> {{ _('organizers') }}</h6>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('organizer') }}:</span>
+                <span class="info-value">
+                    <i class="fas fa-user-circle me-1"></i>
+                    {{ meeting.organizer.full_name if meeting.organizer else '-' }}
+                    {% if meeting.organizer and meeting.organizer.job_title %}
+                    <small class="text-muted">({{ meeting.organizer.job_title }})</small>
+                    {% endif %}
+                </span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('secretary') }}:</span>
+                <span class="info-value">
+                    {% if meeting.secretary %}
+                    <i class="fas fa-user-circle me-1"></i>
+                    {{ meeting.secretary.full_name }}
+                    {% if meeting.secretary.job_title %}
+                    <small class="text-muted">({{ meeting.secretary.job_title }})</small>
+                    {% endif %}
+                    {% else %}
+                    -
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendees -->
+    <div class="col-md-6">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-user-friends"></i> {{ _('attendees') }}</h6>
+            
+            {% if meeting.attendees %}
+            <div class="d-flex flex-wrap">
+                {% for attendee in meeting.attendees %}
+                <span class="attendee-badge">
+                    <i class="fas fa-user"></i> 
+                    {% if attendee is string %}
+                        {{ attendee }}
+                    {% else %}
+                        {{ attendee.name if attendee.name else attendee }}
+                    {% endif %}
+                </span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">{{ _('no_attendees') }}</p>
+            {% endif %}
+        </div>
+        
+        <!-- Project Info -->
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-project-diagram"></i> {{ _('project_info') }}</h6>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('project_name') }}:</span>
+                <span class="info-value">{{ meeting.project.name if meeting.project else '-' }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('project_status') }}:</span>
+                <span class="info-value">
+                    {% if meeting.project %}
+                    <span class="badge bg-{% if meeting.project.status == 'active' %}success{% elif meeting.project.status == 'completed' %}info{% elif meeting.project.status == 'delayed' %}danger{% else %}secondary{% endif %}">
+                        {{ get_status_text(meeting.project.status) }}
+                    </span>
+                    {% else %}
+                    -
+                    {% endif %}
+                </span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">{{ _('project_manager') }}:</span>
+                <span class="info-value">{{ meeting.project.manager.full_name if meeting.project and meeting.project.manager else '-' }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Agenda -->
+    <div class="col-12">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-list-ul"></i> {{ _('agenda') }}</h6>
+            
+            {% if meeting.agenda %}
+            <ul class="agenda-list">
+                {% for item in meeting.agenda %}
+                <li>
+                    <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                    <span>{{ item }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted mb-0">{{ _('no_agenda') }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Minutes -->
+    <div class="col-12">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-file-alt"></i> {{ _('minutes') }}</h6>
+            
+            {% if meeting.minutes %}
+            <div class="meeting-minutes">
+                {{ meeting.minutes|safe|linebreaks }}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">{{ _('no_minutes') }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Decisions -->
+    <div class="col-12">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-gavel"></i> {{ _('decisions') }}</h6>
+            
+            {% if meeting.decisions %}
+            <ul class="decisions-list">
+                {% for decision in meeting.decisions %}
+                <li>
+                    <i class="fas fa-check-circle" style="color: #27ae60;"></i>
+                    <span>{{ decision }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted mb-0">{{ _('no_decisions') }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Action Items -->
+    <div class="col-12">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-tasks"></i> {{ _('action_items') }}</h6>
+            
+            {% if meeting.action_items %}
+                {% for item in meeting.action_items %}
+                <div class="action-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <strong>{{ _('task') }}:</strong>
+                                <span>{{ item.description if item is mapping else item }}</span>
+                            </div>
+                            <div class="row">
+                                {% if item is mapping %}
+                                <div class="col-md-4">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>
+                                        {{ _('assigned_to') }}: {{ item.assigned_to if item.assigned_to else '-' }}
+                                    </small>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        {{ _('due_date') }}: {{ item.due_date if item.due_date else '-' }}
+                                    </small>
+                                </div>
+                                <div class="col-md-4">
+                                    {% if item.status == 'completed' %}
+                                    <span class="action-status status-completed">
+                                        <i class="fas fa-check me-1"></i> {{ _('completed') }}
+                                    </span>
+                                    {% elif item.status == 'in_progress' %}
+                                    <span class="action-status status-in-progress">
+                                        <i class="fas fa-spinner me-1"></i> {{ _('in_progress') }}
+                                    </span>
+                                    {% else %}
+                                    <span class="action-status status-pending">
+                                        <i class="fas fa-clock me-1"></i> {{ _('pending') }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <p class="text-muted mb-0">{{ _('no_action_items') }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Attachments -->
+    {% if meeting.documents and meeting.documents|length > 0 %}
+    <div class="col-12">
+        <div class="info-card">
+            <h6 class="section-title"><i class="fas fa-paperclip"></i> {{ _('attachments') }}</h6>
+            
+            <div class="d-flex flex-wrap">
+                {% for doc in meeting.documents %}
+                <a href="{{ doc.url if doc is mapping else doc }}" class="document-link" target="_blank">
+                    <i class="fas fa-file-alt"></i>
+                    {{ doc.name if doc is mapping else _('document') }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Action Buttons (if meeting is pending) -->
+{% if meeting.status == 'scheduled' %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-white">
+                <h6 class="mb-0"><i class="fas fa-clock me-2"></i> {{ _('upcoming_meeting') }}</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">{{ _('meeting_reminder_message') }}</p>
+                <div class="d-flex gap-2">
+                    {% if meeting.is_virtual and meeting.virtual_link %}
+                    <a href="{{ meeting.virtual_link }}" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-video me-2"></i> {{ _('join_meeting') }}
+                    </a>
+                    {% endif %}
+                    <button class="btn btn-outline-secondary" onclick="addToCalendar()">
+                        <i class="fas fa-calendar-plus me-2"></i> {{ _('add_to_calendar') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add to Calendar function
+function addToCalendar() {
+    const title = "{{ meeting.title }}";
+    const startDate = "{{ meeting.scheduled_date.strftime('%Y%m%d') }}T{{ meeting.start_time.strftime('%H%M%S') if meeting.start_time else '000000' }}";
+    const endDate = "{{ meeting.scheduled_date.strftime('%Y%m%d') }}T{{ meeting.end_time.strftime('%H%M%S') if meeting.end_time else '000000' }}";
+    const location = "{{ meeting.location or '' }}";
+    const description = "{{ meeting.purpose or '' }}";
+    
+    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startDate}/${endDate}&details=${encodeURIComponent(description)}&location=${encodeURIComponent(location)}`;
+    
+    window.open(calendarUrl, '_blank');
+}
+
+// Print styles optimization
+@media print {
+    .btn, .top-navbar, .sidebar, .action-buttons, .card.border-warning {
+        display: none !important;
+    }
+    .meeting-header {
+        background: #2c3e50 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .info-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}
+</script>
+{% endblock %}

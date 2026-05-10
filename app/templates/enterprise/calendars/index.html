@@ -1,0 +1,235 @@
+{% extends "company/base.html" %}
+
+{% block title %}التقويمات - Calendars{% endblock %}
+
+{% block page_title %}التقويمات{% endblock %}
+{% block page_subtitle %}إدارة تقويمات العمل للمشاريع والموارد{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendars-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .calendar-card {
+        background: white;
+        border: 1px solid #eef2f7;
+        border-radius: 15px;
+        padding: 1.2rem;
+        transition: all 0.3s;
+    }
+    
+    .calendar-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    .calendar-name {
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .calendar-type {
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .type-global { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .type-project { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .type-resource { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    
+    .default-badge {
+        background: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .days-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.2rem;
+        margin: 1rem 0;
+    }
+    
+    .day-box {
+        background: #eef2f7;
+        border-radius: 4px;
+        padding: 0.3rem;
+        text-align: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .day-box.work {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .day-box.off {
+        background: #eef2f7;
+        color: #6c757d;
+        opacity: 0.5;
+    }
+    
+    .work-hours {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 0.5rem;
+        text-align: center;
+        font-size: 0.8rem;
+        margin: 0.5rem 0;
+    }
+    
+    .holidays-list {
+        max-height: 60px;
+        overflow-y: auto;
+        margin: 0.5rem 0;
+    }
+    
+    .holiday-item {
+        display: inline-block;
+        background: #eef2f7;
+        padding: 0.1rem 0.3rem;
+        border-radius: 4px;
+        font-size: 0.6rem;
+        margin-left: 0.2rem;
+        margin-bottom: 0.2rem;
+    }
+    
+    .calendar-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eef2f7;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="calendars-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>التقويمات</h5>
+        <button class="btn-primary-gradient" onclick="window.location.href='{{ url_for('primavera.calendar_create') }}'">
+            <i class="fas fa-plus me-2"></i>تقويم جديد
+        </button>
+    </div>
+    
+    <div class="calendar-grid">
+        {% for calendar in calendars %}
+        <div class="calendar-card">
+            <div class="calendar-header">
+                <h6 class="calendar-name">{{ calendar.name }}</h6>
+                <div>
+                    <span class="calendar-type type-{{ calendar.calendar_type }}">
+                        {{ calendar.calendar_type }}
+                    </span>
+                    {% if calendar.is_default %}
+                    <span class="default-badge ms-1">افتراضي</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- أيام العمل -->
+            <div class="days-grid">
+                {% for i in range(1, 8) %}
+                    {% set day_names = ['أحد', 'إثن', 'ثلث', 'أرب', 'خمس', 'جمع', 'سبت'] %}
+                    <div class="day-box {{ 'work' if i in calendar.work_days else 'off' }}">
+                        {{ day_names[i-1] }}
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- ساعات العمل -->
+            <div class="work-hours">
+                <i class="far fa-clock me-1"></i>
+                {{ calendar.work_start.strftime('%H:%M') if calendar.work_start }} - 
+                {{ calendar.work_end.strftime('%H:%M') if calendar.work_end }}
+                ({{ calendar.work_hours_per_day }} س)
+            </div>
+            
+            <!-- الإجازات -->
+            {% if calendar.holidays %}
+            <div class="holidays-list">
+                {% for holiday in calendar.holidays[:3] %}
+                <span class="holiday-item">{{ holiday }}</span>
+                {% endfor %}
+                {% if calendar.holidays|length > 3 %}
+                <span class="holiday-item">+{{ calendar.holidays|length - 3 }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="calendar-footer">
+                <a class="action-btn" href="{{ url_for('primavera.calendar_edit', calendar_id=calendar.id) }}"  title="تعديل">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <button class="action-btn" onclick="setDefault({{ calendar.id }})" title="تعيين كافتراضي">
+                    <i class="fas fa-check-circle"></i>
+                </button>
+                <button class="action-btn" onclick="deleteCalendar({{ calendar.id }})" title="حذف">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5" style="grid-column: 1/-1;">
+            <i class="fas fa-calendar-alt fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد تقويمات</h5>
+            <p class="text-muted">قم بإنشاء تقويم لتحديد أيام وساعات العمل</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+
+
+function setDefault(id) {
+    fetch(`/primavera/calendars/${id}/set-default`, { method: 'POST' })
+        .then(() => location.reload());
+}
+
+function deleteCalendar(id) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا التقويم؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/primavera/calendars/${id}/delete`, { method: 'POST' })
+                .then(() => location.reload());
+        }
+    });
+}
+</script>
+{% endblock %}

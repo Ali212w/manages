@@ -1,0 +1,453 @@
+<!-- templates/company/project_gallery.html -->
+
+{% extends "company/base.html" %}
+
+{% block title %}معرض المشروع - {{ project.name }}{% endblock %}
+
+{% block page_title %}معرض المشروع{% endblock %}
+{% block page_subtitle %}{{ project.name }} - استعراض جميع المرفقات من الأنشطة والمهام{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/css/lightgallery.css" rel="stylesheet">
+<style>
+.gallery-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.gallery-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #eef2f7;
+    padding-bottom: 0.5rem;
+}
+
+.gallery-tab {
+    padding: 0.5rem 1.5rem;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: white;
+    border: 1px solid #eef2f7;
+}
+
+.gallery-tab.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.gallery-tab:hover:not(.active) {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.gallery-item {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #eef2f7;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.gallery-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+}
+
+.gallery-item-thumb {
+    height: 200px;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.gallery-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.gallery-item-thumb video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.file-icon {
+    font-size: 4rem;
+    color: #94a3b8;
+}
+
+.gallery-item-info {
+    padding: 1rem;
+}
+
+.gallery-item-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0.25rem;
+}
+
+.gallery-item-meta {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.activity-badge {
+    background: #eef2f7;
+    padding: 0.2rem 0.5rem;
+    border-radius: 30px;
+    font-size: 0.65rem;
+    color: #475569;
+}
+
+.approval-badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 30px;
+    font-size: 0.65rem;
+}
+
+.approval-badge.approved {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.approval-badge.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+/* Modal المعاينة */
+.preview-modal .modal-dialog {
+    max-width: 90vw;
+    margin: 1.75rem auto;
+}
+
+.preview-container {
+    background: #1e293b;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-container img {
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+}
+
+.preview-container video {
+    max-width: 100%;
+    max-height: 70vh;
+}
+
+.preview-container iframe {
+    width: 100%;
+    height: 70vh;
+    border: none;
+}
+
+.preview-info {
+    padding: 1rem;
+    background: white;
+}
+
+.preview-title {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.preview-description {
+    color: #64748b;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.preview-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem;
+    background: white;
+    border-radius: 24px;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gallery-container">
+    <!-- تبويبات المعرض -->
+    <div class="gallery-tabs">
+        <div class="gallery-tab active" data-type="all">الكل</div>
+        <div class="gallery-tab" data-type="image">الصور</div>
+        <div class="gallery-tab" data-type="video">الفيديوهات</div>
+        <div class="gallery-tab" data-type="document">المستندات</div>
+    </div>
+    
+    <!-- تحميل البيانات -->
+    <div id="galleryContent" class="gallery-grid">
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal المعاينة -->
+<div class="modal fade preview-modal" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="previewContainer" class="preview-container"></div>
+                <div class="preview-info" id="previewInfo"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <a href="#" id="downloadLink" class="btn btn-primary" download>تحميل</a>
+                {% if current_user.role in ['org_admin', 'project_manager'] %}
+                <button class="btn btn-success" onclick="approveDocument()" id="approveBtn">اعتماد</button>
+                <button class="btn btn-danger" onclick="rejectDocument()" id="rejectBtn">رفض</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lightgallery@2.5.0/lightgallery.min.js"></script>
+<script>
+let currentDocuments = [];
+let currentType = 'all';
+let currentDocumentId = null;
+
+function loadGallery() {
+    fetch(`/attachments/project/{{ project.id }}/gallery`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentDocuments = {
+                    images: data.images,
+                    videos: data.videos,
+                    documents: data.documents
+                };
+                renderGallery();
+            }
+        });
+}
+
+function renderGallery() {
+    let items = [];
+    if (currentType === 'all') {
+        items = [...currentDocuments.images, ...currentDocuments.videos, ...currentDocuments.documents];
+        items.sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at));
+    } else if (currentType === 'image') {
+        items = currentDocuments.images;
+    } else if (currentType === 'video') {
+        items = currentDocuments.videos;
+    } else {
+        items = currentDocuments.documents;
+    }
+    
+    const container = document.getElementById('galleryContent');
+    
+    if (items.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state col-12">
+                <i class="fas fa-folder-open"></i>
+                <h5 class="mt-3">لا توجد ملفات</h5>
+                <p class="text-muted">لم يتم رفع أي ملفات في هذا القسم</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    items.forEach(item => {
+        const isImage = item.type === 'image';
+        const thumbUrl = item.thumbnail || item.url;
+        const approvalClass = item.approval_status === 'approved' ? 'approved' : 'pending';
+        const approvalText = item.approval_status === 'approved' ? 'معتمد' : 'قيد المراجعة';
+        
+        html += `
+            <div class="gallery-item" onclick="previewItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                <div class="gallery-item-thumb">
+                    ${isImage ? 
+                        `<img src="${thumbUrl}" alt="${item.filename}" loading="lazy">` :
+                        (item.type === 'video' ?
+                            `<video><source src="${item.url}"></video>` :
+                            `<i class="fas ${item.type === 'document' ? 'fa-file-alt' : 'fa-file'} file-icon"></i>`
+                        )
+                    }
+                </div>
+                <div class="gallery-item-info">
+                    <div class="gallery-item-title" title="${item.filename}">${item.filename.substring(0, 40)}${item.filename.length > 40 ? '...' : ''}</div>
+                    <div class="gallery-item-meta">
+                        <span class="activity-badge">${item.activity_name}</span>
+                        <span class="approval-badge ${approvalClass}">${approvalText}</span>
+                    </div>
+                    <div class="gallery-item-meta mt-1">
+                        <span>${new Date(item.uploaded_at).toLocaleDateString('ar-SA')}</span>
+                        <span>${item.source_task ? `من مهمة: ${item.source_task}` : 'من النشاط'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function previewItem(item) {
+    currentDocumentId = item.id;
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    const title = document.getElementById('previewTitle');
+    const container = document.getElementById('previewContainer');
+    const info = document.getElementById('previewInfo');
+    const downloadLink = document.getElementById('downloadLink');
+    
+    title.innerHTML = `<i class="fas ${item.type === 'image' ? 'fa-image' : (item.type === 'video' ? 'fa-video' : 'fa-file-alt')} me-2"></i>${item.filename}`;
+    downloadLink.href = item.url;
+    
+    if (item.type === 'image') {
+        container.innerHTML = `<img src="${item.url}" alt="${item.filename}">`;
+    } else if (item.type === 'video') {
+        container.innerHTML = `<video controls><source src="${item.url}"></video>`;
+    } else if (item.filename.endsWith('.pdf')) {
+        container.innerHTML = `<iframe src="${item.url}"></iframe>`;
+    } else {
+        container.innerHTML = `
+            <div class="text-center p-5">
+                <i class="fas fa-file-alt fa-5x text-muted mb-3"></i>
+                <p>لا يمكن معاينة هذا الملف مباشرة</p>
+                <a href="${item.url}" class="btn btn-primary" download>تحميل الملف</a>
+            </div>
+        `;
+    }
+    
+    info.innerHTML = `
+        <div class="preview-title">${item.title || item.filename}</div>
+        <div class="preview-description">${item.description || 'لا يوجد وصف'}</div>
+        <div class="preview-meta">
+            <span><i class="far fa-calendar-alt me-1"></i>${new Date(item.uploaded_at).toLocaleString('ar-SA')}</span>
+            <span><i class="fas fa-folder me-1"></i>${item.activity_name}</span>
+            ${item.source_task ? `<span><i class="fas fa-tasks me-1"></i>${item.source_task}</span>` : ''}
+            <span><i class="fas fa-user me-1"></i>${item.uploaded_by}</span>
+        </div>
+    `;
+    
+    modal.show();
+}
+
+function approveDocument() {
+    if (!currentDocumentId) return;
+    
+    Swal.fire({
+        title: 'اعتماد المستند',
+        text: 'هل أنت متأكد من اعتماد هذا المستند؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، اعتماد',
+        cancelButtonText: 'إلغاء'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch(`/attachments/document/${currentDocumentId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ action: 'approve', notes: '' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('تم', data.message, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('previewModal')).hide();
+                    loadGallery();
+                } else {
+                    Swal.fire('خطأ', data.error, 'error');
+                }
+            });
+        }
+    });
+}
+
+function rejectDocument() {
+    if (!currentDocumentId) return;
+    
+    Swal.fire({
+        title: 'رفض المستند',
+        input: 'textarea',
+        inputLabel: 'سبب الرفض',
+        inputPlaceholder: 'أدخل سبب الرفض...',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، رفض',
+        cancelButtonText: 'إلغاء'
+    }).then(result => {
+        if (result.isConfirmed && result.value) {
+            fetch(`/attachments/document/${currentDocumentId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ action: 'reject', notes: result.value })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('تم', data.message, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('previewModal')).hide();
+                    loadGallery();
+                } else {
+                    Swal.fire('خطأ', data.error, 'error');
+                }
+            });
+        }
+    });
+}
+
+document.querySelectorAll('.gallery-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.gallery-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        currentType = this.dataset.type;
+        renderGallery();
+    });
+});
+
+document.addEventListener('DOMContentLoaded', loadGallery);
+</script>
+{% endblock %}

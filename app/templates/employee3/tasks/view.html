@@ -1,0 +1,385 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ task.task_name }} - تفاصيل المهمة{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">{{ task.task_name }}</h2>
+        <p class="text-muted">
+            <i class="fas fa-project-diagram me-1"></i> {{ task.project.name if task.project }}
+            <span class="mx-2">|</span>
+            <i class="fas fa-code me-1"></i> {{ task.task_code }}
+        </p>
+    </div>
+    <div>
+        <a href="{{ url_for('employee.my_tasks') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-2"></i>عودة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- معلومات المهمة -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2 text-primary"></i>
+                    تفاصيل المهمة
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- حالة المهمة -->
+                <div class="mb-4">
+                    <span class="status-badge {{ task.status }} me-2">
+                        {% if task.status == 'pending' %}معلق
+                        {% elif task.status == 'in_progress' %}قيد التنفيذ
+                        {% elif task.status == 'completed' %}مكتمل
+                        {% endif %}
+                    </span>
+                    {% if task.planned_end_date and task.planned_end_date < now.date() and task.status != 'completed' %}
+                    <span class="status-badge overdue">متأخرة</span>
+                    {% endif %}
+                </div>
+                
+                <!-- وصف المهمة -->
+                <div class="mb-4">
+                    <h6 class="fw-bold">الوصف:</h6>
+                    <p>{{ task.description or 'لا يوجد وصف' }}</p>
+                </div>
+                
+                <!-- تعليمات التنفيذ -->
+                {% if task.instructions %}
+                <div class="mb-4">
+                    <h6 class="fw-bold">تعليمات التنفيذ:</h6>
+                    <p>{{ task.instructions }}</p>
+                </div>
+                {% endif %}
+                <!-- أضف هذا القسم في صفحة تفاصيل المهمة، تحت معلومات المهمة -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-clipboard-check me-2 text-primary"></i>متطلبات ما قبل البدء</h5>
+                                <a href="{{ url_for('tracking.task_requirements', task_id=task.id) }}" class="btn btn-sm btn-outline-primary">
+                                    إدارة المتطلبات
+                                </a>
+                            </div>
+                            <div class="card-body">
+                                {% set pending_reqs = task.get_pending_requirements() %}
+                                {% if pending_reqs %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>تنبيه:</strong> يوجد {{ pending_reqs|length }} متطلبات يجب إكمالها قبل بدء المهمة.
+                                </div>
+                                
+                                <div class="list-group">
+                                    {% for req in pending_reqs[:3] %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-{{ 'file' if req.requirement_type == 'document' else 'camera' if req.requirement_type == 'photo' else 'check-circle' }} me-2"></i>
+                                            {{ req.description }}
+                                        </div>
+                                        <span class="badge bg-warning">في انتظار</span>
+                                    </div>
+                                    {% endfor %}
+                                    {% if pending_reqs|length > 3 %}
+                                    <div class="list-group-item text-center text-muted">
+                                        +{{ pending_reqs|length - 3 }} متطلبات أخرى
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <div class="text-center py-3">
+                                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                    <p class="text-muted">جميع المتطلبات مكتملة. يمكنك بدء المهمة الآن.</p>
+                                    {% if task.status == 'pending' %}
+                                    <button class="btn btn-success" onclick="startTask({{ task.id }})">
+                                        <i class="fas fa-play me-2"></i>بدء المهمة
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- تقدم المهمة -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3">تقدم المهمة</h6>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>نسبة الإنجاز</span>
+                        <span>{{ task.progress_percentage }}%</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 10px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ task.progress_percentage }}%"></div>
+                    </div>
+                    
+                    {% if can_update %}
+                    <!-- تحديث التقدم -->
+                    <div class="mt-3">
+                        <label class="form-label">تحديث التقدم</label>
+                        <input type="range" class="form-range" min="0" max="100" 
+                               value="{{ task.progress_percentage }}" id="taskProgress"
+                               onchange="updateProgress(this.value)">
+                        <div class="d-flex justify-content-between mt-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="updateProgress(25)">25%</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="updateProgress(50)">50%</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="updateProgress(75)">75%</button>
+                            <button class="btn btn-sm btn-success" onclick="markAsCompleted()">إكمال المهمة</button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- الموارد المطلوبة -->
+        {% if task.required_materials or task.required_equipment %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tools me-2 text-primary"></i>
+                    الموارد المطلوبة
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if task.required_materials %}
+                <h6 class="fw-bold mb-2">المواد:</h6>
+                <ul class="mb-3">
+                    {% for material in task.required_materials %}
+                    <li>{{ material }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                
+                {% if task.required_equipment %}
+                <h6 class="fw-bold mb-2">المعدات:</h6>
+                <ul>
+                    {% for equipment in task.required_equipment %}
+                    <li>{{ equipment }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- الشريط الجانبي -->
+    <div class="col-md-4">
+        <!-- معلومات إضافية -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2 text-primary"></i>
+                    الجدول الزمني
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>تاريخ البداية:</th>
+                        <td>{{ task.planned_start_date.strftime('%Y-%m-%d') if task.planned_start_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>تاريخ النهاية:</th>
+                        <td class="{% if task.planned_end_date and task.planned_end_date < now.date() and task.status != 'completed' %}text-danger{% endif %}">
+                            {{ task.planned_end_date.strftime('%Y-%m-%d') if task.planned_end_date }}
+                            {% if task.planned_end_date and task.planned_end_date < now.date() and task.status != 'completed' %}
+                            <br><small>متأخرة</small>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if task.actual_start_date %}
+                    <tr>
+                        <th>بدأت في:</th>
+                        <td>{{ task.actual_start_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if task.actual_end_date %}
+                    <tr>
+                        <th>اكتملت في:</th>
+                        <td>{{ task.actual_end_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+        
+        <!-- المسؤولين -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2 text-primary"></i>
+                    المسؤولين
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">المشرف:</small>
+                    <div class="d-flex align-items-center mt-1">
+                        <div class="profile-img me-2" style="width: 30px; height: 30px;">
+                            {{ task.supervisor.full_name[0] if task.supervisor }}
+                        </div>
+                        <span>{{ task.supervisor.full_name if task.supervisor }}</span>
+                    </div>
+                </div>
+                
+                {% if task.delegate %}
+                <div class="mb-3">
+                    <small class="text-muted d-block">المنفذ (مندوب):</small>
+                    <div class="d-flex align-items-center mt-1">
+                        <div class="profile-img me-2" style="width: 30px; height: 30px;">
+                            {{ task.delegate.full_name[0] }}
+                        </div>
+                        <span>{{ task.delegate.full_name }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if assignments %}
+                <div>
+                    <small class="text-muted d-block">المعاونين:</small>
+                    {% for assign in assignments %}
+                    <div class="d-flex align-items-center mt-2">
+                        <div class="profile-img me-2" style="width: 25px; height: 25px; font-size: 0.8rem;">
+                            {{ assign.user.full_name[0] if assign.user }}
+                        </div>
+                        <span class="small">{{ assign.user.full_name if assign.user }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- إجراءات سريعة -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2 text-primary"></i>
+                    إجراءات سريعة
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="addNote()">
+                        <i class="fas fa-sticky-note me-2"></i>إضافة ملاحظة
+                    </button>
+                    <button class="btn btn-outline-success" onclick="uploadFile()">
+                        <i class="fas fa-upload me-2"></i>رفع ملف
+                    </button>
+                    <button class="btn btn-outline-info" onclick="askQuestion()">
+                        <i class="fas fa-question-circle me-2"></i>استفسار
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateProgress(value) {
+    if (value < 0) value = 0;
+    if (value > 100) value = 100;
+    
+    document.getElementById('taskProgress').value = value;
+    
+    fetch('/employee/tasks/{{ task.id }}/update-progress', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            progress: value,
+            status: value >= 100 ? 'completed' : (value > 0 ? 'in_progress' : 'pending')
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('تم تحديث التقدم');
+            location.reload();
+        }
+    });
+}
+
+function markAsCompleted() {
+    confirmAction('هل أنت متأكد من إكمال هذه المهمة؟', function() {
+        updateProgress(100);
+    });
+}
+
+function addNote() {
+    Swal.fire({
+        title: 'إضافة ملاحظة',
+        input: 'textarea',
+        inputPlaceholder: 'أدخل ملاحظتك...',
+        showCancelButton: true,
+        confirmButtonText: 'حفظ',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.value) {
+            // TODO: حفظ الملاحظة
+            showSuccess('تم إضافة الملاحظة');
+        }
+    });
+}
+function startTask(taskId) {
+    Swal.fire({
+        title: 'بدء المهمة',
+        text: 'هل أنت متأكد من بدء هذه المهمة؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--success)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، ابدأ',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/tracking/api/task/${taskId}/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم البدء',
+                        text: data.message,
+                        timer: 2000
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ',
+                            text: data.error
+                        });
+                    }
+                }
+            });
+        }
+    });
+}
+function uploadFile() {
+    // TODO: رفع ملف
+}
+
+function askQuestion() {
+    // TODO: إرسال استفسار
+}
+</script>
+{% endblock %}

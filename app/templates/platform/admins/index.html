@@ -1,0 +1,210 @@
+{# templates/platform/admins/index.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('admins.title') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="page-title">{{ _('admins.title') }}</h1>
+            <p class="text-muted mb-0">{{ _('admins.list') }}</p>
+        </div>
+        {% if g.is_super_admin %}
+        <div>
+            <a href="{{ url_for('platform.create_admin') }}" class="btn btn-gradient">
+                <i class="fas fa-user-plus me-2"></i>{{ _('admins.add_new') }}
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-primary">{{ stats.total }}</h3>
+                <small class="text-muted">{{ _('admins.total') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-danger">{{ stats.super_admins }}</h3>
+                <small class="text-muted">{{ _('admins.role_super_admin') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-primary">{{ stats.admins }}</h3>
+                <small class="text-muted">{{ _('admins.role_admin') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-success">{{ stats.active }}</h3>
+                <small class="text-muted">{{ _('status.active') }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admins Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="adminsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ _('admins.name') }}</th>
+                            <th>{{ _('admins.email') }}</th>
+                            <th>{{ _('admins.phone') }}</th>
+                            <th>{{ _('admins.role') }}</th>
+                            <th>{{ _('status') }}</th>
+                            <th>{{ _('admins.last_login') }}</th>
+                            <th>{{ _('common.actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for admin in admins %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="bg-gradient-primary rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 35px; height: 35px;">
+                                        {{ admin.full_name[0]|upper }}
+                                    </div>
+                                    <div>
+                                        <strong>{{ admin.full_name }}</strong>
+                                        {% if admin.full_name_ar %}
+                                        <br><small class="text-muted">{{ admin.full_name_ar }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ admin.email }}</td>
+                            <td>{{ admin.phone or '-' }}</td>
+                            <td>
+                                {% if admin.role == 'super_admin' %}
+                                <span class="badge bg-danger">{{ _('admins.role_super_admin') }}</span>
+                                {% elif admin.role == 'admin' %}
+                                <span class="badge bg-primary">{{ _('admins.role_admin') }}</span>
+                                {% elif admin.role == 'support' %}
+                                <span class="badge bg-info">{{ _('admins.role_support') }}</span>
+                                {% elif admin.role == 'finance' %}
+                                <span class="badge bg-warning">{{ _('admins.role_finance') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if admin.is_active %}
+                                <span class="badge bg-success">{{ _('status.active') }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">{{ _('status.inactive') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if admin.last_login %}
+                                {{ format_datetime(admin.last_login) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('platform.edit_admin', admin_id=admin.id) }}" class="btn btn-sm btn-outline-warning" title="{{ _('common.edit') }}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if g.is_super_admin and admin.id != current_user.id %}
+                                    <button type="button" class="btn btn-sm btn-outline-success toggle-admin" data-id="{{ admin.id }}" data-status="{{ admin.is_active }}" title="{{ _('admins.toggle_status') }}">
+                                        <i class="fas fa-power-off"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-admin" data-id="{{ admin.id }}" data-name="{{ admin.full_name }}" title="{{ _('common.delete') }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">{{ _('admins.no_admins') }}</p>
+                                {% if g.is_super_admin %}
+                                <a href="{{ url_for('platform.create_admin') }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-user-plus"></i> {{ _('admins.add_new') }}
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    $('#adminsTable').DataTable({
+        responsive: true,
+        ordering: true,
+        searching: true,
+        paging: true,
+        pageLength: 25,
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/{{ "ar.json" if get_current_lang() == "ar" else "en-GB.json" }}'
+        }
+    });
+    
+    // Toggle Admin Status
+    $('.toggle-admin').click(function() {
+        const adminId = $(this).data('id');
+        
+        if (confirm('{{ _("admins.confirm_delete") }}')) {
+            $.ajax({
+                url: "{{ url_for('platform.toggle_admin_status', admin_id=0) }}".replace('0', adminId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+    
+    // Delete Admin
+    $('.delete-admin').click(function() {
+        const adminId = $(this).data('id');
+        const adminName = $(this).data('name');
+        
+        if (confirm('{{ _("admins.confirm_delete") }} ' + adminName + '?')) {
+            $.ajax({
+                url: "{{ url_for('platform.delete_admin', admin_id=0) }}".replace('0', adminId),
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(response.error);
+                    }
+                },
+                error: function() {
+                    toastr.error('{{ _("common.error") }}');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

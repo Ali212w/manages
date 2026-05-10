@@ -1,0 +1,89 @@
+{% extends "auth_base.html" %}
+
+{% block title %}{{ _('register') }}{% endblock %}
+
+{% block content %}
+<div class="auth-container" x-data="{ showPwd: false, showPwd2: false }">
+    <div class="auth-brand">
+        <div class="auth-brand-icon"><i class="fas fa-user-plus"></i></div>
+        <div class="auth-brand-text">{{ _('app_name_short') }}</div>
+        <div class="auth-brand-subtitle">{{ _('create_new_account') }}</div>
+    </div>
+
+    <div class="auth-card">
+        <div class="auth-card-header">
+            <h1 class="auth-title">{{ _('register') }}</h1>
+            <p class="auth-subtitle">{{ _('fill_form_to_create_account') }}</p>
+        </div>
+
+        <div class="auth-card-body">
+            <form method="POST" action="{{ url_for('auth.register_user') }}" id="registerUserForm">
+                {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+
+                <div class="form-group">
+                    <label class="form-label" for="full_name">{{ _('full_name') }} *</label>
+                    <div class="input-group-modern">
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" class="form-control" id="full_name" name="full_name" required autofocus>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="email">{{ _('email_address') }} *</label>
+                    <div class="input-group-modern">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="username">{{ _('username') }} *</label>
+                    <div class="input-group-modern">
+                        <i class="fas fa-at input-icon"></i>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">{{ _('password') }} *</label>
+                    <div class="input-group-modern">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input :type="showPwd ? 'text' : 'password'" class="form-control" id="password" name="password" required minlength="8">
+                        <button class="input-action" type="button" @click="showPwd = !showPwd" tabindex="-1">
+                            <i :class="showPwd ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="confirm_password">{{ _('confirm_password') }} *</label>
+                    <div class="input-group-modern">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input :type="showPwd2 ? 'text' : 'password'" class="form-control" id="confirm_password" name="confirm_password" required>
+                        <button class="input-action" type="button" @click="showPwd2 = !showPwd2" tabindex="-1">
+                            <i :class="showPwd2 ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <label class="checkbox-row" style="margin: 0.5rem 0 1rem;">
+                    <input type="checkbox" name="agree_terms" required>
+                    <span class="text-sm">
+                        {{ _('i_agree_to') }}
+                        <a href="#" class="text-primary">{{ _('terms_of_service') }}</a>
+                    </span>
+                </label>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    <i class="fas fa-user-plus"></i> {{ _('create_account') }}
+                </button>
+            </form>
+        </div>
+
+        <div class="auth-card-footer">
+            <span class="text-muted-foreground">{{ _('have_account') }}</span>
+            <a href="{{ url_for('auth.login') }}" class="text-primary font-semibold">{{ _('login') }}</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

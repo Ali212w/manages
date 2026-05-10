@@ -1,0 +1,811 @@
+{% extends "supplier/base.html" %}
+
+{% block title %}لوحة تحكم المورد{% endblock %}
+
+{% block page_title %}لوحة تحكم المورد{% endblock %}
+{% block page_subtitle %}مرحباً، {{ current_user.full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== المتغيرات ===== */
+    :root {
+        --primary: #4361ee;
+        --primary-dark: #3a3fc9;
+        --primary-light: #4895ef;
+        --success: #4cc9f0;
+        --warning: #f8961e;
+        --danger: #f94144;
+        --danger-dark: #d32f2f;
+        --info: #4895ef;
+        --dark: #1e1e2f;
+        --gray: #6c757d;
+        --gray-light: #eef2f7;
+        --border-radius: 16px;
+        --box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        --box-shadow-hover: 0 10px 30px rgba(0,0,0,0.1);
+        --transition: all 0.3s ease;
+    }
+    
+    /* ===== إحصائيات ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--box-shadow);
+        border: 1px solid var(--gray-light);
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    
+    .stat-card:hover::before {
+        transform: scaleX(1);
+    }
+    
+    .stat-icon {
+        width: 55px;
+        height: 55px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-icon.primary { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .stat-icon.warning { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .stat-icon.info { background: rgba(72, 149, 239, 0.1); color: var(--info); }
+    .stat-icon.success { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        color: var(--dark);
+    }
+    
+    .stat-label {
+        color: var(--gray);
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .stat-trend {
+        position: absolute;
+        bottom: 1rem;
+        right: 1rem;
+        font-size: 0.75rem;
+        opacity: 0.7;
+    }
+    
+    /* ===== بطاقات الطلبات ===== */
+    .requests-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .request-card {
+        background: white;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--gray-light);
+        transition: var(--transition);
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .request-card:hover {
+        transform: translateX(-5px);
+        box-shadow: var(--box-shadow-hover);
+        border-color: var(--primary);
+    }
+    
+    .request-card.pending {
+        border-right: 4px solid var(--warning);
+    }
+    
+    .request-card.started {
+        border-right: 4px solid var(--info);
+    }
+    
+    .request-card.completed {
+        border-right: 4px solid var(--success);
+        opacity: 0.9;
+    }
+    
+    .request-card.overdue {
+        border-right: 4px solid var(--danger);
+        background: linear-gradient(135deg, rgba(249, 65, 68, 0.02), transparent);
+    }
+    
+    .request-header {
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    
+    .request-header:hover {
+        background: rgba(67, 97, 238, 0.02);
+    }
+    
+    .request-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .project-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .project-name i {
+        color: var(--primary);
+        font-size: 1.2rem;
+    }
+    
+    .project-code {
+        font-size: 0.75rem;
+        background: var(--gray-light);
+        padding: 0.2rem 0.6rem;
+        border-radius: 30px;
+        color: var(--gray);
+    }
+    
+    .status-badge {
+        padding: 0.3rem 1rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .status-badge.pending {
+        background: rgba(248, 150, 30, 0.15);
+        color: var(--warning);
+    }
+    
+    .status-badge.started {
+        background: rgba(72, 149, 239, 0.15);
+        color: var(--info);
+    }
+    
+    .status-badge.completed {
+        background: rgba(76, 201, 240, 0.15);
+        color: var(--success);
+    }
+    
+    .request-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+        font-size: 0.85rem;
+        color: var(--gray);
+    }
+    
+    .request-meta i {
+        width: 18px;
+        color: var(--primary);
+        margin-right: 0.3rem;
+    }
+    
+    .due-date {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .due-date.overdue {
+        color: var(--danger);
+        font-weight: 600;
+    }
+    
+    .due-date.overdue i {
+        color: var(--danger);
+    }
+    
+    .due-date.soon {
+        color: var(--warning);
+    }
+    
+    /* ===== المواد المطلوبة ===== */
+    .resources-section {
+        background: var(--gray-light);
+        margin: 0 1.5rem 1rem 1.5rem;
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    .resources-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .resources-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .resource-tag {
+        background: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        transition: var(--transition);
+    }
+    
+    .resource-tag:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    
+    .resource-tag .quantity {
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .resource-tag .unit {
+        font-size: 0.7rem;
+        color: var(--gray);
+    }
+    
+    /* ===== ملاحظات ===== */
+    .notes-section {
+        margin: 0 1.5rem 1rem 1.5rem;
+        padding: 0.75rem;
+        background: rgba(248, 150, 30, 0.05);
+        border-radius: 10px;
+        font-size: 0.85rem;
+        color: var(--gray);
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .notes-section i {
+        color: var(--warning);
+        margin-top: 0.1rem;
+    }
+    
+    /* ===== أزرار الإجراءات ===== */
+    .request-actions {
+        padding: 1rem 1.5rem;
+        background: var(--gray-light);
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .btn-action {
+        padding: 0.5rem 1.2rem;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-outline-primary {
+        background: transparent;
+        border: 2px solid var(--primary);
+        color: var(--primary);
+    }
+    
+    .btn-outline-primary:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, var(--success), #3aa85a);
+        color: white;
+        box-shadow: 0 2px 8px rgba(76, 201, 240, 0.3);
+    }
+    
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 201, 240, 0.4);
+    }
+    
+    .btn-warning {
+        background: linear-gradient(135deg, var(--warning), #e68a2e);
+        color: white;
+    }
+    
+    .btn-warning:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(248, 150, 30, 0.4);
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, var(--danger), var(--danger-dark));
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(249, 65, 68, 0.4);
+    }
+    
+    /* ===== حالة عدم وجود بيانات ===== */
+    .empty-state {
+        text-align: center;
+        padding: 4rem;
+        background: white;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--gray-light);
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--gray);
+        opacity: 0.3;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state h5 {
+        margin-bottom: 0.5rem;
+        color: var(--dark);
+    }
+    
+    /* ===== تنسيق إضافي ===== */
+    .collapse-icon {
+        transition: transform 0.3s ease;
+    }
+    
+    .request-details {
+        display: none;
+        border-top: 1px solid var(--gray-light);
+    }
+    
+    .request-details.show {
+        display: block;
+    }
+    
+    /* ===== متجاوب ===== */
+    @media (max-width: 992px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .request-title {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .request-actions {
+            flex-wrap: wrap;
+        }
+        
+        .btn-action {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- إحصائيات سريعة -->
+    <div class="stats-grid">
+        <div class="stat-card" onclick="filterByStatus('all')">
+            <div class="stat-icon primary">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-label">إجمالي الطلبات</div>
+            <div class="stat-trend">
+                <i class="fas fa-chart-line"></i>
+            </div>
+        </div>
+        <div class="stat-card" onclick="filterByStatus('pending')">
+            <div class="stat-icon warning">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-value">{{ stats.pending }}</div>
+            <div class="stat-label">قيد الانتظار</div>
+            <div class="stat-trend">
+                {% if stats.pending > 0 %}
+                <span class="text-warning">يتطلب اهتمام</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="stat-card" onclick="filterByStatus('started')">
+            <div class="stat-icon info">
+                <i class="fas fa-play"></i>
+            </div>
+            <div class="stat-value">{{ stats.started }}</div>
+            <div class="stat-label">قيد التنفيذ</div>
+        </div>
+        <div class="stat-card" onclick="filterByStatus('completed')">
+            <div class="stat-icon success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-value">{{ stats.completed }}</div>
+            <div class="stat-label">مكتملة</div>
+        </div>
+    </div>
+    
+    <!-- شريط البحث والفلترة -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" id="searchInput" class="form-control border-start-0 ps-0" 
+                       placeholder="بحث في الطلبات..." style="box-shadow: none;">
+            </div>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary btn-sm" onclick="filterByStatus('all')">
+                    <i class="fas fa-th-large me-1"></i> الكل
+                </button>
+                <button class="btn btn-outline-warning btn-sm" onclick="filterByStatus('pending')">
+                    <i class="fas fa-clock me-1"></i> معلق
+                </button>
+                <button class="btn btn-outline-info btn-sm" onclick="filterByStatus('started')">
+                    <i class="fas fa-play me-1"></i> قيد التنفيذ
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="filterByStatus('completed')">
+                    <i class="fas fa-check me-1"></i> مكتمل
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- قائمة الطلبات -->
+    <div class="requests-container" id="requestsContainer">
+        {% if requests %}
+            {% for request in requests %}
+            <div class="request-card {{ request.status }} {% if request.is_overdue %}overdue{% endif %}" 
+                 data-status="{{ request.status }}" 
+                 data-project="{{ request.project_name|lower }}"
+                 data-id="{{ request.id }}">
+                <div class="request-header" onclick="toggleDetails({{ request.id }})">
+                    <div class="request-title">
+                        <div class="project-name">
+                            <i class="fas fa-project-diagram"></i>
+                            {{ request.project_name }}
+                            <span class="project-code">{{ request.project_code }}</span>
+                        </div>
+                        <div>
+                            <span class="status-badge {{ request.status }}">
+                                {% if request.status == 'pending' %}قيد الانتظار
+                                {% elif request.status == 'started' %}قيد التنفيذ
+                                {% elif request.status == 'completed' %}مكتمل
+                                {% endif %}
+                            </span>
+                            <i class="fas fa-chevron-down collapse-icon ms-2"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="request-meta">
+                        <span class="due-date {% if request.is_overdue %}overdue{% elif request.days_left and request.days_left <= 3 %}soon{% endif %}">
+                            <i class="fas fa-calendar-alt"></i>
+                            {% if request.required_date_obj %}
+                                {% if request.is_overdue %}
+                                    متأخر منذ {{ request.days_overdue }} يوم
+                                {% else %}
+                                    متبقي {{ request.days_left }} يوم
+                                {% endif %}
+                                ({{ request.required_date_str }})
+                            {% else %}
+                                تاريخ غير محدد
+                            {% endif %}
+                        </span>
+                        <span>
+                            <i class="fas fa-clock"></i>
+                            تم الإنشاء: {{ request.created_at_str or 'غير محدد' }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="request-details" id="details-{{ request.id }}">
+                    <!-- المواد المطلوبة -->
+                    <div class="resources-section">
+                        <div class="resources-title">
+                            <i class="fas fa-cube"></i>
+                            المواد المطلوبة
+                        </div>
+                        <div class="resources-list">
+                            {% for resource in request.resources %}
+                            <span class="resource-tag">
+                                <i class="fas fa-box"></i>
+                                {{ resource.name }}
+                                <span class="quantity">{{ resource.quantity }}</span>
+                                <span class="unit">{{ resource.unit }}</span>
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- ملاحظات -->
+                    {% if request.notes %}
+                    <div class="notes-section">
+                        <i class="fas fa-sticky-note"></i>
+                        <span>{{ request.notes }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- أزرار الإجراءات -->
+                    <div class="request-actions">
+                        <a href="{{ url_for('supplier.view_request', request_id=request.id) }}" 
+                           class="btn-action btn-outline-primary">
+                            <i class="fas fa-eye"></i>
+                            عرض التفاصيل
+                        </a>
+                        
+                        {% if request.status == 'pending' %}
+                        <button class="btn-action btn-success" onclick="startRequest({{ request.id }})">
+                            <i class="fas fa-play"></i>
+                            بدء التوريد
+                        </button>
+                        {% elif request.status == 'started' %}
+                        <a href="{{ url_for('supplier.deliver_items', request_id=request.id) }}" class="btn btn-sm btn-success mt-1">
+                            <i class="fas fa-truck"></i> تسليم المواد
+                        </a>
+                        <button class="btn-action btn-outline-primary" onclick="updateProgress({{ request.id }})">
+                            <i class="fas fa-chart-line"></i>
+                            تحديث التقدم
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-truck"></i>
+                <h5>لا توجد طلبات نشطة</h5>
+                <p class="text-muted">سيتم عرض الطلبات الجديدة هنا عند إنشائها</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// تبديل عرض التفاصيل
+function toggleDetails(requestId) {
+    const details = document.getElementById(`details-${requestId}`);
+    const icon = document.querySelector(`.request-card[data-id="${requestId}"] .collapse-icon`);
+    
+    if (details.classList.contains('show')) {
+        details.classList.remove('show');
+        icon.style.transform = 'rotate(0deg)';
+    } else {
+        details.classList.add('show');
+        icon.style.transform = 'rotate(180deg)';
+    }
+}
+
+// تصفية حسب الحالة
+function filterByStatus(status) {
+    const cards = document.querySelectorAll('.request-card');
+    cards.forEach(card => {
+        if (status === 'all' || card.dataset.status === status) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// البحث
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const cards = document.querySelectorAll('.request-card');
+    
+    cards.forEach(card => {
+        const projectName = card.dataset.project;
+        if (projectName && projectName.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else if (searchTerm === '') {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+// بدء التوريد
+function startRequest(requestId) {
+    Swal.fire({
+        title: 'بدء التوريد',
+        text: 'هل أنت متأكد من بدء عملية التوريد لهذا الطلب؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، بدء',
+        cancelButtonText: 'إلغاء',
+        confirmButtonColor: '#4cc9f0',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'جاري المعالجة...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            fetch(`/supplier/request/${requestId}/start`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم البدء',
+                        text: 'تم بدء عملية  التوريد بنجاح',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ',
+                    text: 'حدث خطأ في الاتصال بالخادم'
+                });
+            });
+        }
+    });
+}
+
+// إنشاء تسليم
+function createDelivery(requestId) {
+    window.location.href = `/delivery/request/${requestId}/create`;
+}
+
+// تحديث التقدم
+function updateProgress(requestId) {
+    Swal.fire({
+        title: 'تحديث التقدم',
+        html: `
+            <div class="text-start">
+                <label class="form-label">نسبة الإنجاز (%)</label>
+                <input type="number" id="progressPercent" class="form-control" min="0" max="100" step="5" value="50">
+                <label class="form-label mt-3">ملاحظات (اختياري)</label>
+                <textarea id="progressNotes" class="form-control" rows="2"></textarea>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'تحديث',
+        cancelButtonText: 'إلغاء',
+        preConfirm: () => {
+            const progress = document.getElementById('progressPercent').value;
+            const notes = document.getElementById('progressNotes').value;
+            return { progress, notes };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'جاري التحديث...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            fetch(`/supplier/request/${requestId}/progress`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    progress: result.value.progress,
+                    notes: result.value.notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم التحديث',
+                        text: 'تم تحديث تقدم الطلب بنجاح',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+
+// إضافة تأثيرات عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    // إضافة تأثير fadeIn للبطاقات
+    const cards = document.querySelectorAll('.request-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,538 @@
+<!-- templates/company/project_detail.html -->
+
+{% extends "company/base.html" %}
+
+{% block title %}تفاصيل المشروع - {{ project.name }}{% endblock %}
+
+{% block page_title %}{{ project.name }}{% endblock %}
+{% block page_subtitle %}تحليل مفصل للمشروع - التقدم، التكاليف، والجدول الزمني{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.css" rel="stylesheet">
+<style>
+.project-detail-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ============================================
+   بطاقات المؤشرات الرئيسية
+============================================ */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+    background: white;
+    border-radius: 20px;
+    padding: 1.25rem;
+    transition: all 0.3s;
+    border: 1px solid #eef2f7;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px -10px rgba(0,0,0,0.1);
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary);
+}
+
+.kpi-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.kpi-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+}
+
+/* ============================================
+   الرسوم البيانية
+============================================ */
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 24px;
+    padding: 1.25rem;
+    border: 1px solid #eef2f7;
+    transition: all 0.3s;
+}
+
+.chart-card-full {
+    grid-column: span 2;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #eef2f7;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.chart-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-title i {
+    color: var(--primary);
+}
+
+.chart-legend {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    color: #64748b;
+}
+
+.legend-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.chart-container {
+    height: 300px;
+    width: 100%;
+}
+
+/* ============================================
+   جدول الأنشطة
+============================================ */
+.activities-table-wrapper {
+    background: white;
+    border-radius: 24px;
+    padding: 1.25rem;
+    border: 1px solid #eef2f7;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+}
+
+.activities-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 0.5rem;
+}
+
+.activities-table th {
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    font-weight: 600;
+    font-size: 0.7rem;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: right;
+}
+
+.activities-table td {
+    padding: 1rem;
+    background: white;
+    border-radius: 12px;
+    vertical-align: middle;
+    border: 1px solid #eef2f7;
+}
+
+.progress-bar-custom {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.performance-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.performance-good { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.performance-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.performance-critical { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.status-badge.success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.status-badge.warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.status-badge.danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.status-badge.info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+
+@media (max-width: 1024px) {
+    .chart-grid { grid-template-columns: 1fr; }
+    .chart-card-full { grid-column: span 1; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="project-detail-container">
+    <!-- بطاقات المؤشرات الرئيسية -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-value" id="projectProgress">0%</div>
+            <div class="kpi-label">نسبة الإنجاز</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value" id="projectBudget">0</div>
+            <div class="kpi-label">الميزانية</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value" id="projectActual">0</div>
+            <div class="kpi-label">التكلفة الفعلية</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value" id="projectVariance">0</div>
+            <div class="kpi-label">الفارق</div>
+        </div>
+    </div>
+
+    <!-- الرسوم البيانية -->
+    <div class="chart-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i class="fas fa-chart-line text-primary"></i> تقدم المشروع عبر الزمن</div>
+                <div class="chart-legend"><div class="legend-item"><div class="legend-color" style="background: #4361ee;"></div><span>نسبة الإنجاز</span></div></div>
+            </div>
+            <div class="chart-container" id="progressChart"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header"><div class="chart-title"><i class="fas fa-chart-pie text-primary"></i> توزيع الميزانية حسب الأنشطة</div></div>
+            <div class="chart-container" id="budgetChart"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header"><div class="chart-title"><i class="fas fa-chart-line text-primary"></i> مؤشر أداء التكلفة (CPI)</div></div>
+            <div class="chart-container" id="cpiChart"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header"><div class="chart-title"><i class="fas fa-chart-line text-primary"></i> مؤشر أداء الجدول (SPI)</div></div>
+            <div class="chart-container" id="spiChart"></div>
+        </div>
+        <div class="chart-card chart-card-full">
+            <div class="chart-header">
+                <div class="chart-title"><i class="fas fa-chart-line text-primary"></i> تحليل القيمة المكتسبة (EVM)</div>
+                <div class="chart-legend">
+                    <div class="legend-item"><div class="legend-color" style="background: #3b82f6;"></div><span>القيمة المخططة (PV)</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background: #10b981;"></div><span>القيمة المكتسبة (EV)</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background: #ef4444;"></div><span>التكلفة الفعلية (AC)</span></div>
+                </div>
+            </div>
+            <div class="chart-container" id="evmChart"></div>
+        </div>
+    </div>
+
+    <!-- جدول الأنشطة -->
+    <div class="activities-table-wrapper">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="chart-title"><i class="fas fa-tasks"></i> الأنشطة والمهام</div>
+        </div>
+        <div class="table-responsive">
+            <table class="activities-table">
+                <thead>
+                    <tr>
+                        <th>النشاط</th>
+                        <th>التقدم</th>
+                        <th>الميزانية</th>
+                        <th>التكلفة الفعلية</th>
+                        <th>CPI</th>
+                        <th>SPI</th>
+                        <th>الحالة</th>
+                    </thead>
+                <tbody id="activitiesTable">
+                    <tr><td colspan="7" class="text-center py-4"><div class="spinner-border text-primary"></div> جاري التحميل...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.js"></script>
+<script>
+// ============================================
+// متغيرات عامة
+// ============================================
+const projectId = {{ project.id }};
+let charts = {};
+let projectCurrency = '{{ project.base_currency or "SAR" }}';
+
+// ============================================
+// دالة تنسيق العملة
+// ============================================
+function formatCurrency(amount, currency = projectCurrency) {
+    const currencySymbols = {
+        'SAR': 'ر.س',
+        'USD': '$',
+        'EUR': '€',
+        'GBP': '£',
+        'AED': 'د.إ',
+        'KWD': 'د.ك',
+        'QAR': 'ر.ق',
+        'BHD': 'د.ب',
+        'OMR': 'ر.ع',
+        'EGP': 'ج.م',
+        'JOD': 'د.ا',
+        'LYD': 'د.ل',
+        'TND': 'د.ت',
+        'MAD': 'د.م'
+    };
+    
+    const symbol = currencySymbols[currency] || 'ر.س';
+    const numericAmount = amount || 0;
+    
+    if (currency === 'KWD' || currency === 'BHD' || currency === 'OMR') {
+        return numericAmount.toLocaleString('ar-SA', {
+            minimumFractionDigits: 3,
+            maximumFractionDigits: 3
+        }) + ' ' + symbol;
+    } else {
+        return numericAmount.toLocaleString('ar-SA', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' ' + symbol;
+    }
+}
+// ============================================
+// تحميل البيانات
+// ============================================
+async function loadProjectDetails() {
+    try {
+        const response = await fetch(`/company/api/project/${projectId}/full-details`);
+        const data = await response.json();
+        
+        if (data.success) {
+            updateKPIs(data.project);
+            updateCharts(data);
+            updateActivitiesTable(data.activities);
+        } else {
+            console.error('خطأ في جلب البيانات:', data.error);
+        }
+    } catch (error) {
+        console.error('خطأ في الاتصال:', error);
+    }
+}
+
+function updateKPIs(project) {
+    document.getElementById('projectProgress').textContent = project.progress.toFixed(1) + '%';
+    document.getElementById('projectBudget').textContent = formatCurrency(project.budget);
+    document.getElementById('projectActual').textContent = formatCurrency(project.actual_cost);
+    const variance = project.variance;
+    const varianceEl = document.getElementById('projectVariance');
+    varianceEl.textContent = (variance >= 0 ? '+' : '') + formatCurrency(variance);
+    varianceEl.className = variance >= 0 ? 'kpi-value text-danger' : 'kpi-value text-success';
+}
+
+function getCPIColor(value) {
+    if (value >= 1.0) return '#10b981';
+    if (value >= 0.8) return '#f59e0b';
+    return '#ef4444';
+}
+
+function getSPIColor(value) {
+    if (value >= 1.0) return '#10b981';
+    if (value >= 0.8) return '#f59e0b';
+    return '#ef4444';
+}
+
+
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ============================================
+// الرسوم البيانية
+// ============================================
+function createProgressChart(data, labels) {
+    const options = {
+        chart: { type: 'line', height: 280, toolbar: { show: true }, animations: { speed: 800 } },
+        series: [{ name: 'نسبة الإنجاز (%)', data: data, color: '#4361ee' }],
+        xaxis: { categories: labels, labels: { rotate: -45 } },
+        yaxis: { min: 0, max: 100, title: { text: '%' } },
+        stroke: { curve: 'smooth', width: 3 },
+        markers: { size: 5, hover: { size: 7 } },
+        tooltip: { y: { formatter: (val) => val.toFixed(1) + '%' } }
+    };
+    charts.progress = new ApexCharts(document.querySelector("#progressChart"), options);
+    charts.progress.render();
+}
+
+function createBudgetChart(data, labels) {
+    const options = {
+        chart: { type: 'donut', height: 280 },
+        series: data,
+        labels: labels,
+        colors: ['#4361ee', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a'],
+        legend: { position: 'bottom' },
+        dataLabels: { enabled: true, formatter: (val) => val.toFixed(1) + '%' },
+        plotOptions: { pie: { donut: { size: '65%' } } },
+        tooltip: { y: { formatter: (val) => formatCurrency(val) } }
+    };
+    charts.budget = new ApexCharts(document.querySelector("#budgetChart"), options);
+    charts.budget.render();
+}
+
+function createCPIChart(data, labels) {
+    const options = {
+        chart: { type: 'bar', height: 280, toolbar: { show: true } },
+        series: [{ name: 'CPI', data: data }],
+        xaxis: { categories: labels, labels: { rotate: -45 } },
+        yaxis: { min: 0, max: 2, title: { text: 'CPI' } },
+        plotOptions: { bar: { borderRadius: 8, dataLabels: { position: 'top' } } },
+        dataLabels: { enabled: true, formatter: (val) => val.toFixed(2), offsetY: -20 },
+        annotations: { yaxis: [{ y: 1, borderColor: '#ef4444', label: { text: 'CPI = 1', style: { color: '#ef4444' } } }] },
+        colors: data.map(v => getCPIColor(v))
+    };
+    charts.cpi = new ApexCharts(document.querySelector("#cpiChart"), options);
+    charts.cpi.render();
+}
+
+function createSPIChart(data, labels) {
+    const options = {
+        chart: { type: 'bar', height: 280, toolbar: { show: true } },
+        series: [{ name: 'SPI', data: data }],
+        xaxis: { categories: labels, labels: { rotate: -45 } },
+        yaxis: { min: 0, max: 2, title: { text: 'SPI' } },
+        plotOptions: { bar: { borderRadius: 8, dataLabels: { position: 'top' } } },
+        dataLabels: { enabled: true, formatter: (val) => val.toFixed(2), offsetY: -20 },
+        annotations: { yaxis: [{ y: 1, borderColor: '#ef4444', label: { text: 'SPI = 1', style: { color: '#ef4444' } } }] },
+        colors: data.map(v => getSPIColor(v))
+    };
+    charts.spi = new ApexCharts(document.querySelector("#spiChart"), options);
+    charts.spi.render();
+}
+
+function createEVMChart(pvData, evData, acData, labels) {
+    const options = {
+        chart: { type: 'line', height: 300, toolbar: { show: true }, animations: { speed: 800 } },
+        series: [
+            { name: 'PV (القيمة المخططة)', data: pvData, color: '#3b82f6' },
+            { name: 'EV (القيمة المكتسبة)', data: evData, color: '#10b981' },
+            { name: 'AC (التكلفة الفعلية)', data: acData, color: '#ef4444' }
+        ],
+        xaxis: { categories: labels, labels: { rotate: -45 } },
+        yaxis: { title: { text: 'المبلغ (SAR)' }, labels: { formatter: (val) => formatCurrency(val) } },
+        stroke: { width: 2, curve: 'smooth' },
+        markers: { size: 4, hover: { size: 6 } },
+        tooltip: { y: { formatter: (val) => formatCurrency(val) } }
+    };
+    charts.evm = new ApexCharts(document.querySelector("#evmChart"), options);
+    charts.evm.render();
+}
+
+function updateCharts(data) {
+    if (charts.progress) charts.progress.updateSeries([{ name: 'نسبة الإنجاز (%)', data: data.historical_progress }]);
+    else createProgressChart(data.historical_progress, data.historical_dates);
+    
+    if (charts.budget) charts.budget.updateSeries(data.activity_budgets);
+    else createBudgetChart(data.activity_budgets, data.activity_names);
+    
+    if (charts.cpi) charts.cpi.updateSeries([{ name: 'CPI', data: data.cpi_data }]);
+    else createCPIChart(data.cpi_data, data.activity_names);
+    
+    if (charts.spi) charts.spi.updateSeries([{ name: 'SPI', data: data.spi_data }]);
+    else createSPIChart(data.spi_data, data.activity_names);
+    
+    if (charts.evm) charts.evm.updateSeries([
+        { name: 'PV', data: data.evm_pv },
+        { name: 'EV', data: data.evm_ev },
+        { name: 'AC', data: data.evm_ac }
+    ]);
+    else createEVMChart(data.evm_pv, data.evm_ev, data.evm_ac, data.evm_dates);
+}
+
+function updateActivitiesTable(activities) {
+    const tbody = document.getElementById('activitiesTable');
+    if (!activities || activities.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">لا توجد أنشطة</td></tr>';
+        return;
+    }
+    
+    let html = '';
+    activities.forEach(activity => {
+        const progressClass = activity.progress >= 80 ? 'success' : (activity.progress >= 50 ? 'warning' : 'info');
+        const cpiClass = activity.cpi >= 1 ? 'performance-good' : (activity.cpi >= 0.8 ? 'performance-warning' : 'performance-critical');
+        const spiClass = activity.spi >= 1 ? 'performance-good' : (activity.spi >= 0.8 ? 'performance-warning' : 'performance-critical');
+        
+        html += `
+            <tr>
+                <td><div class="fw-bold">${escapeHtml(activity.name)}</div></td>
+                <td class="project-progress">
+                    <div class="fw-bold mb-1">${activity.progress.toFixed(1)}%</div>
+                    <div class="progress-bar-custom">
+                        <div class="progress-fill bg-${progressClass}" style="width: ${activity.progress}%"></div>
+                    </div>
+                </td>
+                <td class="fw-bold">${formatCurrency(activity.budget)}</td>
+                <td>${formatCurrency(activity.actual_cost)}</td>
+                <td><span class="performance-badge ${cpiClass}">${activity.cpi.toFixed(2)}</span></td>
+                <td><span class="performance-badge ${spiClass}">${activity.spi.toFixed(2)}</span></td>
+                <td><span class="status-badge ${activity.status_color}">${activity.status_text}</span></td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', loadProjectDetails);
+</script>
+{% endblock %}

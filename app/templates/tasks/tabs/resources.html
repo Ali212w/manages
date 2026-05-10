@@ -1,0 +1,192 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-bold mb-0">
+        <i class="fas fa-tools text-primary me-2"></i>الموارد المخصصة
+    </h6>
+    <button class="btn btn-sm btn-primary" onclick="showAddResourceModal()">
+        <i class="fas fa-plus me-1"></i> إضافة مورد
+    </button>
+</div>
+
+<div class="table-responsive">
+    <table class="detail-table">
+        <thead>
+            <tr>
+                <th>النوع</th>
+                <th>الاسم</th>
+                <th>الكمية</th>
+                <th>الوحدة</th>
+                <th>التكلفة</th>
+                <th>الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for resource in task_resources %}
+            <tr id="resource-{{ resource.id }}">
+                <td>
+                    <span class="badge bg-{{ 'primary' if resource.resource_type == 'labor' else 'success' if resource.resource_type == 'material' else 'warning' }}">
+                        {% if resource.resource_type == 'labor' %}عمالة
+                        {% elif resource.resource_type == 'material' %}مواد
+                        {% elif resource.resource_type == 'equipment' %}معدات
+                        {% else %}{{ resource.resource_type }}
+                        {% endif %}
+                    </span>
+                </td>
+                <td>{{ resource.resource_name }}</td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" value="{{ resource.quantity }}" 
+                           style="width: 80px;" min="0" step="0.01"
+                           onchange="updateResource({{ resource.id }}, 'quantity', this.value)">
+                </td>
+                <td>{{ resource.unit }}</td>
+                <td class="fw-bold">
+                    <input type="number" class="form-control form-control-sm" value="{{ resource.cost }}" 
+                           style="width: 100px;" min="0" step="0.01"
+                           onchange="updateResource({{ resource.id }}, 'cost', this.value)">
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteResource({{ resource.id }})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    <i class="fas fa-tools fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">لا توجد موارد مخصصة</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal إضافة مورد -->
+<div class="modal fade" id="addResourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة مورد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="resourceForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نوع المورد</label>
+                        <select class="form-select" id="resourceType" required>
+                            <option value="">اختر النوع</option>
+                            <option value="labor">عمالة</option>
+                            <option value="material">مواد</option>
+                            <option value="equipment">معدات</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اسم المورد</label>
+                        <input type="text" class="form-control" id="resourceName" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">الكمية</label>
+                            <input type="number" class="form-control" id="resourceQuantity" value="1" min="0" step="0.01" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">الوحدة</label>
+                            <input type="text" class="form-control" id="resourceUnit" placeholder="ساعة، كجم، ..." required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">التكلفة</label>
+                        <input type="number" class="form-control" id="resourceCost" value="0" min="0" step="0.01" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="addResource()">إضافة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAddResourceModal() {
+    document.getElementById('resourceForm').reset();
+    new bootstrap.Modal(document.getElementById('addResourceModal')).show();
+}
+
+function addResource() {
+    const data = {
+        resource_type: document.getElementById('resourceType').value,
+        resource_name: document.getElementById('resourceName').value,
+        quantity: document.getElementById('resourceQuantity').value,
+        unit: document.getElementById('resourceUnit').value,
+        cost: document.getElementById('resourceCost').value
+    };
+    
+    if (!data.resource_type || !data.resource_name || !data.quantity) {
+        showWarning('الرجاء إدخال جميع البيانات المطلوبة');
+        return;
+    }
+    
+    fetch(`/tasks/api/{{ task.id }}/resource`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addResourceModal')).hide();
+            showSuccess('تم إضافة المورد بنجاح');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'حدث خطأ');
+        }
+    });
+}
+
+function updateResource(id, field, value) {
+    const data = {};
+    data[field] = value;
+    
+    fetch(`/tasks/api/task-resource/${id}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('تم التحديث');
+        } else {
+            showError(data.error || 'حدث خطأ');
+        }
+    });
+}
+
+function deleteResource(id) {
+    confirmDelete('هل أنت متأكد من حذف هذا المورد؟', function() {
+        fetch(`/tasks/api/task-resource/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('تم حذف المورد');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.error || 'حدث خطأ');
+            }
+        });
+    });
+}
+</script>

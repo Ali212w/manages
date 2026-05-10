@@ -1,0 +1,87 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-bold mb-0">
+        <i class="fas fa-chart-line text-primary me-2"></i>تاريخ تحديثات التقدم
+    </h6>
+    <button class="btn btn-sm btn-primary" onclick="showProgressModal()">
+        <i class="fas fa-plus me-1"></i> تحديث التقدم
+    </button>
+</div>
+
+<div class="timeline">
+    {% for update in progress_updates %}
+    <div class="timeline-item">
+        <div class="timeline-badge bg-{{ 'success' if update.progress_percentage == 100 else 'primary' }}">
+            <i class="fas fa-{% if update.progress_percentage == 100 %}check{% else %}arrow-up{% endif %}"></i>
+        </div>
+        <div class="timeline-content">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="mb-1">تقدم: {{ update.progress_percentage }}%</h6>
+                    <p class="text-muted small mb-2">{{ update.notes or 'لا توجد ملاحظات' }}</p>
+                    <div class="d-flex gap-3">
+                        <small class="text-muted">
+                            <i class="fas fa-user me-1"></i>{{ update.updater.full_name if update.updater else 'نظام' }}
+                        </small>
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>{{ update.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                        </small>
+                    </div>
+                </div>
+                {% if update.photos %}
+                <a href="{{ update.photos[0] }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-image"></i> صورة
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-4">
+        <i class="fas fa-chart-line fa-2x text-muted mb-2"></i>
+        <p class="text-muted">لا توجد تحديثات تقدم</p>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding: 1rem 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 30px;
+    width: 2px;
+    background: #eef2f7;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+    padding-right: 70px;
+}
+
+.timeline-badge {
+    position: absolute;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    z-index: 1;
+}
+
+.timeline-content {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 1rem;
+    border: 1px solid #eef2f7;
+}
+</style>

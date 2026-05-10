@@ -1,0 +1,162 @@
+{% extends "communication/base_chat.html" %}
+
+{% block title %}{{ _('chat.messages') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-sidebar {
+        background: white;
+        border-radius: var(--radius-lg);
+        height: calc(100vh - 150px);
+        overflow-y: auto;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .chat-item {
+        padding: 15px;
+        border-bottom: 1px solid #e0e0e0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .chat-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .chat-item.active {
+        background: linear-gradient(135deg, #667eea10, #764ba210);
+        border-right: 3px solid var(--primary-color);
+    }
+    
+    .chat-item.unread {
+        background: linear-gradient(90deg, #e3f2fd, transparent);
+    }
+    
+    .chat-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+    }
+    
+    .unread-badge {
+        background: var(--danger-color);
+        color: white;
+        border-radius: 20px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    
+    .online-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #00b894;
+        border: 2px solid white;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-sm);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- إحصائيات سريعة -->
+        <div class="col-12 mb-4">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stats-card text-center">
+                        <h3 class="text-primary mb-0">{{ stats.total_chats }}</h3>
+                        <small class="text-muted">{{ _('chat.total_chats') }}</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card text-center">
+                        <h3 class="text-warning mb-0">{{ stats.unread_total }}</h3>
+                        <small class="text-muted">{{ _('chat.unread_messages') }}</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card text-center">
+                        <h3 class="text-success mb-0">{{ stats.direct_chats }}</h3>
+                        <small class="text-muted">{{ _('chat.direct_chats') }}</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card text-center">
+                        <h3 class="text-info mb-0">{{ stats.project_chats + stats.task_chats }}</h3>
+                        <small class="text-muted">{{ _('chat.group_chats') }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <!-- منطقة المحادثة (سيتم تحميلها عند اختيار محادثة) -->
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-comment-dots"></i>
+            </div>
+            <h5 class="text-muted">{{ _('chat.select_chat_to_start') }}</h5>
+            <p class="text-muted small">{{ _('chat.click_on_any_conversation_to_start_chatting') }}</p>
+            <button class="btn btn-primary mt-3" onclick="startNewChat()">
+                <i class="fas fa-plus me-2"></i> {{ _('chat.new_conversation') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openChat(chatId) {
+        window.location.href = `/communication/chat/${chatId}`;
+    }
+    
+    function searchChats() {
+        const searchTerm = document.getElementById('searchChat').value.toLowerCase();
+        const chatItems = document.querySelectorAll('.chat-item');
+        
+        chatItems.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    
+    // تحديث تلقائي للإشعارات كل 30 ثانية
+    setInterval(function() {
+        fetch('{{ url_for("notifications.api_unread_count") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.count > 0) {
+                    // تحديث عداد الإشعارات في الشريط العلوي
+                    const badge = document.querySelector('.notification-badge');
+                    if (badge) {
+                        badge.textContent = data.count;
+                        badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+                    }
+                }
+            });
+    }, 30000);
+</script>
+{% endblock %}

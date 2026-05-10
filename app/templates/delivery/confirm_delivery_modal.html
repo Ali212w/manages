@@ -1,0 +1,129 @@
+<!-- templates/delivery/confirm_delivery_modal.html -->
+<div class="modal fade" id="confirmDeliveryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-clipboard-check me-2"></i>
+                    تأكيد استلام المواد
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="deliveryDetails"></div>
+                
+                <div class="mt-3">
+                    <label class="form-label fw-bold">ملاحظات التأكيد</label>
+                    <textarea class="form-control" id="confirmationNotes" rows="2" 
+                              placeholder="أضف ملاحظاتك هنا..."></textarea>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="confirmAction" id="confirmAccept" value="confirm" checked>
+                        <label class="form-check-label" for="confirmAccept">
+                            <i class="fas fa-check-circle text-success"></i> تأكيد الاستلام
+                        </label>
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="confirmAction" id="confirmReject" value="reject">
+                        <label class="form-check-label" for="confirmReject">
+                            <i class="fas fa-times-circle text-danger"></i> رفض الاستلام
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="submitConfirmation()">تأكيد</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentDeliveryId = null;
+
+function showConfirmDeliveryModal(deliveryId, deliveryData) {
+    currentDeliveryId = deliveryId;
+    
+    const container = document.getElementById('deliveryDetails');
+    container.innerHTML = `
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6 class="mb-3">تفاصيل التسليم</h6>
+                <p><strong>رقم التسليم:</strong> ${deliveryData.delivery_number}</p>
+                <p><strong>تاريخ التسليم:</strong> ${deliveryData.delivery_date}</p>
+                <p><strong>موقع التسليم:</strong> ${deliveryData.delivery_location || 'غير محدد'}</p>
+                
+                <h6 class="mt-3">المواد المسلمة:</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>المادة</th>
+                                <th>الكمية</th>
+                                <th>الوحدة</th>
+                                <th>ملاحظات</th>
+                            </thead>
+                            <tbody>
+                                ${deliveryData.delivered_items.map(item => `
+                                <tr>
+                                    <td>${item.name}</td>
+                                    <td><strong>${item.quantity}</strong></td>
+                                    <td>${item.unit}</td>
+                                    <td>${item.notes || '-'}</td>
+                                </tr>
+                                `).join('')}
+                            </tbody>
+                        彬
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    new bootstrap.Modal(document.getElementById('confirmDeliveryModal')).show();
+}
+
+function submitConfirmation() {
+    const action = document.querySelector('input[name="confirmAction"]:checked').value;
+    const notes = document.getElementById('confirmationNotes').value;
+    
+    if (!notes && action === 'reject') {
+        alert('يرجى إدخال سبب الرفض');
+        return;
+    }
+    
+    fetch(`/delivery/${currentDeliveryId}/confirm`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            action: action,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('confirmDeliveryModal')).hide();
+            Swal.fire({
+                icon: 'success',
+                title: action === 'confirm' ? 'تم التأكيد' : 'تم الرفض',
+                text: action === 'confirm' ? 'تم تأكيد استلام المواد بنجاح' : 'تم رفض التسليم بنجاح',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => location.reload());
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error
+            });
+        }
+    });
+}
+</script>

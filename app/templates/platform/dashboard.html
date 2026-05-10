@@ -1,0 +1,270 @@
+{# templates/platform/dashboard.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('dashboard.title') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Welcome Section -->
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">{{ _('dashboard.title') }}</h1>
+            <p class="text-muted">{{ _('dashboard.welcome') }}</p>
+        </div>
+        <div>
+            <small class="text-muted">
+                <i class="fas fa-calendar-alt"></i> {{ format_date(now, 'full') }}
+            </small>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted mb-1">{{ _('dashboard.total_companies') }}</p>
+                        <h2 class="stat-value">{{ stats.companies.total }}</h2>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up"></i> +{{ stats.companies.new_today }} {{ _('dashboard.new_today') }}
+                        </small>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted mb-1">{{ _('dashboard.total_users') }}</p>
+                        <h2 class="stat-value">{{ stats.users.total }}</h2>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up"></i> +{{ stats.users.new_today }} {{ _('dashboard.new_today') }}
+                        </small>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted mb-1">{{ _('dashboard.total_revenue') }}</p>
+                        <h2 class="stat-value">{{ format_currency(stats.subscriptions.total_revenue) }}</h2>
+                        <small class="text-info">
+                            <i class="fas fa-credit-card"></i> {{ stats.subscriptions.active }} {{ _('dashboard.active_subscriptions') }}
+                        </small>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted mb-1">{{ _('dashboard.storage_used') }}</p>
+                        <h2 class="stat-value">{{ stats.storage.used_gb }} GB</h2>
+                        <small class="text-warning">
+                            {{ stats.storage.usage_percent }}% {{ _('dashboard.storage_limit') }} {{ stats.storage.limit_gb }} GB
+                        </small>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-3">
+                    <h5 class="card-title mb-0">{{ _('dashboard.monthly_revenue') }}</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-3">
+                    <h5 class="card-title mb-0">{{ _('dashboard.companies_growth') }}</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="growthChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity Row -->
+    <div class="row g-4">
+        <div class="col-xl-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ _('dashboard.recent_activities') }}</h5>
+                    <a href="{{ url_for('platform.audit_log') }}" class="btn btn-sm btn-link">{{ _('dashboard.view_all') }}</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for log in recent_activities %}
+                        <div class="list-group-item">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-circle text-primary" style="font-size: 8px; margin-top: 8px;"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <p class="mb-1">{{ log.details }}</p>
+                                    <small class="text-muted">{{ time_ago(log.created_at) }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="p-3 text-center text-muted">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <p class="mb-0">{{ _('common.no_data') }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ _('dashboard.top_companies') }}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ _('companies.name') }}</th>
+                                    <th>{{ _('companies.users_count') }}</th>
+                                    <th>{{ _('companies.projects_count') }}</th>
+                                    <th>{{ _('companies.status') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for company in top_companies %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('platform.view_company', company_id=company.id) }}" class="text-decoration-none">
+                                            <strong>{{ company.name }}</strong>
+                                        </a>
+                                    </td>
+                                    <td>{{ company.current_users }} / {{ company.max_users }}</td>
+                                    <td>{{ company.current_projects }} / {{ company.max_projects }}</td>
+                                    <td>
+                                        {% if company.is_active %}
+                                        <span class="badge bg-success">{{ _('status.active') }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ _('status.inactive') }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_revenue|map(attribute='month')|list|tojson }},
+            datasets: [{
+                label: '{{ _("dashboard.monthly_revenue") }}',
+                data: {{ monthly_revenue|map(attribute='revenue')|list|tojson }},
+                borderColor: '#4361ee',
+                backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#4361ee',
+                pointBorderColor: '#fff',
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return '{{ format_currency(0) }}'.replace('0', context.raw);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '{{ format_currency(0) }}'.replace('0', value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Growth Chart
+    const growthCtx = document.getElementById('growthChart').getContext('2d');
+    new Chart(growthCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ companies_growth|map(attribute='month')|list|tojson }},
+            datasets: [{
+                label: '{{ _("dashboard.companies_growth") }}',
+                data: {{ companies_growth|map(attribute='count')|list|tojson }},
+                backgroundColor: 'rgba(67, 97, 238, 0.8)',
+                borderRadius: 8,
+                barPercentage: 0.7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

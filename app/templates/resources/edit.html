@@ -1,0 +1,603 @@
+{% extends "company/base.html" %}
+
+{% block title %}تعديل المورد - {{ resource.name }}{% endblock %}
+
+{% block page_title %}تعديل المورد{% endblock %}
+{% block page_subtitle %}{{ resource.resource_id }} - {{ resource.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .edit-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-card {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+    }
+    
+    .form-section {
+        background: #f8fafc;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px dashed #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .section-title i {
+        color: var(--primary);
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-label i {
+        color: var(--primary);
+        margin-left: 0.5rem;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.7rem 1rem;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        outline: none;
+    }
+    
+    .form-control:disabled, .form-select:disabled {
+        background: #f8fafc;
+        cursor: not-allowed;
+    }
+    
+    .row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .help-text {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.3rem;
+    }
+    
+    .warning-box {
+        background: rgba(248, 150, 30, 0.1);
+        border-right: 4px solid var(--warning);
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .warning-box i {
+        color: var(--warning);
+        margin-left: 0.5rem;
+    }
+    
+    .info-box {
+        background: rgba(67, 97, 238, 0.05);
+        border-right: 4px solid var(--primary);
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .btn-submit {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .btn-secondary {
+        background: #eef2f7;
+        color: #6c757d;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .btn-secondary:hover {
+        background: #e2e8f0;
+        color: var(--dark);
+    }
+    
+    .danger-zone {
+        border: 2px solid rgba(249, 65, 68, 0.2);
+        background: rgba(249, 65, 68, 0.02);
+        margin-top: 1.5rem;
+    }
+    
+    .danger-zone .section-title {
+        color: var(--danger);
+        border-bottom-color: rgba(249, 65, 68, 0.2);
+    }
+    
+    .danger-zone .section-title i {
+        color: var(--danger);
+    }
+    
+    @media (max-width: 768px) {
+        .row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-container">
+    <div class="form-card">
+        <form method="POST" id="resourceForm">
+            <!-- تحذير إذا كان المورد مستخدم -->
+            {% if resource.total_allocated > 0 %}
+            <div class="warning-box">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>تنبيه:</strong> هذا المورد مستخدم حالياً في {{ resource.total_allocated }} تخصيص. قد يؤثر تعديل الكمية المتاحة أو التكلفة على المهام المرتبطة.
+            </div>
+            {% endif %}
+            
+            <!-- المعلومات الأساسية -->
+            <div class="form-section">
+                <h6 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    المعلومات الأساسية
+                </h6>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-barcode"></i>
+                            كود المورد
+                        </label>
+                        <input type="text" class="form-control" 
+                               value="{{ resource.resource_id }}" disabled>
+                        <div class="help-text">لا يمكن تعديل الكود بعد الإنشاء</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i>
+                            اسم المورد <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="name" class="form-control" 
+                               value="{{ resource.name }}" required>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- تصنيف المورد -->
+            <div class="form-section">
+                <h6 class="section-title">
+                    <i class="fas fa-tag"></i>
+                    تصنيف المورد
+                </h6>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-layer-group"></i>
+                            نوع المورد <span class="text-danger">*</span>
+                        </label>
+                        <select name="resource_type" id="resourceType" class="form-select" required>
+                            <option value="labor" {% if resource.type == 'labor' %}selected{% endif %}>موارد بشرية (عمالة)</option>
+                            <option value="material" {% if resource.type == 'material' %}selected{% endif %}>مواد</option>
+                            <option value="equipment" {% if resource.type == 'equipment' %}selected{% endif %}>معدات</option>
+                            <option value="non_labor" {% if resource.type == 'non_labor' %}selected{% endif %}>موارد أخرى</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-ruler"></i>
+                            الوحدة
+                        </label>
+                        <select name="unit" class="form-select">
+                            <option value="">اختر الوحدة</option>
+                            <option value="hour" {% if resource.unit == 'hour' %}selected{% endif %}>ساعة</option>
+                            <option value="day" {% if resource.unit == 'day' %}selected{% endif %}>يوم</option>
+                            <option value="month" {% if resource.unit == 'month' %}selected{% endif %}>شهر</option>
+                            <option value="piece" {% if resource.unit == 'piece' %}selected{% endif %}>قطعة</option>
+                            <option value="kg" {% if resource.unit == 'kg' %}selected{% endif %}>كيلوجرام</option>
+                            <option value="ton" {% if resource.unit == 'ton' %}selected{% endif %}>طن</option>
+                            <option value="m3" {% if resource.unit == 'm3' %}selected{% endif %}>متر مكعب</option>
+                            <option value="m2" {% if resource.unit == 'm2' %}selected{% endif %}>متر مربع</option>
+                            <option value="meter" {% if resource.unit == 'meter' %}selected{% endif %}>متر طولي</option>
+                        </select>
+                        <div class="help-text">وحدة قياس المورد</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- حقول خاصة حسب النوع -->
+            <div id="laborFields" class="form-section" style="display: {% if resource.type == 'labor' %}block{% else %}none{% endif %};">
+                <h6 class="section-title">
+                    <i class="fas fa-user-tie"></i>
+                    معلومات الموارد البشرية
+                </h6>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label"> العامل</label>
+                    <select name="employeeId" class="form-select" required>
+                        <option value="">اختر العامل</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if resource.employee_id == user.id %}selected{% endif %}>
+                            {{ user.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">التخصص</label>
+                    <input type="text" name="specialization" class="form-control" value="{{ resource.specialization or '' }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">المهارات (افصل بينها بفواصل)</label>
+                    <input type="text" name="skills" class="form-control" value="{{ resource.skills|join(', ') if resource.skills else '' }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">سنوات الخبرة</label>
+                    <input type="number" name="experience_years" class="form-control" step="0.5" value="{{ resource.experience_years or 0 }}">
+                </div>
+            </div>
+            
+            <div id="equipmentFields" class="form-section" style="display: {% if resource.type == 'equipment' %}block{% else %}none{% endif %};">
+                <h6 class="section-title">
+                    <i class="fas fa-tractor"></i>
+                    معلومات المعدات
+                </h6>
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">نوع المعدة</label>
+                        <input type="text" name="equipment_type" class="form-control" value="{{ resource.equipment_type or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">الموديل</label>
+                        <input type="text" name="equipment_model" class="form-control" value="{{ resource.equipment_model or '' }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الشركة المصنعة</label>
+                    <input type="text" name="manufacturer" class="form-control" value="{{ resource.manufacturer or '' }}">
+                </div>
+            </div>
+            
+            <div id="materialFields" class="form-section" style="display: {% if resource.type == 'material' %}block{% else %}none{% endif %};">
+                <h6 class="section-title">
+                    <i class="fas fa-cube"></i>
+                    معلومات المواد
+                </h6>
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">نوع المادة</label>
+                        <input type="text" name="material_type" class="form-control" value="{{ resource.material_type or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">درجة المادة</label>
+                        <input type="text" name="material_grade" class="form-control" value="{{ resource.material_grade or '' }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">الحد الأدنى للمخزون</label>
+                        <input type="number" name="minimum_quantity" class="form-control" step="0.01" value="{{ resource.minimum_quantity or 0 }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">كمية إعادة الطلب</label>
+                        <input type="number" name="reorder_quantity" class="form-control" step="0.01" value="{{ resource.reorder_quantity or 0 }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">المورد</label>
+                    <select name="supplier_id" class="form-select">
+                        <option value="">اختر المورد</option>
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}" {% if resource.supplier_id == supplier.id %}selected{% endif %}>
+                            {{ supplier.full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <!-- التكلفة والكمية -->
+            <div class="form-section">
+                <h6 class="section-title">
+                    <i class="fas fa-coins"></i>
+                    التكلفة والكمية
+                </h6>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-money-bill"></i>
+                            التكلفة لكل وحدة
+                        </label>
+                        <input type="number" name="cost_per_unit" class="form-control" 
+                               step="0.01" min="0" value="{{ resource.cost_per_unit }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-boxes"></i>
+                            الكمية المتاحة
+                        </label>
+                        <input type="number" name="available_quantity" class="form-control" 
+                               step="0.01" min="0" value="{{ resource.available_quantity }}">
+                    </div>
+                </div>
+                
+                {% if resource.total_allocated > 0 %}
+                <div class="info-box mt-3">
+                    <i class="fas fa-chart-line"></i>
+                    <strong>إحصائيات الاستخدام:</strong>
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <small>الكمية المخصصة:</small>
+                            <div class="fw-bold">{{ resource.total_allocated }} {{ resource.unit }}</div>
+                        </div>
+                        <div class="col-6">
+                            <small>الكمية المتبقية:</small>
+                            <div class="fw-bold {% if (resource.available_quantity - resource.total_allocated) < 0 %}text-danger{% endif %}">
+                                {{ (resource.available_quantity - resource.total_allocated)|round(2) }} {{ resource.unit }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="progress mt-2" style="height: 6px;">
+                        {% set utilization = (resource.total_allocated / resource.available_quantity * 100) if resource.available_quantity > 0 else 0 %}
+                        <div class="progress-bar {% if utilization > 100 %}bg-danger{% elif utilization > 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                             style="width: {{ utilization }}%"></div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-dollar-sign"></i>
+                            العملة
+                        </label>
+                        <select name="currency" class="form-select">
+                            <option value="SAR" {% if resource.currency == 'SAR' %}selected{% endif %}>ريال سعودي (SAR)</option>
+                            <option value="USD" {% if resource.currency == 'USD' %}selected{% endif %}>دولار أمريكي (USD)</option>
+                            <option value="EUR" {% if resource.currency == 'EUR' %}selected{% endif %}>يورو (EUR)</option>
+                            <option value="AED" {% if resource.currency == 'AED' %}selected{% endif %}>درهم إماراتي (AED)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-calendar"></i>
+                            التقويم
+                        </label>
+                        <select name="calendar_id" class="form-select">
+                            <option value="">-- اختر التقويم --</option>
+                            {% for calendar in calendars %}
+                            <option value="{{ calendar.id }}" {% if resource.calendar_id == calendar.id %}selected{% endif %}>
+                                {{ calendar.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- إعدادات إضافية -->
+            <div class="form-section">
+                <h6 class="section-title">
+                    <i class="fas fa-cog"></i>
+                    إعدادات إضافية
+                </h6>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="is_active" id="isActive" 
+                           {% if resource.is_active %}checked{% endif %}>
+                    <label class="form-check-label" for="isActive">
+                        <i class="fas fa-check-circle text-success me-1"></i>
+                        مورد نشط
+                    </label>
+                    <div class="help-text">إذا تم إلغاء النشاط، لن يظهر المورد في خيارات التخصيص الجديدة</div>
+                </div>
+            </div>
+            
+            <!-- منطقة الخطر - حذف المورد -->
+            {% if resource.total_allocated == 0 %}
+            <div class="form-section danger-zone">
+                <h6 class="section-title">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    منطقة الخطر
+                </h6>
+                
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>تحذير:</strong> حذف هذا المورد سيؤدي إلى إزالته بشكل نهائي من النظام.
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6>حذف المورد</h6>
+                        <p class="text-muted small mb-0">سيتم حذف المورد نهائياً ولا يمكن استعادته</p>
+                    </div>
+                    <button type="button" class="btn btn-danger" onclick="deleteResource({{ resource.id }}, '{{ resource.name }}')">
+                        <i class="fas fa-trash me-1"></i> حذف المورد
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                لا يمكن حذف هذا المورد لأنه مستخدم حالياً في {{ resource.total_allocated }} تخصيص. يمكنك تعطيله بدلاً من ذلك.
+            </div>
+            {% endif %}
+            
+            <!-- أزرار الإجراءات -->
+            <div class="d-flex gap-3 mt-4">
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-save me-2"></i>
+                    حفظ التغييرات
+                </button>
+                <a href="{{ url_for('resource.view', resource_id=resource.id) }}" class="btn-secondary">
+                    <i class="fas fa-times me-2"></i>
+                    إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// إظهار الحقول الخاصة حسب نوع المورد
+document.getElementById('resourceType').addEventListener('change', function() {
+    const type = this.value;
+    document.getElementById('laborFields').style.display = type === 'labor' ? 'block' : 'none';
+    document.getElementById('equipmentFields').style.display = type === 'equipment' ? 'block' : 'none';
+    document.getElementById('materialFields').style.display = type === 'material' ? 'block' : 'none';
+});
+
+// التحقق من صحة النموذج
+document.getElementById('resourceForm').addEventListener('submit', function(e) {
+    const name = document.querySelector('input[name="name"]').value.trim();
+    const resourceType = document.querySelector('select[name="resource_type"]').value;
+    
+    if (!name) {
+        e.preventDefault();
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'يرجى إدخال اسم المورد'
+        });
+        return;
+    }
+    
+    if (!resourceType) {
+        e.preventDefault();
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'يرجى اختيار نوع المورد'
+        });
+        return;
+    }
+    
+    // تأكيد الحفظ
+    Swal.fire({
+        title: 'تأكيد الحفظ',
+        text: 'هل أنت متأكد من حفظ التغييرات؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، حفظ',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (!result.isConfirmed) {
+            e.preventDefault();
+        }
+    });
+});
+
+function deleteResource(resourceId, resourceName) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: `هل أنت متأكد من حذف المورد "${resourceName}" نهائياً؟`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/resources/api/${resourceId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الحذف',
+                        text: 'تم حذف المورد بنجاح',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = '{{ url_for("resource.index") }}';
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+
+// عرض تنبيه عند تغيير الكمية المتاحة مع وجود تخصيصات
+{% if resource.total_allocated > 0 %}
+document.querySelector('input[name="available_quantity"]').addEventListener('change', function() {
+    const newQuantity = parseFloat(this.value);
+    const currentAssigned = {{ resource.total_allocated }};
+    
+    if (newQuantity < currentAssigned) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: `الكمية المخصصة حالياً هي ${currentAssigned} {{ resource.unit }}. تقليل الكمية المتاحة قد يؤثر على المهام الحالية.`,
+            confirmButtonText: 'متابعة'
+        });
+    }
+});
+{% endif %}
+
+// عرض تنبيه عند تغيير التكلفة
+document.querySelector('input[name="cost_per_unit"]').addEventListener('change', function() {
+    const oldCost = {{ resource.cost_per_unit }};
+    const newCost = parseFloat(this.value);
+    
+    if (oldCost !== newCost) {
+        Swal.fire({
+            icon: 'info',
+            title: 'تغيير التكلفة',
+            text: `سيتم تحديث تكلفة المهام المرتبطة من ${oldCost} إلى ${newCost}`,
+            confirmButtonText: 'موافق'
+        });
+    }
+});
+</script>
+{% endblock %}

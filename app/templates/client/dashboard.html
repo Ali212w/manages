@@ -1,0 +1,336 @@
+{% extends "client/base.html" %}
+
+{% block title %}لوحة التحكم - المالك{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Welcome Section -->
+    <div class="col-12 mb-4">
+        <div class="card bg-gradient-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-1">مرحباً {{ current_user.full_name }}</h3>
+                        <p class="mb-0 opacity-75">مرحباً بك في لوحة تحكم المالك. يمكنك متابعة جميع مشاريعك وإدارتها من هنا.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="fas fa-chart-pie fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-muted mb-1">إجمالي المشاريع</h6>
+                    <h2 class="mb-0">{{ stats.total_projects }}</h2>
+                    <small class="text-success">
+                        <i class="fas fa-arrow-up"></i> +{{ stats.active_projects }} نشط
+                    </small>
+                </div>
+                <div class="icon bg-primary bg-opacity-10 text-primary">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-muted mb-1">متوسط التقدم</h6>
+                    <h2 class="mb-0">{{ "%.1f"|format(stats.avg_progress) }}%</h2>
+                    <div class="progress progress-custom mt-2" style="width: 100px;">
+                        <div class="progress-bar bg-success" style="width: {{ stats.avg_progress }}%"></div>
+                    </div>
+                </div>
+                <div class="icon bg-success bg-opacity-10 text-success">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-muted mb-1">الميزانية الإجمالية</h6>
+                    <h5 class="mb-0">{{ "{:,.0f}".format(stats.total_budget) }} ريال</h5>
+                    <small class="text-{% if stats.total_variance >= 0 %}success{% else %}danger{% endif %}">
+                        <i class="fas fa-{% if stats.total_variance >= 0 %}arrow-down{% else %}arrow-up{% endif %}"></i>
+                        الفرق: {{ "{:,.0f}".format(stats.total_variance|abs) }} ريال
+                    </small>
+                </div>
+                <div class="icon bg-warning bg-opacity-10 text-warning">
+                    <i class="fas fa-coins"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-muted mb-1">المشاريع المتأخرة</h6>
+                    <h2 class="mb-0 text-danger">{{ stats.delayed_projects }}</h2>
+                    <small class="text-danger">
+                        <i class="fas fa-clock"></i> بحاجة للمتابعة
+                    </small>
+                </div>
+                <div class="icon bg-danger bg-opacity-10 text-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i> توزيع الميزانية</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="budgetChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i> أداء المشاريع (SPI/CPI)</h6>
+            </div>
+            <div class="card-body">
+                <div id="performanceChart"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Projects Progress -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-chart-simple me-2"></i> تقدم المشاريع</h6>
+                <a href="{{ url_for('client.projects_list') }}" class="btn btn-sm btn-outline-primary">عرض الكل</a>
+            </div>
+            <div class="card-body">
+                {% for project in projects_progress %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>
+                            <a href="{{ url_for('client.project_detail', project_id=project.id) }}" class="text-decoration-none">
+                                {{ project.name }}
+                            </a>
+                        </span>
+                        <span class="fw-bold">{{ "%.1f"|format(project.progress) }}%</span>
+                    </div>
+                    <div class="progress progress-custom">
+                        <div class="progress-bar bg-{{ project.color }}" style="width: {{ project.progress }}%"></div>
+                    </div>
+                    <small class="text-muted">{{ getStatusBadge(project.status)|safe }}</small>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لا توجد مشاريع حالياً</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notifications and Alerts -->
+<div class="row g-4">
+    <!-- Pending Change Requests -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-exchange-alt me-2 text-warning"></i> طلبات التغيير المعلقة</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if pending_changes %}
+                <div class="list-group list-group-flush">
+                    {% for cr in pending_changes %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ cr.title }}</h6>
+                                <small class="text-muted">
+                                    المشروع: {{ cr.project.name }} |
+                                    التاريخ: {{ cr.requested_date.strftime('%Y-%m-%d') }}
+                                </small>
+                            </div>
+                            <a href="{{ url_for('client.change_requests', project_id=cr.project_id) }}" class="btn btn-sm btn-outline-primary">
+                                مراجعة
+                            </a>
+                        </div>
+                        {% if cr.estimated_cost %}
+                        <small class="text-warning">التكلفة المقدرة: {{ "{:,.0f}".format(cr.estimated_cost) }} ريال</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="text-muted">لا توجد طلبات تغيير معلقة</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Critical Risks -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-shield-alt me-2 text-danger"></i> المخاطر الحرجة</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if critical_risks %}
+                <div class="list-group list-group-flush">
+                    {% for risk in critical_risks %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ risk.title }}</h6>
+                                <small class="text-muted">
+                                    المشروع: {{ risk.project.name }} |
+                                    الاحتمالية: {{ "%.0f"|format(risk.probability * 100) }}%
+                                </small>
+                            </div>
+                            <a href="{{ url_for('client.project_risks', project_id=risk.project_id) }}" class="btn btn-sm btn-outline-danger">
+                                عرض
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="text-muted">لا توجد مخاطر حرجة</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Milestones -->
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-flag-checkered me-2"></i> المعالم القادمة</h6>
+            </div>
+            <div class="card-body">
+                {% if upcoming_milestones %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>المشروع</th>
+                                <th>المعلم</th>
+                                <th>التاريخ المخطط</th>
+                                <th>الأيام المتبقية</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for milestone in upcoming_milestones %}
+                            <tr>
+                                <td>{{ milestone.project.name }}</td>
+                                <td>{{ milestone.name }}</td>
+                                <td>{{ milestone.planned_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% set days_left = (milestone.planned_date - now.date()).days %}
+                                    {% if days_left <= 0 %}
+                                    <span class="badge bg-danger">متأخر</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">{{ days_left }} يوم</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('client.project_milestones', project_id=milestone.project_id) }}" class="btn btn-sm btn-outline-info">
+                                        عرض
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-flag-checkered fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لا توجد معالم قادمة</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Budget Distribution Chart
+    const budgetCtx = document.getElementById('budgetChart').getContext('2d');
+    new Chart(budgetCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ budget_distribution|map(attribute='name')|list|tojson }},
+            datasets: [{
+                data: {{ budget_distribution|map(attribute='budget')|list|tojson }},
+                backgroundColor: {{ budget_distribution|map(attribute='color')|list|tojson }},
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    rtl: true
+                }
+            }
+        }
+    });
+    
+    // Performance Chart (ApexCharts)
+    const performanceData = {{ project_performance|tojson }};
+    const spiData = performanceData.map(p => ({ x: p.name, y: p.spi }));
+    const cpiData = performanceData.map(p => ({ x: p.name, y: p.cpi }));
+    
+    const options = {
+        series: [
+            { name: 'SPI (مؤشر الجدول الزمني)', data: spiData },
+            { name: 'CPI (مؤشر التكلفة)', data: cpiData }
+        ],
+        chart: { type: 'bar', height: 250, toolbar: { show: false } },
+        plotOptions: { bar: { horizontal: true, dataLabels: { position: 'top' } } },
+        colors: ['#4361ee', '#4caf50'],
+        xaxis: { title: { text: 'القيمة' }, labels: { formatter: (val) => val.toFixed(2) } },
+        yaxis: { title: { text: 'المشروع' } },
+        tooltip: { y: { formatter: (val) => val.toFixed(2) } }
+    };
+    
+    const chart = new ApexCharts(document.querySelector("#performanceChart"), options);
+    chart.render();
+</script>
+{% endblock %}

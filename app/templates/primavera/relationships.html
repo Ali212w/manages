@@ -1,0 +1,517 @@
+{% extends "company/base.html" %}
+
+{% block title %}العلاقات - {{ project.name }}{% endblock %}
+
+{% block page_title %}العلاقات بين الأنشطة{% endblock %}
+{% block page_subtitle %}{{ project.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .relationships-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .graph-container {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        min-height: 300px;
+        position: relative;
+    }
+    
+    .activity-node {
+        position: absolute;
+        background: white;
+        border: 2px solid var(--primary);
+        border-radius: 10px;
+        padding: 0.5rem;
+        min-width: 120px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .activity-node:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.2);
+    }
+    
+    .activity-node.critical {
+        border-color: var(--danger);
+        background: rgba(249, 65, 68, 0.05);
+    }
+    
+    .activity-node.milestone {
+        border-color: var(--warning);
+    }
+    
+    .activity-id {
+        font-size: 0.7rem;
+        color: #6c757d;
+    }
+    
+    .activity-name {
+        font-weight: 600;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .relationship-line {
+        stroke: #6c757d;
+        stroke-width: 2;
+        stroke-dasharray: 5,5;
+    }
+    
+    .relationship-line.critical {
+        stroke: var(--danger);
+        stroke-width: 3;
+        stroke-dasharray: none;
+    }
+    
+    .relationship-label {
+        font-size: 0.7rem;
+        fill: #6c757d;
+    }
+    
+    .relationship-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 0.5rem;
+    }
+    
+    .relationship-table thead th {
+        background: #f8f9fa;
+        padding: 1rem;
+        font-weight: 600;
+        color: var(--dark);
+        border: none;
+    }
+    
+    .relationship-table tbody tr {
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        border-radius: 12px;
+    }
+    
+    .relationship-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+    
+    .rel-type-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .rel-type-fs { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .rel-type-ss { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .rel-type-ff { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .rel-type-sf { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+    
+    .create-btn {
+        position: fixed;
+        bottom: 2rem;
+        left: 2rem;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
+        cursor: pointer;
+        transition: all 0.3s;
+        z-index: 100;
+        border: none;
+    }
+    
+    .create-btn:hover {
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="relationships-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0"><i class="fas fa-link me-2 text-primary"></i>العلاقات المنطقية</h5>
+        <div>
+            <button class="btn-outline-primary me-2" onclick="scheduleProject()">
+                <i class="fas fa-play me-2"></i>جدولة (F9)
+            </button>
+            <button class="btn-primary-gradient" onclick="showCreateModal()">
+                <i class="fas fa-plus me-2"></i>علاقة جديدة
+            </button>
+        </div>
+    </div>
+    
+    <!-- رسم بياني للعلاقات -->
+    <div class="graph-container" id="graphContainer">
+        <svg width="100%" height="400" viewBox="0 0 800 400">
+            <!-- سيتم رسم العلاقات هنا باستخدام JavaScript -->
+        </svg>
+    </div>
+    
+    <!-- قائمة العلاقات -->
+    <div class="table-responsive">
+        <table class="relationship-table">
+            <thead>
+                <tr>
+                    <th>النشاط السابق</th>
+                    <th>النشاط اللاحق</th>
+                    <th>العلاقة</th>
+                    <th>التأخير</th>
+                    <th>المسار الحرج</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rel in relationships %}
+                <tr>
+                    <td>
+                        <strong>{{ rel.predecessor.activity_name if rel.predecessor else 'غير معروف' }}</strong>
+                        <br><small class="text-muted">{{ rel.predecessor.activity_id if rel.predecessor else '-' }}</small>
+                    </td>
+                    <td>
+                        <strong>{{ rel.successor.activity_name if rel.successor else 'غير معروف' }}</strong>
+                        <br><small class="text-muted">{{ rel.successor.activity_id if rel.successor else '-' }}</small>
+                    </td>
+                    <td>
+                        <span class="rel-type-badge rel-type-{{ rel.relationship_type|lower }}">
+                            {% if rel.relationship_type == 'FS' %}انتهاء-بداية
+                            {% elif rel.relationship_type == 'SS' %}بداية-بداية
+                            {% elif rel.relationship_type == 'FF' %}انتهاء-انتهاء
+                            {% elif rel.relationship_type == 'SF' %}بداية-انتهاء
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% if rel.lag_days > 0 %}
+                        {{ rel.lag_days }} يوم
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if rel.is_critical %}
+                        <span class="badge bg-danger">حرج</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteRelationship({{ rel.id }})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <i class="fas fa-link fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">لا توجد علاقات</h5>
+                        <p class="text-muted">قم بإنشاء علاقات بين الأنشطة لتحديد التبعيات</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal إنشاء علاقة -->
+<div class="modal fade" id="createRelationshipModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus-circle me-2 text-primary"></i>علاقة جديدة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('primavera.relationship_create') }}">
+                <input type="hidden" name="project_id" value="{{ project.id }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label required-field">النشاط السابق</label>
+                        <select name="predecessor_id" class="form-select" required>
+                            <option value="">-- اختر نشاط --</option>
+                            {% for activity in activities %}
+                            <option value="{{ activity.id }}">{{ activity.activity_id }} - {{ activity.activity_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label required-field">النشاط اللاحق</label>
+                        <select name="successor_id" class="form-select" required>
+                            <option value="">-- اختر نشاط --</option>
+                            {% for activity in activities %}
+                            <option value="{{ activity.id }}">{{ activity.activity_id }} - {{ activity.activity_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">نوع العلاقة</label>
+                        <select name="relationship_type" class="form-select">
+                            <option value="FS">انتهاء-بداية (Finish to Start)</option>
+                            <option value="SS">بداية-بداية (Start to Start)</option>
+                            <option value="FF">انتهاء-انتهاء (Finish to Finish)</option>
+                            <option value="SF">بداية-انتهاء (Start to Finish)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">التأخير (أيام)</label>
+                        <input type="number" name="lag_days" class="form-control" value="0" min="0" step="0.5">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn-primary-gradient">حفظ العلاقة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<button class="create-btn" onclick="showCreateModal()">
+    <i class="fas fa-plus"></i>
+</button>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// استخدام activities_json و relationships_json من الراوت
+let activities = {{ activities_json|tojson|safe }};
+let relationships = {{ relationships_json|tojson|safe }};
+
+function showCreateModal() {
+    new bootstrap.Modal(document.getElementById('createRelationshipModal')).show();
+}
+
+function scheduleProject() {
+    Swal.fire({
+        title: 'تشغيل الجدولة',
+        text: 'هل تريد حساب الجدولة الزمنية للمشروع الآن؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، شغل',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/primavera/project/{{ project.id }}/schedule`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تمت الجدولة',
+                        html: `
+                            <div class="text-start">
+                                <p><strong>إجمالي الأنشطة:</strong> ${data.result.total_activities}</p>
+                                <p><strong>الأنشطة الحرجة:</strong> ${data.result.critical_activities}</p>
+                                <p><strong>المدة الإجمالية:</strong> ${data.result.project_duration} يوم</p>
+                                <p><strong>الوقت السماحي:</strong> ${data.result.total_float} يوم</p>
+                            </div>
+                        `,
+                        confirmButtonText: 'عرض المسار الحرج'
+                    }).then(() => {
+                        window.location.href = '/primavera/project/{{ project.id }}/critical-path';
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+
+function deleteRelationship(relId) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذه العلاقة؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/primavera/api/relationship/${relId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الحذف',
+                        text: 'تم حذف العلاقة بنجاح',
+                        timer: 2000
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+
+// رسم بياني مبسط للعلاقات
+function drawGraph() {
+    const svg = document.querySelector('#graphContainer svg');
+    if (!svg || activities.length === 0) return;
+    
+    // مسح المحتوى السابق
+    svg.innerHTML = '';
+    
+    // توزيع الأنشطة بشكل دائري
+    const centerX = 400;
+    const centerY = 200;
+    const radius = 150;
+    
+    // رسم الأنشطة
+    activities.forEach((activity, index) => {
+        const angle = (index / activities.length) * 2 * Math.PI;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        
+        // رسم دائرة النشاط
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', x);
+        circle.setAttribute('cy', y);
+        circle.setAttribute('r', 30);
+        circle.setAttribute('class', `activity-node ${activity.is_critical ? 'critical' : ''}`);
+        circle.setAttribute('data-id', activity.id);
+        circle.setAttribute('title', `${activity.activity_id}: ${activity.activity_name}`);
+        svg.appendChild(circle);
+        
+        // رسم نص النشاط
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', x);
+        text.setAttribute('y', y + 5);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('class', 'activity-label');
+        text.textContent = activity.activity_id;
+        svg.appendChild(text);
+        
+        // تخزين الإحداثيات للعلاقات
+        activity.x = x;
+        activity.y = y;
+    });
+    
+    // رسم العلاقات
+    relationships.forEach(rel => {
+        const pred = activities.find(a => a.id === rel.predecessor_id);
+        const succ = activities.find(a => a.id === rel.successor_id);
+        
+        if (pred && succ) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', pred.x);
+            line.setAttribute('y1', pred.y);
+            line.setAttribute('x2', succ.x);
+            line.setAttribute('y2', succ.y);
+            line.setAttribute('class', `relationship-line ${rel.is_critical ? 'critical' : ''}`);
+            svg.appendChild(line);
+            
+            // رسم سهم صغير
+            const angle = Math.atan2(succ.y - pred.y, succ.x - pred.x);
+            const arrowX = succ.x - 30 * Math.cos(angle);
+            const arrowY = succ.y - 30 * Math.sin(angle);
+            
+            const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const arrowPoints = `
+                ${arrowX},${arrowY}
+                ${arrowX - 10 * Math.cos(angle - 0.5)},${arrowY - 10 * Math.sin(angle - 0.5)}
+                ${arrowX - 10 * Math.cos(angle + 0.5)},${arrowY - 10 * Math.sin(angle + 0.5)}
+            `;
+            arrow.setAttribute('points', arrowPoints);
+            arrow.setAttribute('class', 'relationship-arrow');
+            svg.appendChild(arrow);
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    drawGraph();
+});
+</script>
+
+<style>
+.activity-node {
+    fill: var(--primary);
+    stroke: white;
+    stroke-width: 3;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.activity-node:hover {
+    fill: var(--secondary);
+    r: 35;
+}
+
+.activity-node.critical {
+    fill: var(--danger);
+}
+
+.activity-label {
+    fill: white;
+    font-size: 10px;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.relationship-line {
+    stroke: #6c757d;
+    stroke-width: 2;
+    stroke-dasharray: 5,5;
+}
+
+.relationship-line.critical {
+    stroke: var(--danger);
+    stroke-width: 3;
+    stroke-dasharray: none;
+}
+
+.relationship-arrow {
+    fill: #6c757d;
+}
+
+.relationship-line.critical + .relationship-arrow {
+    fill: var(--danger);
+}
+</style>
+{% endblock %}

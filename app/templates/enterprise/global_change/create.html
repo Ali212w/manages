@@ -1,0 +1,187 @@
+{% extends "company/base.html" %}
+
+{% block title %}إنشاء نموذج تغيير شامل{% endblock %}
+
+{% block page_title %}إنشاء نموذج تغيير شامل{% endblock %}
+{% block page_subtitle %}تحديد الشروط والإجراءات للتعديل الجماعي{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">
+                <i class="fas fa-plus-circle text-primary me-2"></i>
+                نموذج تغيير شامل جديد
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" id="globalChangeForm">
+                <!-- المعلومات الأساسية -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">اسم النموذج</label>
+                        <input type="text" name="change_name" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">نوع الهدف</label>
+                        <select name="target_type" class="form-select" required>
+                            <option value="">اختر نوع الهدف</option>
+                            <option value="activity">الأنشطة</option>
+                            <option value="project">المشاريع</option>
+                            <option value="resource">الموارد</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold">الوصف</label>
+                    <textarea name="change_description" class="form-control" rows="2"></textarea>
+                </div>
+                
+                <!-- الشروط -->
+                <div class="card bg-light mb-4">
+                    <div class="card-header bg-transparent">
+                        <h6 class="mb-0">
+                            <i class="fas fa-filter text-primary me-2"></i>
+                            الشروط (اختياري)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="conditions-container"></div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addCondition()">
+                            <i class="fas fa-plus me-1"></i> إضافة شرط
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- الإجراءات -->
+                <div class="card bg-light mb-4">
+                    <div class="card-header bg-transparent">
+                        <h6 class="mb-0">
+                            <i class="fas fa-tools text-success me-2"></i>
+                            الإجراءات
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="actions-container"></div>
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="addAction()">
+                            <i class="fas fa-plus me-1"></i> إضافة إجراء
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- حقول مخفية لتخزين JSON -->
+                <input type="hidden" name="conditions" id="conditions-input">
+                <input type="hidden" name="actions" id="actions-input">
+                
+                <hr>
+                
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{{ url_for('enterprise.global_change_list') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> إلغاء
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> حفظ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let conditions = [];
+let actions = [];
+
+function addCondition() {
+    const container = document.getElementById('conditions-container');
+    const index = conditions.length;
+    
+    const div = document.createElement('div');
+    div.className = 'row mb-2 condition-row';
+    div.innerHTML = `
+        <div class="col-md-4">
+            <input type="text" class="form-control" placeholder="اسم الحقل" onchange="updateCondition(${index}, 'field', this.value)">
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" onchange="updateCondition(${index}, 'operator', this.value)">
+                <option value="=">=</option>
+                <option value=">">></option>
+                <option value="<"><</option>
+                <option value=">=">≥</option>
+                <option value="<=">≤</option>
+                <option value="!=">≠</option>
+                <option value="like">يحتوي على</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <input type="text" class="form-control" placeholder="القيمة" onchange="updateCondition(${index}, 'value', this.value)">
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeCondition(${index})">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(div);
+    conditions.push({ field: '', operator: '=', value: '' });
+    updateConditionsInput();
+}
+
+function updateCondition(index, key, value) {
+    conditions[index][key] = value;
+    updateConditionsInput();
+}
+
+function removeCondition(index) {
+    conditions.splice(index, 1);
+    document.querySelector('.condition-row').remove();
+    updateConditionsInput();
+}
+
+function addAction() {
+    const container = document.getElementById('actions-container');
+    const index = actions.length;
+    
+    const div = document.createElement('div');
+    div.className = 'row mb-2 action-row';
+    div.innerHTML = `
+        <div class="col-md-5">
+            <input type="text" class="form-control" placeholder="اسم الحقل" onchange="updateAction(${index}, 'field', this.value)">
+        </div>
+        <div class="col-md-5">
+            <input type="text" class="form-control" placeholder="القيمة الجديدة" onchange="updateAction(${index}, 'value', this.value)">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeAction(${index})">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(div);
+    actions.push({ field: '', value: '' });
+    updateActionsInput();
+}
+
+function updateAction(index, key, value) {
+    actions[index][key] = value;
+    updateActionsInput();
+}
+
+function removeAction(index) {
+    actions.splice(index, 1);
+    document.querySelector('.action-row').remove();
+    updateActionsInput();
+}
+
+function updateConditionsInput() {
+    document.getElementById('conditions-input').value = JSON.stringify(conditions);
+}
+
+function updateActionsInput() {
+    document.getElementById('actions-input').value = JSON.stringify(actions);
+}
+</script>
+{% endblock %}

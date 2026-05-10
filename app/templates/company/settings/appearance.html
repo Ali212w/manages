@@ -1,0 +1,180 @@
+{% extends "company/base.html" %}
+
+{% block title %}إعدادات المظهر - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}إعدادات المظهر{% endblock %}
+{% block page_subtitle %}تخصيص ألوان وشعار الشركة{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="table-card">
+            <form method="POST" action="{{ url_for('company.appearance') }}" enctype="multipart/form-data">
+                <!-- الشعار -->
+                <h6 class="fw-bold mb-3"><i class="fas fa-image me-2 text-primary"></i>شعار الشركة</h6>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">رفع شعار جديد</label>
+                            <input type="file" name="logo" class="form-control" accept="image/*">
+                            <small class="text-muted">الصيغ المدعومة: PNG, JPG, JPEG, SVG. أقصى حجم 2 ميجابايت</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        {% if g.company.logo_url %}
+                        <div class="text-center">
+                            <p class="mb-2">الشعار الحالي:</p>
+                            <img src="{{ g.company.logo_url }}" alt="{{ g.company.name }}" style="max-height: 80px; border-radius: 10px;">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- الألوان -->
+                <h6 class="fw-bold mb-3"><i class="fas fa-palette me-2 text-primary"></i>الألوان</h6>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">اللون الأساسي</label>
+                        <div class="d-flex gap-2">
+                            <input type="color" name="primary_color" class="form-control form-control-color" 
+                                   value="{{ g.company.settings.primary_color|default('#4361ee') }}" style="width: 60px; height: 45px;">
+                            <input type="text" class="form-control" value="{{ g.company.settings.primary_color|default('#4361ee') }}" 
+                                   id="primaryColorText" onchange="updateColor('primary', this.value)">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">اللون الثانوي</label>
+                        <div class="d-flex gap-2">
+                            <input type="color" name="secondary_color" class="form-control form-control-color" 
+                                   value="{{ g.company.settings.secondary_color|default('#3f37c9') }}" style="width: 60px; height: 45px;">
+                            <input type="text" class="form-control" value="{{ g.company.settings.secondary_color|default('#3f37c9') }}"
+                                   id="secondaryColorText" onchange="updateColor('secondary', this.value)">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">لون الشريط الجانبي</label>
+                        <div class="d-flex gap-2">
+                            <input type="color" name="sidebar_color" class="form-control form-control-color" 
+                                   value="{{ g.company.settings.sidebar_color|default('#1e1e2f') }}" style="width: 60px; height: 45px;">
+                            <input type="text" class="form-control" value="{{ g.company.settings.sidebar_color|default('#1e1e2f') }}"
+                                   id="sidebarColorText" onchange="updateColor('sidebar', this.value)">
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- المظهر العام -->
+                <h6 class="fw-bold mb-3"><i class="fas fa-paint-roller me-2 text-primary"></i>المظهر العام</h6>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">السمة</label>
+                        <select name="theme" class="form-select">
+                            <option value="light" {% if g.company.settings.theme == 'light' %}selected{% endif %}>فاتح</option>
+                            <option value="dark" {% if g.company.settings.theme == 'dark' %}selected{% endif %}>داكن</option>
+                            <option value="auto" {% if g.company.settings.theme == 'auto' %}selected{% endif %}>تلقائي (حسب النظام)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">الخط</label>
+                        <select name="font" class="form-select">
+                            <option value="Cairo" selected>Cairo</option>
+                            <option value="Tajawal">Tajawal</option>
+                            <option value="Almarai">Almarai</option>
+                            <option value="Noto Kufi Arabic">Noto Kufi Arabic</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- معاينة حية -->
+                <hr>
+                
+                <h6 class="fw-bold mb-3"><i class="fas fa-eye me-2 text-primary"></i>معاينة حية</h6>
+                
+                <div class="preview-card p-4 rounded" style="background: #f8f9fa; border: 2px dashed var(--primary);">
+                    <div class="text-center mb-3">
+                        <span class="badge" style="background: var(--primary); color: white;">الألوان الجديدة</span>
+                    </div>
+                    <div class="d-flex justify-content-center gap-3">
+                        <button class="btn" style="background: var(--primary); color: white;">زر أساسي</button>
+                        <button class="btn" style="background: var(--secondary); color: white;">زر ثانوي</button>
+                        <button class="btn" style="background: var(--sidebar-bg); color: white;">لون الشريط</button>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn-primary-gradient px-5">
+                        <i class="fas fa-save me-2"></i>حفظ التغييرات
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary ms-2 px-5" onclick="resetColors()">
+                        <i class="fas fa-undo me-2"></i>إعادة تعيين
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// تحديث حقول النص عند تغيير منتقي الألوان
+document.querySelectorAll('input[type="color"]').forEach(input => {
+    input.addEventListener('input', function() {
+        const id = this.id || this.name;
+        const textInput = document.getElementById(id + 'Text');
+        if (textInput) {
+            textInput.value = this.value;
+        }
+        updatePreview();
+    });
+});
+
+// تحديث منتقي الألوان عند تغيير حقل النص
+function updateColor(type, value) {
+    const colorInput = document.querySelector(`input[name="${type}_color"]`);
+    if (colorInput) {
+        colorInput.value = value;
+        updatePreview();
+    }
+}
+
+// تحديث المعاينة الحية
+function updatePreview() {
+    const primary = document.querySelector('input[name="primary_color"]').value;
+    const secondary = document.querySelector('input[name="secondary_color"]').value;
+    const sidebar = document.querySelector('input[name="sidebar_color"]').value;
+    
+    document.documentElement.style.setProperty('--primary', primary);
+    document.documentElement.style.setProperty('--secondary', secondary);
+    document.documentElement.style.setProperty('--sidebar-bg', sidebar);
+}
+
+// إعادة تعيين الألوان الافتراضية
+function resetColors() {
+    document.querySelector('input[name="primary_color"]').value = '#4361ee';
+    document.querySelector('input[name="secondary_color"]').value = '#3f37c9';
+    document.querySelector('input[name="sidebar_color"]').value = '#1e1e2f';
+    
+    document.getElementById('primaryColorText').value = '#4361ee';
+    document.getElementById('secondaryColorText').value = '#3f37c9';
+    document.getElementById('sidebarColorText').value = '#1e1e2f';
+    
+    updatePreview();
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'تم',
+        text: 'تم إعادة تعيين الألوان الافتراضية',
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
+</script>
+{% endblock %}

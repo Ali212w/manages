@@ -1,0 +1,600 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}الرئيسية - {{ super() }}{% endblock %}
+
+{% block styles %}
+<style>
+    .dashboard-container {
+        padding: 2rem;
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 56px);
+    }
+    
+    .welcome-card {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-box {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s;
+        border-left: 5px solid var(--primary-color);
+    }
+    
+    .stat-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        background-color: #e3f2fd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 1rem;
+        font-size: 1.5rem;
+    }
+    
+    .stat-content {
+        flex: 1;
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .dashboard-card {
+        background-color: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .dashboard-card-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .dashboard-card-body {
+        padding: 1.5rem;
+    }
+    
+    .task-list, .project-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .task-item, .project-item {
+        padding: 1rem;
+        border-bottom: 1px solid #f5f5f5;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.3s;
+    }
+    
+    .task-item:hover, .project-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .task-item:last-child, .project-item:last-child {
+        border-bottom: none;
+    }
+    
+    .task-priority {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-left: 10px;
+    }
+    
+    .task-priority.high { background-color: #e74c3c; }
+    .task-priority.medium { background-color: #f39c12; }
+    .task-priority.low { background-color: #27ae60; }
+    
+    .task-due-date {
+        font-size: 0.8rem;
+        color: #666;
+        margin-right: auto;
+    }
+    
+    .project-progress {
+        width: 80px;
+        margin-left: 1rem;
+    }
+    
+    .activity-timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .activity-timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #e0e0e0;
+    }
+    
+    .activity-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .activity-item::before {
+        content: '';
+        position: absolute;
+        left: -25px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--secondary-color);
+        border: 2px solid white;
+        box-shadow: 0 0 0 3px var(--secondary-color);
+    }
+    
+    .activity-time {
+        font-size: 0.8rem;
+        color: #666;
+        margin-bottom: 0.25rem;
+    }
+    
+    .activity-content {
+        font-size: 0.9rem;
+    }
+    
+    .calendar-container {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+    
+    .calendar-day {
+        aspect-ratio: 1;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        transition: all 0.3s;
+    }
+    
+    .calendar-day:hover {
+        background-color: #e9ecef;
+        transform: scale(1.05);
+    }
+    
+    .calendar-day.today {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+    
+    .calendar-day-header {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        padding: 10px 0;
+        border-radius: 5px;
+    }
+    
+    .calendar-event {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: var(--success-color);
+        position: absolute;
+        bottom: 5px;
+    }
+    
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 1rem;
+        }
+        
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .quick-stats {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="welcome-card">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2>مرحباً {{ current_user.full_name }} 👋</h2>
+                <p class="mb-0">
+                    {% if current_user.role == 'admin' %}
+                        مرحباً بك في لوحة تحكم مدير النظام. لديك {{ stats.pending_approvals }} طلبات في انتظار الموافقة.
+                    {% elif current_user.role == 'project_manager' %}
+                        مرحباً بك في لوحة تحكم مدير المشاريع. لديك {{ stats.active_projects }} مشاريع نشطة.
+                    {% elif current_user.role == 'supervisor' %}
+                        مرحباً بك في لوحة تحكم المشرف. لديك {{ stats.assigned_tasks }} مهمة معينة.
+                    {% elif current_user.role == 'delegate' %}
+                        مرحباً بك في لوحة تحكم المندوب. لديك {{ stats.in_progress_tasks }} مهمة قيد التنفيذ.
+                    {% else %}
+                        مرحباً بك في لوحة تحكم الموظف. نحن سعداء بخدمتك.
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="current-time">
+                    <h4>{{ now.strftime('%Y-%m-%d') }}</h4>
+                    <p class="mb-0">{{ now.strftime('%H:%M') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="quick-stats">
+        <div class="stat-box">
+            <div class="stat-icon text-primary">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.total_projects }}</div>
+                <div class="stat-label">المشاريع</div>
+            </div>
+        </div>
+        
+        <div class="stat-box">
+            <div class="stat-icon text-success">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.total_tasks }}</div>
+                <div class="stat-label">المهام</div>
+            </div>
+        </div>
+        
+        <div class="stat-box">
+            <div class="stat-icon text-warning">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.pending_tasks }}</div>
+                <div class="stat-label">المهام المعلقة</div>
+            </div>
+        </div>
+        
+        <div class="stat-box">
+            <div class="stat-icon text-danger">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.overdue_tasks or 0 }}</div>
+                <div class="stat-label">المهام المتأخرة</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Recent Projects -->
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h5 class="mb-0">المشاريع الحديثة</h5>
+                <a href="{{ url_for('project.index') }}" class="btn btn-sm btn-outline-primary">
+                    عرض الكل
+                </a>
+            </div>
+            <div class="dashboard-card-body">
+                <ul class="project-list">
+                    {% for project in recent_projects|slice(5) %}
+                    <li class="project-item">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="badge bg-{{ 'success' if project.status == 'active' else 'warning' }} me-2">
+                                    {{ project.status }}
+                                </span>
+                                <strong>{{ project.name }}</strong>
+                            </div>
+                            <small class="text-muted">{{ project.project_code }}</small>
+                        </div>
+                        <div class="project-progress">
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar" style="width: {{ project.progress_percentage or 0 }}%"></div>
+                            </div>
+                            <small class="text-muted">{{ project.progress_percentage or 0 }}%</small>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="text-center py-3 text-muted">
+                        لا توجد مشاريع
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Upcoming Tasks -->
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h5 class="mb-0">المهام القادمة</h5>
+                <a href="{{ url_for('task.index') }}" class="btn btn-sm btn-outline-primary">
+                    عرض الكل
+                </a>
+            </div>
+            <div class="dashboard-card-body">
+                <ul class="task-list">
+                    {% for task in upcoming_tasks|slice(5) %}
+                    <li class="task-item">
+                        <div class="task-priority {{ task.priority or 'medium' }}"></div>
+                        <div class="flex-grow-1 me-2">
+                            <strong>{{ task.task_name }}</strong>
+                            <div class="small text-muted">
+                                {{ task.project.name if task.project else 'بدون مشروع' }}
+                            </div>
+                        </div>
+                        <div class="task-due-date">
+                            {{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '-' }}
+                        </div>
+                        <span class="badge bg-{{ 'success' if task.status == 'completed' else 'warning' if task.status == 'in_progress' else 'secondary' }}">
+                            {{ task.status }}
+                        </span>
+                    </li>
+                    {% else %}
+                    <li class="text-center py-3 text-muted">
+                        لا توجد مهام قادمة
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Activity Timeline -->
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h5 class="mb-0">النشاط الحديث</h5>
+            </div>
+            <div class="dashboard-card-body">
+                <div class="activity-timeline">
+                    {% for activity in recent_activities|slice(5) %}
+                    <div class="activity-item">
+                        <div class="activity-time">
+                            {{ activity.time.strftime('%H:%M') if activity.time else 'الآن' }}
+                        </div>
+                        <div class="activity-content">
+                            {{ activity.description }}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3 text-muted">
+                        لا يوجد نشاط حديث
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Calendar -->
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h5 class="mb-0">التقويم</h5>
+                <a href="{{ url_for('dashboard.calendar') }}" class="btn btn-sm btn-outline-primary">
+                    عرض كامل
+                </a>
+            </div>
+            <div class="dashboard-card-body">
+                <div class="calendar-container mb-3">
+                    <div class="calendar-day-header">الأحد</div>
+                    <div class="calendar-day-header">الاثنين</div>
+                    <div class="calendar-day-header">الثلاثاء</div>
+                    <div class="calendar-day-header">الأربعاء</div>
+                    <div class="calendar-day-header">الخميس</div>
+                    <div class="calendar-day-header">الجمعة</div>
+                    <div class="calendar-day-header">السبت</div>
+                    
+                    {% for day in range(1, 32) %}
+                    <div class="calendar-day {{ 'today' if day == now.day }}">
+                        {{ day }}
+                        {% if day in [5, 12, 19, 26] %}
+                        <div class="calendar-event"></div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-center">
+                    <small class="text-muted">{{ now.strftime('%B %Y') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notifications -->
+    <div class="dashboard-card">
+        <div class="dashboard-card-header">
+            <h5 class="mb-0">الإشعارات</h5>
+            <form method="POST" action="{{ url_for('dashboard.mark_all_notifications_read') }}" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                    تحديد الكل كمقروء
+                </button>
+            </form>
+        </div>
+        <div class="dashboard-card-body">
+            <div class="list-group">
+                {% for notification in notifications|slice(3) %}
+                <a href="{{ url_for('dashboard.notifications') }}" 
+                   class="list-group-item list-group-item-action {% if not notification.is_read %}active{% endif %}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">{{ notification.title }}</h6>
+                    </div>
+                    <p class="mb-1">{{ notification.message|truncate(100) }}</p>
+                    <small class="{{ 'text-white' if not notification.is_read else 'text-muted' }}">
+                        {{ notification.notification_type }}
+                    </small>
+                </a>
+                {% else %}
+                <div class="text-center py-3 text-muted">
+                    لا توجد إشعارات جديدة
+                </div>
+                {% endfor %}
+            </div>
+            <div class="text-center mt-3">
+                <a href="{{ url_for('dashboard.notifications') }}" class="btn btn-outline-primary">
+                    عرض جميع الإشعارات
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // تحديث الوقت الحي
+        function updateTime() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ar-SA');
+            const timeStr = now.toLocaleTimeString('ar-SA');
+            
+            $('.current-time h4').text(dateStr);
+            $('.current-time p').text(timeStr);
+        }
+        
+        setInterval(updateTime, 60000); // تحديث كل دقيقة
+        
+        // تحميل الإحصائيات بشكل غير متزامن
+        function loadStats() {
+            $.ajax({
+                url: "{{ url_for('dashboard.api_stats') }}",
+                method: 'GET',
+                success: function(data) {
+                    if (data.success) {
+                        // تحديث الإحصائيات
+                        Object.keys(data.stats).forEach(stat => {
+                            const element = $(`.stat-value:contains("${stat}")`);
+                            if (element.length) {
+                                element.text(data.stats[stat]);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+        
+        // تحديث الإحصائيات كل 30 ثانية
+        setInterval(loadStats, 30000);
+        
+        // إدارة النقر على المهام
+        $('.task-item').click(function() {
+            const taskId = $(this).data('task-id');
+            if (taskId) {
+                window.location.href = `/tasks/${taskId}`;
+            }
+        });
+        
+        // إدارة النقر على المشاريع
+        $('.project-item').click(function() {
+            const projectId = $(this).data('project-id');
+            if (projectId) {
+                window.location.href = `/projects/${projectId}`;
+            }
+        });
+        
+        // إدارة التقويم
+        $('.calendar-day').click(function() {
+            const day = $(this).text();
+            const month = "{{ now.strftime('%Y-%m') }}";
+            const date = `${month}-${day.padStart(2, '0')}`;
+            
+            // عرض المهام لهذا اليوم
+            $.ajax({
+                url: `/api/tasks?date=${date}`,
+                method: 'GET',
+                success: function(data) {
+                    if (data.success && data.tasks.length > 0) {
+                        let tasksHtml = '<h6>المهام لهذا اليوم:</h6><ul>';
+                        data.tasks.forEach(task => {
+                            tasksHtml += `<li>${task.task_name} - ${task.status}</li>`;
+                        });
+                        tasksHtml += '</ul>';
+                        
+                        // عرض النافذة المنبثقة
+                        showModal('مهام اليوم', tasksHtml);
+                    }
+                }
+            });
+        });
+        
+        // عرض نافذة منبثقة
+        function showModal(title, content) {
+            const modalHtml = `
+                <div class="modal fade" id="dayTasksModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">${title}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                ${content}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            $('body').append(modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('dayTasksModal'));
+            modal.show();
+            
+            // إزالة النافذة بعد الإغلاق
+            $('#dayTasksModal').on('hidden.bs.modal', function() {
+                $(this).remove();
+            });
+        }
+    });
+</script>
+{% endblock %}

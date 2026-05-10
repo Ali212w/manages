@@ -1,0 +1,99 @@
+{% extends "communication/base_chat.html" %}
+
+{% block title %}المحادثات النشطة{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">المحادثات</h2>
+        <p class="text-muted">جميع المحادثات النشطة التي تشارك فيها</p>
+    </div>
+</div>
+
+<!-- قائمة المحادثات -->
+<div class="row">
+    {% for item in chats %}
+    <div class="col-md-6 mb-3">
+        <div class="card border-0 shadow-sm hover-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <!-- أيقونة المحادثة -->
+                    <div class="chat-icon me-3" 
+                         style="width: 50px; height: 50px; border-radius: 12px; 
+                                background: {% if item.chat.chat_type == 'project' %}linear-gradient(135deg, var(--primary), var(--secondary)){% else %}linear-gradient(135deg, #4cc9f0, #4895ef){% endif %};
+                                display: flex; align-items: center; justify-content: center; color: white;">
+                        <i class="fas fa-{% if item.chat.chat_type == 'project' %}project-diagram{% else %}tasks{% endif %} fa-lg"></i>
+                    </div>
+                    
+                    <!-- معلومات المحادثة -->
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1">{{ item.chat.name }}</h5>
+                        <small class="text-muted">
+                            {% if item.chat.chat_type == 'project' %}
+                                <i class="fas fa-users me-1"></i>محادثة عامة
+                            {% else %}
+                                <i class="fas fa-task me-1"></i>محادثة مهمة
+                            {% endif %}
+                            <span class="mx-2">•</span>
+                            <i class="far fa-clock me-1"></i>
+                            آخر نشاط: {{ item.last_message.created_at.strftime('%H:%M') if item.last_message else 'لا توجد رسائل' }}
+                        </small>
+                    </div>
+                    
+                    <!-- عداد غير مقروء -->
+                    {% if item.unread_count > 0 %}
+                    <div class="unread-badge ms-3">
+                        <span class="badge bg-danger rounded-pill">{{ item.unread_count }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- آخر رسالة -->
+                {% if item.last_message %}
+                <div class="last-message mt-2 me-5">
+                    <p class="text-muted small mb-0">
+                        <strong>{{ item.last_message.sender.full_name }}:</strong>
+                        {{ item.last_message.content|truncate(50) }}
+                    </p>
+                </div>
+                {% endif %}
+                
+                <!-- رابط الدخول -->
+                <div class="mt-3 text-start">
+                    {% if item.chat.chat_type == 'project' %}
+                        <a href="{{ url_for('communication.project_chat', project_id=item.chat.project_id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-comments me-1"></i>دخول المحادثة
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('communication.task_chat', task_id=item.chat.task_id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-comments me-1"></i>دخول المحادثة
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="far fa-comments fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد محادثات نشطة</h5>
+            <p class="small text-muted">المحادثات التي تشارك فيها ستظهر هنا</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.hover-card {
+    transition: all 0.3s;
+}
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+}
+</style>
+{% endblock %}

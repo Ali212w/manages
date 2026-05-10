@@ -1,0 +1,242 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-bold mb-0">
+        <i class="fas fa-clipboard-list text-primary me-2"></i>متطلبات المهمة
+    </h6>
+    <button class="btn btn-sm btn-primary" onclick="showAddRequirementModal()">
+        <i class="fas fa-plus me-1"></i> إضافة متطلب
+    </button>
+</div>
+
+<div class="requirements-list">
+    {% for req in requirements %}
+    <div class="requirement-item {% if req.verifications and req.verifications[0].status == 'verified' %}verified{% else %}pending{% endif %}" id="requirement-{{ req.id }}">
+        <div class="d-flex align-items-center gap-3">
+            <div>
+                <span class="badge bg-{{ 'primary' if req.requirement_type == 'document' else 'success' if req.requirement_type == 'photo' else 'warning' if req.requirement_type == 'approval' else 'info' }}">
+                    {{ req.requirement_type }}
+                </span>
+            </div>
+            <div class="flex-grow-1">
+                <div class="fw-bold">{{ req.description }}</div>
+                <small class="text-muted">
+                    {% if req.is_mandatory %}
+                    <i class="fas fa-exclamation-circle text-danger me-1"></i>إلزامي
+                    {% else %}
+                    <i class="fas fa-check-circle text-success me-1"></i>اختياري
+                    {% endif %}
+                </small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                {% set verification = req.verifications|first %}
+                {% if verification %}
+                    {% if verification.status == 'verified' %}
+                        <span class="badge bg-success">تم التحقق</span>
+                        <button class="btn btn-sm btn-outline-info" onclick="viewVerification({{ verification.id }})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    {% elif verification.status == 'rejected' %}
+                        <span class="badge bg-danger">مرفوض</span>
+                        <button class="btn btn-sm btn-outline-primary" onclick="submitVerification({{ req.id }})">
+                            <i class="fas fa-upload"></i> إعادة
+                        </button>
+                    {% else %}
+                        <span class="badge bg-warning">قيد المراجعة</span>
+                    {% endif %}
+                {% else %}
+                    <button class="btn btn-sm btn-outline-primary" onclick="submitVerification({{ req.id }})">
+                        <i class="fas fa-upload me-1"></i> تقديم
+                    </button>
+                {% endif %}
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteRequirement({{ req.id }})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-4">
+        <i class="fas fa-clipboard-list fa-2x text-muted mb-2"></i>
+        <p class="text-muted">لا توجد متطلبات لهذه المهمة</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal إضافة متطلب -->
+<div class="modal fade" id="addRequirementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة متطلب</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="requirementForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نوع المتطلب</label>
+                        <select class="form-select" id="reqType" required>
+                            <option value="document">مستند</option>
+                            <option value="photo">صورة</option>
+                            <option value="approval">موافقة</option>
+                            <option value="checklist">قائمة تدقيق</option>
+                            <option value="training">تدريب</option>
+                            <option value="safety">سلامة</option>
+                            <option value="material">مواد</option>
+                            <option value="equipment">معدات</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">الوصف</label>
+                        <textarea class="form-control" id="reqDescription" rows="2" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="reqMandatory" checked>
+                            <label class="form-check-label" for="reqMandatory">
+                                <strong>متطلب إلزامي</strong>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="addRequirement()">إضافة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تقديم تحقق -->
+<div class="modal fade" id="submitVerificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تقديم التحقق</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="verificationForm" enctype="multipart/form-data">
+                    <input type="hidden" id="submitReqId">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">القيمة</label>
+                        <input type="text" class="form-control" id="verifyValue" placeholder="القيمة المدخلة">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ملف</label>
+                        <input type="file" class="form-control" id="verifyFile" accept=".pdf,.doc,.docx">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">صورة</label>
+                        <input type="file" class="form-control" id="verifyPhoto" accept="image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ملاحظات</label>
+                        <textarea class="form-control" id="verifyNotes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="submitVerificationData()">تقديم</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentReqId = null;
+
+function showAddRequirementModal() {
+    document.getElementById('requirementForm').reset();
+    new bootstrap.Modal(document.getElementById('addRequirementModal')).show();
+}
+
+function addRequirement() {
+    const data = {
+        type: document.getElementById('reqType').value,
+        description: document.getElementById('reqDescription').value,
+        is_mandatory: document.getElementById('reqMandatory').checked
+    };
+    
+    if (!data.type || !data.description) {
+        showWarning('الرجاء إدخال جميع البيانات');
+        return;
+    }
+    
+    fetch(`/tasks/api/{{ task.id }}/requirement`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addRequirementModal')).hide();
+            showSuccess('تم إضافة المتطلب');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'حدث خطأ');
+        }
+    });
+}
+
+function submitVerification(reqId) {
+    currentReqId = reqId;
+    document.getElementById('submitReqId').value = reqId;
+    document.getElementById('verificationForm').reset();
+    new bootstrap.Modal(document.getElementById('submitVerificationModal')).show();
+}
+
+function submitVerificationData() {
+    const formData = new FormData();
+    formData.append('value', document.getElementById('verifyValue').value);
+    formData.append('notes', document.getElementById('verifyNotes').value);
+    
+    const file = document.getElementById('verifyFile').files[0];
+    if (file) formData.append('file', file);
+    
+    const photo = document.getElementById('verifyPhoto').files[0];
+    if (photo) formData.append('photo', photo);
+    
+    fetch(`/tasks/api/requirement/${currentReqId}/verify`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('submitVerificationModal')).hide();
+            showSuccess('تم تقديم طلب التحقق');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'حدث خطأ');
+        }
+    });
+}
+
+function deleteRequirement(id) {
+    confirmDelete('هل أنت متأكد من حذف هذا المتطلب؟', function() {
+        fetch(`/tasks/api/requirement/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('تم حذف المتطلب');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.error || 'حدث خطأ');
+            }
+        });
+    });
+}
+</script>

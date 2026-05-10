@@ -1,0 +1,1131 @@
+<!-- templates/primavera/tabs/activity/expenses.html -->
+
+<div class="field-group">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h6 class="field-group-title mb-0">
+            <i class="fas fa-money-bill-wave text-primary"></i>
+            مصروفات النشاط
+            <span class="badge bg-primary ms-2" id="expenseCount">0</span>
+        </h6>
+        <button class="btn btn-primary btn-sm" onclick="window.showAddExpenseModal()">
+            <i class="fas fa-plus me-1"></i> إضافة مصروف
+        </button>
+    </div>
+    
+    <!-- بطاقات ملخص المصروفات -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="summary-card total">
+                <div class="summary-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-value" id="totalExpenses">0.00</div>
+                    <div class="summary-label">إجمالي المصروفات</div>
+                    <small class="text-muted">SAR</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card approved">
+                <div class="summary-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-value text-success" id="approvedExpenses">0.00</div>
+                    <div class="summary-label">معتمدة</div>
+                    <small class="text-muted">SAR</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card pending">
+                <div class="summary-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-value text-warning" id="pendingExpenses">0.00</div>
+                    <div class="summary-label">قيد الانتظار</div>
+                    <small class="text-muted">SAR</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- جدول المصروفات -->
+    <div class="table-responsive">
+        <table class="expenses-table">
+            <thead>
+                <tr>
+                    <th>التاريخ</th>
+                    <th>الفئة</th>
+                    <th>الوصف</th>
+                    <th>المبلغ</th>
+                    <th>الحالة</th>
+                    <th class="text-center">الإيصال</th>
+                    <th class="text-center">الإجراءات</th>
+                </thead>
+            <tbody id="expensesTable">
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">جاري التحميل...</span>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- ملخص المصروفات حسب الفئة -->
+    <div class="expense-summary mt-4" id="categorySummary" style="display: none;">
+        <h6 class="summary-title mb-3">
+            <i class="fas fa-chart-pie me-2 text-primary"></i>
+            المصروفات حسب الفئة
+        </h6>
+        <div class="row g-3" id="categoryStats"></div>
+    </div>
+</div>
+
+<!-- Modal إضافة مصروف -->
+<div class="modal fade" id="expenseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle text-primary me-2"></i>
+                    إضافة مصروف جديد
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="expenseForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-calendar me-1 text-muted"></i>
+                            التاريخ
+                        </label>
+                        <input type="date" class="form-control" id="expenseDate" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-tag me-1 text-muted"></i>
+                            الفئة
+                        </label>
+                        <select class="form-select" id="expenseCategory" required>
+                            <option value="Labor">👤 عمالة</option>
+                            <option value="Material">📦 مواد</option>
+                            <option value="Equipment">⚙️ معدات</option>
+                            <option value="Transport">🚚 نقل</option>
+                            <option value="Other">📌 أخرى</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-align-left me-1 text-muted"></i>
+                            الوصف
+                        </label>
+                        <input type="text" class="form-control" id="expenseDescription" 
+                               placeholder="أدخل وصف المصروف" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-dollar-sign me-1 text-muted"></i>
+                            المبلغ
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="expenseAmount" 
+                                   step="0.01" min="0" placeholder="0.00" required>
+                            <span class="input-group-text">SAR</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-file-pdf me-1 text-muted"></i>
+                            الإيصال (اختياري)
+                        </label>
+                        <div class="file-upload-area" onclick="document.getElementById('expenseReceipt').click()">
+                            <i class="fas fa-cloud-upload-alt fa-2x text-primary mb-2"></i>
+                            <p class="mb-1 small">انقر للرفع أو اسحب الملف</p>
+                            <small class="text-muted">PDF, JPG, PNG (الحد الأقصى 5MB)</small>
+                            <input type="file" class="d-none" id="expenseReceipt" 
+                                   accept=".pdf,.jpg,.jpeg,.png">
+                        </div>
+                        <div id="receiptFileName" class="small text-success mt-1" style="display: none;">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <span></span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>إلغاء
+                </button>
+                <button type="button" class="btn btn-primary" onclick="window.saveExpense()">
+                    <i class="fas fa-save me-1"></i>حفظ المصروف
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal معاينة الملفات - نافذة متكاملة لعرض جميع أنواع الملفات -->
+<div class="modal fade" id="filePreviewModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filePreviewTitle">
+                    <i class="fas fa-file-alt me-2"></i>
+                    معاينة الملف
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" id="filePreviewBody">
+                <div class="file-preview-container">
+                    <div class="text-center p-5" id="filePreviewLoading">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">جاري التحميل...</span>
+                        </div>
+                        <p class="text-muted">جاري تحميل الملف...</p>
+                    </div>
+                    <div id="filePreviewContent" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>إغلاق
+                </button>
+                <a href="#" id="fileDownloadLink" class="btn btn-primary" download>
+                    <i class="fas fa-download me-1"></i>تحميل الملف
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تأكيد الحذف -->
+<div class="modal fade" id="deleteExpenseConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <h6 class="mb-2">حذف المصروف</h6>
+                <p class="text-muted small mb-3">هل أنت متأكد من حذف هذا المصروف؟</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>إلغاء
+                    </button>
+                    <button class="btn btn-danger btn-sm" id="confirmDeleteExpenseBtn">
+                        <i class="fas fa-trash me-1"></i>حذف
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ============================================
+   التنسيقات الأساسية
+============================================ */
+.field-group-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ============================================
+   بطاقات الملخص
+============================================ */
+.summary-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid #eef2f7;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.summary-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.summary-card.total .summary-icon { background: rgba(67, 97, 238, 0.1); color: #4361ee; }
+.summary-card.approved .summary-icon { background: rgba(76, 175, 80, 0.1); color: #4caf50; }
+.summary-card.pending .summary-icon { background: rgba(255, 152, 0, 0.1); color: #ff9800; }
+
+.summary-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.summary-content {
+    flex: 1;
+}
+
+.summary-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: #1e293b;
+}
+
+.summary-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+}
+
+/* ============================================
+   جدول المصروفات
+============================================ */
+.expenses-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 0.5rem;
+}
+
+.expenses-table thead th {
+    background: #f8fafc;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+}
+
+.expenses-table tbody tr {
+    background: white;
+    border-radius: 12px;
+    transition: all 0.2s;
+}
+
+.expenses-table tbody tr:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.expenses-table td {
+    padding: 1rem;
+    border: none;
+    vertical-align: middle;
+}
+
+/* ============================================
+   شارات الفئة والحالة
+============================================ */
+.category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.category-Labor { background: rgba(67, 97, 238, 0.1); color: #4361ee; }
+.category-Material { background: rgba(76, 175, 80, 0.1); color: #4caf50; }
+.category-Equipment { background: rgba(255, 152, 0, 0.1); color: #ff9800; }
+.category-Transport { background: rgba(0, 188, 212, 0.1); color: #00bcd4; }
+.category-Other { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-approved {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+}
+
+.status-pending {
+    background: rgba(255, 152, 0, 0.1);
+    color: #ff9800;
+}
+
+/* ============================================
+   أزرار الإجراءات
+============================================ */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-icon.btn-success {
+    background: #4caf50;
+    color: white;
+}
+
+.btn-icon.btn-success:hover {
+    background: #43a047;
+    transform: scale(1.1);
+}
+
+.btn-icon.btn-outline-danger {
+    background: transparent;
+    border: 1px solid #dc2626;
+    color: #dc2626;
+}
+
+.btn-icon.btn-outline-danger:hover {
+    background: #dc2626;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* ============================================
+   معاينة الملفات
+============================================ */
+.file-preview-container {
+    background: #f8fafc;
+    min-height: 400px;
+    max-height: 70vh;
+    overflow: auto;
+}
+
+.image-preview {
+    text-align: center;
+    padding: 1rem;
+    background: #1e293b;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 60vh;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.pdf-preview {
+    width: 100%;
+    height: 70vh;
+    border: none;
+}
+
+.text-preview {
+    padding: 1.5rem;
+    background: white;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 60vh;
+    overflow: auto;
+}
+
+.code-preview {
+    padding: 1.5rem;
+    background: #1e293b;
+    color: #e2e8f0;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 60vh;
+    overflow: auto;
+}
+
+.video-preview {
+    max-width: 100%;
+    max-height: 60vh;
+    margin: 0 auto;
+    display: block;
+}
+
+.audio-preview {
+    width: 100%;
+    padding: 2rem;
+    text-align: center;
+}
+
+.file-info {
+    text-align: center;
+    padding: 2rem;
+}
+
+.file-icon-large {
+    font-size: 5rem;
+    color: #4361ee;
+    margin-bottom: 1rem;
+}
+
+.file-name-large {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.file-size {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.receipt-link {
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: inline-block;
+    font-size: 1.2rem;
+}
+
+.receipt-link:hover {
+    transform: scale(1.2);
+}
+
+/* ============================================
+   منطقة رفع الملفات
+============================================ */
+.file-upload-area {
+    border: 2px dashed #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.file-upload-area:hover {
+    border-color: #4361ee;
+    background: #eff6ff;
+}
+
+/* ============================================
+   ملخص المصروفات حسب الفئة
+============================================ */
+.expense-summary {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 1.25rem;
+}
+
+.summary-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.category-stat {
+    background: white;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #eef2f7;
+    transition: all 0.2s;
+}
+
+.category-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* ============================================
+   الحالة الفارغة
+============================================ */
+.empty-state {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 3rem;
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* ============================================
+   تنسيقات الـ Modal
+============================================ */
+.modal-content {
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.modal-header {
+    border-bottom: 1px solid #eef2f7;
+    padding: 1rem 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #eef2f7;
+    padding: 1rem 1.5rem;
+}
+
+/* ============================================
+   تنسيقات متجاوبة
+============================================ */
+@media (max-width: 768px) {
+    .summary-card {
+        padding: 1rem;
+    }
+    
+    .summary-value {
+        font-size: 1.2rem;
+    }
+    
+    .expenses-table {
+        font-size: 0.8rem;
+    }
+    
+    .expenses-table td, 
+    .expenses-table th {
+        padding: 0.5rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .btn-icon {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+}
+</style>
+
+<script>
+(function() {
+    'use strict';
+    
+    // ============================================
+    // المتغيرات العامة
+    // ============================================
+    const activityId = {{ activity.id }};
+    const csrfToken = '{{ csrf_token() }}';
+    
+    // ============================================
+    // دوال معاينة الملفات المتقدمة
+    // ============================================
+    
+    function getFileExtension(filename) {
+        return filename.split('.').pop().toLowerCase();
+    }
+    
+    function isImage(filename) {
+        return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(getFileExtension(filename));
+    }
+    
+    function isVideo(filename) {
+        return ['mp4', 'avi', 'mov', 'mkv', 'webm', 'flv'].includes(getFileExtension(filename));
+    }
+    
+    function isAudio(filename) {
+        return ['mp3', 'wav', 'flac', 'aac', 'ogg'].includes(getFileExtension(filename));
+    }
+    
+    function isPDF(filename) {
+        return getFileExtension(filename) === 'pdf';
+    }
+    
+    function isTextFile(filename) {
+        return ['txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'py', 'java', 'c', 'cpp'].includes(getFileExtension(filename));
+    }
+    
+    function getFileIconClass(filename) {
+        const ext = getFileExtension(filename);
+        const icons = {
+            'pdf': 'fa-file-pdf',
+            'doc': 'fa-file-word', 'docx': 'fa-file-word',
+            'xls': 'fa-file-excel', 'xlsx': 'fa-file-excel',
+            'jpg': 'fa-file-image', 'jpeg': 'fa-file-image', 'png': 'fa-file-image', 'gif': 'fa-file-image',
+            'mp4': 'fa-file-video', 'avi': 'fa-file-video', 'mov': 'fa-file-video',
+            'mp3': 'fa-file-audio', 'wav': 'fa-file-audio',
+            'txt': 'fa-file-alt',
+            'zip': 'fa-file-archive', 'rar': 'fa-file-archive'
+        };
+        return icons[ext] || 'fa-file';
+    }
+    
+    function showFileInfo(url, filename, fileSize) {
+        const contentDiv = document.getElementById('filePreviewContent');
+        const sizeText = fileSize ? `(${(fileSize / 1024).toFixed(1)} كيلوبايت)` : '';
+        contentDiv.innerHTML = `
+            <div class="file-info text-center p-5">
+                <i class="fas ${getFileIconClass(filename)} fa-5x text-primary mb-4"></i>
+                <h5 class="file-name-large">${escapeHtml(filename)}</h5>
+                <p class="file-size text-muted">${sizeText}</p>
+                <p class="text-muted mt-3">لا يمكن معاينة هذا الملف مباشرة</p>
+                <button class="btn btn-primary mt-3" onclick="window.downloadFile('${url}', '${filename}')">
+                    <i class="fas fa-download me-2"></i> تحميل الملف
+                </button>
+            </div>
+        `;
+        document.getElementById('filePreviewLoading').style.display = 'none';
+        contentDiv.style.display = 'block';
+    }
+    
+    window.previewFile = function(url, filename, fileSize = null) {
+        const modal = new bootstrap.Modal(document.getElementById('filePreviewModal'));
+        const title = document.getElementById('filePreviewTitle');
+        const loadingDiv = document.getElementById('filePreviewLoading');
+        const contentDiv = document.getElementById('filePreviewContent');
+        const downloadLink = document.getElementById('fileDownloadLink');
+        
+        title.innerHTML = `<i class="fas ${getFileIconClass(filename)} me-2"></i>${escapeHtml(filename)}`;
+        downloadLink.href = url;
+        downloadLink.download = filename;
+        
+        loadingDiv.style.display = 'block';
+        contentDiv.style.display = 'none';
+        modal.show();
+        
+        if (isImage(filename)) {
+            const img = new Image();
+            img.onload = function() {
+                contentDiv.innerHTML = `<div class="image-preview"><img src="${url}" alt="${filename}" style="max-width: 100%; max-height: 70vh;"></div>`;
+                loadingDiv.style.display = 'none';
+                contentDiv.style.display = 'block';
+            };
+            img.onerror = () => showFileInfo(url, filename, fileSize);
+            img.src = url;
+        }
+        else if (isVideo(filename)) {
+            contentDiv.innerHTML = `<div class="video-preview"><video controls style="width: 100%; max-height: 70vh;"><source src="${url}" type="video/${getFileExtension(filename)}">متصفحك لا يدعم تشغيل الفيديو.</video></div>`;
+            loadingDiv.style.display = 'none';
+            contentDiv.style.display = 'block';
+        }
+        else if (isAudio(filename)) {
+            contentDiv.innerHTML = `<div class="audio-preview"><i class="fas fa-music fa-4x text-primary mb-3"></i><audio controls style="width: 100%;"><source src="${url}" type="audio/${getFileExtension(filename)}">متصفحك لا يدعم تشغيل الصوت.</audio></div>`;
+            loadingDiv.style.display = 'none';
+            contentDiv.style.display = 'block';
+        }
+        else if (isPDF(filename)) {
+            contentDiv.innerHTML = `<iframe src="${url}#toolbar=0" class="pdf-preview" style="width: 100%; height: 70vh;"></iframe>`;
+            loadingDiv.style.display = 'none';
+            contentDiv.style.display = 'block';
+        }
+        else if (isTextFile(filename)) {
+            fetch(url)
+                .then(response => response.text())
+                .then(text => {
+                    const isCode = ['js', 'py', 'java', 'c', 'cpp', 'html', 'css', 'json', 'xml'].includes(getFileExtension(filename));
+                    contentDiv.innerHTML = `<pre class="${isCode ? 'code-preview' : 'text-preview'}">${escapeHtml(text)}</pre>`;
+                    loadingDiv.style.display = 'none';
+                    contentDiv.style.display = 'block';
+                })
+                .catch(() => showFileInfo(url, filename, fileSize));
+        }
+        else {
+            showFileInfo(url, filename, fileSize);
+        }
+    };
+    
+    window.downloadFile = function(url, filename) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+    
+    // ============================================
+    // تحميل وعرض البيانات
+    // ============================================
+    
+    function loadExpenses() {
+        fetch(`/primavera/api/activity/${activityId}/expenses`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderExpenses(data.expenses);
+                    updateStats(data);
+                    renderCategorySummary(data.expenses);
+                } else {
+                    showError(data.error || 'فشل تحميل المصروفات');
+                }
+            })
+            .catch(() => showError('حدث خطأ في الاتصال بالخادم'));
+    }
+    
+    function renderExpenses(expenses) {
+        const tbody = document.getElementById('expensesTable');
+        
+        if (!expenses || expenses.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="empty-state">
+                            <div class="empty-state-icon mb-3">
+                                <i class="fas fa-receipt fa-3x text-muted"></i>
+                            </div>
+                            <h6 class="text-muted mb-2">لا توجد مصروفات</h6>
+                            <p class="text-muted small mb-3">لم يتم تسجيل أي مصروفات لهذا النشاط بعد</p>
+                            <button class="btn btn-outline-primary btn-sm" onclick="window.showAddExpenseModal()">
+                                <i class="fas fa-plus me-1"></i> إضافة مصروف
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            document.getElementById('categorySummary').style.display = 'none';
+            return;
+        }
+        
+        let html = '';
+        expenses.forEach(exp => {
+            html += `
+                <tr class="expense-row" data-expense-id="${exp.id}">
+                    <td><span class="fw-medium">${exp.expense_date}</span></td>
+                    <td>
+                        <span class="category-badge category-${exp.category}">
+                            <i class="fas ${getCategoryIcon(exp.category)}"></i>
+                            ${getCategoryName(exp.category)}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="expense-description" title="${escapeHtml(exp.description)}">
+                            ${escapeHtml(exp.description)}
+                        </span>
+                    </td>
+                    <td class="amount-cell">
+                        ${formatNumber(exp.amount)} <small>${exp.currency}</small>
+                    </td>
+                    <td>
+                        <span class="status-badge status-${exp.is_approved ? 'approved' : 'pending'}">
+                            <i class="fas ${exp.is_approved ? 'fa-check-circle' : 'fa-clock'} me-1"></i>
+                            ${exp.is_approved ? 'معتمد' : 'قيد الانتظار'}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        ${exp.receipt_url ? `
+                            <a class="receipt-link" onclick="window.previewFile('${exp.receipt_url}', '${exp.receipt_url.split('/').pop()}', ${exp.amount})">
+                                <i class="fas fa-file-pdf fa-lg text-danger"></i>
+                            </a>
+                        ` : '<span class="text-muted">—</span>'}
+                    </td>
+                    <td class="text-center">
+                        <div class="action-buttons">
+                            ${!exp.is_approved ? `
+                                <button class="btn-icon btn-success" onclick="window.approveExpense(${exp.id})" title="اعتماد المصروف">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn-icon btn-outline-danger" onclick="window.deleteExpense(${exp.id})" title="حذف المصروف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+        document.getElementById('expenseCount').textContent = expenses.length;
+    }
+    
+    function updateStats(data) {
+        document.getElementById('totalExpenses').textContent = formatNumber(data.total_expenses);
+        document.getElementById('approvedExpenses').textContent = formatNumber(data.approved_expenses);
+        document.getElementById('pendingExpenses').textContent = formatNumber(data.pending_expenses);
+    }
+    
+    function renderCategorySummary(expenses) {
+        if (!expenses || expenses.length === 0) {
+            document.getElementById('categorySummary').style.display = 'none';
+            return;
+        }
+        
+        const categories = {};
+        const categoryColors = {
+            'Labor': 'primary',
+            'Material': 'success',
+            'Equipment': 'warning',
+            'Transport': 'info',
+            'Other': 'secondary'
+        };
+        
+        expenses.forEach(exp => {
+            categories[exp.category] = (categories[exp.category] || 0) + exp.amount;
+        });
+        
+        const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const container = document.getElementById('categoryStats');
+        let html = '';
+        
+        for (const [category, amount] of Object.entries(categories)) {
+            const percentage = (amount / total * 100);
+            html += `
+                <div class="col-md-4">
+                    <div class="category-stat">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="fas ${getCategoryIcon(category)} text-${categoryColors[category]}"></i>
+                            <span class="fw-medium">${getCategoryName(category)}</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-${categoryColors[category]}" style="width: ${percentage}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1 small">
+                            <span class="text-muted">${percentage.toFixed(1)}%</span>
+                            <span class="fw-bold">${formatNumber(amount)} SAR</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = html;
+        document.getElementById('categorySummary').style.display = 'block';
+    }
+    
+    // ============================================
+    // دوال مساعدة
+    // ============================================
+    
+    function getCategoryIcon(category) {
+        const icons = {
+            'Labor': 'fa-user',
+            'Material': 'fa-box',
+            'Equipment': 'fa-cog',
+            'Transport': 'fa-truck',
+            'Other': 'fa-tag'
+        };
+        return icons[category] || 'fa-tag';
+    }
+    
+    function getCategoryName(category) {
+        const names = {
+            'Labor': 'عمالة',
+            'Material': 'مواد',
+            'Equipment': 'معدات',
+            'Transport': 'نقل',
+            'Other': 'أخرى'
+        };
+        return names[category] || category;
+    }
+    
+    function formatNumber(value) {
+        return parseFloat(value).toFixed(2);
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function showSuccess(message) {
+        Swal.fire({
+            icon: 'success',
+            title: 'تم',
+            text: message,
+            timer: 1500,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+    }
+    
+    function showError(message) {
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: message,
+            confirmButtonColor: '#f94144'
+        });
+    }
+    
+    function showWarning(message) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: message,
+            confirmButtonColor: '#f8961e'
+        });
+    }
+    
+    // ============================================
+    // إدارة المصروفات
+    // ============================================
+    
+    window.showAddExpenseModal = function() {
+        document.getElementById('expenseForm').reset();
+        document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('receiptFileName').style.display = 'none';
+        new bootstrap.Modal(document.getElementById('expenseModal')).show();
+    };
+    
+    window.saveExpense = function() {
+        const date = document.getElementById('expenseDate').value;
+        const category = document.getElementById('expenseCategory').value;
+        const description = document.getElementById('expenseDescription').value.trim();
+        const amount = document.getElementById('expenseAmount').value;
+        const receiptFile = document.getElementById('expenseReceipt').files[0];
+        
+        if (!date || !category || !description || !amount) {
+            showWarning('الرجاء تعبئة جميع الحقول المطلوبة');
+            return;
+        }
+        
+        if (parseFloat(amount) <= 0) {
+            showWarning('المبلغ يجب أن يكون أكبر من صفر');
+            return;
+        }
+        
+        Swal.fire({
+            title: 'جاري الحفظ...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+        
+        const formData = new FormData();
+        formData.append('date', date);
+        formData.append('category', category);
+        formData.append('description', description);
+        formData.append('amount', amount);
+        if (receiptFile) formData.append('receipt', receiptFile);
+        
+        fetch(`/primavera/api/activity/${activityId}/expense`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            Swal.close();
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('expenseModal')).hide();
+                showSuccess('تم إضافة المصروف بنجاح');
+                loadExpenses();
+            } else {
+                showError(data.error || 'فشل إضافة المصروف');
+            }
+        })
+        .catch(() => {
+            Swal.close();
+            showError('حدث خطأ في الاتصال بالخادم');
+        });
+    };
+    
+    window.approveExpense = function(expenseId) {
+        Swal.fire({
+            title: 'اعتماد المصروف',
+            text: 'هل أنت متأكد من اعتماد هذا المصروف؟',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'نعم، اعتماد',
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: '#4caf50'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/primavera/api/expense/${expenseId}/approve`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess('تم اعتماد المصروف بنجاح');
+                        loadExpenses();
+                    } else {
+                        showError(data.error || 'فشل اعتماد المصروف');
+                    }
+                });
+            }
+        });
+    };
+    
+    window.deleteExpense = function(expenseId) {
+        Swal.fire({
+            title: 'حذف المصروف',
+            text: 'هل أنت متأكد من حذف هذا المصروف؟',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'نعم، حذف',
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: '#dc2626'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/primavera/api/expense/${expenseId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess('تم حذف المصروف بنجاح');
+                        loadExpenses();
+                    } else {
+                        showError(data.error || 'فشل حذف المصروف');
+                    }
+                });
+            }
+        });
+    };
+    
+    // ============================================
+    // معالجة رفع الملفات
+    // ============================================
+    
+    document.getElementById('expenseReceipt').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const receiptDiv = document.getElementById('receiptFileName');
+            receiptDiv.querySelector('span').textContent = file.name;
+            receiptDiv.style.display = 'block';
+        }
+    });
+    
+    // ============================================
+    // تهيئة الصفحة
+    // ============================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        loadExpenses();
+    });
+    
+})();
+</script>

@@ -1,0 +1,197 @@
+{% extends "consultant/base.html" %}
+
+{% block title %}{{ _('pending_reviews') }} - {{ _('consultant_portal') }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-clipboard-list me-2"></i> {{ _('pending_reviews') }}</h4>
+            <a href="{{ url_for('consultant.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> {{ _('back_to_dashboard') }}
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <h3 class="text-warning">{{ stats.total }}</h3>
+            <small>{{ _('total_pending') }}</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <h3 class="text-danger">{{ stats.urgent }}</h3>
+            <small>{{ _('urgent_reviews') }}</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <h3 class="text-info">{{ stats.today }}</h3>
+            <small>{{ _('today_reviews') }}</small>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Reviews List -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-list me-2"></i> {{ _('pending_reviews_list') }}</h6>
+    </div>
+    <div class="card-body p-0">
+        {% if pending_reviews %}
+        <div class="list-group list-group-flush">
+            {% for review in pending_reviews %}
+            <div class="list-group-item review-card" data-review-id="{{ review.id }}">
+                <div class="row align-items-center">
+                    <div class="col-md-5">
+                        <h6 class="mb-1">{{ review.task.task_name if review.task else '-' }}</h6>
+                        <small class="text-muted">
+                            <i class="fas fa-project-diagram me-1"></i>
+                            {{ review.task.project.name if review.task and review.task.project else '-' }}
+                        </small>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex flex-column">
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>
+                                {{ _('submitted_by') }}: {{ review.task.delegate.full_name if review.task and review.task.delegate else '-' }}
+                            </small>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ _('submitted_on') }}: {{ review.created_at.strftime('%Y-%m-%d %H:%M') if review.created_at else '-' }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        {% if review.task and review.task.is_delayed %}
+                        <span class="badge bg-danger">
+                            <i class="fas fa-exclamation-triangle me-1"></i> {{ _('overdue') }}
+                        </span>
+                        {% else %}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-clock me-1"></i> {{ _('pending') }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button class="btn btn-sm btn-primary review-btn" data-review-id="{{ review.id }}">
+                            <i class="fas fa-check-double me-1"></i> {{ _('review') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+            <h5 class="text-muted">{{ _('no_pending_reviews') }}</h5>
+            <p class="text-muted">{{ _('all_reviews_completed') }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-clipboard-list me-2"></i> {{ _('review_task') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="reviewDetails"></div>
+                <hr>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('review_notes') }}</label>
+                    <textarea id="reviewNotes" class="form-control" rows="4" 
+                              placeholder="{{ _('enter_review_notes') }}"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="rejectReviewBtn">
+                    <i class="fas fa-times me-2"></i> {{ _('reject') }}
+                </button>
+                <button type="button" class="btn btn-success" id="approveReviewBtn">
+                    <i class="fas fa-check me-2"></i> {{ _('approve') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.review-card {
+    transition: all 0.3s;
+    border-left: 4px solid var(--warning-color);
+}
+
+.review-card:hover {
+    background-color: #f8f9fa;
+}
+</style>
+
+<script>
+// Review Modal
+$('.review-btn').click(function() {
+    const reviewId = $(this).data('review-id');
+    showReviewModal(reviewId);
+    $('#approveReviewBtn').off('click').click(() => submitReview(reviewId, true));
+    $('#rejectReviewBtn').off('click').click(() => submitReview(reviewId, false));
+});
+
+function showReviewModal(reviewId) {
+    $.get(`/api/task-verification/${reviewId}`, function(response) {
+        if (response.success) {
+            $('#reviewDetails').html(`
+                <div class="mb-3">
+                    <h6>${response.task_name}</h6>
+                    <p class="text-muted">${response.description || '{{ _("no_description") }}'}</p>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="border rounded p-2">
+                            <small class="text-muted d-block">{{ _('submitted_by') }}</small>
+                            <strong>${response.submitted_by}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border rounded p-2">
+                            <small class="text-muted d-block">{{ _('submitted_on') }}</small>
+                            <strong>${response.submitted_date}</strong>
+                        </div>
+                    </div>
+                </div>
+                ${response.notes ? `<div class="alert alert-info">
+                    <small class="d-block">{{ _('submitter_notes') }}</small>
+                    <p class="mb-0">${response.notes}</p>
+                </div>` : ''}
+            `);
+            $('#reviewModal').modal('show');
+        }
+    });
+}
+
+function submitReview(reviewId, approved) {
+    const notes = $('#reviewNotes').val();
+    $.ajax({
+        url: `/consultant/reviews/${reviewId}/approve`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ approved: approved, notes: notes }),
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('{{ _("error_occurred") }}: ' + response.error);
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

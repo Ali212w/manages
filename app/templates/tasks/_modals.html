@@ -1,0 +1,133 @@
+<!-- Update Progress Modal -->
+<div class="modal fade" id="updateProgressModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تحديث تقدم المهمة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('task.update_progress', task_id=task.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="progress" class="form-label">نسبة التقدم (%)</label>
+                        <input type="range" class="form-range" id="progress" name="progress" 
+                               min="0" max="100" step="1" value="{{ task.progress_percentage|round(0) }}"
+                               oninput="document.getElementById('progressValue').textContent = this.value + '%'">
+                        <div class="text-center mt-2">
+                            <span id="progressValue" class="h4">{{ task.progress_percentage|round(0) }}%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="progressNotes" class="form-label">ملاحظات</label>
+                        <textarea class="form-control" id="progressNotes" name="notes" rows="3" 
+                                  placeholder="أدخل ملاحظات حول التقدم..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">إرفاق صور (اختياري)</label>
+                        <div class="input-group">
+                            <input type="file" class="form-control" id="progressPhotos" name="photos" multiple accept="image/*">
+                            <label class="input-group-text" for="progressPhotos">
+                                <i class="fas fa-camera"></i>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التحديث</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Complete Task Modal -->
+<div class="modal fade" id="completeTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إكمال المهمة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('task.complete_task', task_id=task.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        بعد إكمال المهمة، سيتم تحديث حالة المهمة تلقائياً ويمكن بدء المهام التالية.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="completionQuality" class="form-label">جودة التنفيذ</label>
+                        <select class="form-select" id="completionQuality" name="quality" required>
+                            <option value="excellent">ممتاز - تجاوز التوقعات</option>
+                            <option value="good" selected>جيد - كما هو متوقع</option>
+                            <option value="fair">متوسط - يحتاج تحسين</option>
+                            <option value="poor">ضعيف - دون التوقعات</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="completionNotes" class="form-label">ملاحظات الإكمال</label>
+                        <textarea class="form-control" id="completionNotes" name="notes" rows="3"
+                                  placeholder="ملاحظات حول إكمال المهمة..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="verifyCompletion" name="verify" checked>
+                        <label class="form-check-label" for="verifyCompletion">
+                            التحقق من إكمال جميع المتطلبات
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">تأكيد الإكمال</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Assign User Modal -->
+<div class="modal fade" id="assignUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تعيين موظف للمهمة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('task.assign_task', task_id=task.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="assignUser" class="form-label">اختر الموظف</label>
+                        <select class="form-select" id="assignUser" name="user_id" required>
+                            <option value="">اختر موظف</option>
+                            {% for employee in employees %}
+                            <option value="{{ employee.id }}">{{ employee.full_name }} - {{ employee.position or employee.role }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="assignmentNotes" class="form-label">ملاحظات التعيين (اختياري)</label>
+                        <textarea class="form-control" id="assignmentNotes" name="notes" rows="2"
+                                  placeholder="ملاحظات للموظف حول المهمة..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="sendNotification" name="send_notification" checked>
+                        <label class="form-check-label" for="sendNotification">
+                            إرسال إشعار للموظف
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">تعيين الموظف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

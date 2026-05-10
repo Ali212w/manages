@@ -1,0 +1,255 @@
+{% extends "company/base.html" %}
+
+{% block title %}تعديل المشروع - {{ project.name }}{% endblock %}
+
+{% block page_title %}تعديل المشروع{% endblock %}
+{% block page_subtitle %}{{ project.project_code }} - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="fas fa-edit text-primary me-2"></i>تعديل بيانات المشروع</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('projects.edit_project', project_id=project.id) }}">
+                <!-- المعلومات الأساسية -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">اسم المشروع</label>
+                        <input type="text" name="name" class="form-control" value="{{ project.name }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">الوصف</label>
+                        <textarea name="description" class="form-control" rows="2">{{ project.description or '' }}</textarea>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">الحالة</label>
+                        <select name="status" class="form-select">
+                            <option value="planning" {% if project.status == 'planning' %}selected{% endif %}>مخطط</option>
+                            <option value="active" {% if project.status == 'active' %}selected{% endif %}>نشط</option>
+                            <option value="completed" {% if project.status == 'completed' %}selected{% endif %}>مكتمل</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">مستوى الأولوية (1-100)</label>
+                        <input type="number" name="priority_level" class="form-control" value="{{ project.priority_level }}" min="1" max="100">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">مستوى المخاطرة</label>
+                        <select name="risk_level" class="form-select">
+                            <option value="low" {% if project.risk_level == 'low' %}selected{% endif %}>منخفض</option>
+                            <option value="medium" {% if project.risk_level == 'medium' %}selected{% endif %}>متوسط</option>
+                            <option value="high" {% if project.risk_level == 'high' %}selected{% endif %}>مرتفع</option>
+                            <option value="critical" {% if project.risk_level == 'critical' %}selected{% endif %}>حرج</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">التعقيد</label>
+                        <select name="complexity" class="form-select">
+                            <option value="low" {% if project.complexity == 'low' %}selected{% endif %}>بسيط</option>
+                            <option value="medium" {% if project.complexity == 'medium' %}selected{% endif %}>متوسط</option>
+                            <option value="high" {% if project.complexity == 'high' %}selected{% endif %}>معقد</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">التصنيف</label>
+                        <input type="text" name="category" class="form-control" value="{{ project.category or '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">نوع المشروع</label>
+                        <input type="text" name="project_type" class="form-control" value="{{ project.project_type or '' }}">
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- الهيكل التنظيمي -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">EPS</label>
+                        <select name="eps_id" class="form-select">
+                            <option value="">-- غير محدد --</option>
+                            {% for eps in eps_list %}
+                            <option value="{{ eps.id }}" {% if project.eps_id == eps.id %}selected{% endif %}>{{ eps.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">OBS</label>
+                        <select name="obs_id" class="form-select">
+                            <option value="">-- غير محدد --</option>
+                            {% for obs in obs_list %}
+                            <option value="{{ obs.id }}" {% if project.obs_id == obs.id %}selected{% endif %}>{{ obs.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">التقويم</label>
+                        <select name="calendar_id" class="form-select">
+                            <option value="">-- غير محدد --</option>
+                            {% for cal in calendars %}
+                            <option value="{{ cal.id }}" {% if project.calendar_id == cal.id %}selected{% endif %}>{{ cal.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                
+                <hr>
+                
+                <!-- التواريخ -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">تاريخ البداية المخطط</label>
+                        <input type="date" name="planned_start" class="form-control" value="{{ project.dates.planned_start.strftime('%Y-%m-%d') if project.dates and project.dates.planned_start }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">تاريخ النهاية المخطط</label>
+                        <input type="date" name="planned_finish" class="form-control" value="{{ project.dates.planned_finish.strftime('%Y-%m-%d') if project.dates and project.dates.planned_finish }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">تاريخ الإلزام</label>
+                        <input type="date" name="must_finish_by" class="form-control" value="{{ project.dates.must_finish_by.strftime('%Y-%m-%d') if project.dates and project.dates.must_finish_by }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">تاريخ الانتهاء المتوقع</label>
+                        <input type="date" name="expected_finish" class="form-control" value="{{ project.dates.expected_finish.strftime('%Y-%m-%d') if project.dates and project.dates.expected_finish }}">
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- الميزانية -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">الميزانية الأصلية</label>
+                        <input type="number" name="original_budget" class="form-control" value="{{ project.budget.original_budget if project.budget else 0 }}" step="0.01">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">الميزانية الحالية</label>
+                        <input type="number" name="current_budget" class="form-control" value="{{ project.budget.current_budget if project.budget else 0 }}" step="0.01">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">الميزانية المقترحة</label>
+                        <input type="number" name="proposed_budget" class="form-control" value="{{ project.budget.proposed_budget if project.budget else 0 }}" step="0.01">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">
+                            <i class="fas fa-calculator"></i>
+                            العملة الأساسية
+                        </label>
+                        <select name="base_currency" class="form-select">
+                            <option value="SAR" {% if project.base_currency == 'SAR' %}selected{% endif %}>ريال سعزدي</option>
+                            <option value="USD" {% if project.base_currency == 'USD' %}selected{% endif %}>دولار امريكي</option>
+                            <option value="EUR" {% if project.base_currency == 'EUR' %}selected{% endif %}>يورو</option>
+                        </select>
+                        
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- الموقع -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">اسم الموقع</label>
+                        <input type="text" name="site_name" class="form-control" value="{{ project.location.site_name if project.location else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">المدينة</label>
+                        <input type="text" name="city" class="form-control" value="{{ project.location.city if project.location else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">الدولة</label>
+                        <input type="text" name="country" class="form-control" value="{{ project.location.country if project.location else '' }}">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <label class="form-label">العنوان</label>
+                        <textarea name="address" class="form-control" rows="2">{{ project.location.address if project.location else '' }}</textarea>
+                    </div>
+                </div>
+                <!-- معلومات إضافية -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-users"></i>
+                        معلومات إضافية
+                    </h6>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-user-tie"></i>
+                                مدير المشروع
+                            </label>
+                            <select name="project_manager_id" class="form-select select2">
+                                <option value="">-- اختر مدير المشروع --</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}"{% if project.project_manager_id == user.id %}selected{% endif %}>{{ user.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-user"></i>
+                                مساعد مدير المشروع
+                            </label>
+                            <select name="assistant_manager_id" class="form-select select2">
+                                <option value="">-- اختر المساعد --</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}"{% if project.checked_out_by == user.id %}selected{% endif %}>{{ user.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-handshake"></i>
+                                العميل
+                            </label>
+                            <select name="client_id" class="form-select select2">
+                                <option value="">-- اختر العميل --</option>
+                                {% for client in clients %}
+                                <option value="{{ client.id }}"{% if project.client_id == client.id %}selected{% endif %}>{{ client.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-user-md"></i>
+                                الاستشاري
+                            </label>
+                            <select name="consultant_id" class="form-select select2">
+                                <option value="">-- اختر الاستشاري --</option>
+                                {% for consultant in consultants %}
+                                <option value="{{ consultant.id }}"{% if project.consultant_id == consultant.id %}selected{% endif %}>{{ consultant.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-end">
+                    <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>إلغاء
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>حفظ التغييرات
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

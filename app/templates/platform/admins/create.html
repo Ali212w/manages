@@ -1,0 +1,125 @@
+{# templates/platform/admins/create.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('admins.add_new') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title">{{ _('admins.add_new') }}</h1>
+            <p class="text-muted mb-0">{{ _('admins.create_new_admin') }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('platform.admins') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-{{ 'right' if get_direction() == 'rtl' else 'left' }} me-2"></i>{{ _('common.back') }}
+            </a>
+        </div>
+    </div>
+    
+    <!-- Create Admin Form -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form id="createAdminForm" method="POST">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('admins.name') }} *</label>
+                        <input type="text" name="full_name" class="form-control form-control-lg" required>
+                        <div class="form-text">{{ _('admins.name_description') }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('admins.name_ar') }}</label>
+                        <input type="text" name="full_name_ar" class="form-control form-control-lg">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('admins.email') }} *</label>
+                        <input type="email" name="email" class="form-control form-control-lg" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('admins.username') }} *</label>
+                        <input type="text" name="username" class="form-control form-control-lg" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('admins.phone') }}</label>
+                        <input type="tel" name="phone" class="form-control form-control-lg">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('admins.role') }} *</label>
+                        <select name="role" class="form-select form-select-lg">
+                            <option value="admin">{{ _('admins.role_admin') }}</option>
+                            <option value="support">{{ _('admins.role_support') }}</option>
+                            <option value="finance">{{ _('admins.role_finance') }}</option>
+                            {% if g.is_super_admin %}
+                            <option value="super_admin">{{ _('admins.role_super_admin') }}</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('admins.password') }} *</label>
+                        <input type="password" name="password" class="form-control form-control-lg" value="Admin123!" required>
+                        <div class="form-text">{{ _('admins.password_hint') }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('admins.confirm_password') }} *</label>
+                        <input type="password" name="confirm_password" class="form-control form-control-lg" value="Admin123!" required>
+                    </div>
+                    <div class="col-12">
+                        <hr>
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('platform.admins') }}" class="btn btn-lg btn-outline-secondary">{{ _('common.cancel') }}</a>
+                            <button type="submit" class="btn btn-lg btn-gradient">
+                                <i class="fas fa-save me-2"></i>{{ _('common.save') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#createAdminForm').submit(function(e) {
+        e.preventDefault();
+        
+        const password = $('input[name="password"]').val();
+        const confirm = $('input[name="confirm_password"]').val();
+        
+        if (password !== confirm) {
+            toastr.error('{{ _("admins.password_mismatch") }}');
+            return;
+        }
+        
+        if (password.length < 8) {
+            toastr.error('{{ _("admins.password_weak") }}');
+            return;
+        }
+        
+        const formData = $(this).serialize();
+        
+        $.ajax({
+            url: "{{ url_for('platform.create_admin') }}",
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('platform.admins') }}";
+                    }, 1000);
+                } else {
+                    toastr.error(response.error);
+                }
+            },
+            error: function() {
+                toastr.error('{{ _("common.error") }}');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

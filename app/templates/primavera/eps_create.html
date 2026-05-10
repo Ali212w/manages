@@ -1,0 +1,418 @@
+{% extends "company/base.html" %}
+
+{% block title %}إنشاء عنصر EPS جديد{% endblock %}
+
+{% block page_title %}إنشاء عنصر EPS جديد{% endblock %}
+{% block page_subtitle %}Enterprise Project Structure - إضافة عنصر جديد{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .section-title i {
+        color: var(--primary);
+        font-size: 1.2rem;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .required-field::after {
+        content: '*';
+        color: var(--danger);
+        margin-right: 4px;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        transition: all 0.3s;
+        font-size: 0.95rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .form-text {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin-top: 0.3rem;
+    }
+    
+    .preview-card {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        border-right: 4px solid var(--primary);
+    }
+    
+    .path-preview {
+        font-family: monospace;
+        background: white;
+        padding: 0.8rem;
+        border-radius: 10px;
+        border: 1px dashed var(--primary);
+        color: var(--primary);
+        direction: ltr;
+        text-align: left;
+    }
+    
+    .info-alert {
+        background: rgba(67, 97, 238, 0.05);
+        border-right: 4px solid var(--primary);
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid #eef2f7;
+    }
+    
+    .btn-primary-gradient {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border: none;
+        color: white;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-primary-gradient:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+        color: white;
+    }
+    
+    .btn-outline-secondary {
+        border: 2px solid #eef2f7;
+        color: #6c757d;
+        background: transparent;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+    
+    .btn-outline-secondary:hover {
+        background: #eef2f7;
+        color: var(--dark);
+    }
+    
+    .char-counter {
+        text-align: left;
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 0.3rem;
+    }
+    
+    .char-counter.warning {
+        color: var(--warning);
+    }
+    
+    .char-counter.danger {
+        color: var(--danger);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <!-- معلومات مساعدة -->
+        <div class="info-alert">
+            <div class="d-flex">
+                <div class="me-3">
+                    <i class="fas fa-sitemap fa-2x text-primary"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-2">ما هو عنصر EPS؟</h6>
+                    <p class="text-muted mb-0">EPS (Enterprise Project Structure) هو الهيكل التنظيمي للمشاريع في المؤسسة. يساعد في تنظيم المشاريع في هيكل هرمي يشبه شجرة المجلدات.</p>
+                </div>
+            </div>
+        </div>
+        
+        <form method="POST" action="{{ url_for('primavera.eps_create') }}" id="epsForm">
+            <!-- معلومات أساسية -->
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    المعلومات الأساسية
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="eps_code" class="form-label required-field">رمز EPS</label>
+                        <input type="text" class="form-control" id="eps_code" name="eps_code" 
+                               placeholder="مثال: CORP-001" required maxlength="50">
+                        <div class="form-text">رمز فريد لعنصر EPS (أحرف وأرقام فقط)</div>
+                        <div class="char-counter" id="codeCounter">0/50</div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="name" class="form-label required-field">الاسم </label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               placeholder="مثال: المشاريع المؤسسية" required maxlength="200">
+                        <div class="char-counter" id="nameCounter">0/200</div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="parent_id" class="form-label">العنصر الأب</label>
+                        <select class="form-select" id="parent_id" name="parent_id">
+                            <option value="">-- عنصر رئيسي (بدون أب) --</option>
+                            {% for parent in parents %}
+                            <option value="{{ parent.id }}" data-level="{{ parent.level }}" data-path="{{ parent.path }}">
+                                {{ '─' * parent.level }} {{ parent.name }} ({{ parent.eps_code }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">اختر إذا كان هذا العنصر تابعاً لعنصر آخر</div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="description" class="form-label">الوصف</label>
+                    <textarea class="form-control" id="description" name="description" 
+                              rows="3" placeholder="وصف مختصر لعنصر EPS..." maxlength="500"></textarea>
+                    <div class="char-counter" id="descCounter">0/500</div>
+                </div>
+            </div>
+            
+            <!-- المسؤول ية -->
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-user-tie"></i>
+                    المسؤولية
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="manager_id" class="form-label">المدير المسؤول</label>
+                        <select class="form-select" id="manager_id" name="manager_id">
+                            <option value="">-- غير معين --</option>
+                            {% for manager in managers %}
+                            <option value="{{ manager.id }}">{{ manager.full_name }} - {{ manager.job_title or manager.role }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">المسؤول عن هذا العنصر والمشاريع التابعة له</div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">العنصر نشط</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- معاينة المسار -->
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-eye"></i>
+                    معاينة المسار
+                </h5>
+                
+                <div class="preview-card">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold">المسار المتوقع:</span>
+                        <span class="badge bg-primary" id="levelPreview">المستوى 1</span>
+                    </div>
+                    <div class="path-preview" id="pathPreview">
+                        /
+                    </div>
+                    <small class="text-muted mt-2 d-block">* سيتم إنشاء المسار تلقائياً بناءً على العنصر الأب</small>
+                </div>
+            </div>
+            
+            <!-- أزرار الإجراءات -->
+            <div class="form-actions">
+                <a href="{{ url_for('primavera.eps_list') }}" class="btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    العودة للقائمة
+                </a>
+                <button type="submit" class="btn-primary-gradient">
+                    <i class="fas fa-save me-2"></i>
+                    إنشاء عنصر EPS
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ============================================
+// عدادات الأحرف
+// ============================================
+function updateCounter(input, counterId, maxLength) {
+    const length = input.value.length;
+    const counter = document.getElementById(counterId);
+    counter.textContent = `${length}/${maxLength}`;
+    
+    if (length > maxLength * 0.9) {
+        counter.classList.add('warning');
+    } else {
+        counter.classList.remove('warning');
+    }
+    
+    if (length >= maxLength) {
+        counter.classList.add('danger');
+    } else {
+        counter.classList.remove('danger');
+    }
+}
+
+document.getElementById('eps_code').addEventListener('input', function() {
+    updateCounter(this, 'codeCounter', 50);
+    updatePathPreview();
+});
+
+document.getElementById('name').addEventListener('input', function() {
+    updateCounter(this, 'nameCounter', 200);
+});
+
+document.getElementById('name_ar').addEventListener('input', function() {
+    updateCounter(this, 'nameArCounter', 200);
+});
+
+document.getElementById('description').addEventListener('input', function() {
+    updateCounter(this, 'descCounter', 500);
+});
+
+// ============================================
+// معاينة المسار
+// ============================================
+function updatePathPreview() {
+    const parentSelect = document.getElementById('parent_id');
+    const code = document.getElementById('eps_code').value;
+    const pathPreview = document.getElementById('pathPreview');
+    const levelPreview = document.getElementById('levelPreview');
+    
+    let path = '/';
+    let level = 1;
+    
+    if (parentSelect.value) {
+        const selectedOption = parentSelect.options[parentSelect.selectedIndex];
+        const parentPath = selectedOption.dataset.path || '';
+        const parentLevel = parseInt(selectedOption.dataset.level) || 0;
+        
+        path = parentPath + '/' + code;
+        level = parentLevel + 1;
+    } else {
+        path = '/' + code;
+        level = 1;
+    }
+    
+    pathPreview.textContent = path;
+    levelPreview.textContent = `المستوى ${level}`;
+}
+
+document.getElementById('parent_id').addEventListener('change', updatePathPreview);
+document.getElementById('eps_code').addEventListener('input', updatePathPreview);
+
+// ============================================
+// التحقق من صحة النموذج
+// ============================================
+document.getElementById('epsForm').addEventListener('submit', function(e) {
+    const epsCode = document.getElementById('eps_code').value;
+    const name = document.getElementById('name').value;
+    
+    // التحقق من رمز EPS
+    const codePattern = /^[A-Za-z0-9\-_]+$/;
+    if (!codePattern.test(epsCode)) {
+        e.preventDefault();
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ في الإدخال',
+            text: 'رمز EPS يجب أن يحتوي على أحرف إنجليزية وأرقام فقط (- و _ مسموح بها)'
+        });
+        return;
+    }
+    
+    // التحقق من الاسم
+    if (name.trim().length < 3) {
+        e.preventDefault();
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ في الإدخال',
+            text: 'الاسم يجب أن يكون 3 أحرف على الأقل'
+        });
+        return;
+    }
+    
+    // إضافة loading
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>جاري الإنشاء...';
+    submitBtn.disabled = true;
+});
+
+// ============================================
+// تهيئة العدادات
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    updateCounter(document.getElementById('eps_code'), 'codeCounter', 50);
+    updateCounter(document.getElementById('name'), 'nameCounter', 200);
+    updateCounter(document.getElementById('name_ar'), 'nameArCounter', 200);
+    updateCounter(document.getElementById('description'), 'descCounter', 500);
+    updatePathPreview();
+});
+</script>
+{% endblock %}

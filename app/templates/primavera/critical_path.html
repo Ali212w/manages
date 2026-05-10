@@ -1,0 +1,397 @@
+{% extends "company/base.html" %}
+
+{% block title %}المسار الحرج - {{ project.name }}{% endblock %}
+
+{% block page_title %}المسار الحرج{% endblock %}
+{% block page_subtitle %}{{ project.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .critical-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .info-box {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border-right: 4px solid var(--danger);
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .info-item {
+        text-align: center;
+    }
+    
+    .info-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--danger);
+    }
+    
+    .info-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .path-timeline {
+        position: relative;
+        padding-right: 3rem;
+        margin-top: 2rem;
+    }
+    
+    .path-timeline::before {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--danger);
+    }
+    
+    .path-item {
+        position: relative;
+        margin-bottom: 2rem;
+        animation: slideIn 0.5s ease;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .path-dot {
+        position: absolute;
+        right: -3.2rem;
+        top: 0.5rem;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--danger);
+        border: 3px solid white;
+        box-shadow: 0 0 0 3px rgba(249, 65, 68, 0.3);
+        z-index: 2;
+    }
+    
+    .path-card {
+        background: white;
+        border: 1px solid #eef2f7;
+        border-radius: 15px;
+        padding: 1.2rem;
+        transition: all 0.3s;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+    
+    .path-card:hover {
+        transform: translateX(-10px);
+        box-shadow: 0 10px 30px rgba(249, 65, 68, 0.1);
+        border-color: var(--danger);
+    }
+    
+    .path-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.8rem;
+    }
+    
+    .path-id {
+        font-family: monospace;
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .path-name {
+        font-weight: 700;
+        color: var(--dark);
+    }
+    
+    .path-dates {
+        display: flex;
+        gap: 1.5rem;
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .path-progress {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .progress {
+        flex: 1;
+        height: 8px;
+        border-radius: 4px;
+        background: #eef2f7;
+    }
+    
+    .progress-bar {
+        border-radius: 4px;
+        background: var(--danger);
+    }
+    
+    .warning-badge {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .gantt-mini {
+        margin-top: 2rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        overflow-x: auto;
+    }
+    
+    .gantt-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        padding: 0.3rem;
+    }
+    
+    .gantt-label {
+        width: 100px;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .gantt-bar {
+        height: 25px;
+        background: var(--danger);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 600;
+        min-width: 40px;
+        transition: all 0.3s;
+    }
+    
+    .legend {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eef2f7;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+    }
+    
+    .legend-color.critical { background: var(--danger); }
+    .legend-color.completed { background: var(--success); }
+    .legend-color.normal { background: var(--primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="critical-container">
+    <!-- معلومات سريعة -->
+    <div class="info-box">
+        <h5 class="mb-3"><i class="fas fa-exclamation-triangle me-2 text-danger"></i>المسار الحرج للمشروع</h5>
+        <p class="mb-0">المسار الحرج هو أطول مسار زمني في المشروع. أي تأخير في هذه الأنشطة يؤدي إلى تأخير المشروع بأكمله.</p>
+        
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-value">{{ critical_activities|length }}</div>
+                <div class="info-label">أنشطة حرجة</div>
+            </div>
+            <div class="info-item">
+                <div class="info-value">{{ total_duration|round }} يوم</div>
+                <div class="info-label">المدة الإجمالية</div>
+            </div>
+            <div class="info-item">
+                <div class="info-value">{{ project.project.total_float|round(1) }}</div>
+                <div class="info-label">الوقت السماحي (Float)</div>
+            </div>
+        </div>
+    </div>
+    
+    {% if critical_activities %}
+    <!-- المسار الحرج التفصيلي -->
+    <h5 class="mb-4"><i class="fas fa-link me-2 text-danger"></i>تفاصيل المسار الحرج</h5>
+    
+    <div class="path-timeline">
+        {% for activity in path %}
+        <div class="path-item">
+            <div class="path-dot"></div>
+            <div class="path-card">
+                <div class="path-header">
+                    <span class="path-id">{{ activity.activity_id }}</span>
+                    {% if activity.status == 'completed' %}
+                    <span class="badge bg-success">مكتمل</span>
+                    {% elif activity.status == 'in_progress' %}
+                    <span class="badge bg-primary">قيد التنفيذ</span>
+                    {% else %}
+                    <span class="badge bg-secondary">لم يبدأ</span>
+                    {% endif %}
+                </div>
+                
+                <h6 class="path-name">{{ activity.activity_name }}</h6>
+                
+                <div class="path-dates">
+                    <span><i class="fas fa-play text-success me-1"></i> {{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start }}</span>
+                    <span><i class="fas fa-flag-checkered text-danger me-1"></i> {{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish }}</span>
+                    <span><i class="fas fa-hourglass-half text-warning me-1"></i> {{ activity.original_duration }} يوم</span>
+                </div>
+                
+                <div class="path-progress">
+                    <span class="small text-muted">التقدم:</span>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: {{ activity.progress_percentage }}%"></div>
+                    </div>
+                    <span class="small">{{ activity.progress_percentage|round }}%</span>
+                </div>
+                
+                {% if activity.progress_percentage < 100 and activity.planned_finish and activity.planned_finish.date() < now.date() %}
+                <div class="mt-2">
+                    <span class="warning-badge">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        متأخرة {{ (now.date() - activity.planned_finish.date()).days }} يوم
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- مخطط جانت مبسط -->
+    <div class="gantt-mini">
+        <h6 class="mb-3"><i class="fas fa-chart-bar me-2"></i>مخطط زمني مبسط</h6>
+        {% set min_date = path[0].planned_start if path else now.date() %}
+        {% set max_date = path[-1].planned_finish if path else min_date + timedelta(days=30) %}
+        {% set total_days = (max_date - min_date).days if min_date and max_date else 30 %}
+        
+        {% for activity in path %}
+        {% set start_offset = ((activity.planned_start - min_date).days / total_days * 100) if min_date and total_days > 0 else 0 %}
+        {% set duration = (activity.original_duration / total_days * 100) if total_days > 0 else 100 %}
+        <div class="gantt-row">
+            <div class="gantt-label">{{ activity.activity_id }}</div>
+            <div style="flex: 1; position: relative; height: 25px; background: #eef2f7; border-radius: 4px;">
+                <div class="gantt-bar" style="position: absolute; right: {{ start_offset }}%; width: {{ duration }}%;">
+                    {{ activity.activity_id }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <!-- لا توجد أنشطة حرجة -->
+    <div class="text-center py-5">
+        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+        <h5 class="text-muted mb-3">لا توجد أنشطة حرجة</h5>
+        <p class="text-muted">جميع الأنشطة لديها وقت سماحي. المشروع في وضع آمن.</p>
+    </div>
+    {% endif %}
+    
+    <!-- وسيلة الإيضاح -->
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color critical"></div>
+            <span>مسار حرج</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color completed" style="background: var(--success);"></div>
+            <span>مكتمل</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color normal" style="background: var(--primary);"></div>
+            <span>غير حرج</span>
+        </div>
+    </div>
+    
+    <!-- أزرار الإجراءات -->
+    <div class="mt-4 text-center">
+        <button class="btn-primary-gradient me-2" onclick="runSchedule()">
+            <i class="fas fa-play me-2"></i>إعادة جدولة (F9)
+        </button>
+        <button class="btn-outline-primary" onclick="window.location.href='{{ url_for('primavera.activities_list', project_id=project.id) }}'">
+            <i class="fas fa-tasks me-2"></i>عرض الأنشطة
+        </button>
+    </div>
+</div>
+
+<script>
+let criticalActivities = {{ critical_activities_json|tojson|safe }};
+function runSchedule() {
+    Swal.fire({
+        title: 'تشغيل الجدولة',
+        text: 'هل تريد إعادة حساب المسار الحرج الآن؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، شغل',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/primavera/project/{{ project.id }}/schedule`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تمت الجدولة',
+                        text: 'تم تحديث المسار الحرج',
+                        timer: 2000
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

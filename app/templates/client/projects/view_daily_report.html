@@ -1,0 +1,402 @@
+{% extends "client/base.html" %}
+
+{% block title %}التقرير اليومي {{ report.report_number }} - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4><i class="fas fa-file-alt me-2"></i> التقرير اليومي</h4>
+                <p class="text-muted mb-0">{{ project.name }} - {{ report.report_date.strftime('%Y-%m-%d') }}</p>
+            </div>
+            <div>
+                <a href="{{ url_for('client.daily_reports', project_id=project.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-right"></i> العودة للقائمة
+                </a>
+                <button onclick="window.print()" class="btn btn-outline-primary ms-2">
+                    <i class="fas fa-print"></i> طباعة
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Header -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i> معلومات التقرير</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="info-row">
+                    <span class="info-label">رقم التقرير:</span>
+                    <span class="info-value">{{ report.report_number }}</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-row">
+                    <span class="info-label">التاريخ:</span>
+                    <span class="info-value">{{ report.report_date.strftime('%Y-%m-%d') }}</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-row">
+                    <span class="info-label">الحالة:</span>
+                    <span class="info-value">
+                        {% if report.review_status == 'approved' %}
+                        <span class="badge bg-success">معتمد</span>
+                        {% elif report.review_status == 'pending' %}
+                        <span class="badge bg-warning">قيد المراجعة</span>
+                        {% else %}
+                        <span class="badge bg-danger">مرفوض</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-row">
+                    <span class="info-label">المعد بواسطة:</span>
+                    <span class="info-value">{{ report.preparer.full_name if report.preparer else '-' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weather & Site Conditions -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-cloud-sun me-2"></i> الظروف الجوية</h6>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-label">حالة الطقس:</span>
+                    <span class="info-value">{{ report.weather_condition or '-' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">درجة الحرارة:</span>
+                    <span class="info-value">{{ "%.1f"|format(report.temperature) if report.temperature else '-' }} °C</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">الرطوبة:</span>
+                    <span class="info-value">{{ "%.1f"|format(report.humidity) if report.humidity else '-' }}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-users me-2"></i> العمالة</h6>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-label">عدد العمال:</span>
+                    <span class="info-value">{{ report.total_workers or 0 }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">ساعات العمل:</span>
+                    <span class="info-value">{{ "%.1f"|format(report.total_hours or 0) }} ساعة</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">ساعات إضافية:</span>
+                    <span class="info-value">{{ "%.1f"|format(report.overtime_hours or 0) }} ساعة</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">الإنتاجية:</span>
+                    <span class="info-value">{{ "%.1f"|format(report.calculate_productivity() if report.calculate_productivity else 0) }} ساعة/رجل</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i> التقدم اليومي</h6>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-label">إجمالي المهام:</span>
+                    <span class="info-value">{{ report.get_progress_summary().total_tasks if report.get_progress_summary else 0 }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">مهام مكتملة:</span>
+                    <span class="info-value text-success">{{ report.get_progress_summary().completed_tasks if report.get_progress_summary else 0 }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">نسبة الإنجاز:</span>
+                    <span class="info-value">{{ "%.1f"|format(report.get_progress_summary().completion_rate if report.get_progress_summary else 0) }}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Work Summary -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i> ملخص العمل</h6>
+            </div>
+            <div class="card-body">
+                <p>{{ report.work_summary or 'لا يوجد ملخص' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-check-circle me-2"></i> الأعمال المنجزة</h6>
+            </div>
+            <div class="card-body">
+                <p>{{ report.completed_work or 'لا توجد أعمال منجزة' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-calendar-week me-2"></i> الأعمال المخطط لها</h6>
+            </div>
+            <div class="card-body">
+                <p>{{ report.planned_work or 'لا توجد أعمال مخطط لها' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> المشكلات والعقبات</h6>
+            </div>
+            <div class="card-body">
+                <p>{{ report.issues_encountered or 'لا توجد مشكلات' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Safety & Quality -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-shield-alt me-2"></i> السلامة</h6>
+            </div>
+            <div class="card-body">
+                <p>{{ report.safety_incidents or 'لا توجد حوادث سلامة' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i> الجودة</h6>
+            </div>
+            <div class="card-body">
+                <p>{{ report.quality_notes or 'لا توجد ملاحظات جودة' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-user-tie me-2"></i> ملاحظات المشرف</h6>
+            </div>
+            <div class="card-body">
+                <p>{{ report.supervisor_notes or 'لا توجد ملاحظات' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-user-graduate me-2"></i> ملاحظات المهندس</h6>
+            </div>
+            <div class="card-body">
+                <p>{{ report.engineer_notes or 'لا توجد ملاحظات' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tasks Details -->
+{% if report.tasks and report.tasks.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-tasks me-2"></i> تفاصيل المهام</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>المهمة</th>
+                        <th>العمل المخطط</th>
+                        <th>العمل الفعلي</th>
+                        <th>التقدم</th>
+                        <th>الحالة</th>
+                        <th>العمال</th>
+                        <th>الساعات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task_report in report.tasks %}
+                    <tr>
+                        <td>{{ task_report.task.task_name if task_report.task else '-' }}</td>
+                        <td>{{ task_report.planned_work|truncate(40) if task_report.planned_work else '-' }}</td>
+                        <td>{{ task_report.actual_work|truncate(40) if task_report.actual_work else '-' }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress progress-custom" style="width: 80px;">
+                                    <div class="progress-bar" style="width: {{ task_report.progress_percentage }}%"></div>
+                                </div>
+                                <small>{{ "%.0f"|format(task_report.progress_percentage) }}%</small>
+                            </div>
+                        </td>
+                        <td>
+                            {% if task_report.status == 'completed' %}
+                            <span class="badge bg-success">مكتمل</span>
+                            {% elif task_report.status == 'in_progress' %}
+                            <span class="badge bg-primary">قيد التنفيذ</span>
+                            {% elif task_report.status == 'delayed' %}
+                            <span class="badge bg-danger">متأخر</span>
+                            {% else %}
+                            <span class="badge bg-secondary">معلق</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ task_report.workers_assigned or 0 }}</td>
+                        <td>{{ "%.1f"|format(task_report.hours_worked or 0) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Materials & Equipment -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-cubes me-2"></i> المواد المستلمة</h6>
+            </div>
+            <div class="card-body">
+                <p>{{ report.materials_received or 'لا توجد مواد مستلمة' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-tractor me-2"></i> المعدات المستخدمة</h6>
+            </div>
+            <div class="card-body">
+                <p>{{ report.equipment_used or 'لا توجد معدات مستخدمة' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Photos -->
+{% if report.photos and report.photos.count() > 0 %}
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-camera me-2"></i> الصور المرفقة</h6>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {% for photo in report.photos %}
+            <div class="col-md-3">
+                <div class="photo-card">
+                    <img src="{{ photo.photo_url }}" class="img-fluid rounded" alt="{{ photo.caption or 'صورة' }}" style="width: 100%; height: 150px; object-fit: cover;">
+                    {% if photo.caption %}
+                    <div class="photo-caption small text-muted mt-1">{{ photo.caption }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Approval Section -->
+{% if report.review_status == 'pending' and current_user.role in ['org_admin', 'project_manager'] %}
+<div class="card border-warning">
+    <div class="card-header bg-warning text-white">
+        <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i> الموافقة على التقرير</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <textarea id="approvalNotes" class="form-control" rows="3" placeholder="أدخل ملاحظاتك..."></textarea>
+            </div>
+            <div class="col-md-4 d-flex align-items-center gap-2">
+                <button class="btn btn-success w-100" onclick="reviewReport(true)">
+                    <i class="fas fa-check"></i> اعتماد التقرير
+                </button>
+                <button class="btn btn-danger w-100" onclick="reviewReport(false)">
+                    <i class="fas fa-times"></i> رفض التقرير
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    @media print {
+        .btn, .top-navbar, .sidebar, .card-header .btn, .action-buttons {
+            display: none !important;
+        }
+        .main-content {
+            margin-right: 0 !important;
+        }
+        .card {
+            break-inside: avoid;
+        }
+    }
+    
+    .photo-card {
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .photo-card:hover {
+        transform: scale(1.02);
+    }
+</style>
+
+<script>
+function reviewReport(approve) {
+    const notes = $('#approvalNotes').val();
+    $.ajax({
+        url: `/client/api/daily-report/{{ report.id }}/review`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ approved: approve, notes: notes }),
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('حدث خطأ: ' + response.error);
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

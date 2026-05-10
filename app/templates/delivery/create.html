@@ -1,0 +1,187 @@
+<!-- templates/delivery/create.html -->
+{% extends "supplier/base.html" %}
+
+{% block title %}تسليم مواد - طلب #{{ request.id }}{% endblock %}
+
+{% block page_title %}تسليم مواد{% endblock %}
+{% block page_subtitle %}طلب توريد #{{ request.id }} - {{ request.project.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delivery-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .items-table th {
+        background: var(--primary);
+        color: white;
+        padding: 0.8rem;
+    }
+    
+    .items-table td {
+        padding: 0.8rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .remaining-qty {
+        font-weight: 600;
+        color: var(--warning);
+    }
+    
+    .btn-submit {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        width: 100%;
+    }
+    
+    .location-input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 2px solid #eef2f7;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delivery-container">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">
+                <i class="fas fa-truck text-primary me-2"></i>
+                تسليم مواد للمشروع
+            </h5>
+            <small class="text-muted">{{ request.project.name }} - {{ request.project.project_code }}</small>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <h6 class="mb-3">المواد المتبقية للاستلام</h6>
+                <div class="table-responsive">
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>المادة</th>
+                                <th>الوحدة</th>
+                                <th>المطلوب</th>
+                                <th>المستلم</th>
+                                <th>المتبقي</th>
+                                <th>الكمية المسلمة اليوم</th>
+                                <th>ملاحظات</th>
+                            </thead>
+                            <tbody>
+                                {% for item in remaining_items %}
+                                <tr>
+                                    <td>{{ item.resource_name }}<br><small class="text-muted">كود: {{ item.resource.resource_id if item.resource }}</small>\(
+                                    <td>{{ item.unit }}<br><span class="badge bg-light">{{ item.unit }}</span>\(
+                                    <td class="fw-bold">{{ item.required_quantity }}\(
+                                    <td class="text-success">{{ item.delivered_quantity }}\(
+                                    <td class="remaining-qty">{{ item.remaining_quantity }}\(
+                                    <td>
+                                        <input type="number" name="qty_{{ item.id }}" class="form-control" 
+                                               step="0.01" min="0" max="{{ item.remaining_quantity }}" 
+                                               value="0" style="width: 100px;">
+                                    \(
+                                    <td>
+                                        <input type="text" name="notes_{{ item.id }}" class="form-control" 
+                                               placeholder="ملاحظات">
+                                    \(
+                                  </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">موقع التسليم</label>
+                        <input type="text" name="delivery_location" class="location-input" 
+                               value="{{ request.site_location }}" placeholder="أدخل موقع التسليم">
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="getCurrentLocation()">
+                            <i class="fas fa-location-dot"></i> استخدام الموقع الحالي
+                        </button>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">إحداثيات GPS (اختياري)</label>
+                        <input type="text" name="coordinates" class="location-input" 
+                               placeholder="مثال: 24.7136, 46.6753">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">صور التسليم (اختياري)</label>
+                        <div class="upload-area" onclick="document.getElementById('photos').click()">
+                            <i class="fas fa-camera fa-2x mb-2"></i>
+                            <p>انقر لرفع صور</p>
+                            <input type="file" id="photos" name="photos" multiple accept="image/*" style="display: none;">
+                        </div>
+                        <div id="photoPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-save me-2"></i> إرسال التسليم
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    function getCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const coords = `${position.coords.latitude}, ${position.coords.longitude}`;
+                document.querySelector('input[name="coordinates"]').value = coords;
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم',
+                    text: 'تم الحصول على الموقع الحالي',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }, function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ',
+                    text: 'تعذر الحصول على الموقع'
+                });
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'غير مدعوم',
+                text: 'المتصفح لا يدعم تحديد الموقع'
+            });
+        }
+    }
+    
+    document.getElementById('photos').addEventListener('change', function(e) {
+        const preview = document.getElementById('photoPreview');
+        preview.innerHTML = '';
+        for (let i = 0; i < this.files.length; i++) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.width = '80px';
+                img.style.height = '80px';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '8px';
+                img.style.border = '1px solid #eef2f7';
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(this.files[i]);
+        }
+    });
+    </script>
+    {% endblock %}

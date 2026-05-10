@@ -1,0 +1,200 @@
+{% extends "company/base.html" %}
+
+{% block title %}الذكاء الاصطناعي{% endblock %}
+
+{% block page_title %}الذكاء الاصطناعي{% endblock %}
+{% block page_subtitle %}تحليل واستخراج المعلومات وإنشاء التقارير{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ai-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+    }
+    
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 30px;
+        padding: 3rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    
+    .command-input-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+    
+    .feature-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s;
+        border: 1px solid #eef2f7;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border-color: var(--primary);
+    }
+    
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin: 0 auto 1rem;
+    }
+    
+    .recent-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .recent-item:hover {
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateX(-5px);
+    }
+    
+    .status-badge {
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-processing { background: #cce5ff; color: #004085; }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-failed { background: #f8d7da; color: #721c24; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ai-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 mb-3">🤖 الذكاء الاصطناعي</h1>
+                <p class="lead mb-4">استخدم قوة الذكاء الاصطناعي لتحليل المستندات واستخراج المعلومات وإنشاء تقارير مخصصة</p>
+                <a href="{{ url_for('ai.new_command') }}" class="btn btn-light btn-lg">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    أمر جديد
+                </a>
+            </div>
+            <div class="col-md-4 text-center">
+                <i class="fas fa-robot" style="font-size: 8rem; opacity: 0.8;"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ميزات النظام -->
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <h5>تحليل المستندات</h5>
+            <p class="text-muted small">استخراج المعلومات من PDF, Word, Excel, صور</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+            <h5>تقارير ذكية</h5>
+            <p class="text-muted small">توليد تقارير مخصصة حسب طلبك</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <h5>اقتراحات وتوصيات</h5>
+            <p class="text-muted small">تحليل البيانات وإعطاء توصيات ذكية</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- آخر الأوامر -->
+        <div class="col-md-6">
+            <div class="command-input-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-history text-primary me-2"></i>
+                    آخر الأوامر
+                </h5>
+                
+                {% for command in recent_commands %}
+                <div class="recent-item" onclick="window.location.href='{{ url_for('ai.command_detail', command_id=command.id) }}'">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">{{ command.command_text[:50] }}{% if command.command_text|length > 50 %}...{% endif %}</h6>
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            {{ command.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        </small>
+                    </div>
+                    <span class="status-badge status-{{ command.status }} ms-2">
+                        {{ command.status }}
+                    </span>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">لا توجد أوامر سابقة</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- آخر التقارير -->
+        <div class="col-md-6">
+            <div class="command-input-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-bar text-success me-2"></i>
+                    آخر التقارير
+                </h5>
+                
+                {% for report in recent_reports %}
+                <div class="recent-item" onclick="window.location.href='{{ url_for('ai.view_report', report_id=report.id) }}'">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">{{ report.report_name }}</h6>
+                        <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ report.created_at.strftime('%Y-%m-%d') }}
+                        </small>
+                    </div>
+                    <span class="badge bg-info">{{ report.report_type }}</span>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">لا توجد تقارير سابقة</p>
+                {% endfor %}
+                
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('ai.reports_list') }}" class="btn btn-outline-primary">
+                        عرض كل التقارير
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

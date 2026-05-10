@@ -1,0 +1,668 @@
+{# templates/projects/confirm_delivery.html #}
+
+{% extends "company/base.html" %}
+
+{% block title %}تأكيد التسليم - {{ project.name }}{% endblock %}
+
+{% block page_title %}تأكيد استلام المواد{% endblock %}
+{% block page_subtitle %}{{ project.name }} - {{ project.project_code }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .confirm-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    /* بطاقة معلومات التسليم */
+    .delivery-header-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 24px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 2rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .delivery-header-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.3; }
+        50% { transform: scale(1.1); opacity: 0.5; }
+    }
+    
+    .delivery-number {
+        font-size: 1.2rem;
+        font-weight: 600;
+        background: rgba(255,255,255,0.2);
+        padding: 0.25rem 1rem;
+        border-radius: 50px;
+        display: inline-block;
+    }
+    
+    .delivery-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .stat-badge {
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    /* بطاقات المواد المسلمة */
+    .items-card, .photos-card, .info-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    
+    .items-card:hover, .photos-card:hover, .info-card:hover {
+        box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+        transform: translateY(-2px);
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .section-title i {
+        color: var(--primary);
+        font-size: 1.2rem;
+    }
+    
+    /* جدول المواد المسلمة */
+    .delivered-items-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .delivered-items-table th {
+        text-align: right;
+        padding: 0.75rem 0.5rem;
+        background: #f8fafc;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: var(--gray);
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .delivered-items-table td {
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid #eef2f7;
+        vertical-align: middle;
+    }
+    
+    .delivered-items-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .item-name {
+        font-weight: 600;
+        color: var(--dark);
+    }
+    
+    .item-quantity {
+        font-weight: 700;
+        color: var(--primary);
+        font-size: 1.1rem;
+    }
+    
+    /* معرض الصور */
+    .photo-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+    
+    .photo-item {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        cursor: pointer;
+        aspect-ratio: 1;
+        background: #f8fafc;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .photo-item:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    
+    .photo-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .photo-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,0.7));
+        padding: 0.5rem;
+        color: white;
+        font-size: 0.75rem;
+        text-align: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .photo-item:hover .photo-overlay {
+        opacity: 1;
+    }
+    
+    /* معلومات الموقع */
+    .location-info {
+        background: linear-gradient(135deg, #f8fafc, #ffffff);
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #eef2f7;
+    }
+    
+    .location-info i {
+        color: var(--primary);
+        width: 24px;
+    }
+    
+    /* ملاحظات */
+    .notes-box {
+        background: #fff9e8;
+        border-right: 4px solid #ffc107;
+        padding: 1rem;
+        border-radius: 12px;
+        margin-top: 1rem;
+    }
+    
+    .rejection-box {
+        background: #ffe8e8;
+        border-right: 4px solid var(--danger);
+    }
+    
+    /* تقدم الطلب */
+    .progress-summary {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .progress-item {
+        margin-bottom: 0.75rem;
+    }
+    
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .progress-bar {
+        height: 6px;
+        background: #eef2f7;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+    
+    /* أزرار الإجراءات */
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #eef2f7;
+    }
+    
+    .btn-confirm {
+        background: linear-gradient(135deg, var(--success), #3aa85a);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 201, 240, 0.4);
+    }
+    
+    .btn-reject {
+        background: linear-gradient(135deg, var(--danger), #d32f2f);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-reject:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(249, 65, 68, 0.4);
+    }
+    
+    /* حالة التسليم */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .status-pending {
+        background: rgba(248, 150, 30, 0.1);
+        color: var(--warning);
+    }
+    
+    .status-confirmed {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .status-rejected {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+    }
+    
+    /* Modal لعرض الصور */
+    .image-modal .swal2-image {
+        max-height: 90vh;
+        object-fit: contain;
+    }
+    
+    @media (max-width: 768px) {
+        .delivery-stats {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .photo-gallery {
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .btn-confirm, .btn-reject {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="confirm-container">
+    <!-- رأس التسليم -->
+    <div class="delivery-header-card">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <div class="delivery-number mb-2">
+                    <i class="fas fa-receipt me-2"></i>
+                    {{ delivery.delivery_number }}
+                </div>
+                <h3 class="mb-2">{{ project.name }}</h3>
+                <p class="mb-0 opacity-75">
+                    <i class="fas fa-code me-1"></i>
+                    {{ project.project_code }}
+                </p>
+            </div>
+            <div>
+                <span class="status-badge status-{{ delivery.status }}">
+                    <i class="fas fa-{% if delivery.status == 'pending' %}clock{% elif delivery.status == 'confirmed' %}check-circle{% else %}times-circle{% endif %} me-1"></i>
+                    {% if delivery.status == 'pending' %}في انتظار التأكيد
+                    {% elif delivery.status == 'confirmed' %}تم التأكيد
+                    {% elif delivery.status == 'rejected' %}مرفوض
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        
+        <div class="delivery-stats">
+            <div class="stat-badge">
+                <i class="fas fa-calendar-alt"></i>
+                <span>{{ delivery.delivery_date.strftime('%Y-%m-%d %H:%M') if delivery.delivery_date }}</span>
+            </div>
+            <div class="stat-badge">
+                <i class="fas fa-user"></i>
+                <span>{{ delivery.supplier.full_name }}</span>
+            </div>
+            <div class="stat-badge">
+                <i class="fas fa-boxes"></i>
+                <span>{{ delivery.delivered_items|length }} مادة مسلمة</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- المواد المسلمة -->
+            <div class="items-card">
+                <div class="section-title">
+                    <i class="fas fa-box-open"></i>
+                    المواد المسلمة
+                </div>
+                <table class="delivered-items-table">
+                    <thead>
+                        <tr>
+                            <th>المادة</th>
+                            <th>الكمية</th>
+                            <th>الوحدة</th>
+                            <th>ملاحظات</th>
+                        </thead>
+                        <tbody>
+                            {% for item in delivery.delivered_items %}
+                            <tr>
+                                <td>
+                                    <div class="item-name">{{ item.name }}</div>
+                                    {% if item.resource_code %}
+                                    <small class="text-muted">{{ item.resource_code }}</small>
+                                    {% endif %}
+                                </td>
+                                <td class="item-quantity">{{ item.quantity|round(2) }}</td>
+                                <td>{{ item.unit }}</td>
+                                <td class="text-muted">{{ item.notes or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- معرض الصور -->
+                {% if delivery.photos and delivery.photos|length > 0 %}
+                <div class="photos-card">
+                    <div class="section-title">
+                        <i class="fas fa-camera"></i>
+                        صور التسليم
+                        <span class="badge bg-primary ms-2">{{ delivery.photos|length }}</span>
+                    </div>
+                    <div class="photo-gallery">
+                        {% for photo in delivery.photos %}
+                        <div class="photo-item" onclick="viewImage('{{ photo }}')">
+                            <img src="{{ photo }}" alt="صورة التسليم" loading="lazy">
+                            <div class="photo-overlay">
+                                <i class="fas fa-search-plus"></i> تكبير
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- ملاحظات المورد -->
+                {% if delivery.notes %}
+                <div class="info-card">
+                    <div class="section-title">
+                        <i class="fas fa-sticky-note"></i>
+                        ملاحظات المورد
+                    </div>
+                    <div class="notes-box">
+                        {{ delivery.notes }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- معلومات الموقع -->
+                <div class="info-card">
+                    <div class="section-title">
+                        <i class="fas fa-map-marker-alt"></i>
+                        موقع التسليم
+                    </div>
+                    {% if delivery.delivery_location %}
+                    <div class="location-info">
+                        <i class="fas fa-location-dot"></i>
+                        {{ delivery.delivery_location }}
+                    </div>
+                    {% endif %}
+                    {% if delivery.coordinates %}
+                    <div class="location-info">
+                        <i class="fas fa-map-pin"></i>
+                        الإحداثيات: {{ delivery.coordinates }}
+                        <button class="btn btn-sm btn-outline-primary mt-2" onclick="openMap('{{ delivery.coordinates }}')">
+                            <i class="fas fa-map-marked-alt"></i> عرض على الخريطة
+                        </button>
+                    </div>
+                    {% endif %}
+                    {% if not delivery.delivery_location and not delivery.coordinates %}
+                    <p class="text-muted text-center py-3">لا توجد معلومات موقع</p>
+                    {% endif %}
+                </div>
+                
+                <!-- تقدم الطلب -->
+                <div class="info-card">
+                    <div class="section-title">
+                        <i class="fas fa-chart-line"></i>
+                        تقدم الطلب
+                    </div>
+                    {% for item in request_items %}
+                    <div class="progress-item">
+                        <div class="progress-header">
+                            <span>{{ item.resource_name }}</span>
+                            <span class="fw-bold">{{ item.delivered_quantity|round(2) }} / {{ item.required_quantity|round(2) }} {{ item.unit }}</span>
+                        </div>
+                        {% set percent = (item.delivered_quantity / item.required_quantity * 100) if item.required_quantity > 0 else 0 %}
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ percent }}%; background: linear-gradient(90deg, var(--primary), var(--success));"></div>
+                        </div>
+                        <small class="text-muted">{{ "%.1f"|format(percent) }}% مكتمل</small>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="mt-3 pt-2 border-top">
+                        <div class="d-flex justify-content-between">
+                            <span>إجمالي التقدم</span>
+                            <span class="fw-bold">{{ "%.1f"|format(resource_request.completion_percentage) }}%</span>
+                        </div>
+                        <div class="progress-bar mt-1">
+                            <div class="progress-fill bg-success" style="width: {{ resource_request.completion_percentage }}%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- معلومات التسليم الإضافية -->
+                <div class="info-card">
+                    <div class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        معلومات إضافية
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted d-block">تاريخ التسليم</small>
+                        <span>{{ delivery.delivery_date.strftime('%Y-%m-%d %H:%M:%S') if delivery.delivery_date }}</span>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted d-block">المورد</small>
+                        <span>{{ delivery.supplier.full_name }}</span>
+                        <br><small class="text-muted">{{ delivery.supplier.email }}</small>
+                    </div>
+                    <div>
+                        <small class="text-muted d-block">رقم الطلب المرجعي</small>
+                        <span>#{{ resource_request.id }} - {{ resource_request.project_name }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- نموذج التأكيد -->
+        <div class="info-card">
+            <div class="section-title">
+                <i class="fas fa-clipboard-check"></i>
+                تأكيد الاستلام
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">ملاحظات التأكيد</label>
+                <textarea id="confirmationNotes" class="form-control" rows="3" 
+                          placeholder="أضف ملاحظاتك هنا (مطلوب للرفض)..."></textarea>
+            </div>
+            
+            <div class="action-buttons">
+                <button type="button" class="btn-confirm" onclick="confirmDelivery('confirm')">
+                    <i class="fas fa-check-circle me-2"></i> تأكيد الاستلام
+                </button>
+                <button type="button" class="btn-reject" onclick="confirmDelivery('reject')">
+                    <i class="fas fa-times-circle me-2"></i> رفض التسليم
+                </button>
+                <a href="{{ url_for('projects.project_resource_requests', project_id=project.id) }}" 
+                   class="btn btn-secondary">
+                    <i class="fas fa-arrow-right me-2"></i> العودة للطلبات
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelivery(action) {
+    const notes = document.getElementById('confirmationNotes').value;
+    
+    if (action === 'reject' && !notes) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'الرجاء إدخال سبب الرفض',
+            confirmButtonText: 'حسناً'
+        });
+        return;
+    }
+    
+    const title = action === 'confirm' ? 'تأكيد الاستلام' : 'رفض التسليم';
+    const text = action === 'confirm' 
+        ? 'هل أنت متأكد من تأكيد استلام هذه المواد؟' 
+        : 'هل أنت متأكد من رفض هذا التسليم؟';
+    
+    Swal.fire({
+        title: title,
+        text: text,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم',
+        cancelButtonText: 'إلغاء',
+        confirmButtonColor: action === 'confirm' ? '#4cc9f0' : '#f94144',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // عرض مؤشر تحميل
+            Swal.fire({
+                title: 'جاري المعالجة...',
+                text: 'يرجى الانتظار',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    action: action,
+                    notes: notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: action === 'confirm' ? 'تم التأكيد' : 'تم الرفض',
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = "{{ url_for('projects.project_resource_requests', project_id=project.id) }}";
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error,
+                        confirmButtonText: 'حسناً'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ في الاتصال',
+                    text: 'حدث خطأ في الاتصال بالخادم. يرجى المحاولة مرة أخرى.',
+                    confirmButtonText: 'حسناً'
+                });
+            });
+        }
+    });
+}
+
+function viewImage(imageUrl) {
+    Swal.fire({
+        imageUrl: imageUrl,
+        imageAlt: 'صورة التسليم',
+        showCloseButton: true,
+        showConfirmButton: false,
+        width: 'auto',
+        imageWidth: '90%',
+        imageHeight: 'auto',
+        customClass: {
+            popup: 'image-modal'
+        }
+    });
+}
+
+function openMap(coordinates) {
+    // فتح الخريطة في Google Maps
+    const [lat, lng] = coordinates.split(',').map(coord => coord.trim());
+    const url = `https://www.google.com/maps?q=${lat},${lng}`;
+    window.open(url, '_blank');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends "communication/base_chat.html" %}
+
+{% block title %}{{ attachment.original_filename }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .image-preview-container {
+        background: rgba(0,0,0,0.95);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    
+    .image-wrapper {
+        max-width: 90%;
+        max-height: 85vh;
+        text-align: center;
+    }
+    
+    .preview-image {
+        max-width: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-xl);
+    }
+    
+    .image-info-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(90deg, rgba(0,0,0,0.8), rgba(0,0,0,0.9));
+        backdrop-filter: blur(10px);
+        padding: 15px 20px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .image-info {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .image-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .image-action-btn {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 25px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .image-action-btn:hover {
+        background: rgba(255,255,255,0.3);
+        transform: scale(1.05);
+    }
+    
+    .close-btn {
+        background: rgba(220,53,69,0.8);
+    }
+    
+    .close-btn:hover {
+        background: #dc3545;
+    }
+    
+    @media (max-width: 768px) {
+        .image-info-bar {
+            flex-direction: column;
+            text-align: center;
+        }
+        .image-info {
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="image-preview-container">
+    <div class="image-wrapper">
+        <img id="previewImage" class="preview-image" src="{{ url_for('communication.download_attachment', attachment_id=attachment.id) }}" alt="{{ attachment.original_filename }}">
+    </div>
+    
+    <div class="image-info-bar">
+        <div class="image-info">
+            <span><i class="fas fa-file-image me-2"></i> {{ attachment.original_filename }}</span>
+            <span><i class="fas fa-weight-hanging me-2"></i> 
+                {% if attachment.file_size < 1024 %}
+                    {{ attachment.file_size }} Bytes
+                {% elif attachment.file_size < 1024*1024 %}
+                    {{ (attachment.file_size / 1024)|round(1) }} KB
+                {% else %}
+                    {{ (attachment.file_size / (1024*1024))|round(2) }} MB
+                {% endif %}
+            </span>
+            <span><i class="fas fa-expand me-2"></i> 
+                {% if attachment.image_width and attachment.image_height %}
+                    {{ attachment.image_width }} x {{ attachment.image_height }}
+                {% else %}
+                    {{ _('dimensions_not_available') }}
+                {% endif %}
+            </span>
+        </div>
+        <div class="image-actions">
+            <button class="image-action-btn" onclick="zoomIn()" title="{{ _('zoom_in') }}">
+                <i class="fas fa-search-plus"></i>
+            </button>
+            <button class="image-action-btn" onclick="zoomOut()" title="{{ _('zoom_out') }}">
+                <i class="fas fa-search-minus"></i>
+            </button>
+            <button class="image-action-btn" onclick="resetZoom()" title="{{ _('reset_zoom') }}">
+                <i class="fas fa-undo"></i>
+            </button>
+            <a href="{{ url_for('communication.download_attachment', attachment_id=attachment.id) }}" class="image-action-btn" download>
+                <i class="fas fa-download"></i> {{ _('download') }}
+            </a>
+            <button class="image-action-btn close-btn" onclick="goBackToChat()" title="{{ _('close') }}">
+                <i class="fas fa-times"></i> {{ _('close') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentZoom = 1;
+    const img = document.getElementById('previewImage');
+    
+    function zoomIn() {
+        currentZoom += 0.2;
+        img.style.transform = `scale(${currentZoom})`;
+        img.style.transition = 'transform 0.2s';
+    }
+    
+    function zoomOut() {
+        if (currentZoom > 0.4) {
+            currentZoom -= 0.2;
+            img.style.transform = `scale(${currentZoom})`;
+        }
+    }
+    
+    function resetZoom() {
+        currentZoom = 1;
+        img.style.transform = 'scale(1)';
+    }
+    
+    function goBackToChat() {
+        window.location.href = "{{ url_for('communication.chat_room', chat_id=attachment.message.chat_id) }}";
+    }
+    
+    // دعم عجلة الماوس للتكبير والتصغير
+    img.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+            zoomIn();
+        } else {
+            zoomOut();
+        }
+    });
+</script>
+{% endblock %}

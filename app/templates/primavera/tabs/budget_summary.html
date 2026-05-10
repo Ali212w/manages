@@ -1,0 +1,128 @@
+<!-- templates/primavera/tabs/project/budget_summary.html -->
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-calculator text-primary"></i>
+        Budget Summary
+    </h6>
+    
+    <!-- بطاقات الميزانية -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Current Budget</h6>
+                            <h3 class="mb-0">{{ "%.2f"|format(project.current_budget or project.total_planned_cost or 0) }} ر.س</h3>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-coins fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Unallocated Budget</h6>
+                            <h3 class="mb-0">{{ "%.2f"|format(unallocated_budget or 0) }} ر.س</h3>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-hourglass-half fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Distributed Current Budget</h6>
+                            <h3 class="mb-0">{{ "%.2f"|format(distributed_budget or 0) }} ر.س</h3>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-chart-pie fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h6>Current Variance</h6>
+                        {% set variance = current_variance|default(0) %}
+                        <span class="badge bg-{{ 'success' if variance >= 0 else 'danger' }} p-2">
+                            {{ "%.2f"|format(variance) }} ر.س
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-0">
+                        Current Budget - Actual Cost
+                    </p>
+                    <div class="progress mt-2" style="height: 8px;">
+                        {% set variance_percentage = variance_percentage|default(0) %}
+                        <div class="progress-bar bg-{{ 'success' if variance >= 0 else 'danger' }}" 
+                             style="width: {{ variance_percentage }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="mb-2">Total Spending Plan</h6>
+                            <h5 class="mb-0">{{ "%.2f"|format(total_spending_plan or 0) }} ر.س</h5>
+                        </div>
+                        <div>
+                            <h6 class="mb-2">Total Benefit Plan</h6>
+                            <h5 class="mb-0 text-success">{{ "%.2f"|format(total_benefit_plan or 0) }} ر.س</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- رسم بياني لتوزيع الميزانية -->
+    <div class="mt-4">
+        <canvas id="budgetChart" height="300"></canvas>
+    </div>
+</div>
+
+<script>
+function initBudgetChart() {
+    const ctx = document.getElementById('budgetChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Allocated Budget', 'Unallocated Budget', 'Actual Cost'],
+            datasets: [{
+                data: [
+                    {{ distributed_budget or 0 }},
+                    {{ unallocated_budget or 0 }},
+                    {{ project.total_actual_cost or 0 }}
+                ],
+                backgroundColor: ['#2563eb', '#f59e0b', '#ef4444']
+            }]
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initBudgetChart);
+</script>

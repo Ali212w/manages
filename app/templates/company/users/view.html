@@ -1,0 +1,270 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ user.full_name }} - تفاصيل المستخدم{% endblock %}
+
+{% block page_title %}{{ user.full_name }}{% endblock %}
+{% block page_subtitle %}معلومات المستخدم وإحصائيات{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة مع معلومات المستخدم -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border: none;">
+            <div class="card-body p-4 text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center gap-4">
+                            <div class="user-avatar" style="width: 100px; height: 100px; font-size: 2.5rem;">
+                                {{ user.full_name[0] }}
+                            </div>
+                            <div>
+                                <h1 class="display-6 fw-bold mb-2">{{ user.full_name }}</h1>
+                                {% if user.full_name_ar %}
+                                <h5 class="mb-3 opacity-75">{{ user.full_name_ar }}</h5>
+                                {% endif %}
+                                <div class="d-flex gap-3 flex-wrap">
+                                    <span class="badge bg-white text-dark p-2"><i class="fas fa-envelope me-2"></i>{{ user.email }}</span>
+                                    {% if user.phone %}
+                                    <span class="badge bg-white text-dark p-2" dir="ltr"><i class="fas fa-phone me-2"></i>{{ user.phone }}</span>
+                                    {% endif %}
+                                    <span class="badge bg-white text-dark p-2">
+                                        <i class="fas fa-tag me-2"></i>
+                                        {% if user.role == 'org_admin' %}
+                                            مدير شركة
+                                        {% elif user.role == 'project_manager' %}
+                                            مدير مشروع
+                                        {% elif user.role == 'supervisor' %}
+                                            مشرف
+                                        {% elif user.role == 'delegate' %}
+                                            مندوب
+                                        {% else %}
+                                            موظف
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-start">
+                        <a href="{{ url_for('company.edit_user', user_id=user.id) }}" class="btn btn-light">
+                            <i class="fas fa-edit me-2"></i>تعديل البيانات
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- إحصائيات المستخدم -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <h2 class="stat-value">{{ stats.managed_projects }}</h2>
+            <p class="stat-label">مشاريع يديرها</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <h2 class="stat-value">{{ stats.supervised_tasks }}</h2>
+            <p class="stat-label">مهام يشرف عليها</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <h2 class="stat-value">{{ stats.delegate_tasks }}</h2>
+            <p class="stat-label">مهام مندوب</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon danger">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="stat-value">{{ stats.completed_tasks }}</h2>
+            <p class="stat-label">مهام مكتملة</p>
+        </div>
+    </div>
+    <!-- في قسم الإحصائيات، أضف هذه البطاقة -->
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon danger">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2 class="stat-value">{{ stats.critical_tasks }}</h2>
+            <p class="stat-label">مهام حرجة</p>
+        </div>
+    </div>
+</div>
+
+<!-- معلومات إضافية -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="table-card">
+            <h5 class="table-title mb-4"><i class="fas fa-info-circle me-2 text-primary"></i>معلومات شخصية</h5>
+            <table class="table table-borderless">
+                <tr>
+                    <th width="150">الحالة:</th>
+                    <td>
+                        <span class="badge-status {{ 'active' if user.is_user_active else 'inactive' }}">
+                            {{ 'نشط' if user.is_user_active else 'غير نشط' }}
+                        </span>
+                        {% if user.is_verified %}
+                        <span class="badge bg-success ms-2"><i class="fas fa-check-circle"></i> موثق</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>رقم الموظف:</th>
+                    <td>{{ user.employee_id or 'غير محدد' }}</td>
+                </tr>
+                <tr>
+                    <th>رقم الجوال:</th>
+                    <td dir="ltr">{{ user.mobile or 'غير محدد' }}</td>
+                </tr>
+                <tr>
+                    <th>المسمى الوظيفي:</th>
+                    <td>{{ user.job_title or 'غير محدد' }}</td>
+                </tr>
+                <tr>
+                    <th>القسم:</th>
+                    <td>{{ user.department.name if user.department else 'غير محدد' }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="table-card">
+            <h5 class="table-title mb-4"><i class="fas fa-history me-2 text-primary"></i>معلومات الحساب</h5>
+            <table class="table table-borderless">
+                <tr>
+                    <th width="150">تاريخ الإنشاء:</th>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                <tr>
+                    <th>آخر تحديث:</th>
+                    <td>{{ user.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                <tr>
+                    <th>آخر دخول:</th>
+                    <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'لم يسجل بعد' }}</td>
+                </tr>
+                <tr>
+                    <th>عدد الدخول:</th>
+                    <td>{{ user.login_count or 0 }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- الصلاحيات -->
+<div class="table-card mb-4">
+    <h5 class="table-title mb-4"><i class="fas fa-shield-alt me-2 text-primary"></i>الصلاحيات</h5>
+    
+    <div class="row">
+        <div class="col-md-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" {% if user.permissions.view_projects %}checked{% endif %} disabled>
+                <label class="form-check-label">عرض المشاريع</label>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" {% if user.permissions.create_tasks %}checked{% endif %} disabled>
+                <label class="form-check-label">إنشاء مهام</label>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" {% if user.permissions.approve_expenses %}checked{% endif %} disabled>
+                <label class="form-check-label">الموافقة على المصروفات</label>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" {% if user.permissions.manage_users %}checked{% endif %} disabled>
+                <label class="form-check-label">إدارة المستخدمين</label>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" {% if user.permissions.view_reports %}checked{% endif %} disabled>
+                <label class="form-check-label">عرض التقارير</label>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" {% if user.permissions.upload_documents %}checked{% endif %} disabled>
+                <label class="form-check-label">رفع المستندات</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- آخر النشاطات -->
+<div class="table-card">
+    <div class="table-header">
+        <h5 class="table-title"><i class="fas fa-history me-2 text-primary"></i>آخر النشاطات</h5>
+    </div>
+    
+    <ul class="nav nav-tabs" id="activityTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button" role="tab">
+                المشاريع
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab">
+                المهام
+            </button>
+        </li>
+    </ul>
+    
+    <div class="tab-content mt-3">
+        <div class="tab-pane fade show active" id="projects" role="tabpanel">
+            <div class="list-group list-group-flush">
+                {% for project in recent_activity.projects %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">{{ project.name }}</h6>
+                        <small class="text-muted">{{ project.project_code }}</small>
+                    </div>
+                    <small class="text-muted">{{ project.updated_at.strftime('%Y-%m-%d') }}</small>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">لا يوجد نشاط</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="tasks" role="tabpanel">
+            <div class="list-group list-group-flush">
+                {% for task in recent_activity.tasks %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">{{ task.task_name }}</h6>
+                        <small class="text-muted">{{ task.project.name if task.project }}</small>
+                    </div>
+                    <span class="badge bg-{{ 'success' if task.status == 'completed' else 'warning' }}">
+                        {{ task.status }}
+                    </span>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">لا يوجد نشاط</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

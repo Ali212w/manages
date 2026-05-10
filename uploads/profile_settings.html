@@ -1,0 +1,1676 @@
+<!-- {% if current_user.role == 'supervisor' or current_user.role == 'delegate' or current_user.role == 'employee' %}
+{% extends "employee/base.html" %}
+{% elif current_user.role == 'project_manager' or current_user.role == 'org_admin' %}
+{% extends "company/base.html" %}
+{% elif current_user.role == 'consultant' %}
+{% extends "consultant/base.html" %}
+{% elif current_user.role == 'supplier' %}
+{% extends "supplier/base.html" %}
+{% elif current_user.role == 'client' %}
+{% extends "client/base.html" %}
+{%else%} -->
+{% extends "base.html" %}
+
+{% block title %}إعدادات الملف الشخصي{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-header {
+        background: linear-gradient(135deg, #6f42c1 0%, #007bff 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .settings-nav {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .settings-nav .nav-link {
+        color: #495057;
+        border-radius: 5px;
+        padding: 10px 15px;
+        margin-bottom: 5px;
+        transition: all 0.3s;
+    }
+    
+    .settings-nav .nav-link:hover {
+        background: #f8f9fa;
+        color: #007bff;
+    }
+    
+    .settings-nav .nav-link.active {
+        background: #007bff;
+        color: white;
+    }
+    
+    .settings-nav .nav-link i {
+        width: 25px;
+    }
+    
+    .settings-card {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .settings-card h5 {
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+        color: #495057;
+    }
+    
+    .preference-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .preference-item:last-child {
+        border-bottom: none;
+    }
+    
+    .preference-info h6 {
+        margin-bottom: 5px;
+        color: #212529;
+    }
+    
+    .preference-info p {
+        margin-bottom: 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    /* toggle switch */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+    
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+    
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+        background-color: #007bff;
+    }
+    
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+    
+    .color-option {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.3s;
+    }
+    
+    .color-option:hover {
+        transform: scale(1.1);
+    }
+    
+    .color-option.selected {
+        border-color: #007bff;
+        transform: scale(1.1);
+    }
+    
+    .language-option {
+        padding: 10px 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 10px;
+    }
+    
+    .language-option:hover {
+        background: #f8f9fa;
+        border-color: #007bff;
+    }
+    
+    .language-option.selected {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    
+    .timezone-select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        background: white;
+    }
+    
+    .api-key {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        font-family: monospace;
+        direction: ltr;
+        text-align: left;
+        margin-bottom: 10px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .danger-zone {
+        border: 2px solid #dc3545;
+        border-radius: 10px;
+        padding: 20px;
+        background: #fff5f5;
+    }
+    
+    .danger-zone h6 {
+        color: #dc3545;
+        margin-bottom: 15px;
+    }
+    
+    .two-factor-qr {
+        text-align: center;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .two-factor-qr img {
+        max-width: 200px;
+        margin-bottom: 15px;
+    }
+    
+    .backup-codes {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        font-family: monospace;
+        direction: ltr;
+        text-align: center;
+        letter-spacing: 2px;
+        margin-bottom: 10px;
+    }
+    
+    .backup-codes span {
+        display: inline-block;
+        padding: 5px 10px;
+        background: white;
+        border: 1px solid #dee2e6;
+        margin: 5px;
+        font-size: 1.1rem;
+    }
+    
+    .session-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+    
+    .session-item.current {
+        background: #e3f2fd;
+        border-color: #007bff;
+    }
+    
+    .session-device {
+        display: flex;
+        align-items: center;
+    }
+    
+    .session-device i {
+        font-size: 2rem;
+        margin-left: 15px;
+        color: #6c757d;
+    }
+    
+    .session-device .device-info h6 {
+        margin-bottom: 5px;
+    }
+    
+    .session-device .device-info small {
+        color: #6c757d;
+    }
+    
+    .notification-preview {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        display: none;
+        z-index: 9999;
+        border-right: 4px solid #007bff;
+    }
+    
+    .notification-preview.show {
+        display: block;
+        animation: slideInLeft 0.3s ease;
+    }
+    
+    @keyframes slideInLeft {
+        from {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    .integration-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+    }
+    
+    .integration-item:hover {
+        background: #f8f9fa;
+        border-color: #007bff;
+    }
+    
+    .integration-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .integration-info i {
+        font-size: 2.5rem;
+        margin-left: 15px;
+    }
+    
+    .integration-info h6 {
+        margin-bottom: 5px;
+    }
+    
+    .integration-info p {
+        margin-bottom: 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .connected-badge {
+        background: #28a745;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    
+    .disconnected-badge {
+        background: #dc3545;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    
+    .storage-bar {
+        height: 10px;
+        background: #f0f0f0;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+    
+    .storage-bar .used {
+        height: 100%;
+        background: linear-gradient(90deg, #007bff, #6610f2);
+        border-radius: 5px;
+        transition: width 0.3s;
+    }
+    
+    @media print {
+        .settings-nav, .btn, .switch {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="settings-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="fas fa-cog"></i> إعدادات الملف الشخصي</h2>
+            <p class="mb-0">قم بتخصيص إعدادات حسابك وتفضيلاتك</p>
+        </div>
+        <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" 
+             class="rounded-circle" width="80" height="80" alt="">
+    </div>
+</div>
+
+<div class="row">
+    <!-- القائمة الجانبية -->
+    <div class="col-md-3">
+        <div class="settings-nav">
+            <nav class="nav flex-column">
+                <a class="nav-link active" href="#general" data-bs-toggle="tab">
+                    <i class="fas fa-user"></i> عام
+                </a>
+                <a class="nav-link" href="#notifications" data-bs-toggle="tab">
+                    <i class="fas fa-bell"></i> الإشعارات
+                </a>
+                <a class="nav-link" href="#security" data-bs-toggle="tab">
+                    <i class="fas fa-shield-alt"></i> الأمان
+                </a>
+                <a class="nav-link" href="#privacy" data-bs-toggle="tab">
+                    <i class="fas fa-lock"></i> الخصوصية
+                </a>
+                <a class="nav-link" href="#appearance" data-bs-toggle="tab">
+                    <i class="fas fa-paint-brush"></i> المظهر
+                </a>
+                <a class="nav-link" href="#integrations" data-bs-toggle="tab">
+                    <i class="fas fa-plug"></i> التكاملات
+                </a>
+                <a class="nav-link" href="#api" data-bs-toggle="tab">
+                    <i class="fas fa-code"></i> API
+                </a>
+                <a class="nav-link" href="#billing" data-bs-toggle="tab">
+                    <i class="fas fa-credit-card"></i> الفواتير
+                </a>
+                <a class="nav-link" href="#sessions" data-bs-toggle="tab">
+                    <i class="fas fa-history"></i> الجلسات النشطة
+                </a>
+                <a class="nav-link text-danger" href="#danger" data-bs-toggle="tab">
+                    <i class="fas fa-exclamation-triangle"></i> المنطقة الخطرة
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- محتوى الإعدادات -->
+    <div class="col-md-9">
+        <div class="tab-content">
+            <!-- الإعدادات العامة -->
+            <div class="tab-pane fade show active" id="general">
+                <div class="settings-card">
+                    <h5><i class="fas fa-user-circle"></i> المعلومات الشخصية</h5>
+                    <form method="POST" action="{{ url_for('profile_settings') }}" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4 text-center">
+                                <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" 
+                                     class="rounded-circle img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="">
+                                <div>
+                                    <label for="profile_image" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-camera"></i> تغيير الصورة
+                                    </label>
+                                    <input type="file" class="d-none" id="profile_image" name="profile_image" accept="image/*">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">اسم المستخدم</label>
+                                        <input type="text" class="form-control" value="{{ current_user.username }}" disabled>
+                                        <small class="text-muted">لا يمكن تغيير اسم المستخدم</small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">البريد الإلكتروني</label>
+                                        <input type="email" class="form-control" value="{{ current_user.email }}" disabled>
+                                        <small class="text-muted">لطلب تغيير البريد، تواصل مع الدعم</small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="full_name" class="form-label">الاسم الكامل</label>
+                                        <input type="text" class="form-control" id="full_name" name="full_name" 
+                                               value="{{ current_user.full_name }}">
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="phone" class="form-label">رقم الهاتف</label>
+                                        <input type="tel" class="form-control" id="phone" name="phone" 
+                                               value="{{ current_user.phone or '' }}" placeholder="05xxxxxxxx">
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="job_title" class="form-label">المسمى الوظيفي</label>
+                                        <input type="text" class="form-control" id="job_title" name="job_title" 
+                                               value="{{ current_user.job_title or '' }}">
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="department" class="form-label">القسم</label>
+                                        <input type="text" class="form-control" id="department" name="department" 
+                                               value="{{ current_user.department or '' }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="submit" name="action" value="update_profile" class="btn btn-primary">
+                                <i class="fas fa-save"></i> حفظ التغييرات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="settings-card">
+                    <h5><i class="fas fa-clock"></i> المنطقة الزمنية والتاريخ</h5>
+                    <form method="POST" action="{{ url_for('profile_settings') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">المنطقة الزمنية</label>
+                                <select class="timezone-select" name="timezone">
+                                    <option value="Asia/Riyadh" {% if current_user.timezone == 'Asia/Riyadh' %}selected{% endif %}>الرياض</option>
+                                    <option value="Asia/Dubai" {% if current_user.timezone == 'Asia/Dubai' %}selected{% endif %}>دبي</option>
+                                    <option value="Asia/Kuwait" {% if current_user.timezone == 'Asia/Kuwait' %}selected{% endif %}>الكويت</option>
+                                    <option value="Asia/Qatar" {% if current_user.timezone == 'Asia/Qatar' %}selected{% endif %}>قطر</option>
+                                    <option value="Asia/Bahrain" {% if current_user.timezone == 'Asia/Bahrain' %}selected{% endif %}>البحرين</option>
+                                    <option value="Asia/Amman" {% if current_user.timezone == 'Asia/Amman' %}selected{% endif %}>عمان</option>
+                                    <option value="Asia/Beirut" {% if current_user.timezone == 'Asia/Beirut' %}selected{% endif %}>بيروت</option>
+                                    <option value="Africa/Cairo" {% if current_user.timezone == 'Africa/Cairo' %}selected{% endif %}>القاهرة</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">صيغة التاريخ</label>
+                                <select class="form-select" name="date_format">
+                                    <option value="Y-m-d" {% if current_user.date_format == 'Y-m-d' %}selected{% endif %}>2024-01-15</option>
+                                    <option value="d/m/Y" {% if current_user.date_format == 'd/m/Y' %}selected{% endif %}>15/01/2024</option>
+                                    <option value="m/d/Y" {% if current_user.date_format == 'm/d/Y' %}selected{% endif %}>01/15/2024</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">صيغة الوقت</label>
+                                <select class="form-select" name="time_format">
+                                    <option value="24" {% if current_user.time_format == '24' %}selected{% endif %}>24 ساعة (14:30)</option>
+                                    <option value="12" {% if current_user.time_format == '12' %}selected{% endif %}>12 ساعة (02:30 PM)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">أول أيام الأسبوع</label>
+                                <select class="form-select" name="week_start">
+                                    <option value="saturday" {% if current_user.week_start == 'saturday' %}selected{% endif %}>السبت</option>
+                                    <option value="sunday" {% if current_user.week_start == 'sunday' %}selected{% endif %}>الأحد</option>
+                                    <option value="monday" {% if current_user.week_start == 'monday' %}selected{% endif %}>الاثنين</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="submit" name="action" value="update_locale" class="btn btn-primary">
+                                <i class="fas fa-save"></i> حفظ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- إعدادات الإشعارات -->
+            <div class="tab-pane fade" id="notifications">
+                <div class="settings-card">
+                    <h5><i class="fas fa-bell"></i> تفضيلات الإشعارات</h5>
+                    <form method="POST" action="{{ url_for('profile_settings') }}">
+                        <div class="preference-item">
+                            <div class="preference-info">
+                                <h6>إشعارات البريد الإلكتروني</h6>
+                                <p>استلام إشعارات المهام والتحديثات عبر البريد الإلكتروني</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="email_notifications" 
+                                       {% if current_user.notification_settings.email_notifications %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div class="preference-info">
+                                <h6>إشعارات المتصفح</h6>
+                                <p>عرض إشعارات فورية في المتصفح</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="browser_notifications" 
+                                       {% if current_user.notification_settings.browser_notifications %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div class="preference-info">
+                                <h6>إشعارات الجوال</h6>
+                                <p>استلام إشعارات عبر تطبيق الجوال</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="mobile_notifications" 
+                                       {% if current_user.notification_settings.mobile_notifications %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div class="preference-info">
+                                <h6>تذكيرات المهام</h6>
+                                <p>تذكير قبل موعد المهام</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="task_reminders" 
+                                       {% if current_user.notification_settings.task_reminders %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div class="preference-info">
+                                <h6>إشعارات المشروع</h6>
+                                <p>إشعارات بتحديثات المشاريع التي تشارك فيها</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="project_notifications" 
+                                       {% if current_user.notification_settings.project_notifications %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div class="preference-info">
+                                <h6>إشعارات التعليقات</h6>
+                                <p>إشعارات عند إضافة تعليقات على مهامك</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="comment_notifications" 
+                                       {% if current_user.notification_settings.comment_notifications %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <label class="form-label">وقت التذكير اليومي</label>
+                            <input type="time" class="form-control" name="daily_reminder_time" 
+                                   value="{{ current_user.notification_settings.daily_reminder_time or '09:00' }}">
+                        </div>
+                        
+                        <div class="text-end mt-4">
+                            <button type="submit" name="action" value="update_notifications" class="btn btn-primary">
+                                <i class="fas fa-save"></i> حفظ الإعدادات
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="testNotification()">
+                                <i class="fas fa-bell"></i> اختبار الإشعارات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="settings-card">
+                    <h5><i class="fas fa-clock"></i> جدول التذكيرات</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="remindBeforeStart">
+                                <label class="form-check-label">
+                                    تذكير قبل بدء المهمة
+                                </label>
+                            </div>
+                            <select class="form-select mt-2" style="width: auto;">
+                                <option>15 دقيقة</option>
+                                <option>30 دقيقة</option>
+                                <option>1 ساعة</option>
+                                <option>2 ساعة</option>
+                                <option>1 يوم</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="remindBeforeDue">
+                                <label class="form-check-label">
+                                    تذكير قبل تاريخ الاستحقاق
+                                </label>
+                            </div>
+                            <select class="form-select mt-2" style="width: auto;">
+                                <option>1 يوم</option>
+                                <option>2 يوم</option>
+                                <option>3 يوم</option>
+                                <option>1 أسبوع</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- إعدادات الأمان -->
+            <div class="tab-pane fade" id="security">
+                <div class="settings-card">
+                    <h5><i class="fas fa-key"></i> تغيير كلمة المرور</h5>
+                    <form method="POST" action="{{ url_for('profile_settings') }}">
+                        <div class="mb-3">
+                            <label class="form-label">كلمة المرور الحالية</label>
+                            <input type="password" class="form-control" name="current_password" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">كلمة المرور الجديدة</label>
+                            <input type="password" class="form-control" name="new_password" required 
+                                   pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}">
+                            <small class="text-muted">يجب أن تحتوي على 8 أحرف على الأقل، حرف كبير، حرف صغير، ورقم</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">تأكيد كلمة المرور الجديدة</label>
+                            <input type="password" class="form-control" name="confirm_password" required>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="submit" name="action" value="change_password" class="btn btn-warning">
+                                <i class="fas fa-key"></i> تغيير كلمة المرور
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="settings-card">
+                    <h5><i class="fas fa-shield-alt"></i> المصادقة الثنائية (2FA)</h5>
+                    
+                    {% if current_user.two_factor_enabled %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> المصادقة الثنائية مفعلة
+                        </div>
+                        
+                        <div class="two-factor-qr">
+                            <img src="data:image/png;base64,{{ two_factor_qr }}" alt="QR Code">
+                            <p>امسح الرمز باستخدام تطبيق Google Authenticator</p>
+                        </div>
+                        
+                        <div class="backup-codes">
+                            {% for code in backup_codes %}
+                            <span>{{ code }}</span>
+                            {% endfor %}
+                        </div>
+                        <p class="text-muted">احتفظ بهذه الرموز في مكان آمن. يمكن استخدامها مرة واحدة فقط.</p>
+                        
+                        <button class="btn btn-danger" onclick="disable2FA()">
+                            <i class="fas fa-times"></i> تعطيل المصادقة الثنائية
+                        </button>
+                    {% else %}
+                        <p>المصادقة الثنائية تضيف طبقة أمان إضافية لحسابك</p>
+                        <button class="btn btn-primary" onclick="enable2FA()">
+                            <i class="fas fa-qrcode"></i> تفعيل المصادقة الثنائية
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- إعدادات الخصوصية -->
+            <div class="tab-pane fade" id="privacy">
+                <div class="settings-card">
+                    <h5><i class="fas fa-user-secret"></i> إعدادات الخصوصية</h5>
+                    
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <h6>الملف الشخصي عام</h6>
+                            <p>السماح للآخرين برؤية ملفك الشخصي</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" name="public_profile" 
+                                   {% if current_user.privacy_settings.public_profile %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <h6>إظهار البريد الإلكتروني</h6>
+                            <p>إظهار بريدك الإلكتروني لأعضاء الفريق</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" name="show_email" 
+                                   {% if current_user.privacy_settings.show_email %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <h6>إظهار رقم الهاتف</h6>
+                            <p>إظهار رقم هاتفك لأعضاء الفريق</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" name="show_phone" 
+                                   {% if current_user.privacy_settings.show_phone %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6>من يمكنه رؤية نشاطاتي</h6>
+                        <select class="form-select">
+                            <option>الجميع</option>
+                            <option>أعضاء الفريق فقط</option>
+                            <option>المديرين فقط</option>
+                            <option>لا أحد</option>
+                        </select>
+                    </div>
+                    
+                    <div class="text-end mt-4">
+                        <button class="btn btn-primary" onclick="savePrivacySettings()">
+                            <i class="fas fa-save"></i> حفظ إعدادات الخصوصية
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="settings-card">
+                    <h5><i class="fas fa-download"></i> بياناتي</h5>
+                    <p>قم بتصدير جميع بياناتك أو حذفها</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button class="btn btn-outline-primary w-100 mb-2" onclick="exportData()">
+                                <i class="fas fa-download"></i> تصدير البيانات
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-outline-danger w-100 mb-2" onclick="requestDataDeletion()">
+                                <i class="fas fa-trash"></i> طلب حذف البيانات
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- إعدادات المظهر -->
+            <div class="tab-pane fade" id="appearance">
+                <div class="settings-card">
+                    <h5><i class="fas fa-palette"></i> المظهر</h5>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">الوضع</label>
+                        <div class="row">
+                            <div class="col-4">
+                                <div class="language-option text-center" onclick="selectTheme('light')">
+                                    <i class="fas fa-sun fa-2x mb-2"></i>
+                                    <div>فاتح</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="language-option text-center" onclick="selectTheme('dark')">
+                                    <i class="fas fa-moon fa-2x mb-2"></i>
+                                    <div>داكن</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="language-option text-center selected" onclick="selectTheme('auto')">
+                                    <i class="fas fa-laptop fa-2x mb-2"></i>
+                                    <div>تلقائي</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">اللغة</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="language-option selected" onclick="selectLanguage('ar')">
+                                    <i class="fas fa-language"></i> العربية
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="language-option" onclick="selectLanguage('en')">
+                                    <i class="fas fa-language"></i> English
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">اللون الأساسي</label>
+                        <div class="d-flex gap-2">
+                            <div class="color-option" style="background: #007bff;" onclick="selectColor('blue')"></div>
+                            <div class="color-option" style="background: #6f42c1;" onclick="selectColor('purple')"></div>
+                            <div class="color-option" style="background: #28a745;" onclick="selectColor('green')"></div>
+                            <div class="color-option" style="background: #dc3545;" onclick="selectColor('red')"></div>
+                            <div class="color-option" style="background: #fd7e14;" onclick="selectColor('orange')"></div>
+                            <div class="color-option" style="background: #20c997;" onclick="selectColor('teal')"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">حجم الخط</label>
+                        <input type="range" class="form-range" min="12" max="24" value="16" onchange="changeFontSize(this.value)">
+                        <div class="d-flex justify-content-between">
+                            <span>صغير</span>
+                            <span>متوسط</span>
+                            <span>كبير</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">كثافة العرض</label>
+                        <select class="form-select">
+                            <option>مريح</option>
+                            <option selected>افتراضي</option>
+                            <option>مدمج</option>
+                        </select>
+                    </div>
+                    
+                    <div class="text-end">
+                        <button class="btn btn-primary" onclick="saveAppearance()">
+                            <i class="fas fa-save"></i> حفظ المظهر
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- التكاملات -->
+            <div class="tab-pane fade" id="integrations">
+                <div class="settings-card">
+                    <h5><i class="fas fa-plug"></i> التكاملات المتاحة</h5>
+                    
+                    <div class="integration-item">
+                        <div class="integration-info">
+                            <i class="fab fa-slack" style="color: #4A154B;"></i>
+                            <div>
+                                <h6>Slack</h6>
+                                <p>استلم إشعارات المهام في Slack</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="connected-badge">متصل</span>
+                            <button class="btn btn-sm btn-outline-danger">قطع الاتصال</button>
+                        </div>
+                    </div>
+                    
+                    <div class="integration-item">
+                        <div class="integration-info">
+                            <i class="fab fa-github" style="color: #24292e;"></i>
+                            <div>
+                                <h6>GitHub</h6>
+                                <p>اربط المهام مع Issues في GitHub</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="disconnected-badge">غير متصل</span>
+                            <button class="btn btn-sm btn-primary">اتصال</button>
+                        </div>
+                    </div>
+                    
+                    <div class="integration-item">
+                        <div class="integration-info">
+                            <i class="fab fa-google" style="color: #4285F4;"></i>
+                            <div>
+                                <h6>Google Calendar</h6>
+                                <p>مزامنة المهام مع Google Calendar</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="disconnected-badge">غير متصل</span>
+                            <button class="btn btn-sm btn-primary">اتصال</button>
+                        </div>
+                    </div>
+                    
+                    <div class="integration-item">
+                        <div class="integration-info">
+                            <i class="fab fa-microsoft" style="color: #00A4EF;"></i>
+                            <div>
+                                <h6>Microsoft Teams</h6>
+                                <p>استلم إشعارات في Microsoft Teams</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="connected-badge">متصل</span>
+                            <button class="btn btn-sm btn-outline-danger">قطع الاتصال</button>
+                        </div>
+                    </div>
+                    
+                    <div class="integration-item">
+                        <div class="integration-info">
+                            <i class="fas fa-envelope" style="color: #EA4335;"></i>
+                            <div>
+                                <h6>Gmail</h6>
+                                <p>إنشاء مهام من البريد الإلكتروني</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="disconnected-badge">غير متصل</span>
+                            <button class="btn btn-sm btn-primary">اتصال</button>
+                        </div>
+                    </div>
+                    
+                    <div class="integration-item">
+                        <div class="integration-info">
+                            <i class="fab fa-trello" style="color: #0079BF;"></i>
+                            <div>
+                                <h6>Trello</h6>
+                                <p>مزامنة المهام مع Trello</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="disconnected-badge">غير متصل</span>
+                            <button class="btn btn-sm btn-primary">اتصال</button>
+                        </div>
+                    </div>
+                    
+                    <div class="integration-item">
+                        <div class="integration-info">
+                            <i class="fab fa-zapier" style="color: #FF4A00;"></i>
+                            <div>
+                                <h6>Zapier</h6>
+                                <p>تكامل مع أكثر من 3000 تطبيق</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="connected-badge">متصل</span>
+                            <button class="btn btn-sm btn-outline-danger">قطع الاتصال</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-card">
+                    <h5><i class="fas fa-link"></i> Webhooks</h5>
+                    <p>استخدم webhooks لإرسال البيانات إلى تطبيقاتك</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Webhook URL</label>
+                        <div class="input-group">
+                            <input type="url" class="form-control" value="https://your-app.com/webhook" dir="ltr">
+                            <button class="btn btn-outline-secondary" onclick="copyWebhook()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">الأحداث</label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                    <label>مهمة جديدة</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                    <label>تحديث مهمة</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                    <label>إكمال مهمة</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                    <label>مشروع جديد</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                    <label>تحديث مشروع</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox">
+                                    <label>تعليق جديد</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </div>
+            
+            <!-- API -->
+            <div class="tab-pane fade" id="api">
+                <div class="settings-card">
+                    <h5><i class="fas fa-code"></i> API Keys</h5>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> استخدم هذه المفاتيح للوصول إلى API منصة إدارة المشاريع
+                    </div>
+                    
+                    <div class="api-key">
+                        sk_live_PLACEHOLDER
+                    </div>
+                    
+                    <div class="mb-4">
+                        <button class="btn btn-warning" onclick="generateNewKey()">
+                            <i class="fas fa-sync"></i> إنشاء مفتاح جديد
+                        </button>
+                        <button class="btn btn-danger" onclick="revokeKey()">
+                            <i class="fas fa-ban"></i> إلغاء المفتاح
+                        </button>
+                    </div>
+                    
+                    <h6 class="mt-4">مثال استخدام API</h6>
+                    <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; direction: ltr; text-align: left;">
+curl -X GET https://api.project-management.com/v1/projects \
+  -H "Authorization: Bearer sk_live_PLACEHOLDER" \
+  -H "Content-Type: application/json"</pre>
+                    
+                    <p class="text-muted mt-2">
+                        <i class="fas fa-clock"></i> آخر استخدام: 2024-01-15 14:30
+                    </p>
+                </div>
+                
+                <div class="settings-card">
+                    <h5><i class="fas fa-chart-line"></i> استخدام API</h5>
+                    
+                    <div class="storage-bar mb-2">
+                        <div class="used" style="width: 45%;"></div>
+                    </div>
+                    <p>4,500 من 10,000 طلب هذا الشهر</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h6>أكثر النقاط استخداماً</h6>
+                            <ul class="list-unstyled">
+                                <li><code>/projects</code> - 1,234 طلب</li>
+                                <li><code>/tasks</code> - 987 طلب</li>
+                                <li><code>/users</code> - 456 طلب</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>حدود API</h6>
+                            <ul class="list-unstyled">
+                                <li>100 طلب/دقيقة للمصادق عليهم</li>
+                                <li>20 طلب/دقيقة للضيوف</li>
+                                <li>100,000 طلب/شهر للخطة الحالية</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- الفواتير -->
+            <div class="tab-pane fade" id="billing">
+                <div class="settings-card">
+                    <h5><i class="fas fa-credit-card"></i> طريقة الدفع</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <i class="fab fa-cc-visa fa-2x mb-2"></i>
+                                    <h6>بطاقة ائتمان</h6>
+                                    <p class="mb-0">**** **** **** 4242</p>
+                                    <small class="text-muted">تنتهي 12/2025</small>
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-primary">تعديل</button>
+                                        <button class="btn btn-sm btn-outline-danger">حذف</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <i class="fab fa-paypal fa-2x mb-2"></i>
+                                    <h6>PayPal</h6>
+                                    <p class="mb-0">user@example.com</p>
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-primary">تعديل</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> إضافة طريقة دفع
+                    </button>
+                </div>
+                
+                <div class="settings-card">
+                    <h5><i class="fas fa-file-invoice"></i> الفواتير السابقة</h5>
+                    
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>رقم الفاتورة</th>
+                                    <th>التاريخ</th>
+                                    <th>المبلغ</th>
+                                    <th>الحالة</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>INV-2024-001</td>
+                                    <td>2024-01-01</td>
+                                    <td>$79.00</td>
+                                    <td><span class="badge bg-success">مدفوعة</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>INV-2023-012</td>
+                                    <td>2023-12-01</td>
+                                    <td>$79.00</td>
+                                    <td><span class="badge bg-success">مدفوعة</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>INV-2023-011</td>
+                                    <td>2023-11-01</td>
+                                    <td>$79.00</td>
+                                    <td><span class="badge bg-success">مدفوعة</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="settings-card">
+                    <h5><i class="fas fa-chart-bar"></i> ملخص الاشتراك</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>الخطة الحالية:</strong> Pro</p>
+                            <p><strong>تاريخ التجديد:</strong> 2024-02-01</p>
+                            <p><strong>المبلغ الشهري:</strong> $79.00</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>المستخدمون:</strong> 15 من 50</p>
+                            <p><strong>المشاريع:</strong> 8 من غير محدود</p>
+                            <p><strong>التخزين:</strong> 23.5GB من 50GB</p>
+                        </div>
+                    </div>
+                    
+                    <div class="storage-bar mb-2">
+                        <div class="used" style="width: 47%;"></div>
+                    </div>
+                    
+                    <button class="btn btn-warning mt-3">
+                        <i class="fas fa-sync"></i> تغيير الخطة
+                    </button>
+                </div>
+            </div>
+            
+            <!-- الجلسات النشطة -->
+            <div class="tab-pane fade" id="sessions">
+                <div class="settings-card">
+                    <h5><i class="fas fa-laptop"></i> الأجهزة المتصلة</h5>
+                    
+                    <div class="session-item current">
+                        <div class="session-device">
+                            <i class="fas fa-laptop"></i>
+                            <div class="device-info">
+                                <h6>هذا الجهاز (الحالي)</h6>
+                                <small>Chrome على Windows • آخر نشاط: الآن</small>
+                                <small class="d-block">IP: 192.168.1.100 • الرياض، السعودية</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-success">نشط</span>
+                    </div>
+                    
+                    <div class="session-item">
+                        <div class="session-device">
+                            <i class="fas fa-mobile-alt"></i>
+                            <div class="device-info">
+                                <h6>iPhone 13</h6>
+                                <small>Safari على iOS • آخر نشاط: قبل ساعتين</small>
+                                <small class="d-block">IP: 192.168.1.105 • الرياض، السعودية</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger">إنهاء الجلسة</button>
+                    </div>
+                    
+                    <div class="session-item">
+                        <div class="session-device">
+                            <i class="fas fa-tablet-alt"></i>
+                            <div class="device-info">
+                                <h6>iPad Pro</h6>
+                                <small>Chrome على iPadOS • آخر نشاط: أمس</small>
+                                <small class="d-block">IP: 192.168.1.110 • الرياض، السعودية</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger">إنهاء الجلسة</button>
+                    </div>
+                    
+                    <div class="text-end mt-3">
+                        <button class="btn btn-danger" onclick="endAllSessions()">
+                            <i class="fas fa-sign-out-alt"></i> إنهاء جميع الجلسات الأخرى
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="settings-card">
+                    <h5><i class="fas fa-history"></i> سجل الدخول</h5>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ والوقت</th>
+                                    <th>الجهاز</th>
+                                    <th>المتصفح</th>
+                                    <th>الموقع</th>
+                                    <th>IP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>2024-01-15 09:30</td>
+                                    <td>Windows</td>
+                                    <td>Chrome 120</td>
+                                    <td>الرياض</td>
+                                    <td>192.168.1.100</td>
+                                </tr>
+                                <tr>
+                                    <td>2024-01-14 22:15</td>
+                                    <td>iPhone</td>
+                                    <td>Safari 17</td>
+                                    <td>الرياض</td>
+                                    <td>192.168.1.105</td>
+                                </tr>
+                                <tr>
+                                    <td>2024-01-14 14:20</td>
+                                    <td>Windows</td>
+                                    <td>Firefox 121</td>
+                                    <td>الرياض</td>
+                                    <td>192.168.1.100</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- المنطقة الخطرة -->
+            <div class="tab-pane fade" id="danger">
+                <div class="danger-zone">
+                    <h6><i class="fas fa-exclamation-triangle"></i> إجراءات خطيرة</h6>
+                    <p class="text-muted">هذه الإجراءات لا يمكن التراجع عنها. يرجى التأكد قبل المتابعة.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <button class="btn btn-outline-warning w-100" onclick="deactivateAccount()">
+                                <i class="fas fa-pause-circle"></i> تعطيل الحساب مؤقتاً
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button class="btn btn-outline-danger w-100" onclick="deleteAccount()">
+                                <i class="fas fa-trash"></i> حذف الحساب نهائياً
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <button class="btn btn-outline-danger w-100" onclick="exportAllData()">
+                                <i class="fas fa-download"></i> تصدير جميع البيانات
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button class="btn btn-outline-danger w-100" onclick="clearAllData()">
+                                <i class="fas fa-eraser"></i> مسح جميع البيانات
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmDanger">
+                        <label class="form-check-label">
+                            أنا أفهم أن هذه الإجراءات لا يمكن التراجع عنها
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- معاينة الإشعارات -->
+<div class="notification-preview" id="notificationPreview">
+    <div class="d-flex align-items-center">
+        <div class="flex-shrink-0">
+            <i class="fas fa-bell fa-2x text-primary"></i>
+        </div>
+        <div class="flex-grow-1 me-3">
+            <strong>إشعار تجريبي</strong>
+            <p class="mb-0">هذا شكل الإشعار الذي ستستلمه</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// دوال إعدادات الملف الشخصي
+$(document).ready(function() {
+    // تحديث النشاط عند تغيير التبويب
+    $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+        localStorage.setItem('activeSettingsTab', $(e.target).attr('href'));
+    });
+    
+    // استعادة آخر تبويب نشط
+    const activeTab = localStorage.getItem('activeSettingsTab');
+    if (activeTab) {
+        $(`a[href="${activeTab}"]`).tab('show');
+    }
+});
+
+// دوال الإشعارات
+function testNotification() {
+    const preview = document.getElementById('notificationPreview');
+    preview.classList.add('show');
+    
+    setTimeout(() => {
+        preview.classList.remove('show');
+    }, 3000);
+    
+    // طلب إذن الإشعارات
+    if (Notification.permission !== 'granted') {
+        Notification.requestPermission();
+    } else {
+        new Notification('إشعار تجريبي', {
+            body: 'هذا شكل الإشعار الذي ستستلمه',
+            icon: '/static/icon.png'
+        });
+    }
+}
+
+// دوال المظهر
+function selectTheme(theme) {
+    document.querySelectorAll('.language-option').forEach(el => {
+        el.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+    
+    // تغيير الثيم
+    if (theme === 'dark') {
+        document.body.classList.add('dark-theme');
+    } else {
+        document.body.classList.remove('dark-theme');
+    }
+}
+
+function selectLanguage(lang) {
+    document.querySelectorAll('.language-option').forEach(el => {
+        el.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+    
+    // تغيير اللغة
+    if (lang === 'en') {
+        window.location.href = '/en/profile-settings';
+    }
+}
+
+function selectColor(color) {
+    document.querySelectorAll('.color-option').forEach(el => {
+        el.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+    
+    // تغيير اللون الأساسي
+    document.documentElement.style.setProperty('--primary-color', event.currentTarget.style.backgroundColor);
+}
+
+function changeFontSize(size) {
+    document.documentElement.style.fontSize = size + 'px';
+}
+
+function saveAppearance() {
+    alert('تم حفظ إعدادات المظهر');
+}
+
+// دوال الأمان
+function enable2FA() {
+    if (confirm('هل تريد تفعيل المصادقة الثنائية؟')) {
+        // تفعيل المصادقة الثنائية
+        $.post('/enable-2fa', function(response) {
+            if (response.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+function disable2FA() {
+    if (confirm('هل أنت متأكد من تعطيل المصادقة الثنائية؟ هذا سيقلل من أمان حسابك')) {
+        $.post('/disable-2fa', function(response) {
+            if (response.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+// دوال الخصوصية
+function savePrivacySettings() {
+    const settings = {
+        public_profile: $('[name="public_profile"]').is(':checked'),
+        show_email: $('[name="show_email"]').is(':checked'),
+        show_phone: $('[name="show_phone"]').is(':checked')
+    };
+    
+    $.post('/update-privacy', settings, function(response) {
+        if (response.success) {
+            alert('تم حفظ إعدادات الخصوصية');
+        }
+    });
+}
+
+function exportData() {
+    if (confirm('سيتم تصدير جميع بياناتك. هل تريد المتابعة؟')) {
+        window.location.href = '/export-data';
+    }
+}
+
+function requestDataDeletion() {
+    if (confirm('سيتم حذف جميع بياناتك خلال 30 يوم. هل أنت متأكد؟')) {
+        $.post('/request-data-deletion', function(response) {
+            alert('تم إرسال طلب حذف البيانات');
+        });
+    }
+}
+
+// دوال API
+function generateNewKey() {
+    if (confirm('سيتم إنشاء مفتاح API جديد. المفتاح القديم سيتوقف عن العمل فوراً. هل تريد المتابعة؟')) {
+        $.post('/generate-api-key', function(response) {
+            if (response.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+function revokeKey() {
+    if (confirm('سيتم إلغاء مفتاح API الحالي. التطبيقات التي تستخدمه ستتوقف عن العمل. هل أنت متأكد؟')) {
+        $.post('/revoke-api-key', function(response) {
+            if (response.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+function copyWebhook() {
+    const webhookUrl = document.querySelector('[name="webhook_url"]').value;
+    navigator.clipboard.writeText(webhookUrl).then(() => {
+        alert('تم نسخ الرابط');
+    });
+}
+
+// دوال الجلسات
+function endAllSessions() {
+    if (confirm('سيتم إنهاء جميع الجلسات الأخرى. هل تريد المتابعة؟')) {
+        $.post('/end-all-sessions', function(response) {
+            if (response.success) {
+                alert('تم إنهاء جميع الجلسات الأخرى');
+                location.reload();
+            }
+        });
+    }
+}
+
+// دوال المنطقة الخطرة
+function deactivateAccount() {
+    if (!document.getElementById('confirmDanger').checked) {
+        alert('يرجى تأكيد فهمك للمخاطر');
+        return;
+    }
+    
+    if (confirm('هل أنت متأكد من تعطيل حسابك مؤقتاً؟ يمكنك تفعيله لاحقاً بتسجيل الدخول')) {
+        $.post('/deactivate-account', function(response) {
+            if (response.success) {
+                window.location.href = '/logout';
+            }
+        });
+    }
+}
+
+function deleteAccount() {
+    if (!document.getElementById('confirmDanger').checked) {
+        alert('يرجى تأكيد فهمك للمخاطر');
+        return;
+    }
+    
+    if (confirm('تحذير شديد: هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع بياناتك نهائياً. هل أنت متأكد بنسبة 100%؟')) {
+        const password = prompt('يرجى إدخال كلمة المرور لتأكيد الحذف:');
+        if (password) {
+            $.post('/delete-account', {password: password}, function(response) {
+                if (response.success) {
+                    window.location.href = '/logout';
+                } else {
+                    alert('كلمة المرور غير صحيحة');
+                }
+            });
+        }
+    }
+}
+
+function exportAllData() {
+    if (!document.getElementById('confirmDanger').checked) {
+        alert('يرجى تأكيد فهمك للمخاطر');
+        return;
+    }
+    
+    window.location.href = '/export-all-data';
+}
+
+function clearAllData() {
+    if (!document.getElementById('confirmDanger').checked) {
+        alert('يرجى تأكيد فهمك للمخاطر');
+        return;
+    }
+    
+    if (confirm('سيتم مسح جميع بياناتك ولكن سيتم الاحتفاظ بالحساب. هل أنت متأكد؟')) {
+        $.post('/clear-all-data', function(response) {
+            if (response.success) {
+                alert('تم مسح جميع البيانات');
+                location.reload();
+            }
+        });
+    }
+}
+
+// حفظ الإعدادات العامة
+function saveGeneralSettings() {
+    const formData = new FormData();
+    formData.append('full_name', $('#full_name').val());
+    formData.append('phone', $('#phone').val());
+    formData.append('job_title', $('#job_title').val());
+    formData.append('department', $('#department').val());
+    
+    if ($('#profile_image')[0].files[0]) {
+        formData.append('profile_image', $('#profile_image')[0].files[0]);
+    }
+    
+    $.ajax({
+        url: '/update-profile',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                alert('تم حفظ التغييرات');
+                location.reload();
+            }
+        }
+    });
+}
+
+// معاينة الصورة قبل الرفع
+document.getElementById('profile_image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            $('.rounded-circle.img-fluid').attr('src', e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// تفعيل tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+});
+</script>
+{% endblock %}

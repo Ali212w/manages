@@ -1,0 +1,88 @@
+{% extends "company/base.html" %}
+
+{% block title %}تعديل المورد - {{ resource.name }}{% endblock %}
+
+{% block page_title %}تعديل المورد{% endblock %}
+{% block page_subtitle %}{{ resource.resource_id }} - {{ resource.name }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <form method="POST" action="{{ url_for('enterprise.resource_edit', resource_id=resource.id) }}">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">رمز المورد</label>
+                    <input type="text" class="form-control readonly-field" value="{{ resource.resource_id }}" readonly>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">الاسم</label>
+                    <input type="text" name="name" class="form-control" value="{{ resource.name }}" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">نوع المورد</label>
+                    <select name="resource_type" class="form-select" required>
+                        <option value="labor" {% if resource.resource_type == 'labor' %}selected{% endif %}>عمال</option>
+                        <option value="material" {% if resource.resource_type == 'material' %}selected{% endif %}>مواد</option>
+                        <option value="equipment" {% if resource.resource_type == 'equipment' %}selected{% endif %}>معدات</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">الوحدة</label>
+                    <input type="text" name="unit" class="form-control" value="{{ resource.unit or '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">التكلفة للوحدة</label>
+                    <input type="number" name="cost_per_unit" class="form-control" value="{{ resource.cost_per_unit }}" step="0.01">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">العملة</label>
+                    <select name="currency" class="form-select">
+                        <option value="SAR" {% if resource.currency == 'SAR' %}selected{% endif %}>ريال سعودي</option>
+                        <option value="USD" {% if resource.currency == 'USD' %}selected{% endif %}>دولار أمريكي</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الكمية المتاحة</label>
+                    <input type="number" name="available_quantity" class="form-control" value="{{ resource.available_quantity }}" min="0" step="0.01">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">التقويم</label>
+                    <select name="calendar_id" class="form-select">
+                        <option value="">-- تقويم افتراضي --</option>
+                        {% for cal in calendars %}
+                        <option value="{{ cal.id }}" {% if resource.calendar_id == cal.id %}selected{% endif %}>
+                            {{ cal.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">المواصفات (JSON)</label>
+                <textarea name="specifications" class="form-control" rows="3">{{ resource.specifications|tojson }}</textarea>
+            </div>
+            
+            <hr>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('enterprise.resources_list') }}" class="btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-2"></i> إلغاء
+                </a>
+                <button type="submit" class="btn-primary-gradient">
+                    <i class="fas fa-save me-2"></i> حفظ التغييرات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,960 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}التقويم - {{ super() }}{% endblock %}
+
+{% block styles %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+<style>
+    .calendar-container {
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 56px);
+        padding: 2rem;
+    }
+    
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .calendar-wrapper {
+        background-color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .calendar-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .calendar-view-buttons {
+        display: flex;
+        gap: 5px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 5px;
+    }
+    
+    .calendar-view-buttons .btn {
+        padding: 5px 15px;
+        border-radius: 6px;
+    }
+    
+    .calendar-view-buttons .btn.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .calendar-sidebar {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+    }
+    
+    .legend-items {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .legend-color {
+        width: 15px;
+        height: 15px;
+        border-radius: 3px;
+    }
+    
+    .upcoming-events {
+        margin-top: 2rem;
+    }
+    
+    .upcoming-event-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        background-color: #f8f9fa;
+        transition: all 0.3s;
+    }
+    
+    .upcoming-event-item:hover {
+        background-color: #e9ecef;
+        transform: translateX(5px);
+    }
+    
+    .event-time {
+        min-width: 80px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .event-title {
+        flex: 1;
+        font-weight: 500;
+    }
+    
+    .event-badge {
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+    
+    /* Custom FullCalendar Styles */
+    .fc {
+        direction: rtl;
+        font-family: 'Cairo', sans-serif;
+    }
+    
+    .fc .fc-toolbar-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+    
+    .fc .fc-button {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .fc .fc-button:hover {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+    
+    .fc .fc-button-primary:not(:disabled).fc-button-active {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+    
+    .fc .fc-daygrid-day-number {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    .fc .fc-day-today {
+        background-color: rgba(52, 152, 219, 0.1) !important;
+    }
+    
+    .fc-event {
+        border-radius: 4px;
+        border: none;
+        padding: 2px 5px;
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+    
+    .fc-event:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+    
+    .event-modal .modal-content {
+        border-radius: 15px;
+        border: none;
+    }
+    
+    .event-modal .modal-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        border-radius: 15px 15px 0 0;
+    }
+    
+    .event-details {
+        padding: 1.5rem;
+    }
+    
+    .event-detail-item {
+        display: flex;
+        margin-bottom: 1rem;
+        align-items: flex-start;
+    }
+    
+    .event-detail-item i {
+        width: 20px;
+        margin-left: 10px;
+        color: var(--primary-color);
+        margin-top: 3px;
+    }
+    
+    @media (max-width: 768px) {
+        .calendar-container {
+            padding: 1rem;
+        }
+        
+        .calendar-wrapper {
+            padding: 1rem;
+        }
+        
+        .calendar-header {
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .calendar-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .calendar-view-buttons {
+            justify-content: center;
+        }
+        
+        .fc .fc-toolbar {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .fc .fc-toolbar-title {
+            font-size: 1.2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="calendar-container">
+    <div class="page-header">
+        <h2 class="mb-0">تقويم المهام والمشاريع</h2>
+        <p class="text-muted mb-0">إدارة وجدولة جميع المهام والمشاريع في مكان واحد</p>
+    </div>
+    
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 mb-3">
+            <div class="calendar-sidebar">
+                <h5 class="mb-3">وسيلة الإيضاح</h5>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #28a745;"></div>
+                        <span>مشاريع نشطة</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #ffc107;"></div>
+                        <span>مشاريع قيد التخطيط</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #007bff;"></div>
+                        <span>مهام قيد التنفيذ</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #6c757d;"></div>
+                        <span>مهام معلقة</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #dc3545;"></div>
+                        <span>مهام متأخرة</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #17a2b8;"></div>
+                        <span>مشاريع مكتملة</span>
+                    </div>
+                </div>
+                
+                <!-- Quick Filters -->
+                <div class="quick-filters mt-4">
+                    <h5 class="mb-3">تصفية سريعة</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-sm btn-outline-primary filter-btn" data-type="all">
+                            الكل
+                        </button>
+                        <button class="btn btn-sm btn-outline-success filter-btn" data-type="projects">
+                            المشاريع
+                        </button>
+                        <button class="btn btn-sm btn-outline-info filter-btn" data-type="tasks">
+                            المهام
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Upcoming Events -->
+                <div class="upcoming-events">
+                    <h5 class="mb-3">الأحداث القادمة</h5>
+                    <div id="upcomingEventsList">
+                        <!-- سيتم تعبئته بواسطة JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Quick Add -->
+                <div class="quick-add mt-4">
+                    <h5 class="mb-3">إضافة سريعة</h5>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" onclick="quickAddEvent()">
+                            <i class="fas fa-plus me-2"></i>حدث جديد
+                        </button>
+                        <button class="btn btn-outline-success" onclick="quickAddTask()">
+                            <i class="fas fa-tasks me-2"></i>مهمة جديدة
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Calendar -->
+        <div class="col-lg-9">
+            <div class="calendar-wrapper">
+                <div class="calendar-header">
+                    <div>
+                        <select class="form-select d-inline-block w-auto" id="userFilter">
+                            <option value="all">جميع الموظفين</option>
+                            <option value="me">مهامي فقط</option>
+                            {% if current_user.role in ['admin', 'project_manager', 'supervisor'] %}
+                            <option value="team">فريقي</option>
+                            <option value="department">قسمي</option>
+                            {% endif %}
+                        </select>
+                        
+                        <select class="form-select d-inline-block w-auto mx-2" id="projectFilter">
+                            <option value="all">جميع المشاريع</option>
+                            <!-- سيتم تعبئته بواسطة JavaScript -->
+                        </select>
+                    </div>
+                    
+                    <div class="calendar-actions">
+                        <div class="calendar-view-buttons">
+                            <button class="btn btn-sm" id="monthView">
+                                شهر
+                            </button>
+                            <button class="btn btn-sm" id="weekView">
+                                أسبوع
+                            </button>
+                            <button class="btn btn-sm active" id="dayView">
+                                يوم
+                            </button>
+                        </div>
+                        <button class="btn btn-outline-primary" id="todayBtn">
+                            اليوم
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- FullCalendar -->
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Event Modal -->
+<div class="modal fade event-modal" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalTitle"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="event-details" id="eventDetails">
+                    <!-- سيتم تعبئته بواسطة JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-primary" id="editEventBtn">تعديل</button>
+                <button type="button" class="btn btn-danger" id="deleteEventBtn">حذف</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Add Modal -->
+<div class="modal fade" id="quickAddModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة سريعة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickAddForm">
+                    <div class="mb-3">
+                        <label class="form-label">النوع</label>
+                        <select class="form-select" id="eventType" required>
+                            <option value="">اختر النوع</option>
+                            <option value="task">مهمة</option>
+                            <option value="meeting">اجتماع</option>
+                            <option value="reminder">تذكير</option>
+                            <option value="deadline">موعد نهائي</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">العنوان</label>
+                        <input type="text" class="form-control" id="eventTitle" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">تاريخ البدء</label>
+                            <input type="date" class="form-control" id="eventStart" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">تاريخ الانتهاء</label>
+                            <input type="date" class="form-control" id="eventEnd" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الوصف</label>
+                        <textarea class="form-control" id="eventDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="saveQuickAdd">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar.js'></script>
+<script>
+    $(document).ready(function() {
+        let calendar;
+        let currentEvent = null;
+        
+        // تهيئة التقويم
+        initializeCalendar();
+        
+        // تحميل الأحداث
+        loadEvents();
+        
+        // تحميل المشاريع للتصفية
+        loadProjectsForFilter();
+        
+        // تحميل الأحداث القادمة
+        loadUpcomingEvents();
+        
+        // إعداد معالجات الأحداث
+        setupEventHandlers();
+    });
+    
+    function initializeCalendar() {
+        const calendarEl = document.getElementById('calendar');
+        
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'ar',
+            direction: 'rtl',
+            initialView: 'dayGridMonth',
+            headerToolbar: false,
+            height: 'auto',
+            contentHeight: 600,
+            editable: true,
+            selectable: true,
+            selectMirror: true,
+            dayMaxEvents: true,
+            weekends: true,
+            firstDay: 6, // السبت كأول يوم في الأسبوع
+            businessHours: {
+                daysOfWeek: [0, 1, 2, 3, 4], // الأحد إلى الخميس
+                startTime: '08:00',
+                endTime: '17:00'
+            },
+            
+            // إعدادات العرض
+            views: {
+                dayGridMonth: {
+                    titleFormat: { year: 'numeric', month: 'long' }
+                },
+                timeGridWeek: {
+                    titleFormat: { year: 'numeric', month: 'short', day: 'numeric' }
+                },
+                timeGridDay: {
+                    titleFormat: { year: 'numeric', month: 'long', day: 'numeric' }
+                }
+            },
+            
+            // معالجة النقر على الأحداث
+            eventClick: function(info) {
+                showEventDetails(info.event);
+            },
+            
+            // معالجة السحب والإفلات
+            eventDrop: function(info) {
+                updateEventDate(info.event);
+            },
+            
+            // معالجة تغيير الوقت
+            eventResize: function(info) {
+                updateEventDate(info.event);
+            },
+            
+            // معالجة تحديد تاريخ
+            select: function(info) {
+                showQuickAddModal(info.start, info.end);
+            },
+            
+            // تنسيق الأحداث
+            eventContent: function(arg) {
+                return {
+                    html: `<div class="fc-event-title">${arg.event.title}</div>`
+                };
+            },
+            
+            // ألوان التواريخ الخاصة
+            dateClick: function(info) {
+                // يمكن إضافة وظائف إضافية هنا
+            }
+        });
+        
+        calendar.render();
+    }
+    
+    function loadEvents() {
+        $.ajax({
+            url: "{{ url_for('dashboard.calendar_events') }}",
+            method: 'GET',
+            success: function(data) {
+                if (Array.isArray(data)) {
+                    calendar.removeAllEvents();
+                    calendar.addEventSource(data);
+                    
+                    // تحديث الأحداث القادمة
+                    updateUpcomingEvents(data);
+                }
+            },
+            error: function(error) {
+                console.error('خطأ في تحميل الأحداث:', error);
+            }
+        });
+    }
+    
+    function loadProjectsForFilter() {
+        $.ajax({
+            url: '/api/projects/list',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    const select = $('#projectFilter');
+                    response.projects.forEach(project => {
+                        select.append(`<option value="${project.id}">${project.name}</option>`);
+                    });
+                }
+            }
+        });
+    }
+    
+    function loadUpcomingEvents() {
+        const today = new Date().toISOString().split('T')[0];
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        const nextWeekStr = nextWeek.toISOString().split('T')[0];
+        
+        $.ajax({
+            url: `/api/events/upcoming?start=${today}&end=${nextWeekStr}`,
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    displayUpcomingEvents(response.events);
+                }
+            }
+        });
+    }
+    
+    function displayUpcomingEvents(events) {
+        const container = $('#upcomingEventsList');
+        container.empty();
+        
+        if (events.length === 0) {
+            container.html('<div class="text-center text-muted py-3">لا توجد أحداث قادمة</div>');
+            return;
+        }
+        
+        events.forEach(event => {
+            const eventDate = new Date(event.start);
+            const timeStr = eventDate.toLocaleTimeString('ar-SA', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            const eventHtml = `
+                <div class="upcoming-event-item" data-id="${event.id}">
+                    <div class="event-time">${timeStr}</div>
+                    <div class="event-title">${event.title}</div>
+                    <span class="event-badge" style="background-color: ${event.color || '#6c757d'}; color: white;">
+                        ${event.type || 'حدث'}
+                    </span>
+                </div>
+            `;
+            
+            container.append(eventHtml);
+        });
+        
+        // إضافة معالج النقر للأحداث القادمة
+        $('.upcoming-event-item').click(function() {
+            const eventId = $(this).data('id');
+            const event = calendar.getEventById(eventId);
+            
+            if (event) {
+                showEventDetails(event);
+            }
+        });
+    }
+    
+    function updateUpcomingEvents(events) {
+        const today = new Date();
+        const upcoming = events.filter(event => {
+            const eventDate = new Date(event.start);
+            return eventDate >= today;
+        }).sort((a, b) => new Date(a.start) - new Date(b.start)).slice(0, 5);
+        
+        displayUpcomingEvents(upcoming);
+    }
+    
+    function setupEventHandlers() {
+        // تغيير طريقة العرض
+        $('#monthView').click(function() {
+            calendar.changeView('dayGridMonth');
+            updateViewButtons('month');
+        });
+        
+        $('#weekView').click(function() {
+            calendar.changeView('timeGridWeek');
+            updateViewButtons('week');
+        });
+        
+        $('#dayView').click(function() {
+            calendar.changeView('timeGridDay');
+            updateViewButtons('day');
+        });
+        
+        // الذهاب إلى اليوم الحالي
+        $('#todayBtn').click(function() {
+            calendar.today();
+        });
+        
+        // تصفية المستخدمين
+        $('#userFilter').change(function() {
+            applyFilters();
+        });
+        
+        // تصفية المشاريع
+        $('#projectFilter').change(function() {
+            applyFilters();
+        });
+        
+        // التصفية السريعة
+        $('.filter-btn').click(function() {
+            const type = $(this).data('type');
+            applyTypeFilter(type);
+            $('.filter-btn').removeClass('active');
+            $(this).addClass('active');
+        });
+        
+        // معالجات النموذج السريع
+        $('#saveQuickAdd').click(function() {
+            saveQuickEvent();
+        });
+        
+        // معالجات نافذة الأحداث
+        $('#editEventBtn').click(function() {
+            if (currentEvent) {
+                editEvent(currentEvent);
+            }
+        });
+        
+        $('#deleteEventBtn').click(function() {
+            if (currentEvent) {
+                deleteEvent(currentEvent);
+            }
+        });
+    }
+    
+    function updateViewButtons(activeView) {
+        $('#monthView, #weekView, #dayView').removeClass('active');
+        $(`#${activeView}View`).addClass('active');
+    }
+    
+    function applyFilters() {
+        const userId = $('#userFilter').val();
+        const projectId = $('#projectFilter').val();
+        
+        // إعادة تحميل الأحداث مع الفلاتر
+        $.ajax({
+            url: `/api/events/filtered?user=${userId}&project=${projectId}`,
+            method: 'GET',
+            success: function(data) {
+                calendar.removeAllEvents();
+                calendar.addEventSource(data);
+            }
+        });
+    }
+    
+    function applyTypeFilter(type) {
+        if (type === 'all') {
+            calendar.removeAllEvents();
+            loadEvents();
+            return;
+        }
+        
+        $.ajax({
+            url: `/api/events/type/${type}`,
+            method: 'GET',
+            success: function(data) {
+                calendar.removeAllEvents();
+                calendar.addEventSource(data);
+            }
+        });
+    }
+    
+    function showEventDetails(event) {
+        currentEvent = event;
+        
+        const eventData = event.extendedProps;
+        const startDate = new Date(event.start).toLocaleDateString('ar-SA');
+        const endDate = new Date(event.end).toLocaleDateString('ar-SA');
+        
+        let detailsHtml = `
+            <div class="event-detail-item">
+                <i class="fas fa-calendar-alt"></i>
+                <div>
+                    <div class="fw-bold">الفترة</div>
+                    <div>${startDate} - ${endDate}</div>
+                </div>
+            </div>
+            <div class="event-detail-item">
+                <i class="fas ${eventData.type === 'project' ? 'fa-project-diagram' : 'fa-tasks'}"></i>
+                <div>
+                    <div class="fw-bold">النوع</div>
+                    <div>${eventData.type === 'project' ? 'مشروع' : 'مهمة'}</div>
+                </div>
+            </div>
+        `;
+        
+        if (eventData.status) {
+            detailsHtml += `
+                <div class="event-detail-item">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <div class="fw-bold">الحالة</div>
+                        <div>
+                            <span class="badge bg-${getStatusColor(eventData.status)}">
+                                ${eventData.status}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (eventData.progress) {
+            detailsHtml += `
+                <div class="event-detail-item">
+                    <i class="fas fa-chart-line"></i>
+                    <div>
+                        <div class="fw-bold">التقدم</div>
+                        <div class="progress" style="width: 200px; height: 10px;">
+                            <div class="progress-bar" style="width: ${eventData.progress}%"></div>
+                        </div>
+                        <small>${eventData.progress}%</small>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (event.url) {
+            detailsHtml += `
+                <div class="event-detail-item">
+                    <i class="fas fa-link"></i>
+                    <div>
+                        <div class="fw-bold">رابط</div>
+                        <a href="${event.url}" class="btn btn-sm btn-outline-primary">
+                            الانتقال إلى التفاصيل
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (eventData.description) {
+            detailsHtml += `
+                <div class="event-detail-item">
+                    <i class="fas fa-file-alt"></i>
+                    <div>
+                        <div class="fw-bold">الوصف</div>
+                        <div>${eventData.description}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        $('#eventModalTitle').text(event.title);
+        $('#eventDetails').html(detailsHtml);
+        
+        const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+        modal.show();
+    }
+    
+    function getStatusColor(status) {
+        const colors = {
+            'active': 'success',
+            'in_progress': 'warning',
+            'completed': 'info',
+            'pending': 'secondary',
+            'planning': 'primary',
+            'on_hold': 'warning',
+            'cancelled': 'danger'
+        };
+        return colors[status] || 'secondary';
+    }
+    
+    function showQuickAddModal(start, end) {
+        $('#quickAddForm')[0].reset();
+        $('#eventStart').val(start.toISOString().split('T')[0]);
+        $('#eventEnd').val(end.toISOString().split('T')[0]);
+        
+        const modal = new bootstrap.Modal(document.getElementById('quickAddModal'));
+        modal.show();
+    }
+    
+    function saveQuickEvent() {
+        const formData = {
+            type: $('#eventType').val(),
+            title: $('#eventTitle').val(),
+            start: $('#eventStart').val(),
+            end: $('#eventEnd').val(),
+            description: $('#eventDescription').val()
+        };
+        
+        // التحقق من البيانات
+        if (!formData.type || !formData.title || !formData.start) {
+            showNotification('خطأ', 'الرجاء ملء جميع الحقول المطلوبة', 'danger');
+            return;
+        }
+        
+        $.ajax({
+            url: '/api/events/quick-add',
+            method: 'POST',
+            data: JSON.stringify(formData),
+            contentType: 'application/json',
+            success: function(response) {
+                if (response.success) {
+                    // إضافة الحدث الجديد إلى التقويم
+                    calendar.addEvent({
+                        id: response.event.id,
+                        title: response.event.title,
+                        start: response.event.start,
+                        end: response.event.end,
+                        color: getEventColor(response.event.type),
+                        extendedProps: {
+                            type: response.event.type,
+                            description: response.event.description
+                        }
+                    });
+                    
+                    showNotification('تم', 'تم إضافة الحدث بنجاح', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('quickAddModal')).hide();
+                    
+                    // تحديث الأحداث القادمة
+                    loadUpcomingEvents();
+                }
+            },
+            error: function() {
+                showNotification('خطأ', 'حدث خطأ أثناء إضافة الحدث', 'danger');
+            }
+        });
+    }
+    
+    function getEventColor(type) {
+        const colors = {
+            'task': '#007bff',
+            'meeting': '#28a745',
+            'reminder': '#ffc107',
+            'deadline': '#dc3545',
+            'project': '#17a2b8'
+        };
+        return colors[type] || '#6c757d';
+    }
+    
+    function updateEventDate(event) {
+        const eventData = {
+            id: event.id,
+            start: event.start ? event.start.toISOString() : null,
+            end: event.end ? event.end.toISOString() : null
+        };
+        
+        $.ajax({
+            url: '/api/events/update-date',
+            method: 'PUT',
+            data: JSON.stringify(eventData),
+            contentType: 'application/json',
+            success: function(response) {
+                if (response.success) {
+                    showNotification('تم', 'تم تحديث موعد الحدث', 'success');
+                }
+            },
+            error: function() {
+                showNotification('خطأ', 'حدث خطأ أثناء تحديث الحدث', 'danger');
+                // إعادة الحدث إلى موضعه السابق
+                event.revert();
+            }
+        });
+    }
+    
+    function editEvent(event) {
+        // يمكن توجيه المستخدم إلى صفحة تعديل الحدث
+        if (event.url) {
+            window.location.href = event.url + '/edit';
+        } else {
+            showNotification('معلومات', 'لا يمكن تعديل هذا الحدث من هنا', 'info');
+        }
+    }
+    
+    function deleteEvent(event) {
+        if (confirm('هل أنت متأكد من حذف هذا الحدث؟')) {
+            $.ajax({
+                url: `/api/events/${event.id}`,
+                method: 'DELETE',
+                success: function(response) {
+                    if (response.success) {
+                        event.remove();
+                        showNotification('تم', 'تم حذف الحدث بنجاح', 'success');
+                        bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
+                        
+                        // تحديث الأحداث القادمة
+                        loadUpcomingEvents();
+                    }
+                },
+                error: function() {
+                    showNotification('خطأ', 'حدث خطأ أثناء حذف الحدث', 'danger');
+                }
+            });
+        }
+    }
+    
+    function quickAddEvent() {
+        showQuickAddModal(new Date(), new Date());
+    }
+    
+    function quickAddTask() {
+        // توجيه إلى صفحة إضافة مهمة جديدة
+        window.location.href = "{{ url_for('task.create') }}";
+    }
+    
+    // تحديث التقويم كل دقيقة
+    setInterval(function() {
+        calendar.refetchEvents();
+        loadUpcomingEvents();
+    }, 60000);
+</script>
+{% endblock %}

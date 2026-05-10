@@ -1,0 +1,99 @@
+{% extends "client/base.html" %}
+
+{% block title %}التقارير اليومية - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4><i class="fas fa-file-alt me-2"></i> التقارير اليومية</h4>
+                <p class="text-muted mb-0">{{ project.name }}</p>
+            </div>
+            <a href="{{ url_for('client.project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> العودة للمشروع
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <h3 class="text-primary">{{ stats.total }}</h3>
+            <small>إجمالي التقارير</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <h3 class="text-success">{{ stats.approved }}</h3>
+            <small>معتمدة</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card text-center">
+            <h3 class="text-warning">{{ stats.pending }}</h3>
+            <small>قيد المراجعة</small>
+        </div>
+    </div>
+</div>
+
+<!-- Reports List -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-list me-2"></i> قائمة التقارير اليومية</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم التقرير</th>
+                        <th>التاريخ</th>
+                        <th>ملخص العمل</th>
+                        <th>العمال</th>
+                        <th>ساعات العمل</th>
+                        <th>الحالة</th>
+                        <th>المعد بواسطة</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr class="{% if report.review_status == 'pending' %}table-warning{% endif %}">
+                        <td><span class="badge bg-secondary">{{ report.report_number }}</span></td>
+                        <td>{{ report.report_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ report.work_summary|truncate(50) if report.work_summary else '-' }}</td>
+                        <td>{{ report.total_workers or 0 }}</td>
+                        <td>{{ "%.1f"|format(report.total_hours or 0) }}</td>
+                        <td>
+                            {% if report.review_status == 'approved' %}
+                            <span class="badge bg-success">معتمد</span>
+                            {% elif report.review_status == 'pending' %}
+                            <span class="badge bg-warning">قيد المراجعة</span>
+                            {% elif report.review_status == 'rejected' %}
+                            <span class="badge bg-danger">مرفوض</span>
+                            {% endif %}
+                         </td>
+                        <td>{{ report.preparer.full_name if report.preparer else '-' }}</td>
+                        <td>
+                            <a href="{{ url_for('client.view_daily_report', project_id=project.id, report_id=report.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> عرض
+                            </a>
+                         </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="fas fa-file-alt fa-3x text-muted mb-3 d-block"></i>
+                            <p class="text-muted">لا توجد تقارير يومية</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,189 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ project.name }} - تفاصيل المشروع{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">{{ project.name }}</h2>
+        <p class="text-muted">
+            <i class="fas fa-code me-1"></i> {{ project.project_code }}
+            <span class="mx-2">|</span>
+            <i class="fas fa-calendar me-1"></i> {{ project.dates.planned_start.strftime('%Y-%m-%d') }} - {{ project.dates.planned_finish.strftime('%Y-%m-%d') }}
+        </p>
+    </div>
+    <div>
+        <a href="{{ url_for('employee.my_projects') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-2"></i>عودة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- معلومات المشروع -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2 text-primary"></i>
+                    معلومات المشروع
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>{{ project.description or 'لا يوجد وصف للمشروع' }}</p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">معلومات الموقع</h6>
+                        <p class="text-muted mb-1">{{ project.site_name or 'غير محدد' }}</p>
+                        <p class="text-muted">{{ project.location_address or 'غير محدد' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">القيمة المالية</h6>
+                        <p class="text-primary fw-bold">{{ project.contract_value }} ر.س</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- مهامي في هذا المشروع -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tasks me-2 text-primary"></i>
+                    مهامي في هذا المشروع ({{ tasks|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for task in tasks %}
+                <div class="task-card {{ task.status }} mb-3">
+                    <div class="d-flex justify-content-between">
+                        <h6 class="task-title">{{ task.task_name }}</h6>
+                        <span class="status-badge {{ task.status }}">
+                            {% if task.status == 'pending' %}معلق
+                            {% elif task.status == 'in_progress' %}قيد التنفيذ
+                            {% elif task.status == 'completed' %}مكتمل
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="task-meta">
+                        <span><i class="fas fa-clock me-1"></i> {{ task.planning.planned_finish.strftime('%Y-%m-%d') if task.planned_end_date }}</span>
+                    </div>
+                    
+                    <div class="task-progress">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small>التقدم</small>
+                            <small>{{ task.progress.progress_percentage }}%</small>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: {{ task.progress.progress_percentage}}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-2 text-start">
+                        <a href="{{ url_for('employee.view_task', task_id=task.id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>عرض المهمة
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">لا توجد مهام لك في هذا المشروع</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- الشريط الجانبي -->
+    <div class="col-md-4">
+        <!-- تقدم المشروع -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2 text-primary"></i>
+                    تقدم المشروع
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="position-relative d-inline-block">
+                    <div class="progress-circle" data-progress="{{ progress }}">
+                        <span class="progress-value">{{ progress }}%</span>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">الحالة</span>
+                        <span class="badge-status {{ 'active' if project.status == 'active' else 'pending' }}">
+                            {{ project.status }}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">المتبقي</span>
+                        <span>{{ project.remaining_days if project.remaining_days else 0 }} يوم</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- فريق المشروع -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2 text-primary"></i>
+                    فريق المشروع
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-2">مدير المشروع</small>
+                    <div class="d-flex align-items-center">
+                        <div class="profile-img me-2" style="width: 35px; height: 35px;">
+                            {{ project.manager.full_name[0] if project.manager }}
+                        </div>
+                        <span>{{ project.manager.full_name if project.manager else 'غير محدد' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.progress-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(var(--primary) 0deg, #eef2f7 0deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.progress-circle .progress-value {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary);
+}
+</style>
+
+<script>
+// تحديث الدائرة بناءً على النسبة
+document.addEventListener('DOMContentLoaded', function() {
+    const progress = {{ project.progress_percentage }};
+    const circle = document.querySelector('.progress-circle');
+    const degrees = (progress / 100) * 360;
+    circle.style.background = `conic-gradient(var(--primary) ${degrees}deg, #eef2f7 0deg)`;
+});
+</script>
+{% endblock %}

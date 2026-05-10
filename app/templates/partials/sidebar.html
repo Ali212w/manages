@@ -1,0 +1,76 @@
+{# Modern sidebar nav, used by layouts/base.html #}
+<aside class="app-sidebar">
+    <a href="{{ url_for('dashboard.index') if current_user.is_authenticated else url_for('index') }}" class="sidebar-brand">
+        <div class="sidebar-brand-icon"><i class="fas fa-hard-hat"></i></div>
+        <div>
+            <div class="sidebar-brand-text">{{ _('app_name_short') }}</div>
+            <div class="sidebar-brand-subtitle">{{ _('smart_platform') }}</div>
+        </div>
+    </a>
+
+    <nav class="sidebar-nav">
+        {% if current_user.is_authenticated %}
+        <a class="sidebar-link" href="{{ url_for('dashboard.index') }}">
+            <i class="fas fa-tachometer-alt"></i><span>{{ _('dashboard') }}</span>
+        </a>
+
+        <div class="sidebar-group">
+            <a class="sidebar-link sidebar-group-toggle" href="javascript:void(0)">
+                <i class="fas fa-project-diagram"></i><span>{{ _('projects') }}</span>
+                <i class="fas fa-chevron-down chevron"></i>
+            </a>
+            <div class="sidebar-submenu">
+                <a class="sidebar-link" href="{{ url_for('project.index') }}"><i class="fas fa-list"></i><span>{{ _('all_projects') }}</span></a>
+                <a class="sidebar-link" href="{{ url_for('project.create') }}"><i class="fas fa-plus-circle"></i><span>{{ _('new_project') }}</span></a>
+                <a class="sidebar-link" href="{{ url_for('project.my_projects') }}"><i class="fas fa-user-circle"></i><span>{{ _('my_projects') }}</span></a>
+                <a class="sidebar-link" href="{{ url_for('project.calendar') }}"><i class="fas fa-calendar-alt"></i><span>{{ _('calendar') }}</span></a>
+            </div>
+        </div>
+
+        <div class="sidebar-group">
+            <a class="sidebar-link sidebar-group-toggle" href="javascript:void(0)">
+                <i class="fas fa-tasks"></i><span>{{ _('tasks') }}</span>
+                <i class="fas fa-chevron-down chevron"></i>
+            </a>
+            <div class="sidebar-submenu">
+                <a class="sidebar-link" href="{{ url_for('task.index') }}"><i class="fas fa-list"></i><span>{{ _('all_tasks') }}</span></a>
+                <a class="sidebar-link" href="{{ url_for('task.my_tasks') }}"><i class="fas fa-user-check"></i><span>{{ _('my_tasks') }}</span></a>
+                <a class="sidebar-link" href="{{ url_for('task.create') }}"><i class="fas fa-plus"></i><span>{{ _('new_task') }}</span></a>
+                <a class="sidebar-link" href="{{ url_for('task.board') }}"><i class="fas fa-columns"></i><span>{{ _('task_board') }}</span></a>
+            </div>
+        </div>
+
+        <a class="sidebar-link" href="{{ url_for('document.index') }}">
+            <i class="fas fa-file-alt"></i><span>{{ _('documents') }}</span>
+        </a>
+
+        {% if current_user.role in ['admin', 'project_manager'] %}
+        <div class="sidebar-section-title">{{ _('management') }}</div>
+        <a class="sidebar-link" href="{{ url_for('dashboard.analytics') }}">
+            <i class="fas fa-chart-bar"></i><span>{{ _('analytics') }}</span>
+        </a>
+        {% endif %}
+
+        {% if current_user.role == 'admin' %}
+        <a class="sidebar-link" href="{{ url_for('admin.dashboard') }}">
+            <i class="fas fa-shield-alt"></i><span>{{ _('admin') }}</span>
+        </a>
+        <a class="sidebar-link" href="{{ url_for('admin.users') }}">
+            <i class="fas fa-user-cog"></i><span>{{ _('users') }}</span>
+        </a>
+        {% endif %}
+
+        <div class="sidebar-section-title">{{ _('account') }}</div>
+        <a class="sidebar-link" href="{{ url_for('auth.profile') }}">
+            <i class="fas fa-user"></i><span>{{ _('profile') }}</span>
+        </a>
+        <a class="sidebar-link" href="{{ url_for('auth.logout') }}">
+            <i class="fas fa-sign-out-alt"></i><span>{{ _('logout') }}</span>
+        </a>
+        {% else %}
+        <a class="sidebar-link" href="{{ url_for('index') }}"><i class="fas fa-home"></i><span>{{ _('home') }}</span></a>
+        <a class="sidebar-link" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt"></i><span>{{ _('login') }}</span></a>
+        <a class="sidebar-link" href="{{ url_for('auth.register_company') }}"><i class="fas fa-user-plus"></i><span>{{ _('register') }}</span></a>
+        {% endif %}
+    </nav>
+</aside>

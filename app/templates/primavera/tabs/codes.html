@@ -1,0 +1,161 @@
+<!-- Codes Tab - أكواد التصنيف -->
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-tags text-primary"></i>
+        Activity Codes
+    </h6>
+    
+    <div class="row">
+        {% for code_type in activity_code_types %}
+        <div class="col-md-6 mb-3">
+            <div class="code-selector">
+                <label class="field-label">{{ code_type.name }}</label>
+                <select class="field-input" name="activity_code_{{ code_type.id }}">
+                    <option value="">-- None --</option>
+                    {% for code in code_type.codes %}
+                    <option value="{{ code.id }}" 
+                            {% if project.activity_codes and code.id in project.activity_codes %}selected{% endif %}>
+                        {{ code.code_value }} - {{ code.code_description }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="codes-container" id="selectedActivityCodes">
+        {% for code in selected_activity_codes %}
+        <span class="code-tag">
+            {{ code.code_type }}: {{ code.code_value }}
+            <span class="remove" onclick="removeCode(this, 'activity')">&times;</span>
+        </span>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="field-group mt-4">
+    <h6 class="field-group-title">
+        <i class="fas fa-tags text-primary"></i>
+        Resource Codes
+    </h6>
+    
+    <div class="row">
+        {% for code_type in resource_code_types %}
+        <div class="col-md-6 mb-3">
+            <div class="code-selector">
+                <label class="field-label">{{ code_type.name }}</label>
+                <select class="field-input" name="resource_code_{{ code_type.id }}">
+                    <option value="">-- None --</option>
+                    {% for code in code_type.codes %}
+                    <option value="{{ code.id }}"
+                            {% if project.resource_codes and code.id in project.resource_codes %}selected{% endif %}>
+                        {{ code.code_value }} - {{ code.code_description }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="codes-container" id="selectedResourceCodes">
+        {% for code in selected_resource_codes %}
+        <span class="code-tag">
+            {{ code.code_type }}: {{ code.code_value }}
+            <span class="remove" onclick="removeCode(this, 'resource')">&times;</span>
+        </span>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="field-group mt-4">
+    <h6 class="field-group-title">
+        <i class="fas fa-tag text-primary"></i>
+        Project Codes
+    </h6>
+    
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="field-label">Project Category</label>
+            <select class="field-input" id="projectCategory">
+                <option value="">-- Select --</option>
+                <option value="government" {% if project.category == 'government' %}selected{% endif %}>Government</option>
+                <option value="private" {% if project.category == 'private' %}selected{% endif %}>Private</option>
+                <option value="industrial" {% if project.category == 'industrial' %}selected{% endif %}>Industrial</option>
+            </select>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="field-label">Project Priority</label>
+            <select class="field-input" id="projectPriority">
+                <option value="low" {% if project.priority == 'low' %}selected{% endif %}>Low</option>
+                <option value="medium" {% if project.priority == 'medium' %}selected{% endif %}>Medium</option>
+                <option value="high" {% if project.priority == 'high' %}selected{% endif %}>High</option>
+                <option value="critical" {% if project.priority == 'critical' %}selected{% endif %}>Critical</option>
+            </select>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="field-label">Project Risk Level</label>
+            <select class="field-input" id="projectRisk">
+                <option value="low" {% if project.risk_level == 'low' %}selected{% endif %}>Low</option>
+                <option value="medium" {% if project.risk_level == 'medium' %}selected{% endif %}>Medium</option>
+                <option value="high" {% if project.risk_level == 'high' %}selected{% endif %}>High</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="field-group mt-4">
+    <h6 class="field-group-title">
+        <i class="fas fa-globe text-primary"></i>
+        Global Codes
+    </h6>
+    
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="field-label">Region</label>
+            <select class="field-input" id="projectRegion">
+                <option value="">-- Select --</option>
+                <option value="north">North Region</option>
+                <option value="south">South Region</option>
+                <option value="east">East Region</option>
+                <option value="west">West Region</option>
+                <option value="central">Central Region</option>
+            </select>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="field-label">Department</label>
+            <select class="field-input" id="projectDepartment">
+                <option value="">-- Select --</option>
+                <option value="engineering">Engineering</option>
+                <option value="construction">Construction</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="quality">Quality Control</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<script>
+function removeCode(element, type) {
+    element.parentElement.remove();
+    // يمكن إضافة منطق لإزالة الكود من قاعدة البيانات
+}
+
+// تحديث الأكواد المختارة
+document.querySelectorAll('[name^="activity_code_"]').forEach(select => {
+    select.addEventListener('change', function() {
+        const container = document.getElementById('selectedActivityCodes');
+        const selectedText = this.options[this.selectedIndex]?.text;
+        const selectedValue = this.value;
+        
+        if (selectedValue) {
+            const codeType = this.name.replace('activity_code_', '');
+            const tag = document.createElement('span');
+            tag.className = 'code-tag';
+            tag.innerHTML = `${codeType}: ${selectedText} <span class="remove" onclick="removeCode(this, 'activity')">&times;</span>`;
+            container.appendChild(tag);
+        }
+    });
+});
+</script>

@@ -1,0 +1,160 @@
+{% extends "client/base.html" %}
+
+{% block title %}المشاريع - المالك{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-project-diagram me-2"></i> المشاريع</h4>
+            <div>
+                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                    <i class="fas fa-filter"></i> تصفية
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="collapse mb-4" id="filterCollapse">
+    <div class="card">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">الحالة</label>
+                    <select name="status" class="form-select">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>الكل</option>
+                        <option value="planning" {% if status_filter == 'planning' %}selected{% endif %}>قيد التخطيط</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>نشط</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>مكتمل</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">بحث</label>
+                    <input type="text" name="search" class="form-control" placeholder="اسم المشروع..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">ترتيب حسب</label>
+                    <select name="sort" class="form-select">
+                        <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>تاريخ الإنشاء</option>
+                        <option value="name" {% if sort_by == 'name' %}selected{% endif %}>الاسم</option>
+                        <option value="progress" {% if sort_by == 'progress' %}selected{% endif %}>نسبة التقدم</option>
+                        <option value="budget" {% if sort_by == 'budget' %}selected{% endif %}>الميزانية</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">تطبيق</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-primary">{{ stats.total }}</h3>
+            <small class="text-muted">إجمالي المشاريع</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-success">{{ stats.active }}</h3>
+            <small class="text-muted">نشطة</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-info">{{ stats.completed }}</h3>
+            <small class="text-muted">مكتملة</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-danger">{{ stats.delayed }}</h3>
+            <small class="text-muted">متأخرة</small>
+        </div>
+    </div>
+</div>
+
+<!-- Projects Grid -->
+<div class="row g-4">
+    {% for project in projects %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="card-title mb-1">
+                            <a href="{{ url_for('client.project_detail', project_id=project.id) }}" class="text-decoration-none">
+                                {{ project.name }}
+                            </a>
+                        </h5>
+                        <small class="text-muted">{{ project.project_code }}</small>
+                    </div>
+                    {{ getStatusBadge(project.status)|safe }}
+                </div>
+                
+                <p class="card-text small text-muted">{{ project.description|truncate(100) }}</p>
+                
+                <!-- Progress -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>التقدم</small>
+                        <small class="fw-bold">{{ "%.1f"|format(project.get_progress()) }}%</small>
+                    </div>
+                    <div class="progress progress-custom">
+                        <div class="progress-bar bg-{% if project.get_progress() >= 75 %}success{% elif project.get_progress() >= 40 %}warning{% else %}info{% endif %}" 
+                             style="width: {{ project.get_progress() }}%"></div>
+                    </div>
+                </div>
+                
+                <!-- Budget & Dates -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">الميزانية</small>
+                        <span class="fw-bold">{{ "{:,.0f}".format(project.budget.current_budget if project.budget else 0) }} ريال</span>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">التكلفة الفعلية</small>
+                        <span class="fw-bold">{{ "{:,.0f}".format(project.cost.total_actual_cost if project.cost else 0) }} ريال</span>
+                    </div>
+                </div>
+                
+                <!-- Dates -->
+                <div class="small text-muted mb-3">
+                    <div><i class="fas fa-calendar-alt me-1"></i> البدء: {{ project.dates.planned_start.strftime('%Y-%m-%d') if project.dates and project.dates.planned_start else 'غير محدد' }}</div>
+                    <div><i class="fas fa-calendar-check me-1"></i> الانتهاء: {{ project.dates.planned_finish.strftime('%Y-%m-%d') if project.dates and project.dates.planned_finish else 'غير محدد' }}</div>
+                    {% if project.remaining_days > 0 %}
+                    <div class="text-warning"><i class="fas fa-hourglass-half me-1"></i> متبقي: {{ project.remaining_days }} يوم</div>
+                    {% elif project.is_overdue %}
+                    <div class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i> متأخر</div>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('client.project_detail', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> تفاصيل
+                    </a>
+                    <a href="{{ url_for('client.financial_report', project_id=project.id) }}" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-chart-line"></i> تقرير مالي
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد مشاريع حالياً</h5>
+            <p class="text-muted">سيتم عرض مشاريعك هنا بعد إضافتها من قبل مدير الشركة</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+<!-- نافذة تأكيد الحذف -->
+<div class="modal fade" id="deleteWbsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle ms-2"></i>
+                    تأكيد الحذف
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
+                    <h5>هل أنت متأكد من حذف عنصر WBS؟</h5>
+                    <p class="text-muted" id="deleteWbsName"></p>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle ms-2"></i>
+                    <strong>تنبيه:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>لا يمكن حذف العنصر إذا كان يحتوي على عناصر فرعية</li>
+                        <li>لا يمكن حذف العنصر إذا كان مرتبطاً بأنشطة</li>
+                        <li>هذا الإجراء لا يمكن التراجع عنه</li>
+                    </ul>
+                </div>
+                
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="confirmDelete">
+                    <label class="form-check-label" for="confirmDelete">
+                        نعم، أنا متأكد من الحذف
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    إلغاء
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn" disabled>
+                    <i class="fas fa-trash"></i>
+                    حذف نهائي
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// تفعيل زر الحذف عند التأكيد
+document.getElementById('confirmDelete').addEventListener('change', function() {
+    document.getElementById('confirmDeleteBtn').disabled = !this.checked;
+});
+</script>

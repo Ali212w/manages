@@ -1,0 +1,1129 @@
+<!-- templates/primavera/tabs/activity/feedback.html -->
+
+<div class="field-group">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h6 class="field-group-title mb-0">
+            <i class="fas fa-comments text-primary"></i>
+            التعليقات والملاحظات
+            <span class="badge bg-primary ms-2" id="feedbackCount">0</span>
+        </h6>
+    </div>
+    
+    <!-- قائمة التعليقات -->
+    <div class="feedback-list" id="feedbackList">
+        <div class="text-center py-4" id="loadingFeedbacks">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">جاري التحميل...</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- نموذج إضافة تعليق جديد -->
+    <div class="feedback-form mt-4">
+        <div class="d-flex gap-3">
+            <div class="feedback-avatar current-user" style="background: linear-gradient(135deg, #4361ee, #3f37c9)">
+                {{ current_user.full_name[0]|upper if current_user.full_name else 'U' }}
+            </div>
+            <div class="flex-grow-1">
+                <div class="form-container">
+                    <textarea class="feedback-input" id="newFeedback" rows="3" 
+                              placeholder="اكتب تعليقك هنا... (يمكنك استخدام Markdown)"></textarea>
+                    
+                    <!-- شريط أدوات التنسيق -->
+                    <div class="formatting-toolbar">
+                        <button type="button" class="toolbar-btn" onclick="window.insertFormat('**', '**')" title="غامق">
+                            <i class="fas fa-bold"></i>
+                        </button>
+                        <button type="button" class="toolbar-btn" onclick="window.insertFormat('*', '*')" title="مائل">
+                            <i class="fas fa-italic"></i>
+                        </button>
+                        <button type="button" class="toolbar-btn" onclick="window.insertFormat('__', '__')" title="مسطر">
+                            <i class="fas fa-underline"></i>
+                        </button>
+                        <span class="separator"></span>
+                        <button type="button" class="toolbar-btn" onclick="window.insertFormat('`', '`')" title="كود">
+                            <i class="fas fa-code"></i>
+                        </button>
+                        <button type="button" class="toolbar-btn" onclick="window.insertFormat('> ', '')" title="اقتباس">
+                            <i class="fas fa-quote-right"></i>
+                        </button>
+                        <span class="separator"></span>
+                        <button type="button" class="toolbar-btn" onclick="window.insertFormat('- ', '')" title="قائمة نقطية">
+                            <i class="fas fa-list-ul"></i>
+                        </button>
+                        <button type="button" class="toolbar-btn" onclick="window.insertFormat('1. ', '')" title="قائمة رقمية">
+                            <i class="fas fa-list-ol"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- منطقة معاينة المرفقات -->
+                    <div class="attachments-preview" id="attachmentsPreview"></div>
+                    
+                    <!-- أزرار الإجراءات -->
+                    <div class="form-actions mt-3">
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.attachFile()">
+                                <i class="fas fa-paperclip me-1"></i>
+                                إرفاق ملف
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.clearForm()">
+                                <i class="fas fa-eraser me-1"></i>
+                                مسح
+                            </button>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="window.postFeedback()" id="postFeedbackBtn">
+                            <i class="fas fa-paper-plane me-1"></i>
+                            إرسال التعليق
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal معاينة الملفات -->
+<div class="modal fade" id="filePreviewModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filePreviewTitle">
+                    <i class="fas fa-file-alt me-2"></i>
+                    معاينة الملف
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" id="filePreviewBody">
+                <div class="file-preview-container">
+                    <div class="text-center p-5" id="filePreviewLoading">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">جاري التحميل...</span>
+                        </div>
+                        <p class="mt-3 text-muted">جاري تحميل الملف...</p>
+                    </div>
+                    <div id="filePreviewContent" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> إغلاق
+                </button>
+                <a href="#" id="fileDownloadLink" class="btn btn-primary" download>
+                    <i class="fas fa-download me-1"></i> تحميل الملف
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تعديل التعليق -->
+<div class="modal fade" id="editFeedbackModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تعديل التعليق</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea class="form-control" id="editFeedbackContent" rows="4"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="window.updateFeedback()">حفظ التغييرات</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* تنسيقات إضافية للمعاينة */
+.file-preview-container {
+    background: #f8fafc;
+    min-height: 400px;
+    max-height: 70vh;
+    overflow: auto;
+}
+
+.image-preview {
+    text-align: center;
+    padding: 1rem;
+    background: #1e293b;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 60vh;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.pdf-preview {
+    height: 70vh;
+    width: 100%;
+    border: none;
+}
+
+.text-preview {
+    padding: 1.5rem;
+    background: white;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 60vh;
+    overflow: auto;
+}
+
+.code-preview {
+    padding: 1.5rem;
+    background: #1e293b;
+    color: #e2e8f0;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 60vh;
+    overflow: auto;
+}
+
+.video-preview {
+    max-width: 100%;
+    max-height: 60vh;
+    margin: 0 auto;
+    display: block;
+}
+
+.audio-preview {
+    width: 100%;
+    padding: 2rem;
+}
+
+.file-info {
+    text-align: center;
+    padding: 2rem;
+}
+
+.file-icon-large {
+    font-size: 5rem;
+    color: #4361ee;
+    margin-bottom: 1rem;
+}
+
+.file-name-large {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.file-size {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+/* باقي التنسيقات كما هي */
+.feedback-list {
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.feedback-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.feedback-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.feedback-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.feedback-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #eef2f7;
+    transition: all 0.3s;
+}
+
+.feedback-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transform: translateX(-4px);
+}
+
+.feedback-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #4361ee;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.feedback-avatar.current-user {
+    background: linear-gradient(135deg, #4361ee, #3f37c9);
+}
+
+.feedback-content {
+    flex: 1;
+}
+
+.feedback-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.feedback-author {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.feedback-role {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    background: #eef2f7;
+    border-radius: 30px;
+    color: #64748b;
+}
+
+.feedback-date {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.feedback-text {
+    color: #334155;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin-bottom: 0.5rem;
+}
+
+.feedback-attachments {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.attachment-label {
+    color: #64748b;
+    margin-left: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.attachment-link {
+    color: #4361ee;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #eef2f7;
+    cursor: pointer;
+}
+
+.attachment-link:hover {
+    background: #4361ee;
+    color: white;
+    border-color: #4361ee;
+    transform: translateY(-2px);
+}
+
+.feedback-form {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 2px dashed #eef2f7;
+    transition: all 0.3s;
+}
+
+.feedback-form:hover {
+    border-color: #4361ee;
+    background: #f0f9ff;
+}
+
+.feedback-input {
+    width: 100%;
+    border: 2px solid #eef2f7;
+    border-radius: 12px 12px 0 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+    resize: vertical;
+}
+
+.feedback-input:focus {
+    border-color: #4361ee;
+    outline: none;
+    box-shadow: none;
+}
+
+.formatting-toolbar {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    background: white;
+    border: 2px solid #eef2f7;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    flex-wrap: wrap;
+}
+
+.toolbar-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    color: #64748b;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toolbar-btn:hover {
+    background: #eef2f7;
+    color: #4361ee;
+}
+
+.separator {
+    width: 1px;
+    height: 24px;
+    background: #eef2f7;
+    margin: 0 0.25rem;
+}
+
+.attachments-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.attachment-preview-item {
+    background: white;
+    border: 2px solid #eef2f7;
+    border-radius: 8px;
+    padding: 0.25rem 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.attachment-preview-item .remove {
+    color: #ef4444;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.attachment-preview-item .remove:hover {
+    transform: scale(1.2);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.btn-outline-secondary {
+    border: 2px solid #eef2f7;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.btn-outline-secondary:hover {
+    background: #eef2f7;
+    color: #1e293b;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4361ee, #3f37c9);
+    border: none;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+}
+
+.empty-state {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 3rem;
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+@media (max-width: 768px) {
+    .feedback-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .d-flex {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .btn-primary {
+        width: 100%;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+}
+</style>
+
+<script>
+(function() {
+    // متغيرات عامة
+    let attachments = [];
+    let currentEditFeedbackId = null;
+    const activityId = {{ activity.id }};
+    const csrfToken = '{{ csrf_token() }}';
+    
+    // ============================================
+    // دوال معاينة الملفات
+    // ============================================
+    
+    function getFileExtension(filename) {
+        return filename.split('.').pop().toLowerCase();
+    }
+    
+    function getFileIconClass(filename) {
+        const ext = getFileExtension(filename);
+        const icons = {
+            'pdf': 'fa-file-pdf',
+            'doc': 'fa-file-word', 'docx': 'fa-file-word',
+            'xls': 'fa-file-excel', 'xlsx': 'fa-file-excel',
+            'jpg': 'fa-file-image', 'jpeg': 'fa-file-image', 'png': 'fa-file-image', 'gif': 'fa-file-image', 'webp': 'fa-file-image',
+            'mp4': 'fa-file-video', 'avi': 'fa-file-video', 'mov': 'fa-file-video', 'mkv': 'fa-file-video',
+            'mp3': 'fa-file-audio', 'wav': 'fa-file-audio', 'flac': 'fa-file-audio',
+            'txt': 'fa-file-alt',
+            'zip': 'fa-file-archive', 'rar': 'fa-file-archive', '7z': 'fa-file-archive'
+        };
+        return icons[ext] || 'fa-file';
+    }
+    
+    function isImage(filename) {
+        const ext = getFileExtension(filename);
+        return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext);
+    }
+    
+    function isVideo(filename) {
+        const ext = getFileExtension(filename);
+        return ['mp4', 'avi', 'mov', 'mkv', 'webm', 'flv'].includes(ext);
+    }
+    
+    function isAudio(filename) {
+        const ext = getFileExtension(filename);
+        return ['mp3', 'wav', 'flac', 'aac', 'ogg'].includes(ext);
+    }
+    
+    function isPDF(filename) {
+        return getFileExtension(filename) === 'pdf';
+    }
+    
+    function isTextFile(filename) {
+        const ext = getFileExtension(filename);
+        return ['txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'py', 'java', 'c', 'cpp'].includes(ext);
+    }
+    
+    window.previewFile = function(url, filename, fileSize = null) {
+        const modal = new bootstrap.Modal(document.getElementById('filePreviewModal'));
+        const title = document.getElementById('filePreviewTitle');
+        const body = document.getElementById('filePreviewBody');
+        const loadingDiv = document.getElementById('filePreviewLoading');
+        const contentDiv = document.getElementById('filePreviewContent');
+        const downloadLink = document.getElementById('fileDownloadLink');
+        
+        // إعداد عنوان الملف
+        title.innerHTML = `<i class="fas ${getFileIconClass(filename)} me-2"></i>${filename}`;
+        downloadLink.href = url;
+        downloadLink.download = filename;
+        
+        // إظهار مؤشر التحميل
+        loadingDiv.style.display = 'block';
+        contentDiv.style.display = 'none';
+        modal.show();
+        
+        // تحديد نوع الملف وعرض المعاينة المناسبة
+        if (isImage(filename)) {
+            // معاينة الصور
+            const img = new Image();
+            img.onload = function() {
+                contentDiv.innerHTML = `
+                    <div class="image-preview">
+                        <img src="${url}" alt="${filename}" style="max-width: 100%; max-height: 70vh; object-fit: contain;">
+                    </div>
+                `;
+                loadingDiv.style.display = 'none';
+                contentDiv.style.display = 'block';
+            };
+            img.onerror = function() {
+                showFileInfo(url, filename, fileSize);
+            };
+            img.src = url;
+        } 
+        else if (isVideo(filename)) {
+            // معاينة الفيديو
+            contentDiv.innerHTML = `
+                <div class="video-preview">
+                    <video controls style="width: 100%; max-height: 70vh;">
+                        <source src="${url}" type="video/${getFileExtension(filename)}">
+                        متصفحك لا يدعم تشغيل الفيديو.
+                    </video>
+                </div>
+            `;
+            loadingDiv.style.display = 'none';
+            contentDiv.style.display = 'block';
+        }
+        else if (isAudio(filename)) {
+            // معاينة الصوت
+            contentDiv.innerHTML = `
+                <div class="audio-preview text-center p-5">
+                    <i class="fas fa-music fa-4x text-primary mb-3"></i>
+                    <audio controls style="width: 100%;">
+                        <source src="${url}" type="audio/${getFileExtension(filename)}">
+                        متصفحك لا يدعم تشغيل الصوت.
+                    </audio>
+                </div>
+            `;
+            loadingDiv.style.display = 'none';
+            contentDiv.style.display = 'block';
+        }
+        else if (isPDF(filename)) {
+            // معاينة PDF
+            contentDiv.innerHTML = `
+                <iframe src="${url}#toolbar=0" class="pdf-preview" style="width: 100%; height: 70vh; border: none;"></iframe>
+            `;
+            loadingDiv.style.display = 'none';
+            contentDiv.style.display = 'block';
+        }
+        else if (isTextFile(filename)) {
+            // معاينة الملفات النصية
+            fetch(url)
+                .then(response => response.text())
+                .then(text => {
+                    const isCode = ['js', 'py', 'java', 'c', 'cpp', 'html', 'css', 'json', 'xml'].includes(getFileExtension(filename));
+                    contentDiv.innerHTML = `
+                        <pre class="${isCode ? 'code-preview' : 'text-preview'}">${escapeHtml(text)}</pre>
+                    `;
+                    loadingDiv.style.display = 'none';
+                    contentDiv.style.display = 'block';
+                })
+                .catch(() => showFileInfo(url, filename, fileSize));
+        }
+        else {
+            // عرض معلومات الملف فقط
+            showFileInfo(url, filename, fileSize);
+        }
+    };
+    
+    function showFileInfo(url, filename, fileSize) {
+        const contentDiv = document.getElementById('filePreviewContent');
+        const sizeText = fileSize ? `(${(fileSize / 1024).toFixed(1)} كيلوبايت)` : '';
+        
+        contentDiv.innerHTML = `
+            <div class="file-info text-center p-5">
+                <i class="fas ${getFileIconClass(filename)} fa-5x text-primary mb-4"></i>
+                <h5 class="file-name-large">${escapeHtml(filename)}</h5>
+                <p class="file-size text-muted">${sizeText}</p>
+                <p class="text-muted mt-3">لا يمكن معاينة هذا الملف مباشرة</p>
+                <button class="btn btn-primary mt-3" onclick="window.downloadFile('${url}', '${filename}')">
+                    <i class="fas fa-download me-2"></i> تحميل الملف
+                </button>
+            </div>
+        `;
+        
+        document.getElementById('filePreviewLoading').style.display = 'none';
+        contentDiv.style.display = 'block';
+    }
+    
+    window.downloadFile = function(url, filename) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+    
+    // ============================================
+    // الدوال المساعدة
+    // ============================================
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function getFileIcon(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const icons = {
+            'pdf': 'pdf',
+            'doc': 'word', 'docx': 'word',
+            'xls': 'excel', 'xlsx': 'excel',
+            'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image',
+            'txt': 'alt',
+            'zip': 'archive', 'rar': 'archive'
+        };
+        return icons[ext] || 'alt';
+    }
+    
+    function getRoleName(role) {
+        const roles = {
+            'org_admin': 'مدير المنظمة',
+            'project_manager': 'مدير مشروع',
+            'supervisor': 'مشرف',
+            'employee': 'موظف',
+            'supplier': 'مورد'
+        };
+        return roles[role] || role || 'مستخدم';
+    }
+    
+    function formatMarkdown(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/__(.*?)__/g, '<u>$1</u>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/^> (.*?)$/gm, '<blockquote class="blockquote small">$1</blockquote>')
+            .replace(/^- (.*?)$/gm, '<li>$1</li>')
+            .replace(/^\d+\. (.*?)$/gm, '<li class="numbered">$1</li>')
+            .replace(/\n/g, '<br>');
+    }
+    
+    function updateFeedbackCount(count) {
+        const countElement = document.getElementById('feedbackCount');
+        if (countElement) {
+            countElement.textContent = count;
+        }
+    }
+    
+    function updateAttachmentsPreview() {
+        const preview = document.getElementById('attachmentsPreview');
+        preview.innerHTML = '';
+        attachments.forEach((file, index) => {
+            addAttachmentPreview(file, index);
+        });
+    }
+    
+    function addAttachmentPreview(file, index) {
+        const preview = document.getElementById('attachmentsPreview');
+        const previewItem = document.createElement('div');
+        previewItem.className = 'attachment-preview-item';
+        previewItem.innerHTML = `
+            <i class="fas fa-file-${getFileIcon(file.name)}"></i>
+            <span>${file.name} (${(file.size / 1024).toFixed(1)} كيلوبايت)</span>
+            <i class="fas fa-times remove" onclick="window.removeAttachment(${index})"></i>
+        `;
+        preview.appendChild(previewItem);
+    }
+    
+    // ============================================
+    // دوال التحميل والعرض
+    // ============================================
+    
+    function renderFeedbacks(feedbacks) {
+        const container = document.getElementById('feedbackList');
+        
+        if (!feedbacks || feedbacks.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state text-center py-5">
+                    <div class="empty-state-icon mb-3">
+                        <i class="fas fa-comments fa-2x text-muted"></i>
+                    </div>
+                    <h6 class="text-muted mb-2">لا توجد تعليقات</h6>
+                    <p class="text-muted small">كن أول من يشارك رأيه حول هذا النشاط</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        const colors = ['#4361ee', '#3f37c9', '#4895ef', '#4cc9f0', '#f72585', '#b5179e'];
+        
+        feedbacks.forEach(feedback => {
+            const userInitial = feedback.user_name ? feedback.user_name[0].toUpperCase() : '?';
+            const colorIndex = (feedback.user_id % colors.length);
+            
+            html += `
+                <div class="feedback-item" data-feedback-id="${feedback.id}">
+                    <div class="feedback-avatar" style="background: linear-gradient(135deg, ${colors[colorIndex]}, ${colors[colorIndex]}cc)">
+                        ${userInitial}
+                    </div>
+                    <div class="feedback-content">
+                        <div class="feedback-header">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="feedback-author">${escapeHtml(feedback.user_name)}</span>
+                                <span class="feedback-role">${getRoleName(feedback.user_role)}</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="feedback-date">
+                                    <i class="far fa-clock me-1"></i>
+                                    ${feedback.created_at}
+                                </span>
+                                ${feedback.user_id === {{ current_user.id }} ? `
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-link text-muted p-0" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" href="#" onclick="window.editFeedback(${feedback.id}, '${escapeHtml(feedback.content).replace(/'/g, "\\'")}')">
+                                                    <i class="fas fa-edit me-2"></i>تعديل
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="#" onclick="window.deleteFeedback(${feedback.id})">
+                                                    <i class="fas fa-trash me-2"></i>حذف
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="feedback-text" id="feedback-text-${feedback.id}">
+                            ${formatMarkdown(escapeHtml(feedback.content))}
+                        </div>
+            `;
+            
+            if (feedback.attachment_url && feedback.attachment_url.length > 0) {
+                html += `<div class="feedback-attachments mt-2">
+                            <span class="attachment-label">
+                                <i class="fas fa-paperclip me-1"></i>
+                                المرفقات:
+                            </span>`;
+                feedback.attachment_url.forEach(att => {
+                    html += `<a class="attachment-link" onclick="window.previewFile('${att.url}', '${att.name}', ${att.size || 0})">
+                                <i class="fas ${getFileIconClass(att.name)}"></i>
+                                ${att.name}
+                                <i class="fas fa-eye ms-1"></i>
+                            </a>`;
+                });
+                html += `</div>`;
+            }
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    function loadFeedbacks() {
+        const container = document.getElementById('feedbackList');
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">جاري التحميل...</span>
+                </div>
+            </div>
+        `;
+        
+        fetch(`/primavera/api/activity/${activityId}/feedback/list`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderFeedbacks(data.feedbacks);
+                    updateFeedbackCount(data.feedbacks.length);
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state text-center py-5">
+                            <div class="empty-state-icon mb-3">
+                                <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                            </div>
+                            <h6 class="text-muted mb-2">حدث خطأ</h6>
+                            <p class="text-muted small">${data.error || 'فشل تحميل التعليقات'}</p>
+                            <button class="btn btn-sm btn-primary mt-2" onclick="window.loadFeedbacks()">
+                                <i class="fas fa-sync-alt"></i> إعادة المحاولة
+                            </button>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                container.innerHTML = `
+                    <div class="empty-state text-center py-5">
+                        <div class="empty-state-icon mb-3">
+                            <i class="fas fa-wifi fa-2x text-danger"></i>
+                        </div>
+                        <h6 class="text-muted mb-2">خطأ في الاتصال</h6>
+                        <p class="text-muted small">فشل الاتصال بالخادم</p>
+                        <button class="btn btn-sm btn-primary mt-2" onclick="window.loadFeedbacks()">
+                            <i class="fas fa-sync-alt"></i> إعادة المحاولة
+                        </button>
+                    </div>
+                `;
+            });
+    }
+    
+    // ============================================
+    // الدوال العامة
+    // ============================================
+    
+    window.insertFormat = function(before, after) {
+        const textarea = document.getElementById('newFeedback');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+        const newText = before + selectedText + after;
+        
+        textarea.value = textarea.value.substring(0, start) + newText + textarea.value.substring(end);
+        textarea.focus();
+        textarea.selectionStart = start + before.length;
+        textarea.selectionEnd = start + before.length + selectedText.length;
+    };
+    
+    window.attachFile = function() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mp3,.txt,.zip';
+        
+        input.onchange = function(e) {
+            const files = Array.from(e.target.files);
+            
+            files.forEach(file => {
+                if (file.size > 10 * 1024 * 1024) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'ملف كبير جداً',
+                        text: `${file.name} يتجاوز الحد الأقصى 10 ميجابايت`
+                    });
+                    return;
+                }
+                
+                attachments.push(file);
+                addAttachmentPreview(file, attachments.length - 1);
+            });
+        };
+        
+        input.click();
+    };
+    
+    window.removeAttachment = function(index) {
+        attachments.splice(index, 1);
+        updateAttachmentsPreview();
+    };
+    
+    window.clearForm = function() {
+        document.getElementById('newFeedback').value = '';
+        attachments = [];
+        updateAttachmentsPreview();
+    };
+    
+    window.postFeedback = function() {
+        const content = document.getElementById('newFeedback').value.trim();
+        
+        if (!content) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'تنبيه',
+                text: 'الرجاء إدخال نص التعليق'
+            });
+            return;
+        }
+        
+        const btn = document.getElementById('postFeedbackBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>جاري الإرسال...';
+        
+        const formData = new FormData();
+        formData.append('content', content);
+        attachments.forEach((file, index) => {
+            formData.append(`attachment_${index}`, file);
+        });
+        
+        fetch(`/primavera/api/activity/${activityId}/feedback`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم',
+                    text: 'تم إضافة التعليق بنجاح',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.clearForm();
+                    loadFeedbacks();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ',
+                    text: data.error || 'فشل إضافة التعليق'
+                });
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>إرسال التعليق';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: 'حدث خطأ في الاتصال بالخادم'
+            });
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>إرسال التعليق';
+        });
+    };
+    
+    window.editFeedback = function(feedbackId, content) {
+        currentEditFeedbackId = feedbackId;
+        document.getElementById('editFeedbackContent').value = content;
+        new bootstrap.Modal(document.getElementById('editFeedbackModal')).show();
+    };
+    
+    window.updateFeedback = function() {
+        const content = document.getElementById('editFeedbackContent').value.trim();
+        
+        if (!content) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'تنبيه',
+                text: 'محتوى التعليق لا يمكن أن يكون فارغاً'
+            });
+            return;
+        }
+        
+        fetch(`/primavera/api/feedback/${currentEditFeedbackId}/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ content: content })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('editFeedbackModal')).hide();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم',
+                    text: 'تم تحديث التعليق بنجاح',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    loadFeedbacks();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ',
+                    text: data.error || 'فشل تحديث التعليق'
+                });
+            }
+        });
+    };
+    
+    window.deleteFeedback = function(feedbackId) {
+        Swal.fire({
+            title: 'تأكيد الحذف',
+            text: 'هل أنت متأكد من حذف هذا التعليق؟',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'نعم، احذف',
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: '#dc2626'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/primavera/api/feedback/${feedbackId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'تم',
+                            text: 'تم حذف التعليق بنجاح',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            loadFeedbacks();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ',
+                            text: data.error || 'فشل حذف التعليق'
+                        });
+                    }
+                });
+            }
+        });
+    };
+    
+    window.loadFeedbacks = loadFeedbacks;
+    
+    // تحميل التعليقات عند تحميل الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+        loadFeedbacks();
+    });
+})();
+</script>

@@ -1,0 +1,381 @@
+{% extends "employee/base.html" %}
+
+{% block title %}تقرير التقدم - {{ activity.activity_name }}{% endblock %}
+
+{% block page_title %}تقرير التقدم{% endblock %}
+{% block page_subtitle %}{{ activity.activity_name }} - {{ activity.activity_id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress-header {
+        background: linear-gradient(135deg, #1a2a3a, #0f1a24);
+        border-radius: 24px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        color: white;
+    }
+    
+    .progress-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .progress-stat {
+        background: rgba(255,255,255,0.1);
+        border-radius: 16px;
+        padding: 0.75rem 1.25rem;
+        text-align: center;
+    }
+    
+    .progress-stat-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+    }
+    
+    .timeline {
+        position: relative;
+        padding: 1rem 0;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 20px;
+        width: 2px;
+        background: #e2e8f0;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-right: 50px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .timeline-dot {
+        position: absolute;
+        right: 12px;
+        top: 0;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--primary);
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px var(--primary);
+    }
+    
+    .timeline-dot.completed {
+        background: #4caf50;
+        box-shadow: 0 0 0 2px #4caf50;
+    }
+    
+    .timeline-dot.delayed {
+        background: #ef4444;
+        box-shadow: 0 0 0 2px #ef4444;
+    }
+    
+    .timeline-content {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1rem;
+    }
+    
+    .step-progress {
+        margin-top: 0.5rem;
+    }
+    
+    .step-progress-bar {
+        height: 4px;
+        background: #e2e8f0;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+    
+    .step-progress-fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.5s ease;
+    }
+    
+    .task-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .task-card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+    
+    .task-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .task-title {
+        font-weight: 700;
+    }
+    
+    .delay-badge {
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 0.2rem 0.6rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .gauge-container {
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .gauge-value {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--primary);
+    }
+    
+    .gauge-label {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    @media (max-width: 768px) {
+        .progress-stats {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- رأس التقرير -->
+    <div class="progress-header">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <h3 class="mb-2">{{ activity.activity_name }}</h3>
+                <p class="mb-0 opacity-75">
+                    <i class="fas fa-code me-1"></i> {{ activity.activity_id }}
+                    <span class="mx-2">|</span>
+                    <i class="fas fa-project-diagram me-1"></i> {{ activity.project.name }}
+                </p>
+            </div>
+            <div>
+                <span class="badge bg-{{ 'success' if activity.status == 'completed' else 'primary' if activity.status == 'in_progress' else 'secondary' }} fs-6">
+                    {{ 'مكتمل' if activity.status == 'completed' else 'قيد التنفيذ' if activity.status == 'in_progress' else 'لم يبدأ' }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="progress-stats">
+            <div class="progress-stat">
+                <div class="progress-stat-value">{{ "%.1f"|format(activity.progress_percentage) }}%</div>
+                <div class="small opacity-75">نسبة الإنجاز</div>
+            </div>
+            <div class="progress-stat">
+                <div class="progress-stat-value">{{ steps_completed }}/{{ steps_total }}</div>
+                <div class="small opacity-75">الخطوات المكتملة</div>
+            </div>
+            <div class="progress-stat">
+                <div class="progress-stat-value">{{ tasks_completed }}/{{ tasks_total }}</div>
+                <div class="small opacity-75">المهام المكتملة</div>
+            </div>
+            {% if is_delayed %}
+            <div class="progress-stat" style="background: rgba(239, 68, 68, 0.2);">
+                <div class="progress-stat-value text-danger">+{{ delay_days }} يوم</div>
+                <div class="small opacity-75">متأخر</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-4">
+            <!-- مقياس التقدم -->
+            <div class="chart-container mb-4">
+                <div class="chart-title">
+                    <i class="fas fa-chart-simple text-primary"></i>
+                    مؤشرات التقدم
+                </div>
+                <div class="gauge-container">
+                    <div class="gauge-value">{{ "%.0f"|format(activity.progress_percentage) }}%</div>
+                    <div class="gauge-label">نسبة الإنجاز الكلية</div>
+                    <div class="progress mt-2" style="height: 8px;">
+                        <div class="progress-bar bg-primary" style="width: {{ activity.progress_percentage }}%"></div>
+                    </div>
+                </div>
+                <div class="gauge-container mt-3">
+                    <div class="gauge-value">{{ "%.0f"|format(steps_progress) }}%</div>
+                    <div class="gauge-label">تقدم الخطوات</div>
+                    <div class="progress mt-2" style="height: 8px;">
+                        <div class="progress-bar bg-info" style="width: {{ steps_progress }}%"></div>
+                    </div>
+                </div>
+                <div class="gauge-container mt-3">
+                    <div class="gauge-value">{{ "%.0f"|format(tasks_progress) }}%</div>
+                    <div class="gauge-label">تقدم المهام</div>
+                    <div class="progress mt-2" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ tasks_progress }}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- معلومات المدة -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <i class="fas fa-clock text-primary"></i>
+                    معلومات المدة
+                </div>
+                <div class="cost-breakdown">
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">المدة المخططة</span>
+                        <span class="breakdown-value">{{ planned_duration }} يوم</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">المدة الفعلية</span>
+                        <span class="breakdown-value">{{ actual_duration }} يوم</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">المدة المتبقية</span>
+                        <span class="breakdown-value">{{ remaining_duration }} يوم</span>
+                    </div>
+                    {% if is_delayed %}
+                    <div class="breakdown-item">
+                        <span class="breakdown-label text-danger">التأخير</span>
+                        <span class="breakdown-value text-danger">{{ delay_days }} يوم</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <!-- الخطوات -->
+            <div class="chart-container mb-4">
+                <div class="chart-title">
+                    <i class="fas fa-list-ol text-primary"></i>
+                    خطوات التنفيذ
+                    <span class="badge bg-primary ms-2">{{ steps|length }}</span>
+                </div>
+                <div class="timeline">
+                    {% for step in steps %}
+                    <div class="timeline-item">
+                        <div class="timeline-dot {% if step.is_completed %}completed{% endif %}"></div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                <div>
+                                    <div class="fw-bold">{{ step.title }}</div>
+                                    {% if step.description %}
+                                    <small class="text-muted">{{ step.description }}</small>
+                                    {% endif %}
+                                </div>
+                                {% if step.is_completed %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i> مكتملة
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% if step.completed_at %}
+                            <div class="mt-1">
+                                <small class="text-muted">
+                                    <i class="far fa-clock me-1"></i>
+                                    اكتملت: {{ step.completed_at.strftime('%Y-%m-%d %H:%M') }}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-list-ol fa-3x mb-2"></i>
+                        <p>لا توجد خطوات تنفيذ</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- المهام -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <i class="fas fa-tasks text-primary"></i>
+                    المهام
+                    <span class="badge bg-primary ms-2">{{ tasks|length }}</span>
+                </div>
+                {% for task in tasks %}
+                <div class="task-card">
+                    <div class="task-header">
+                        <div>
+                            <span class="task-title">{{ task.task_name }}</span>
+                            <small class="text-muted ms-2">({{ task.task_code }})</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-{{ 'success' if task.status == 'completed' else 'primary' if task.status == 'in_progress' else 'secondary' }}">
+                                {{ 'مكتمل' if task.status == 'completed' else 'قيد التنفيذ' if task.status == 'in_progress' else 'معلق' }}
+                            </span>
+                            {% if task.is_delayed %}
+                            <span class="delay-badge ms-1">
+                                <i class="fas fa-exclamation-triangle me-1"></i> متأخر
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row small text-muted mb-2">
+                        <div class="col-md-4">
+                            <i class="fas fa-user me-1"></i> المنفذ: {{ task.delegate.full_name if task.delegate else 'غير محدد' }}
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fas fa-calendar me-1"></i> تاريخ الانتهاء: {{ task.planning.planned_finish.strftime('%Y-%m-%d') if task.planning and task.planning.planned_finish else 'غير محدد' }}
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fas fa-chart-line me-1"></i> التقدم: {{ "%.0f"|format(task.progress_percentage) }}%
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-{{ 'success' if task.status == 'completed' else 'primary' }}" style="width: {{ task.progress_percentage }}%"></div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-tasks fa-3x mb-2"></i>
+                    <p>لا توجد مهام مرتبطة</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportReport(format) {
+    Swal.fire({
+        title: 'جاري التصدير...',
+        text: `يتم تصدير التقرير بصيغة ${format.toUpperCase()}`,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+    
+    setTimeout(() => {
+        Swal.fire({
+            icon: 'success',
+            title: 'تم التصدير',
+            text: `تم تصدير التقرير بنجاح`,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    }, 1500);
+}
+</script>
+{% endblock %}

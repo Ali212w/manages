@@ -1,0 +1,593 @@
+{% extends "company/base.html" %}
+
+{% block title %}التقارير - {{ project.name }}{% endblock %}
+
+{% block page_title %}التقارير والتحليلات{% endblock %}
+{% block page_subtitle %}{{ project.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reports-container {
+        padding: 1rem 0;
+    }
+    
+    .reports-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .report-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+        cursor: pointer;
+        border: 1px solid #eef2f7;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .report-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        border-color: var(--primary);
+    }
+    
+    .report-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .icon-progress { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .icon-resources { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .icon-cost { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .icon-schedule { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+    .icon-critical { background: rgba(156, 39, 176, 0.1); color: #9c27b0; }
+    .icon-baseline { background: rgba(0, 150, 136, 0.1); color: #009688; }
+    
+    .report-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+    
+    .report-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        flex-grow: 1;
+    }
+    
+    .report-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+        border-top: 1px solid #eef2f7;
+    }
+    
+    .report-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: #eef2f7;
+        color: #6c757d;
+    }
+    
+    .btn-view {
+        background: transparent;
+        border: 2px solid var(--primary);
+        color: var(--primary);
+        padding: 0.5rem 1.5rem;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-view:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .summary-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1rem;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+    
+    .summary-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .summary-label {
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .chart-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+    }
+    
+    .chart-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .chart-btn {
+        padding: 0.3rem 1rem;
+        border: 2px solid #eef2f7;
+        border-radius: 30px;
+        background: white;
+        color: #6c757d;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .chart-btn:hover,
+    .chart-btn.active {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .export-options {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        margin-top: 1rem;
+    }
+    
+    .export-btn {
+        padding: 0.5rem 1rem;
+        border: 2px solid #eef2f7;
+        border-radius: 10px;
+        background: white;
+        color: #6c757d;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .export-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .export-btn.excel:hover { border-color: #1e6f3f; color: #1e6f3f; }
+    .export-btn.pdf:hover { border-color: #d32f2f; color: #d32f2f; }
+    
+    .recent-reports {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .recent-item {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        border-bottom: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .recent-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .recent-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: #eef2f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        margin-left: 1rem;
+    }
+    
+    .recent-info {
+        flex: 1;
+    }
+    
+    .recent-name {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+    
+    .recent-date {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .recent-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+    <!-- إحصائيات سريعة -->
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="summary-value">{{ project.project.total_activities }}</div>
+            <div class="summary-label">إجمالي الأنشطة</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">{{ project.project.critical_activities }}</div>
+            <div class="summary-label">أنشطة حرجة</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">{{ project.project.progress_percentage|round }}%</div>
+            <div class="summary-label">التقدم</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">{{ project.project.total_float|round(1) }}</div>
+            <div class="summary-label">الوقت السماحي</div>
+        </div>
+    </div>
+    
+    <!-- بطاقات التقارير -->
+    <div class="reports-grid">
+        <!-- تقرير التقدم -->
+        <div class="report-card" onclick="viewReport('progress')">
+            <div class="report-icon icon-progress">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h5 class="report-title">تقرير التقدم</h5>
+            <p class="report-description">عرض تقدم المشروع ونسب الإنجاز للأنشطة المختلفة مع مقارنة زمنية</p>
+            <div class="report-meta">
+                <span class="report-badge">تحديث فوري</span>
+                <button class="btn-view" onclick="event.stopPropagation(); viewReport('progress')">
+                    <i class="fas fa-eye"></i> عرض
+                </button>
+            </div>
+        </div>
+        
+        <!-- تقرير الموارد -->
+        <div class="report-card" onclick="viewReport('resources')">
+            <div class="report-icon icon-resources">
+                <i class="fas fa-users"></i>
+            </div>
+            <h5 class="report-title">تقرير الموارد</h5>
+            <p class="report-description">تحليل استخدام الموارد وتوزيعها على الأنشطة مع مؤشرات الكفاءة</p>
+            <div class="report-meta">
+                <span class="report-badge">تحليل استخدام</span>
+                <button class="btn-view" onclick="event.stopPropagation(); viewReport('resources')">
+                    <i class="fas fa-eye"></i> عرض
+                </button>
+            </div>
+        </div>
+        
+        <!-- تقرير التكاليف -->
+        <div class="report-card" onclick="viewReport('cost')">
+            <div class="report-icon icon-cost">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <h5 class="report-title">تقرير التكاليف</h5>
+            <p class="report-description">تحليل التكاليف المخططة مقابل الفعلية مع توقعات التدفق النقدي</p>
+            <div class="report-meta">
+                <span class="report-badge">تحليل مالي</span>
+                <button class="btn-view" onclick="event.stopPropagation(); viewReport('cost')">
+                    <i class="fas fa-eye"></i> عرض
+                </button>
+            </div>
+        </div>
+        
+        <!-- تقرير الجدول الزمني -->
+        <div class="report-card" onclick="viewReport('schedule')">
+            <div class="report-icon icon-schedule">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <h5 class="report-title">تقرير الجدول الزمني</h5>
+            <p class="report-description">عرض المخطط الزمني للمشروع مع مقارنة بين المخطط والمنفذ</p>
+            <div class="report-meta">
+                <span class="report-badge">مخطط جانت</span>
+                <button class="btn-view" onclick="event.stopPropagation(); viewReport('schedule')">
+                    <i class="fas fa-eye"></i> عرض
+                </button>
+            </div>
+        </div>
+        
+        <!-- تقرير المسار الحرج -->
+        <div class="report-card" onclick="viewReport('critical')">
+            <div class="report-icon icon-critical">
+                <i class="fas fa-link"></i>
+            </div>
+            <h5 class="report-title">تقرير المسار الحرج</h5>
+            <p class="report-description">تحليل المسار الحرج للمشروع وتأثير التأخيرات على الجدول الزمني</p>
+            <div class="report-meta">
+                <span class="report-badge">CPM</span>
+                <button class="btn-view" onclick="event.stopPropagation(); viewReport('critical')">
+                    <i class="fas fa-eye"></i> عرض
+                </button>
+            </div>
+        </div>
+        
+        <!-- تقرير مقارنة خطوط الأساس -->
+        <div class="report-card" onclick="viewReport('baseline')">
+            <div class="report-icon icon-baseline">
+                <i class="fas fa-history"></i>
+            </div>
+            <h5 class="report-title">مقارنة خطوط الأساس</h5>
+            <p class="report-description">مقارنة الأداء الحالي مع خطوط الأساس السابقة وتحليل الفروق</p>
+            <div class="report-meta">
+                <span class="report-badge">تحليل تباين</span>
+                <button class="btn-view" onclick="event.stopPropagation(); viewReport('baseline')">
+                    <i class="fas fa-eye"></i> عرض
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- رسم بياني تفاعلي -->
+    <div class="chart-container">
+        <div class="chart-header">
+            <h5 class="chart-title"><i class="fas fa-chart-bar me-2 text-primary"></i>تحليل التقدم</h5>
+            <div class="chart-actions">
+                <button class="chart-btn active" onclick="changeChart('progress')">التقدم</button>
+                <button class="chart-btn" onclick="changeChart('resources')">الموارد</button>
+                <button class="chart-btn" onclick="changeChart('cost')">التكاليف</button>
+            </div>
+        </div>
+        <canvas id="mainChart" height="300"></canvas>
+    </div>
+    
+    <!-- آخر التقارير -->
+    <div class="recent-reports">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><i class="fas fa-history me-2 text-primary"></i>آخر التقارير</h5>
+            <button class="btn-outline-primary btn-sm" onclick="generateAll()">
+                <i class="fas fa-sync me-1"></i> تحديث الكل
+            </button>
+        </div>
+        
+        <div class="recent-item">
+            <div class="recent-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="recent-info">
+                <div class="recent-name">تقرير التقدم - {{ now.strftime('%Y-%m-%d') }}</div>
+                <div class="recent-date">تم الإنشاء: {{ now.strftime('%H:%M') }}</div>
+            </div>
+            <div class="recent-actions">
+                <button class="export-btn" onclick="exportReport('progress', 'pdf')">
+                    <i class="fas fa-file-pdf"></i>
+                </button>
+                <button class="export-btn" onclick="exportReport('progress', 'excel')">
+                    <i class="fas fa-file-excel"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="recent-item">
+            <div class="recent-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="recent-info">
+                <div class="recent-name">تقرير الموارد - الأسبوعي</div>
+                <div class="recent-date">تم الإنشاء: أمس</div>
+            </div>
+            <div class="recent-actions">
+                <button class="export-btn" onclick="exportReport('resources', 'pdf')">
+                    <i class="fas fa-file-pdf"></i>
+                </button>
+                <button class="export-btn" onclick="exportReport('resources', 'excel')">
+                    <i class="fas fa-file-excel"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- خيارات التصدير -->
+    <div class="export-options">
+        <button class="export-btn excel" onclick="exportAll('excel')">
+            <i class="fas fa-file-excel me-2"></i> تصدير الكل (Excel)
+        </button>
+        <button class="export-btn pdf" onclick="exportAll('pdf')">
+            <i class="fas fa-file-pdf me-2"></i> تصدير الكل (PDF)
+        </button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let currentChart = null;
+
+// ============================================
+// عرض التقارير
+// ============================================
+function viewReport(type) {
+    switch(type) {
+        case 'progress':
+            window.location.href = "{{ url_for('primavera.progress_report', project_id=project.id) }}";
+            break;
+        case 'resources':
+            window.location.href = "{{ url_for('primavera.resources_report', project_id=project.id) }}";
+            break;
+        case 'cost':
+            // TODO: إضافة مسار تقرير التكاليف
+            Swal.fire('قريباً', 'تقرير التكاليف قيد التطوير', 'info');
+            break;
+        case 'schedule':
+            window.location.href = "{{ url_for('primavera.critical_path', project_id=project.id) }}";
+            break;
+        case 'critical':
+            window.location.href = "{{ url_for('primavera.critical_path', project_id=project.id) }}";
+            break;
+        case 'baseline':
+            window.location.href = "{{ url_for('primavera.baselines_list', project_id=project.id) }}";
+            break;
+    }
+}
+
+// ============================================
+// تغيير الرسم البياني
+// ============================================
+function changeChart(type) {
+    document.querySelectorAll('.chart-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    
+    if (currentChart) {
+        currentChart.destroy();
+    }
+    
+    let data = [];
+    let labels = [];
+    let label = '';
+    
+    if (type === 'progress') {
+        labels = ['الأسبوع 1', 'الأسبوع 2', 'الأسبوع 3', 'الأسبوع 4', 'الأسبوع 5', 'الأسبوع 6'];
+        data = [10, 25, 40, 55, 70, {{ project.progress_percentage }}];
+        label = 'نسبة التقدم %';
+    } else if (type === 'resources') {
+        labels = ['عمال', 'معدات', 'مواد', 'مقاولين'];
+        data = [45, 30, 65, 20];
+        label = 'الاستخدام %';
+    } else {
+        labels = ['الأسبوع 1', 'الأسبوع 2', 'الأسبوع 3', 'الأسبوع 4', 'الأسبوع 5', 'الأسبوع 6'];
+        data = [50000, 120000, 180000, 250000, 310000, 380000];
+        label = 'التكلفة (ر.س)';
+    }
+    
+    currentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: label,
+                data: data,
+                borderColor: 'var(--primary)',
+                backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#eef2f7'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ============================================
+// تصدير التقارير
+// ============================================
+function exportReport(type, format) {
+    Swal.fire({
+        icon: 'success',
+        title: 'جاري التصدير',
+        text: `سيتم تحميل التقرير بصيغة ${format.toUpperCase()}`,
+        timer: 2000,
+        showConfirmButton: false
+    });
+    
+    // TODO: تنفيذ تصدير التقرير
+}
+
+function exportAll(format) {
+    Swal.fire({
+        icon: 'info',
+        title: 'تصدير جميع التقارير',
+        text: `سيتم تحميل جميع التقارير بصيغة ${format.toUpperCase()}`,
+        showCancelButton: true,
+        confirmButtonText: 'موافق',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire('جاري التصدير', '', 'success');
+        }
+    });
+}
+
+function generateAll() {
+    Swal.fire({
+        icon: 'info',
+        title: 'تحديث التقارير',
+        text: 'سيتم تحديث جميع التقارير بأحدث البيانات',
+        showCancelButton: true,
+        confirmButtonText: 'موافق',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire('تم التحديث', '', 'success').then(() => {
+                location.reload();
+            });
+        }
+    });
+}
+
+// ============================================
+// تهيئة الرسم البياني
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    changeChart('progress');
+});
+</script>
+{% endblock %}

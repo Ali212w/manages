@@ -1,0 +1,225 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ _('emp.verification_requests') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .verification-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: var(--radius-lg);
+        padding: 25px;
+        color: white;
+        margin-bottom: 25px;
+    }
+    
+    .verification-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        margin-bottom: 20px;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    
+    .verification-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .verification-header-card {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .verification-body {
+        padding: 20px;
+    }
+    
+    .status-badge-pending {
+        background: #ffeaa7;
+        color: #d63031;
+    }
+    
+    .status-badge-verified {
+        background: #55efc4;
+        color: #00b894;
+    }
+    
+    .status-badge-rejected {
+        background: #fab1a0;
+        color: #d63031;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="verification-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-2"><i class="fas fa-clipboard-check me-2"></i> {{ _('emp.verification_requests') }}</h2>
+            <p class="mb-0 text-white-50">{{ _('emp.review_and_approve_verification_requests') }}</p>
+        </div>
+        <div>
+            <div class="btn-group">
+                <button class="btn btn-light" onclick="filterByStatus('pending')">
+                    <i class="fas fa-clock me-1"></i> {{ _('emp.pending') }}
+                </button>
+                <button class="btn btn-light" onclick="filterByStatus('verified')">
+                    <i class="fas fa-check me-1"></i> {{ _('emp.verified') }}
+                </button>
+                <button class="btn btn-light" onclick="filterByStatus('rejected')">
+                    <i class="fas fa-times me-1"></i> {{ _('emp.rejected') }}
+                </button>
+                <button class="btn btn-light" onclick="filterByStatus('all')">
+                    <i class="fas fa-list me-1"></i> {{ _('emp.all') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% for verification in verifications %}
+        <div class="verification-card" data-status="{{ verification.status }}" id="verification-{{ verification.id }}">
+            <div class="verification-header-card">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <span class="badge bg-secondary me-2">#{{ verification.id }}</span>
+                        <span class="badge status-badge-{{ verification.status }}">
+                            {% if verification.status == 'pending' %}
+                                <i class="fas fa-clock me-1"></i> {{ _('emp.pending') }}
+                            {% elif verification.status == 'verified' %}
+                                <i class="fas fa-check me-1"></i> {{ _('emp.verified') }}
+                            {% else %}
+                                <i class="fas fa-times me-1"></i> {{ _('emp.rejected') }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar me-1"></i> {{ format_datetime(verification.submitted_at) }}
+                    </small>
+                </div>
+            </div>
+            <div class="verification-body">
+                <div class="row">
+                    <div class="col-md-7">
+                        <h6 class="fw-bold mb-2">{{ verification.requirement.description if verification.requirement else '-' }}</h6>
+                        <div class="d-flex gap-3 mb-3">
+                            <div>
+                                <small class="text-muted">{{ _('emp.task') }}:</small>
+                                <div class="fw-bold">{{ verification.task.task_name if verification.task else '-' }}</div>
+                            </div>
+                            <div>
+                                <small class="text-muted">{{ _('emp.submitted_by') }}:</small>
+                                <div class="fw-bold">{{ verification.user.full_name if verification.user else '-' }}</div>
+                            </div>
+                            <div>
+                                <small class="text-muted">{{ _('emp.project') }}:</small>
+                                <div class="fw-bold">{{ verification.task.project.name if verification.task and verification.task.project else '-' }}</div>
+                            </div>
+                        </div>
+                        {% if verification.verified_value %}
+                        <div class="alert alert-light mb-0">
+                            <i class="fas fa-pen me-2"></i>
+                            <strong>{{ _('emp.verification_details') }}:</strong>
+                            <p class="mb-0 mt-1">{{ verification.verified_value }}</p>
+                        </div>
+                        {% endif %}
+                        {% if verification.notes %}
+                        <div class="mt-2 small text-muted">
+                            <i class="fas fa-sticky-note me-1"></i> {{ verification.notes }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                        {% if verification.status == 'pending' %}
+                        <div class="d-flex gap-2 justify-content-md-end">
+                            <button class="btn btn-success" onclick="approveVerification({{ verification.id }}, true)">
+                                <i class="fas fa-check me-1"></i> {{ _('emp.approve') }}
+                            </button>
+                            <button class="btn btn-danger" onclick="approveVerification({{ verification.id }}, false)">
+                                <i class="fas fa-times me-1"></i> {{ _('emp.reject') }}
+                            </button>
+                        </div>
+                        {% elif verification.verified_by_user %}
+                        <div class="mt-2 text-md-end">
+                            <small class="text-muted">
+                                <i class="fas fa-user-check me-1"></i>
+                                {{ _('emp.reviewed_by') }}: {{ verification.verified_by_user.full_name }}
+                                <br>
+                                {{ format_datetime(verification.verified_at) }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">{{ _('emp.no_verification_requests') }}</h4>
+            <p class="text-muted">{{ _('emp.no_verifications_found') }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function filterByStatus(status) {
+        const cards = document.querySelectorAll('.verification-card');
+        cards.forEach(card => {
+            if (status === 'all' || card.getAttribute('data-status') === status) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+    
+    function approveVerification(verificationId, approved) {
+        const action = approved ? 'approve' : 'reject';
+        const title = approved ? '{{ _("approve_verification") }}' : '{{ _("reject_verification") }}';
+        const confirmText = approved ? '{{ _("yes_approve") }}' : '{{ _("yes_reject") }}';
+        
+        Swal.fire({
+            title: title,
+            input: 'textarea',
+            inputLabel: '{{ _("notes") }}',
+            inputPlaceholder: '{{ _("optional_notes") }}',
+            showCancelButton: true,
+            confirmButtonText: confirmText,
+            cancelButtonText: '{{ _("cancel") }}',
+            preConfirm: (notes) => {
+                return { notes: notes };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showLoading();
+                $.ajax({
+                    url: `/employee/supervisor/verifications/${verificationId}/approve`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        approved: approved,
+                        notes: result.value.notes || ''
+                    }),
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast(approved ? '{{ _("verification_approved") }}' : '{{ _("verification_rejected") }}', 'success');
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showToast(response.error, 'danger');
+                        }
+                    },
+                    error: function() { showToast('{{ _("server_error") }}', 'danger'); },
+                    complete: function() { hideLoading(); }
+                });
+            }
+        });
+    }
+</script>
+{% endblock %}

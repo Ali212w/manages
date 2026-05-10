@@ -1,0 +1,367 @@
+{% extends "company/base.html" %}
+
+{% block title %}مراجعة البيانات المستخرجة{% endblock %}
+
+{% block page_title %}مراجعة البيانات المستخرجة{% endblock %}
+{% block page_subtitle %}راجع وعدل البيانات قبل حفظها في قاعدة البيانات{% endblock %}
+
+{% block extra_css %}
+<style>
+    .review-container {
+        max-width: 900px;
+        margin: 2rem auto;
+    }
+    
+    .review-card {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+        border: 1px solid #eef2f7;
+    }
+    
+    .extraction-header {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05), rgba(67, 97, 238, 0.1));
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border-bottom: 3px solid var(--primary);
+    }
+    
+    .confidence-meter {
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 1rem;
+    }
+    
+    .confidence-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .field-card {
+        background: #f8fafc;
+        border-radius: 15px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        border: 2px solid transparent;
+        transition: all 0.3s;
+    }
+    
+    .field-card:hover {
+        border-color: var(--primary);
+        background: white;
+    }
+    
+    .field-card.edited {
+        border-color: var(--warning);
+        background: rgba(248, 150, 30, 0.05);
+    }
+    
+    .field-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+    
+    .field-value {
+        background: white;
+        border: 2px solid #eef2f7;
+        border-radius: 10px;
+        padding: 0.7rem 1rem;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .field-value:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .field-value.edited {
+        border-color: var(--warning);
+        background: rgba(248, 150, 30, 0.05);
+    }
+    
+    .suggestion-badge {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .suggestion-badge:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    
+    .btn-save {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 1rem 3rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-save:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.4);
+    }
+    
+    .btn-save:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .btn-cancel {
+        background: #eef2f7;
+        color: #6c757d;
+        border: none;
+        padding: 1rem 3rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-cancel:hover {
+        background: #e2e8f0;
+        color: var(--dark);
+    }
+    
+    .changes-list {
+        background: #f8fafc;
+        border-radius: 15px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .change-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .change-item:last-child {
+        border-bottom: none;
+    }
+    
+    .change-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: rgba(248, 150, 30, 0.1);
+        color: var(--warning);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="review-container">
+    <div class="review-card">
+        <!-- رأس الصفحة -->
+        <div class="extraction-header">
+            <div class="d-flex align-items-center">
+                <div class="flex-grow-1">
+                    <h3 class="mb-2">مراجعة البيانات المستخرجة</h3>
+                    <p class="mb-0 text-muted">
+                        <span class="badge bg-primary me-2">{{ extraction.extraction_type }}</span>
+                        من الأمر: "{{ extraction.command.command_text[:50] }}..."
+                    </p>
+                </div>
+                <div class="text-center">
+                    <div class="confidence-value">{{ extraction.confidence }}%</div>
+                    <small class="text-muted">نسبة الثقة</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- نموذج المراجعة -->
+        <form id="reviewForm">
+            <input type="hidden" name="extraction_id" value="{{ extraction.id }}">
+            
+            <!-- الحقول القابلة للتعديل -->
+            <div id="fieldsContainer">
+                {% for key, value in extraction.extracted_data.items() %}
+                <div class="field-card" data-field="{{ key }}">
+                    <div class="field-label">
+                        {{ key }}
+                        {% if extraction.suggested_mappings and extraction.suggested_mappings.get(key) %}
+                        <span class="suggestion-badge ms-2" onclick="applySuggestion('{{ key }}', '{{ extraction.suggested_mappings[key] }}')">
+                            <i class="fas fa-magic me-1"></i>
+                            اقتراح: {{ extraction.suggested_mappings[key] }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if value is mapping %}
+                    <textarea class="field-value" name="{{ key }}" rows="3">{{ value|tojson }}</textarea>
+                    {% elif value is sequence and value is not string %}
+                    <input type="text" class="field-value" name="{{ key }}" value="{{ value|join(', ') }}">
+                    {% else %}
+                    <input type="text" class="field-value" name="{{ key }}" value="{{ value }}">
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- قائمة التغييرات -->
+            <div id="changesList" class="changes-list" style="display: none;">
+                <h6 class="mb-3"><i class="fas fa-edit text-warning me-2"></i>التغييرات التي أجريتها:</h6>
+                <div id="changesContainer"></div>
+            </div>
+            
+            <!-- أزرار الإجراءات -->
+            <div class="action-buttons">
+                <button type="button" class="btn-save" id="saveBtn" onclick="saveExtraction()">
+                    <i class="fas fa-save me-2"></i>
+                    حفظ في قاعدة البيانات
+                </button>
+                <button type="button" class="btn-cancel" onclick="window.location.href='{{ url_for('ai.command_detail', command_id=extraction.command.id) }}'">
+                    <i class="fas fa-times me-2"></i>
+                    إلغاء
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// تخزين القيم الأصلية
+let originalValues = {};
+let currentValues = {};
+let changes = {};
+
+// تهيئة الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.field-card').forEach(card => {
+        const fieldName = card.dataset.field;
+        const input = card.querySelector('.field-value');
+        originalValues[fieldName] = input.value;
+        currentValues[fieldName] = input.value;
+        
+        input.addEventListener('input', function() {
+            checkChanges(fieldName, this.value);
+        });
+    });
+});
+
+// فحص التغييرات
+function checkChanges(fieldName, newValue) {
+    if (newValue !== originalValues[fieldName]) {
+        changes[fieldName] = newValue;
+        document.querySelector(`.field-card[data-field="${fieldName}"]`).classList.add('edited');
+        document.querySelector(`.field-value[name="${fieldName}"]`).classList.add('edited');
+    } else {
+        delete changes[fieldName];
+        document.querySelector(`.field-card[data-field="${fieldName}"]`).classList.remove('edited');
+        document.querySelector(`.field-value[name="${fieldName}"]`).classList.remove('edited');
+    }
+    
+    updateChangesList();
+}
+
+// تحديث قائمة التغييرات
+function updateChangesList() {
+    const changesContainer = document.getElementById('changesContainer');
+    const changesList = document.getElementById('changesList');
+    
+    if (Object.keys(changes).length > 0) {
+        changesList.style.display = 'block';
+        changesContainer.innerHTML = '';
+        
+        for (const [field, value] of Object.entries(changes)) {
+            const div = document.createElement('div');
+            div.className = 'change-item';
+            div.innerHTML = `
+                <div class="change-icon">
+                    <i class="fas fa-pencil-alt"></i>
+                </div>
+                <div>
+                    <strong>${field}:</strong> ${value.substring(0, 50)}${value.length > 50 ? '...' : ''}
+                </div>
+            `;
+            changesContainer.appendChild(div);
+        }
+    } else {
+        changesList.style.display = 'none';
+    }
+}
+
+// تطبيق الاقتراح
+function applySuggestion(fieldName, suggestion) {
+    const input = document.querySelector(`.field-value[name="${fieldName}"]`);
+    input.value = suggestion;
+    checkChanges(fieldName, suggestion);
+}
+
+// حفظ البيانات
+function saveExtraction() {
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>جاري الحفظ...';
+    
+    const data = {
+        modifications: changes
+    };
+    
+    fetch(`/ai/api/extraction/{{ extraction.id }}/save`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم الحفظ',
+                text: 'تم حفظ البيانات في قاعدة البيانات بنجاح',
+                timer: 2000
+            }).then(() => {
+                window.location.href = '{{ url_for('ai.command_detail', command_id=extraction.command.id) }}';
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: data.error || 'حدث خطأ أثناء الحفظ'
+            });
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>حفظ في قاعدة البيانات';
+        }
+    })
+    .catch(error => {
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'فشل الاتصال بالخادم'
+        });
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>حفظ في قاعدة البيانات';
+    });
+}
+</script>
+{% endblock %}

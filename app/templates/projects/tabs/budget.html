@@ -1,0 +1,262 @@
+<div class="card">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-coins text-primary me-2"></i>Budget Information</h6>
+    </div>
+    <div class="card-body">
+        <!-- Budget Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <small class="text-muted">Original Budget</small>
+                        <h4 class="mb-0 text-primary">{{ project.budget.original_budget|format_currency(project.base_currency) if project.budget else '0'|format_currency(project.base_currency) }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <small class="text-muted">Current Budget</small>
+                        <h4 class="mb-0 text-success">
+                            {{ project.budget.current_budget|format_currency(project.base_currency) if project.budget else '0'|format_currency(project.base_currency) }}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-warning">
+                    <div class="card-body text-center">
+                        <small class="text-muted">Proposed Budget</small>
+                        <h4 class="mb-0 text-warning">
+                            {{ project.budget.proposed_budget|format_currency(project.base_currency) if project.budget else '0'|format_currency(project.base_currency) }}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Change Log -->
+        <h6 class="fw-bold mb-3">
+            <i class="fas fa-history text-primary me-2"></i>Budget Change Log
+            <button class="btn btn-sm btn-outline-primary ms-2" onclick="showAddBudgetLogModal()">
+                <i class="fas fa-plus"></i>
+            </button>
+        </h6>
+        
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Change Number</th>
+                        <th>Amount</th>
+                        <th>Responsible</th>
+                        <th>Status</th>
+                        <th>Reason</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in budget_logs %}
+                    <tr>
+                        <td>{{ log.date.strftime('%Y-%m-%d') }}</td>
+                        <td><span class="fw-bold">{{ log.change_number }}</span></td>
+                        <td class="fw-bold">
+                            {{ log.amount|format_currency(project.base_currency) if log.amount else '0'|format_currency(project.base_currency) }}
+                        </td>
+                        <td>{{ log.responsible.full_name if log.responsible else '-' }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if log.status == 'Approved' else 'warning' }}">
+                                {{ log.status }}
+                            </span>
+                        </td>
+                        <td>{{ log.reason }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-link" onclick="editBudgetLog({{ log.id }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-3">No budget change logs</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Cost Breakdown -->
+        <h6 class="fw-bold mb-3">
+            <i class="fas fa-chart-pie text-primary me-2"></i>Cost Breakdown
+        </h6>
+        
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <small class="text-muted">Total Planned Cost</small>
+                        <h5 class="mb-0">
+                         {{ project.cost.total_planned_cost|format_currency(project.base_currency) if  project.cost else '0'|format_currency(project.base_currency) }}
+                        </h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <small class="text-muted">Total Actual Cost</small>
+                        <h5 class="mb-0">
+                            {{ project.cost.total_actual_cost|format_currency(project.base_currency) if  project.cost else '0'|format_currency(project.base_currency) }}
+                        </h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <small class="text-muted">Variance</small>
+                        <h5 class="mb-0 {% if (project.cost.total_planned_cost|default(0) - project.cost.total_actual_cost|default(0)) >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ project.cost.total_planned_cost|format_currency(project.base_currency) if  project.cost else '0'|format_currency(project.base_currency) }}
+                        </h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cost Distribution Chart -->
+        <div class="mt-3">
+            <canvas id="costChart" height="100"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Add Budget Log Modal -->
+<div class="modal fade" id="addBudgetLogModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Budget Change</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="budgetLogForm">
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" id="log_date" value="{{ now().strftime('%Y-%m-%d') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="log_amount" step="0.01">
+                            <span class="input-group-text">{{project.base_currency }}</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <select class="form-control" id="log_reason">
+                            <option value="Scope Change">Scope Change</option>
+                            <option value="Price Escalation">Price Escalation</option>
+                            <option value="Additional Work">Additional Work</option>
+                            <option value="Currency Adjustment">Currency Adjustment</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-control" id="log_status">
+                            <option value="Proposed">Proposed</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addBudgetLog()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let costChart = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initCostChart();
+});
+
+function initCostChart() {
+    const ctx = document.getElementById('costChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    const data = {
+        labels: ['Labor', 'Material', 'Equipment', 'Other'],
+        datasets: [{
+            label: 'Planned Cost',
+            data: [
+                {{ project.cost.labor_cost if project.cost else 0 }},
+                {{ project.cost.material_cost if project.cost else 0 }},
+                {{ project.cost.equipment_cost if project.cost else 0 }},
+                {{ project.cost.other_cost if project.cost else 0 }}
+            ],
+            backgroundColor: [
+                'rgba(67, 97, 238, 0.8)',
+                'rgba(76, 175, 80, 0.8)',
+                'rgba(255, 152, 0, 0.8)',
+                'rgba(156, 39, 176, 0.8)'
+            ]
+        }]
+    };
+    
+    if (costChart) {
+        costChart.destroy();
+    }
+    
+    costChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function showAddBudgetLogModal() {
+    new bootstrap.Modal(document.getElementById('addBudgetLogModal')).show();
+}
+
+function addBudgetLog() {
+    const data = {
+        date: document.getElementById('log_date').value,
+        amount: document.getElementById('log_amount').value,
+        reason: document.getElementById('log_reason').value,
+        status: document.getElementById('log_status').value
+    };
+    
+    fetch(`/projects/api/{{ project.id }}/budget-log`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Budget log added successfully');
+            location.reload();
+        } else {
+            showError(data.error || 'Error adding budget log');
+        }
+    });
+}
+</script>

@@ -1,0 +1,618 @@
+{% extends "employee/base.html" %}
+
+{% block title %}متطلبات المهمة - {{ task.task_name }}{% endblock %}
+
+{% block page_title %}متطلبات المهمة{% endblock %}
+{% block page_subtitle %}{{ task.task_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .requirements-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .progress-header {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        text-align: center;
+    }
+    
+    .progress-circle {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 1rem;
+        position: relative;
+    }
+    
+    .progress-circle svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+    
+    .progress-circle-bg {
+        fill: none;
+        stroke: #eef2f7;
+        stroke-width: 8;
+    }
+    
+    .progress-circle-progress {
+        fill: none;
+        stroke: var(--primary);
+        stroke-width: 8;
+        stroke-linecap: round;
+        transition: stroke-dasharray 0.3s;
+    }
+    
+    .progress-circle-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.5rem 1.5rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .status-ready {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .status-not-ready {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+    }
+    
+    .requirements-list {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .section-title i {
+        color: var(--primary);
+    }
+    
+    .requirement-item {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        border-right: 4px solid transparent;
+        transition: all 0.3s;
+    }
+    
+    .requirement-item.pending {
+        border-right-color: var(--warning);
+    }
+    
+    .requirement-item.verified {
+        border-right-color: var(--success);
+        opacity: 0.8;
+    }
+    
+    .requirement-item.rejected {
+        border-right-color: var(--danger);
+    }
+    
+    .requirement-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.8rem;
+    }
+    
+    .requirement-title {
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .requirement-type {
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .type-document { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .type-photo { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .type-approval { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .type-checklist { background: rgba(156, 39, 176, 0.1); color: #9c27b0; }
+    .type-safety { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+    .type-material { background: rgba(0, 150, 136, 0.1); color: #009688; }
+    
+    .requirement-status {
+        padding: 0.3rem 1rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-pending { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .status-verified { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .status-rejected { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+    
+    .requirement-description {
+        color: #6c757d;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+    
+    .verification-info {
+        background: white;
+        border-radius: 8px;
+        padding: 0.8rem;
+        margin-top: 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .verification-label {
+        color: #6c757d;
+        display: inline-block;
+        width: 80px;
+    }
+    
+    .verification-value {
+        font-weight: 500;
+    }
+    
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border: 2px solid #eef2f7;
+        border-radius: 8px;
+        background: white;
+        color: #6c757d;
+        transition: all 0.3s;
+        cursor: pointer;
+        margin-right: 0.5rem;
+    }
+    
+    .action-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .action-btn.primary {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border: none;
+        color: white;
+    }
+    
+    .action-btn.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
+    }
+    
+    .file-preview {
+        max-width: 200px;
+        max-height: 150px;
+        border-radius: 8px;
+        margin-top: 0.5rem;
+    }
+    
+    .start-task-card {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 20px;
+        padding: 2rem;
+        color: white;
+        text-align: center;
+        margin-top: 2rem;
+    }
+    
+    .start-task-btn {
+        background: white;
+        color: var(--primary);
+        border: none;
+        padding: 1rem 3rem;
+        border-radius: 50px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 1rem;
+    }
+    
+    .start-task-btn:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+    
+    .start-task-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="requirements-container">
+    <!-- رأس التقدم -->
+    <div class="progress-header">
+        <div class="progress-circle">
+            {% set completed = requirements|selectattr('verification.status', 'equalto', 'verified')|list|length %}
+            {% set total = requirements|length %}
+            {% set percentage = (completed / total * 100) if total > 0 else 0 %}
+            
+            <svg viewBox="0 0 100 100">
+                <circle class="progress-circle-bg" cx="50" cy="50" r="45"></circle>
+                <circle class="progress-circle-progress" cx="50" cy="50" r="45" 
+                        stroke-dasharray="{{ percentage }}, 100"
+                        stroke-dashoffset="25"></circle>
+            </svg>
+            <div class="progress-circle-text">{{ percentage|round }}%</div>
+        </div>
+        
+        <h5 class="mb-2">جاهزية المهمة</h5>
+        
+        {% if can_start %}
+        <div class="status-badge status-ready mb-3">
+            <i class="fas fa-check-circle me-2"></i> جميع المتطلبات مكتملة
+        </div>
+        {% else %}
+        <div class="status-badge status-not-ready mb-3">
+            <i class="fas fa-exclamation-triangle me-2"></i> {{ message }}
+        </div>
+        {% endif %}
+        
+        <p class="text-muted">أكمل {{ completed }} من {{ total }} متطلبات</p>
+    </div>
+    
+    <!-- قائمة المتطلبات -->
+    <div class="requirements-list">
+        <h5 class="section-title">
+            <i class="fas fa-clipboard-check"></i>
+            المتطلبات الإلزامية
+        </h5>
+        
+        {% for req in requirements %}
+        <div class="requirement-item {{ req.verification.status if req.verification else 'pending' }}">
+            <div class="requirement-header">
+                <div class="requirement-title">
+                    <span class="requirement-type type-{{ req.requirement_type }}">
+                        {% if req.requirement_type == 'document' %}📄 وثيقة
+                        {% elif req.requirement_type == 'photo' %}📷 صورة
+                        {% elif req.requirement_type == 'approval' %}✅ موافقة
+                        {% elif req.requirement_type == 'checklist' %}📋 قائمة تحقق
+                        {% elif req.requirement_type == 'safety' %}🛡️ سلامة
+                        {% elif req.requirement_type == 'material' %}📦 مادة
+                        {% endif %}
+                    </span>
+                    {% if req.is_mandatory %}
+                    <span class="badge bg-danger">إلزامي</span>
+                    {% endif %}
+                </div>
+                
+                {% if req.verification %}
+                <span class="requirement-status status-{{ req.verification.status }}">
+                    {% if req.verification.status == 'pending' %}قيد المراجعة
+                    {% elif req.verification.status == 'verified' %}✓ تم التحقق
+                    {% elif req.verification.status == 'rejected' %}✗ مرفوض
+                    {% endif %}
+                </span>
+                {% else %}
+                <span class="requirement-status status-pending">في انتظار التقديم</span>
+                {% endif %}
+            </div>
+            
+            <div class="requirement-description">
+                {{ req.description }}
+            </div>
+            
+            {% if req.verification %}
+            <div class="verification-info">
+                <div class="mb-1">
+                    <span class="verification-label">تاريخ التقديم:</span>
+                    <span class="verification-value">{{ req.verification.submitted_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                
+                {% if req.verification.file_url %}
+                <div class="mb-1">
+                    <span class="verification-label">الملف:</span>
+                    <a href="{{ req.verification.file_url }}" target="_blank" class="verification-value">
+                        <i class="fas fa-file"></i> عرض المستند
+                    </a>
+                </div>
+                {% endif %}
+                
+                {% if req.verification.photo_url %}
+                <div class="mb-1">
+                    <span class="verification-label">الصورة:</span>
+                    <a href="#" onclick="viewPhoto('{{ req.verification.photo_url }}')" class="verification-value">
+                        <i class="fas fa-image"></i> عرض الصورة
+                    </a>
+                </div>
+                {% endif %}
+                
+                {% if req.verification.verified_at %}
+                <div class="mb-1">
+                    <span class="verification-label">تاريخ التحقق:</span>
+                    <span class="verification-value">{{ req.verification.verified_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                {% endif %}
+                
+                {% if req.verification.notes %}
+                <div class="mb-1">
+                    <span class="verification-label">ملاحظات:</span>
+                    <span class="verification-value">{{ req.verification.notes }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if not req.verification or req.verification.status == 'rejected' %}
+            <div class="mt-3">
+                <button class="action-btn primary" onclick="showVerificationForm({{ req.id }}, '{{ req.requirement_type }}')">
+                    <i class="fas fa-upload me-1"></i>
+                    {% if req.verification and req.verification.status == 'rejected' %}إعادة تقديم{% else %}تقديم{% endif %}
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+            <p class="text-muted">لا توجد متطلبات لهذه المهمة</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- فحوصات السلامة -->
+    {% if safety_checks %}
+    <div class="requirements-list">
+        <h5 class="section-title">
+            <i class="fas fa-shield-alt"></i>
+            فحوصات السلامة
+        </h5>
+        
+        {% for check in safety_checks %}
+        <div class="requirement-item {{ 'verified' if check.is_verified else 'pending' }}">
+            <div class="requirement-header">
+                <div class="requirement-title">{{ check.check_name }}</div>
+                {% if check.is_verified %}
+                <span class="requirement-status status-verified">✓ تم التحقق</span>
+                {% else %}
+                <span class="requirement-status status-pending">في انتظار</span>
+                {% endif %}
+            </div>
+            
+            <div class="requirement-description">{{ check.description }}</div>
+            
+            {% if not check.is_verified %}
+            <div class="mt-3">
+                <button class="action-btn primary" onclick="verifySafetyCheck({{ check.id }})">
+                    <i class="fas fa-camera me-1"></i> تأكيد الفحص
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- المواد -->
+    {% if materials %}
+    <div class="requirements-list">
+        <h5 class="section-title">
+            <i class="fas fa-boxes"></i>
+            المواد المطلوبة
+        </h5>
+        
+        {% for material in materials %}
+        <div class="requirement-item {{ 'verified' if material.is_available else 'pending' }}">
+            <div class="requirement-header">
+                <div class="requirement-title">{{ material.material_name }}</div>
+                {% if material.is_available %}
+                <span class="requirement-status status-verified">✓ متوفر</span>
+                {% else %}
+                <span class="requirement-status status-pending">غير متوفر</span>
+                {% endif %}
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <span>المطلوب: {{ material.required_quantity }} {{ material.unit }}</span>
+                <span>المتوفر: {{ material.available_quantity }} {{ material.unit }}</span>
+            </div>
+            
+            {% if not material.is_available %}
+            <div class="mt-3">
+                <button class="action-btn primary" onclick="updateMaterial({{ material.id }})">
+                    <i class="fas fa-sync me-1"></i> تحديث الكمية
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- زر بدء المهمة -->
+    <div class="start-task-card">
+        <i class="fas fa-play-circle fa-3x mb-3"></i>
+        <h4 class="mb-2">المهمة جاهزة للبدء؟</h4>
+        <p class="mb-3">تأكد من إكمال جميع المتطلبات قبل البدء</p>
+        
+        <button class="start-task-btn" onclick="startTask()" {% if not can_start %}disabled{% endif %}>
+            <i class="fas fa-play me-2"></i>
+            بدء المهمة
+        </button>
+    </div>
+</div>
+
+<!-- Modal تقديم المتطلب -->
+<div class="modal fade" id="verificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تقديم متطلب</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="verificationForm" enctype="multipart/form-data">
+                <input type="hidden" name="requirement_id" id="reqId">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">القيمة / النص</label>
+                        <input type="text" class="form-control" name="value" id="reqValue">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">رفع ملف</label>
+                        <input type="file" class="form-control" name="file" id="reqFile" accept=".pdf,.doc,.docx">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">رفع صورة</label>
+                        <input type="file" class="form-control" name="photo" id="reqPhoto" accept="image/*">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات</label>
+                        <textarea class="form-control" name="notes" id="reqNotes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn-primary-gradient">تقديم</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentRequirementId = null;
+
+function showVerificationForm(reqId, type) {
+    currentRequirementId = reqId;
+    
+    // إظهار/إخفاء الحقول حسب النوع
+    document.getElementById('reqValue').style.display = type === 'checklist' ? 'block' : 'none';
+    document.getElementById('reqFile').style.display = type === 'document' ? 'block' : 'none';
+    document.getElementById('reqPhoto').style.display = type === 'photo' ? 'block' : 'none';
+    
+    new bootstrap.Modal(document.getElementById('verificationModal')).show();
+}
+
+document.getElementById('verificationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('requirement_id', currentRequirementId);
+    formData.append('value', document.getElementById('reqValue').value);
+    formData.append('notes', document.getElementById('reqNotes').value);
+    
+    const fileInput = document.getElementById('reqFile');
+    if (fileInput.files.length > 0) {
+        formData.append('file', fileInput.files[0]);
+    }
+    
+    const photoInput = document.getElementById('reqPhoto');
+    if (photoInput.files.length > 0) {
+        formData.append('photo', photoInput.files[0]);
+    }
+    
+    fetch(`/tracking/api/task/{{ task.id }}/submit-verification`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم التقديم',
+                text: 'سيتم مراجعة طلبك من قبل المشرف',
+                timer: 2000
+            }).then(() => {
+                location.reload();
+            });
+        }
+    });
+});
+
+function startTask() {
+    Swal.fire({
+        title: 'بدء المهمة',
+        text: 'هل أنت متأكد من بدء هذه المهمة؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، ابدأ',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/tracking/api/task/{{ task.id }}/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم البدء',
+                        text: data.message,
+                        timer: 2000
+                    }).then(() => {
+                        window.location.href = "{{ url_for('employee.my_tasks') }}";
+                    });
+                } else {
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ',
+                            text: data.error
+                        });
+                    }
+                }
+            });
+        }
+    });
+}
+
+function viewPhoto(url) {
+    Swal.fire({
+        imageUrl: url,
+        imageHeight: 400,
+        imageAlt: 'صورة التحقق',
+        showConfirmButton: false,
+        showCloseButton: true
+    });
+}
+</script>
+{% endblock %}

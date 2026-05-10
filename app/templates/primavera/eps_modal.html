@@ -1,0 +1,851 @@
+<!-- 
+    eps_modal.html - نوافذ منبثقة لإدارة EPS
+    تشمل: إنشاء، تعديل، عرض تفاصيل، حذف، عرض المشاريع
+-->
+
+<!-- ============================================ -->
+<!-- نافذة إنشاء/تعديل EPS -->
+<!-- ============================================ -->
+<div class="modal fade" id="epsModal" tabindex="-1" aria-labelledby="epsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="epsModalLabel">
+                    <i class="fas fa-sitemap ms-2 text-primary"></i>
+                    <span id="epsModalTitle">إضافة EPS جديد</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="epsForm" method="POST" action="{{ url_for('primavera.eps_create') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="eps_id" id="epsId">
+                    
+                    <!-- المعلومات الأساسية -->
+                    <div class="form-section">
+                        <h6 class="section-title">
+                            <i class="fas fa-info-circle"></i>
+                            المعلومات الأساسية
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-code"></i>
+                                        كود EPS <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" name="eps_code" id="epsCode" 
+                                           placeholder="مثال: EPS-001" required maxlength="50">
+                                    <small class="text-muted">كود فريد لعنصر EPS</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-tag"></i>
+                                        الاسم <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" name="name" id="epsName" 
+                                           placeholder="اسم عنصر EPS" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-align-left"></i>
+                                الوصف
+                            </label>
+                            <textarea class="form-control" name="description" id="epsDescription" 
+                                      rows="3" placeholder="وصف عنصر EPS"></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- الهيكل التنظيمي -->
+                    <div class="form-section">
+                        <h6 class="section-title">
+                            <i class="fas fa-sitemap"></i>
+                            الهيكل التنظيمي
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-level-up-alt"></i>
+                                        العنصر الأب
+                                    </label>
+                                    <select class="form-select" name="parent_id" id="epsParent">
+                                        <option value="">-- بدون (عنصر جذري) --</option>
+                                        {% if eps_data %}
+                                            {% for eps in eps_data %}
+                                            <option value="{{ eps.id }}" data-level="{{ eps.level }}">
+                                                {{ '—' * eps.level }} {{ eps.name }} ({{ eps.eps_code }})
+                                            </option>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                    <small class="text-muted">اختر العنصر الأب في الهيكل</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-user-tie"></i>
+                                        المدير المسؤول
+                                    </label>
+                                    <select class="form-select" name="manager_id" id="epsManager">
+                                        <option value="">-- غير محدد --</option>
+                                        <!-- سيتم تعبئتها ديناميكياً من JavaScript -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-chart-line"></i>
+                                المستوى
+                            </label>
+                            <input type="number" class="form-control" id="epsLevel" readonly 
+                                   value="1" style="background: #f8f9fa;">
+                            <small class="text-muted">يتم حسابه تلقائياً بناءً على العنصر الأب</small>
+                        </div>
+                    </div>
+                    
+                    <!-- إعدادات إضافية -->
+                    <div class="form-section">
+                        <h6 class="section-title">
+                            <i class="fas fa-cog"></i>
+                            إعدادات إضافية
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" name="is_active" 
+                                           id="epsActive" checked value="1">
+                                    <label class="form-check-label" for="epsActive">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        نشط
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-palette"></i>
+                                        لون مميز
+                                    </label>
+                                    <input type="color" class="form-control form-control-color" 
+                                           name="color" id="epsColor" value="#4361ee">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- معلومات إضافية -->
+                    <div class="form-section bg-light">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-clock"></i>
+                                    تاريخ الإنشاء: <span id="epsCreatedAt">--</span>
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-user"></i>
+                                    آخر تحديث: <span id="epsUpdatedAt">--</span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        إلغاء
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="epsSubmitBtn">
+                        <i class="fas fa-save"></i>
+                        <span id="epsSubmitText">حفظ</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- نافذة عرض تفاصيل EPS -->
+<!-- ============================================ -->
+<div class="modal fade" id="epsDetailModal" tabindex="-1" aria-labelledby="epsDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="epsDetailModalLabel">
+                    <i class="fas fa-info-circle ms-2"></i>
+                    تفاصيل EPS
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="120">الكود:</th>
+                                <td><strong id="detailEpsCode">-</strong></td>
+                            </tr>
+                            <tr>
+                                <th>الاسم:</th>
+                                <td><span id="detailEpsName">-</span></td>
+                            </tr>
+                            <tr>
+                                <th>المستوى:</th>
+                                <td><span class="badge bg-primary" id="detailEpsLevel">-</span></td>
+                            </tr>
+                            <tr>
+                                <th>المسار:</th>
+                                <td><small class="text-muted" id="detailEpsPath">-</small></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="120">المدير:</th>
+                                <td><span id="detailEpsManager">-</span></td>
+                            </tr>
+                            <tr>
+                                <th>الحالة:</th>
+                                <td><span class="badge" id="detailEpsStatus">-</span></td>
+                            </tr>
+                            <tr>
+                                <th>تاريخ الإنشاء:</th>
+                                <td><span id="detailEpsCreated">-</span></td>
+                            </tr>
+                            <tr>
+                                <th>آخر تحديث:</th>
+                                <td><span id="detailEpsUpdated">-</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="border-bottom pb-2">الوصف</h6>
+                        <p id="detailEpsDescription" class="text-muted">-</p>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="stat-card-sm text-center">
+                            <div class="stat-value text-primary" id="detailProjectsCount">0</div>
+                            <div class="stat-label">المشاريع</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card-sm text-center">
+                            <div class="stat-value text-success" id="detailBudget">0</div>
+                            <div class="stat-label">الميزانية</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card-sm text-center">
+                            <div class="stat-value text-warning" id="detailActivities">0</div>
+                            <div class="stat-label">الأنشطة</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6 class="border-bottom pb-2">العناصر الفرعية</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm" id="detailChildrenTable">
+                                <thead>
+                                    <tr>
+                                        <th>الكود</th>
+                                        <th>الاسم</th>
+                                        <th>المستوى</th>
+                                        <th>المشاريع</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detailChildrenBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">لا توجد عناصر فرعية</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="editEpsFromDetail()">
+                    <i class="fas fa-edit"></i>
+                    تعديل
+                </button>
+                <button type="button" class="btn btn-info" onclick="showEpsProjects()">
+                    <i class="fas fa-project-diagram"></i>
+                    عرض المشاريع
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- نافذة تأكيد الحذف -->
+<!-- ============================================ -->
+<div class="modal fade" id="deleteEpsModal" tabindex="-1" aria-labelledby="deleteEpsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteEpsModalLabel">
+                    <i class="fas fa-exclamation-triangle ms-2"></i>
+                    تأكيد الحذف
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
+                    <h5>هل أنت متأكد من حذف عنصر EPS؟</h5>
+                    <p class="text-muted" id="deleteEpsInfo">سيتم حذف العنصر وجميع العناصر الفرعية المرتبطة به</p>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle ms-2"></i>
+                    <strong>تنبيه:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>سيتم حذف جميع العناصر الفرعية المرتبطة</li>
+                        <li>المشاريع المرتبطة لن يتم حذفها ولكن ستصبح بدون EPS</li>
+                        <li>لا يمكن التراجع عن هذه العملية</li>
+                    </ul>
+                </div>
+                
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="confirmDelete">
+                    <label class="form-check-label" for="confirmDelete">
+                        نعم، أنا متأكد من رغبتي في الحذف
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    إلغاء
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn" disabled onclick="deleteEps()">
+                    <i class="fas fa-trash"></i>
+                    حذف نهائي
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- نافذة عرض مشاريع EPS -->
+<!-- ============================================ -->
+<div class="modal fade" id="epsProjectsModal" tabindex="-1" aria-labelledby="epsProjectsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="epsProjectsModalLabel">
+                    <i class="fas fa-project-diagram ms-2"></i>
+                    مشاريع EPS
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <h6 id="epsProjectsTitle"></h6>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover" id="epsProjectsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>كود المشروع</th>
+                                <th>اسم المشروع</th>
+                                <th>الحالة</th>
+                                <th>التقدم</th>
+                                <th>الميزانية</th>
+                                <th>تاريخ البدء</th>
+                                <th>تاريخ الانتهاء</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="epsProjectsBody">
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">جاري تحميل البيانات...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="addProjectToEps()">
+                    <i class="fas fa-plus"></i>
+                    إضافة مشروع جديد
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- نافذة إحصائيات EPS -->
+<!-- ============================================ -->
+<div class="modal fade" id="epsStatsModal" tabindex="-1" aria-labelledby="epsStatsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="epsStatsModalLabel">
+                    <i class="fas fa-chart-bar ms-2"></i>
+                    إحصائيات متقدمة
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <canvas id="statsChart" height="250"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                        <div id="statsDetails"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript خاص بالنوافذ المنبثقة -->
+<script>
+// ============================================
+// متغيرات عامة
+// ============================================
+let currentEpsId = null;
+let currentEpsData = null;
+
+// ============================================
+// دوال نافذة إنشاء/تعديل EPS
+// ============================================
+function openCreateModal() {
+    resetEpsForm();
+    document.getElementById('epsModalTitle').textContent = 'إضافة EPS جديد';
+    document.getElementById('epsSubmitText').textContent = 'إنشاء';
+    document.getElementById('epsForm').action = "{{ url_for('primavera.eps_create') }}";
+    
+    // تحميل قائمة المدراء
+    loadManagers();
+    
+    new bootstrap.Modal(document.getElementById('epsModal')).show();
+}
+
+function openEditModal(epsId) {
+    resetEpsForm();
+    document.getElementById('epsModalTitle').textContent = 'تعديل EPS';
+    document.getElementById('epsSubmitText').textContent = 'تحديث';
+    document.getElementById('epsForm').action = `/primavera/eps/${epsId}/edit`;
+    
+    // تحميل بيانات EPS
+    loadEpsData(epsId);
+    
+    new bootstrap.Modal(document.getElementById('epsModal')).show();
+}
+
+function resetEpsForm() {
+    document.getElementById('epsForm').reset();
+    document.getElementById('epsId').value = '';
+    document.getElementById('epsLevel').value = '1';
+    document.getElementById('epsColor').value = '#4361ee';
+    document.getElementById('epsActive').checked = true;
+    document.getElementById('epsCreatedAt').textContent = '--';
+    document.getElementById('epsUpdatedAt').textContent = '--';
+}
+
+function loadManagers() {
+    // جلب قائمة المدراء من API
+    fetch('/api/users?role=manager')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('epsManager');
+            select.innerHTML = '<option value="">-- غير محدد --</option>';
+            
+            data.users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.full_name} (${user.job_title || 'مدير'})`;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error loading managers:', error));
+}
+
+function loadEpsData(epsId) {
+    fetch(`/primavera/api/eps/${epsId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const eps = data.eps;
+                currentEpsData = eps;
+                
+                document.getElementById('epsId').value = eps.id;
+                document.getElementById('epsCode').value = eps.eps_code;
+                document.getElementById('epsName').value = eps.name;
+                document.getElementById('epsDescription').value = eps.description || '';
+                document.getElementById('epsParent').value = eps.parent_id || '';
+                document.getElementById('epsManager').value = eps.manager_id || '';
+                document.getElementById('epsLevel').value = eps.level;
+                document.getElementById('epsActive').checked = eps.is_active;
+                document.getElementById('epsColor').value = eps.color || '#4361ee';
+                document.getElementById('epsCreatedAt').textContent = eps.created_at;
+                document.getElementById('epsUpdatedAt').textContent = eps.updated_at;
+                
+                // تحديث المستوى عند تغيير الأب
+                updateLevel();
+            }
+        })
+        .catch(error => console.error('Error loading EPS data:', error));
+}
+
+// تحديث المستوى تلقائياً
+document.getElementById('epsParent').addEventListener('change', updateLevel);
+
+function updateLevel() {
+    const parentSelect = document.getElementById('epsParent');
+    const selectedOption = parentSelect.options[parentSelect.selectedIndex];
+    
+    if (selectedOption && selectedOption.value) {
+        const parentLevel = parseInt(selectedOption.dataset.level) || 0;
+        document.getElementById('epsLevel').value = parentLevel + 1;
+    } else {
+        document.getElementById('epsLevel').value = 1;
+    }
+}
+
+// ============================================
+// دوال نافذة التفاصيل
+// ============================================
+function showEpsDetails(epsId) {
+    fetch(`/primavera/api/eps/${epsId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const eps = data.eps;
+                currentEpsId = eps.id;
+                
+                document.getElementById('detailEpsCode').textContent = eps.eps_code;
+                document.getElementById('detailEpsName').textContent = eps.name;
+                document.getElementById('detailEpsLevel').textContent = `المستوى ${eps.level}`;
+                document.getElementById('detailEpsPath').textContent = eps.full_path || eps.name;
+                document.getElementById('detailEpsManager').textContent = eps.manager_name || 'غير محدد';
+                
+                const statusBadge = document.getElementById('detailEpsStatus');
+                if (eps.is_active) {
+                    statusBadge.textContent = 'نشط';
+                    statusBadge.className = 'badge bg-success';
+                } else {
+                    statusBadge.textContent = 'غير نشط';
+                    statusBadge.className = 'badge bg-secondary';
+                }
+                
+                document.getElementById('detailEpsCreated').textContent = eps.created_at || '-';
+                document.getElementById('detailEpsUpdated').textContent = eps.updated_at || '-';
+                document.getElementById('detailEpsDescription').textContent = eps.description || 'لا يوجد وصف';
+                
+                document.getElementById('detailProjectsCount').textContent = eps.projects_count || 0;
+                document.getElementById('detailBudget').textContent = formatNumber(eps.total_budget || 0);
+                document.getElementById('detailActivities').textContent = eps.activities_count || 0;
+                
+                // عرض العناصر الفرعية
+                const childrenBody = document.getElementById('detailChildrenBody');
+                if (eps.children && eps.children.length > 0) {
+                    childrenBody.innerHTML = '';
+                    eps.children.forEach(child => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${child.eps_code}</td>
+                            <td>${child.name}</td>
+                            <td><span class="badge bg-info">المستوى ${child.level}</span></td>
+                            <td><span class="badge bg-primary">${child.projects_count || 0}</span></td>
+                        `;
+                        childrenBody.appendChild(row);
+                    });
+                } else {
+                    childrenBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">لا توجد عناصر فرعية</td></tr>';
+                }
+                
+                new bootstrap.Modal(document.getElementById('epsDetailModal')).show();
+            }
+        });
+}
+
+function editEpsFromDetail() {
+    bootstrap.Modal.getInstance(document.getElementById('epsDetailModal')).hide();
+    setTimeout(() => openEditModal(currentEpsId), 500);
+}
+
+function showEpsProjects() {
+    bootstrap.Modal.getInstance(document.getElementById('epsDetailModal')).hide();
+    setTimeout(() => openEpsProjects(currentEpsId), 500);
+}
+
+// ============================================
+// دوال نافذة الحذف
+// ============================================
+function confirmDeleteEps(epsId, epsName) {
+    currentEpsId = epsId;
+    document.getElementById('deleteEpsInfo').innerHTML = `
+        <strong>${epsName}</strong><br>
+        <span class="text-danger">سيتم حذف هذا العنصر وجميع العناصر التابعة له</span>
+    `;
+    
+    new bootstrap.Modal(document.getElementById('deleteEpsModal')).show();
+}
+
+document.getElementById('confirmDelete').addEventListener('change', function() {
+    document.getElementById('confirmDeleteBtn').disabled = !this.checked;
+});
+
+function deleteEps() {
+    fetch(`/primavera/api/eps/${currentEpsId}/delete`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('deleteEpsModal')).hide();
+            showNotification('success', 'تم الحذف', 'تم حذف EPS بنجاح');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('error', 'خطأ', data.error || 'حدث خطأ أثناء الحذف');
+        }
+    })
+    .catch(error => {
+        showNotification('error', 'خطأ', 'فشل الاتصال بالخادم');
+    });
+}
+
+// ============================================
+// دوال نافذة المشاريع
+// ============================================
+function openEpsProjects(epsId) {
+    currentEpsId = epsId;
+    
+    fetch(`/primavera/api/eps/${epsId}/projects`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('epsProjectsTitle').innerHTML = `
+                    <i class="fas fa-sitemap"></i>
+                    EPS: ${data.eps_name} (${data.eps_code})
+                `;
+                
+                const tbody = document.getElementById('epsProjectsBody');
+                if (data.projects && data.projects.length > 0) {
+                    tbody.innerHTML = '';
+                    data.projects.forEach((project, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td><strong>${project.project_code}</strong></td>
+                            <td>${project.name}</td>
+                            <td><span class="badge bg-${getStatusColor(project.status)}">${project.status}</span></td>
+                            <td>
+                                <div class="progress" style="height: 5px; width: 100px;">
+                                    <div class="progress-bar bg-success" style="width: ${project.progress || 0}%"></div>
+                                </div>
+                                <small>${project.progress || 0}%</small>
+                            </td>
+                            <td>${formatNumber(project.budget || 0)}</td>
+                            <td>${project.start_date || '-'}</td>
+                            <td>${project.finish_date || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewProject(${project.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">لا توجد مشاريع في هذا EPS</td></tr>';
+                }
+                
+                new bootstrap.Modal(document.getElementById('epsProjectsModal')).show();
+            }
+        });
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'active': 'success',
+        'planning': 'info',
+        'completed': 'primary',
+        'on_hold': 'warning',
+        'cancelled': 'danger'
+    };
+    return colors[status] || 'secondary';
+}
+
+function viewProject(projectId) {
+    window.location.href = `/primavera/project/${projectId}`;
+}
+
+function addProjectToEps() {
+    window.location.href = `/primavera/project/create?eps_id=${currentEpsId}`;
+}
+
+// ============================================
+// دوال مساعدة
+// ============================================
+function formatNumber(num) {
+    return new Intl.NumberFormat('ar-SA').format(num) + ' ر.س';
+}
+
+function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+function showNotification(type, title, message) {
+    // يمكن استخدام SweetAlert أو أي مكتبة إشعارات
+    Swal.fire({
+        icon: type,
+        title: title,
+        text: message,
+        timer: 3000,
+        showConfirmButton: false
+    });
+}
+
+// ============================================
+// التحقق من صحة النموذج
+// ============================================
+document.getElementById('epsForm').addEventListener('submit', function(e) {
+    const epsCode = document.getElementById('epsCode').value.trim();
+    const epsName = document.getElementById('epsName').value.trim();
+    
+    if (!epsCode) {
+        e.preventDefault();
+        showNotification('warning', 'تنبيه', 'يرجى إدخال كود EPS');
+        return;
+    }
+    
+    if (!epsName) {
+        e.preventDefault();
+        showNotification('warning', 'تنبيه', 'يرجى إدخال اسم EPS');
+        return;
+    }
+    
+    // التحقق من عدم وجود رموز خاصة
+    const codeRegex = /^[A-Za-z0-9_-]+$/;
+    if (!codeRegex.test(epsCode)) {
+        e.preventDefault();
+        showNotification('warning', 'تنبيه', 'كود EPS يجب أن يحتوي على أحرف وأرقام وشرطة فقط');
+        return;
+    }
+});
+</script>
+
+<!-- CSS إضافي للنوافذ -->
+<style>
+.modal .form-section {
+    background: #f8fafc;
+    border-radius: 15px;
+    padding: 1.2rem;
+    margin-bottom: 1.2rem;
+    border: 1px solid #eef2f7;
+}
+
+.modal .section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed #dee2e6;
+}
+
+.modal .section-title i {
+    color: var(--primary);
+    margin-left: 0.5rem;
+}
+
+.modal .stat-card-sm {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.3s;
+}
+
+.modal .stat-card-sm:hover {
+    background: white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.modal .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.modal .stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.modal .table th {
+    font-weight: 600;
+    color: var(--dark);
+    border-bottom-width: 1px;
+}
+
+.modal .table td {
+    vertical-align: middle;
+}
+
+.modal .badge {
+    padding: 0.4rem 0.8rem;
+    font-weight: 500;
+}
+
+.modal .form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.modal-footer {
+    border-top: 2px solid #eef2f7;
+    padding: 1.2rem;
+}
+</style>

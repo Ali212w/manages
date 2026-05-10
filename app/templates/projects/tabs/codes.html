@@ -1,0 +1,204 @@
+<div class="card">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="fas fa-code-branch text-primary me-2"></i>
+            Codes
+        </h6>
+        <div>
+            <button class="btn btn-primary btn-sm" onclick="showAssignModal()">
+                <i class="fas fa-plus me-1"></i>Assign
+            </button>
+            <button class="btn btn-outline-danger btn-sm" onclick="removeSelectedCodes()">
+                <i class="fas fa-trash me-1"></i>Remove
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th width="50">
+                            <input type="checkbox" id="selectAll" onclick="toggleAll()">
+                        </th>
+                        <th>Project Code</th>
+                        <th>Code Value</th>
+                        <th>Code Description</th>
+                    </tr>
+                </thead>
+                <tbody id="assignmentsTable">
+                    <!-- يتم تعبئتها عبر JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- مودال تعيين كود -->
+<div class="modal fade" id="assignCodeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Assign Project Code</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignForm">
+                    <div class="mb-3">
+                        <label class="form-label">Project Code</label>
+                        <select class="form-select" id="dictionarySelect" required>
+                            <option value="">-- Select Code Type --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Code Value</label>
+                        <select class="form-select" id="codeValueSelect" required>
+                            <option value="">-- Select Code Value --</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="assignCode()">Assign</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let projectId = {{ project.id }};
+let selectedAssignments = [];
+
+// تحميل التعيينات
+function loadAssignments() {
+    fetch(`/codes/api/projects/${projectId}/codeassignments`)
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('assignmentsTable');
+            if (data.success && data.assignments.length > 0) {
+                tbody.innerHTML = data.assignments.map(a => `
+                    <tr data-id="${a.id}">
+                        <td><input type="checkbox" class="code-select" value="${a.id}"></td>
+                        <td><span class="code-color" style="background-color: ${a.display_color}; margin-left: 5px;"></span> ${a.dictionary_name}</td>
+                        <td>${a.code_value}</td>
+                        <td>${a.description || '-'}</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3">No codes assigned</td></tr>';
+            }
+        });
+}
+
+// تحميل قواميس الأكواد
+function loadDictionaries() {
+    fetch('/codes/api/dictionaries')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('dictionarySelect');
+            select.innerHTML = '<option value="">-- Select Code Type --</option>';
+            if (data.success) {
+                data.dictionaries.forEach(d => {
+                    select.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+                });
+            }
+        });
+}
+
+// تحميل قيم الأكواد عند اختيار قاموس
+document.getElementById('dictionarySelect').addEventListener('change', function() {
+    const dictId = this.value;
+    if (!dictId) return;
+    
+    fetch(`/codes/api/dictionary/${dictId}/codes`)
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('codeValueSelect');
+            select.innerHTML = '<option value="">-- Select Code Value --</option>';
+            if (data.success) {
+                function addOptions(codes, level = 0) {
+                    codes.forEach(code => {
+                        select.innerHTML += `<option value="${code.id}">${'—'.repeat(level)} ${code.code_value}</option>`;
+                        if (code.children) addOptions(code.children, level + 1);
+                    });
+                }
+                addOptions(data.codes);
+            }
+        });
+});
+
+function showAssignModal() {
+    loadDictionaries();
+    new bootstrap.Modal(document.getElementById('assignCodeModal')).show();
+}
+
+function assignCode() {
+    const dictId = document.getElementById('dictionarySelect').value;
+    const codeId = document.getElementById('codeValueSelect').value;
+    
+    if (!dictId || !codeId) {
+        alert('Please select both Code Type and Code Value');
+        return;
+    }
+    
+    fetch(`/codes/api/project/${projectId}/assign`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            dictionary_id: dictId,
+            code_id: codeId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('assignCodeModal')).hide();
+            loadAssignments();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+
+function toggleAll() {
+    const checkboxes = document.querySelectorAll('.code-select');
+    const selectAll = document.getElementById('selectAll');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+}
+
+function removeSelectedCodes() {
+    const selected = [];
+    document.querySelectorAll('.code-select:checked').forEach(cb => selected.push(cb.value));
+    
+    if (selected.length === 0) {
+        alert('Please select at least one code to remove');
+        return;
+    }
+    
+    if (confirm('Are you sure you want to remove the selected codes?')) {
+        fetch(`/codes/api/project/${projectId}/unassign-multiple`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ assignment_ids: selected })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadAssignments();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+}
+
+// تحميل البيانات عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', loadAssignments);
+</script>

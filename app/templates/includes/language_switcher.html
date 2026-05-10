@@ -1,0 +1,113 @@
+<!-- templates/includes/language_switcher.html -->
+<div class="language-switcher dropdown">
+    <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" 
+            type="button" data-bs-toggle="dropdown" 
+            style="border-radius: 30px; padding: 0.5rem 1.2rem;">
+        <span class="language-icon">
+            {% if current_lang == 'ar' %}🇸🇦{% else %}🇬🇧{% endif %}
+        </span>
+        <span class="language-name">
+            {% if current_lang == 'ar' %}{{ _('language_arabic') }}{% else %}{{ _('language_english') }}{% endif %}
+        </span>
+        <i class="fas fa-chevron-down ms-1" style="font-size: 0.8rem;"></i>
+    </button>
+    
+    <ul class="dropdown-menu dropdown-menu-{{ 'end' if current_dir == 'rtl' else 'start' }}">
+        <li>
+            <a class="dropdown-item d-flex align-items-center gap-3 {% if current_lang == 'ar' %}active{% endif %}" 
+               href="{{ url_for(request.endpoint, **request.view_args) }}?lang=ar">
+                <span class="language-icon">🇸🇦</span>
+                <span class="flex-grow-1">{{ _('language_arabic') }}</span>
+                {% if current_lang == 'ar' %}
+                <i class="fas fa-check text-success"></i>
+                {% endif %}
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center gap-3 {% if current_lang == 'en' %}active{% endif %}" 
+               href="{{ url_for(request.endpoint, **request.view_args) }}?lang=en">
+                <span class="language-icon">🇬🇧</span>
+                <span class="flex-grow-1">{{ _('language_english') }}</span>
+                {% if current_lang == 'en' %}
+                <i class="fas fa-check text-success"></i>
+                {% endif %}
+            </a>
+        </li>
+    </ul>
+</div>
+
+<style>
+.language-switcher .dropdown-toggle {
+    transition: all 0.3s;
+    border-color: #eef2f7;
+    background: white;
+}
+
+.language-switcher .dropdown-toggle:hover {
+    background: var(--primary, #4361ee);
+    color: white;
+    border-color: var(--primary, #4361ee);
+}
+
+.language-switcher .dropdown-toggle:hover .language-name {
+    color: white;
+}
+
+.language-switcher .dropdown-item {
+    padding: 0.6rem 1.2rem;
+    transition: all 0.3s;
+}
+
+.language-switcher .dropdown-item:hover {
+    background: rgba(67, 97, 238, 0.1);
+}
+
+.language-switcher .dropdown-item.active {
+    background: rgba(67, 97, 238, 0.15);
+    color: var(--primary, #4361ee);
+}
+
+.language-icon {
+    font-size: 1.2rem;
+}
+
+/* تخصيص الاتجاه حسب اللغة */
+.language-switcher .dropdown-menu {
+    text-align: {{ 'right' if current_dir == 'rtl' else 'left' }};
+}
+
+.language-switcher .dropdown-item .flex-grow-1 {
+    text-align: {{ 'right' if current_dir == 'rtl' else 'left' }};
+}
+</style>
+
+<script>
+// دالة لتغيير اللغة مع تأثير سلس
+$(document).ready(function() {
+    $('.language-switcher .dropdown-item').on('click', function(e) {
+        e.preventDefault();
+        const lang = $(this).attr('href').split('lang=')[1];
+        
+        // إظهار مؤشر تحميل
+        const $btn = $('.language-switcher .dropdown-toggle');
+        const originalContent = $btn.html();
+        $btn.html('<i class="fas fa-spinner fa-spin"></i> {{ _('loading') if current_lang == "ar" else "Loading..." }}');
+        $btn.prop('disabled', true);
+        
+        // تغيير اللغة عبر AJAX
+        $.ajax({
+            url: '/change-language/' + lang,
+            method: 'GET',
+            success: function() {
+                location.reload();
+            },
+            error: function() {
+                $btn.html(originalContent);
+                $btn.prop('disabled', false);
+                // إذا فشل AJAX، انتقل إلى الرابط مباشرة
+                window.location.href = '?lang=' + lang;
+            }
+        });
+    });
+});
+</script>

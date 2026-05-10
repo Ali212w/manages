@@ -1,0 +1,1047 @@
+<!-- templates/ai/command_center.html -->
+{% extends "company/base.html" %}
+
+{% block title %}مركز أوامر الذكاء الاصطناعي{% endblock %}
+
+{% block page_title %}مركز أوامر الذكاء الاصطناعي{% endblock %}
+{% block page_subtitle %}تحكم بالمشاريع والبيانات باستخدام الأوامر الذكية والبحث الدلالي{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* تنسيق واجهة الأوامر */
+    .ai-command-container {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    
+    /* بطاقات الإحصائيات */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        transition: transform 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .stat-card:nth-child(2) {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .stat-card:nth-child(3) {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .stat-card:nth-child(4) {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    /* منطقة إدخال الأوامر */
+    .command-input-area {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 2px solid #eef2f7;
+    }
+    
+    .command-prompt {
+        width: 100%;
+        min-height: 120px;
+        padding: 1rem;
+        border: 2px solid #eef2f7;
+        border-radius: 15px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        resize: vertical;
+        font-family: 'Cairo', sans-serif;
+    }
+    
+    .command-prompt:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* أزرار الاقتراحات السريعة */
+    .suggestion-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1rem 0;
+    }
+    
+    .suggestion-chip {
+        background: white;
+        border: 2px solid #eef2f7;
+        border-radius: 30px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        color: #333;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .suggestion-chip:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 10px rgba(102, 126, 234, 0.2);
+    }
+    
+    /* منطقة رفع الملفات */
+    .file-upload-area {
+        border: 2px dashed #eef2f7;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        background: #f8f9fa;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin: 1rem 0;
+    }
+    
+    .file-upload-area:hover {
+        border-color: #667eea;
+        background: #eef2f7;
+    }
+    
+    .file-upload-area.dragover {
+        background: #e3f2fd;
+        border-color: #2196f3;
+    }
+    
+    .file-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .file-item {
+        background: white;
+        border: 2px solid #eef2f7;
+        border-radius: 30px;
+        padding: 0.5rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .file-item .remove {
+        color: #dc3545;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+    
+    .file-item .remove:hover {
+        transform: scale(1.2);
+    }
+    
+    /* أزرار الإجراءات */
+    .action-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .btn-clear {
+        background: #eef2f7;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-clear:hover {
+        background: #e2e6ea;
+        transform: translateY(-2px);
+    }
+    
+    .btn-execute {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 2.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-execute:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-execute:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    /* سجل الأوامر */
+    .command-history {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1rem;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .history-item {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        border-right: 4px solid;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .history-item:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .history-item.pending { border-right-color: #ffc107; }
+    .history-item.processing { border-right-color: #17a2b8; }
+    .history-item.completed { border-right-color: #28a745; }
+    .history-item.failed { border-right-color: #dc3545; }
+    
+    .history-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .history-text {
+        font-weight: 600;
+        margin: 0.3rem 0;
+    }
+    
+    .history-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+    }
+    
+    /* منطقة النتائج */
+    .results-area {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 15px;
+        border: 2px solid #eef2f7;
+    }
+    
+    .result-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 2px solid #eef2f7;
+    }
+    
+    .result-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .result-badge.create { background: #28a745; color: white; }
+    .result-badge.update { background: #ffc107; color: black; }
+    .result-badge.delete { background: #dc3545; color: white; }
+    .result-badge.report { background: #17a2b8; color: white; }
+    
+    /* علامات التبويب */
+    .ai-tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #eef2f7;
+        padding-bottom: 1rem;
+    }
+    
+    .ai-tab {
+        padding: 0.5rem 1.5rem;
+        border-radius: 30px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 600;
+    }
+    
+    .ai-tab:hover {
+        background: #f8f9fa;
+    }
+    
+    .ai-tab.active {
+        background: #667eea;
+        color: white;
+    }
+    
+    /* مؤشر التحميل */
+    .loading-spinner {
+        display: inline-block;
+        width: 2rem;
+        height: 2rem;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* رسائل الخطأ */
+    .error-message {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 1rem;
+        border-radius: 12px;
+        border-right: 4px solid #dc3545;
+        margin: 1rem 0;
+    }
+    
+    /* نتائج البحث الدلالي */
+    .search-result {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        border: 2px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .search-result:hover {
+        border-color: #667eea;
+    }
+    
+    .similarity-score {
+        display: inline-block;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #667eea;
+        color: white;
+        text-align: center;
+        line-height: 50px;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ai-command-container">
+    <!-- علامات التبويب -->
+    <div class="ai-tabs">
+        <div class="ai-tab active" onclick="switchTab('commands')" id="tab-commands">
+            <i class="fas fa-terminal me-2"></i>الأوامر الذكية
+        </div>
+        <div class="ai-tab" onclick="switchTab('search')" id="tab-search">
+            <i class="fas fa-search me-2"></i>البحث الدلالي
+        </div>
+        <div class="ai-tab" onclick="switchTab('analytics')" id="tab-analytics">
+            <i class="fas fa-chart-line me-2"></i>التحليلات
+        </div>
+        <div class="ai-tab" onclick="switchTab('clusters')" id="tab-clusters">
+            <i class="fas fa-project-diagram me-2"></i>تجميع المشاريع
+        </div>
+    </div>
+
+    <!-- بطاقات الإحصائيات -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total_commands }}</div>
+            <div class="stat-label">إجمالي الأوامر</div>
+            <i class="fas fa-robot" style="position: absolute; top: 1rem; left: 1rem; opacity: 0.3; font-size: 3rem;"></i>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.completed }}</div>
+            <div class="stat-label">أوامر منجزة</div>
+            <i class="fas fa-check-circle" style="position: absolute; top: 1rem; left: 1rem; opacity: 0.3; font-size: 3rem;"></i>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.processing }}</div>
+            <div class="stat-label">قيد المعالجة</div>
+            <i class="fas fa-clock" style="position: absolute; top: 1rem; left: 1rem; opacity: 0.3; font-size: 3rem;"></i>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="indexedCount">0</div>
+            <div class="stat-label">عناصر مفهرسة</div>
+            <i class="fas fa-database" style="position: absolute; top: 1rem; left: 1rem; opacity: 0.3; font-size: 3rem;"></i>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- العمود الأيمن - إدخال الأوامر -->
+        <div class="col-md-8" id="commands-panel">
+            <div class="command-input-area">
+                <h5 class="mb-3">
+                    <i class="fas fa-microphone-alt text-primary me-2"></i>
+                    اكتب أمرك بالعربية أو الإنجليزية
+                </h5>
+                
+                <!-- حقل إدخال الأمر -->
+                <textarea class="command-prompt" 
+                          id="commandPrompt"
+                          placeholder="مثال: أنشئ مشروع جديد اسمه برج الرياض بميزانية 50 مليون ريال&#10;أو: ابحث عن مشاريع مشابهة لمشروع الطاقة&#10;أو: اعرض تقرير بجميع المهام المتأخرة"></textarea>
+                
+                <!-- اقتراحات سريعة -->
+                <div class="suggestion-chips">
+                    <span class="suggestion-chip" onclick="useSuggestion('أنشئ مشروع جديد اسمه برج الرياض')">🏗️ مشروع جديد</span>
+                    <span class="suggestion-chip" onclick="useSuggestion('أضف مستخدم جديد اسمه أحمد محمد بريده ahmed@company.com')">👤 مستخدم جديد</span>
+                    <span class="suggestion-chip" onclick="useSuggestion('اعرض تقرير بجميع المشاريع')">📊 تقرير المشاريع</span>
+                    <span class="suggestion-chip" onclick="useSuggestion('ابحث عن مشاريع متأخرة')">🔍 مشاريع متأخرة</span>
+                    <span class="suggestion-chip" onclick="useSuggestion('جمّع المشاريع حسب النوع')">📈 تحليل المشاريع</span>
+                    <span class="suggestion-chip" onclick="useSuggestion('ابحث عن مهام مسندة لمهندسين')">👷 مهام المهندسين</span>
+                </div>
+                
+                <!-- رفع الملفات -->
+                <div class="file-upload-area" id="dropzone"
+                     onclick="document.getElementById('fileInput').click()"
+                     ondragover="event.preventDefault(); this.classList.add('dragover')"
+                     ondragleave="this.classList.remove('dragover')"
+                     ondrop="handleFileDrop(event)">
+                    <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                    <p class="mb-1">اسحب وأفلت الملفات هنا أو <strong>اضغط للتصفح</strong></p>
+                    <small class="text-muted">يدعم: PDF, Excel, Word, TXT, صور (حتى 50MB)</small>
+                    <input type="file" id="fileInput" multiple style="display: none;" 
+                           accept=".pdf,.xlsx,.xls,.docx,.doc,.txt,.jpg,.jpeg,.png"
+                           onchange="handleFileSelect(this)">
+                </div>
+                
+                <!-- قائمة الملفات المرفوعة -->
+                <div class="file-list" id="fileList"></div>
+                
+                <!-- أزرار التحكم -->
+                <div class="action-buttons">
+                    <button class="btn-clear" onclick="clearCommand()">
+                        <i class="fas fa-eraser me-2"></i>مسح
+                    </button>
+                    <button class="btn-execute" onclick="executeCommand()" id="executeBtn">
+                        <i class="fas fa-paper-plane me-2"></i>تنفيذ الأمر
+                    </button>
+                </div>
+            </div>
+            
+            <!-- نتائج الأوامر -->
+            <div id="resultsArea" class="results-area" style="display: none;">
+                <h6 class="mb-3"><i class="fas fa-tasks me-2"></i>نتائج التنفيذ</h6>
+                <div id="resultsContent"></div>
+            </div>
+        </div>
+
+        <!-- عمود البحث الدلالي (مخفي افتراضياً) -->
+        <div class="col-md-8" id="search-panel" style="display: none;">
+            <div class="command-input-area">
+                <h5 class="mb-3">
+                    <i class="fas fa-search text-primary me-2"></i>
+                    البحث الدلالي المتقدم
+                </h5>
+                
+                <div class="mb-3">
+                    <input type="text" class="form-control form-control-lg" 
+                           id="searchQuery" 
+                           placeholder="مثال: مشاريع فيها مخاطر عالية في المنطقة الغربية">
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">تصفية حسب النوع</label>
+                        <select class="form-select" id="searchType">
+                            <option value="">الكل</option>
+                            <option value="project">مشاريع</option>
+                            <option value="task">مهام</option>
+                            <option value="user">مستخدمين</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">عدد النتائج</label>
+                        <input type="number" class="form-control" id="searchLimit" value="10" min="1" max="50">
+                    </div>
+                </div>
+                
+                <button class="btn-execute w-100" onclick="performSemanticSearch()">
+                    <i class="fas fa-search me-2"></i>بحث
+                </button>
+            </div>
+            
+            <div id="searchResultsArea" class="results-area" style="display: none;">
+                <h6 class="mb-3"><i class="fas fa-list me-2"></i>نتائج البحث</h6>
+                <div id="searchResultsContent"></div>
+            </div>
+        </div>
+
+        <!-- عمود التحليلات -->
+        <div class="col-md-8" id="analytics-panel" style="display: none;">
+            <div class="command-input-area">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-line text-primary me-2"></i>
+                    التحليلات المتقدمة
+                </h5>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <button class="btn-execute w-100 mb-2" onclick="findSimilarProjects()">
+                            <i class="fas fa-project-diagram me-2"></i>مشاريع مشابهة
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn-execute w-100 mb-2" onclick="clusterProjects()">
+                            <i class="fas fa-cubes me-2"></i>تجميع المشاريع
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <button class="btn-execute w-100 mb-2" onclick="indexOrganization()">
+                            <i class="fas fa-database me-2"></i>فهرسة جميع البيانات
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <select class="form-select" id="projectSelect">
+                            <option value="">اختر مشروع...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="analyticsResultsArea" class="results-area" style="display: none;"></div>
+        </div>
+
+        <!-- عمود التجميع -->
+        <div class="col-md-4" id="clusters-panel" style="display: none;">
+            <div class="command-input-area">
+                <h5 class="mb-3">
+                    <i class="fas fa-cubes text-primary me-2"></i>
+                    مجموعات المشاريع
+                </h5>
+                <div id="clustersContent"></div>
+            </div>
+        </div>
+        
+        <!-- العمود الأيسر - سجل الأوامر -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="fas fa-history text-primary me-2"></i>
+                        سجل الأوامر
+                    </h6>
+                </div>
+                <div class="command-history" id="commandHistory">
+                    {% if recent_commands %}
+                        {% for cmd in recent_commands %}
+                        <div class="history-item {{ cmd.status }}" onclick="loadCommand({{ cmd.id }})">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <small class="history-time">{{ cmd.created_at.strftime('%H:%M %d/%m/%Y') }}</small>
+                                <span class="badge bg-{% if cmd.status == 'completed' %}success{% elif cmd.status == 'processing' %}info{% elif cmd.status == 'pending' %}warning{% else %}danger{% endif %} history-badge">
+                                    {{ cmd.status }}
+                                </span>
+                            </div>
+                            <div class="history-text">{{ cmd.command_text[:50] }}{% if cmd.command_text|length > 50 %}...{% endif %}</div>
+                            <small class="text-muted">
+                                <i class="fas fa-paperclip me-1"></i>{{ cmd.attachments_count or 0 }}
+                                <i class="fas fa-file me-1 ms-2"></i>{{ cmd.results.count() if cmd.results else 0 }}
+                            </small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-center text-muted py-3">لا توجد أوامر سابقة</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- إجراءات سريعة -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="fas fa-bolt text-primary me-2"></i>
+                        إجراءات سريعة
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary text-start" onclick="quickAction('index')">
+                            <i class="fas fa-database me-2"></i>فهرسة جميع البيانات
+                        </button>
+                        <button class="btn btn-outline-success text-start" onclick="quickAction('report')">
+                            <i class="fas fa-chart-bar me-2"></i>تقرير شامل
+                        </button>
+                        <button class="btn btn-outline-info text-start" onclick="quickAction('similar')">
+                            <i class="fas fa-project-diagram me-2"></i>مشاريع مشابهة
+                        </button>
+                        <button class="btn btn-outline-warning text-start" onclick="quickAction('cluster')">
+                            <i class="fas fa-cubes me-2"></i>تجميع المشاريع
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal عرض تفاصيل الأمر -->
+<div class="modal fade" id="commandDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تفاصيل الأمر</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="commandDetailBody">
+                <!-- تملأ ديناميكياً -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// متغيرات عامة
+let uploadedFiles = [];
+let currentCommandId = null;
+
+// ============================================
+// دوال تبديل التبويبات
+// ============================================
+function switchTab(tabName) {
+    // تحديث التبويبات النشطة
+    document.querySelectorAll('.ai-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+    
+    // إخفاء/إظهار اللوحات
+    const panels = ['commands', 'search', 'analytics', 'clusters'];
+    panels.forEach(panel => {
+        document.getElementById(`${panel}-panel`).style.display = 'none';
+    });
+    document.getElementById(`${tabName}-panel`).style.display = 'block';
+}
+
+// ============================================
+// دوال الأوامر
+// ============================================
+function useSuggestion(text) {
+    document.getElementById('commandPrompt').value = text;
+}
+
+function handleFileSelect(input) {
+    addFilesToList(Array.from(input.files));
+}
+
+function handleFileDrop(event) {
+    event.preventDefault();
+    document.getElementById('dropzone').classList.remove('dragover');
+    addFilesToList(Array.from(event.dataTransfer.files));
+}
+
+function addFilesToList(files) {
+    files.forEach(file => {
+        if (file.size <= 50 * 1024 * 1024) { // 50MB حد أقصى
+            uploadedFiles.push(file);
+        } else {
+            Swal.fire('خطأ', 'حجم الملف يتجاوز 50MB', 'error');
+        }
+    });
+    updateFileList();
+}
+
+function updateFileList() {
+    const list = document.getElementById('fileList');
+    list.innerHTML = '';
+    
+    uploadedFiles.forEach((file, index) => {
+        const fileSize = (file.size / 1024).toFixed(1);
+        const icon = getFileIcon(file.name);
+        
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.innerHTML = `
+            <i class="fas fa-${icon}"></i>
+            <span>${file.name} (${fileSize} KB)</span>
+            <i class="fas fa-times remove" onclick="removeFile(${index})"></i>
+        `;
+        list.appendChild(item);
+    });
+}
+
+function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const icons = {
+        'pdf': 'file-pdf',
+        'xlsx': 'file-excel', 'xls': 'file-excel',
+        'docx': 'file-word', 'doc': 'file-word',
+        'txt': 'file-alt',
+        'jpg': 'file-image', 'jpeg': 'file-image', 'png': 'file-image'
+    };
+    return icons[ext] || 'file';
+}
+
+function removeFile(index) {
+    uploadedFiles.splice(index, 1);
+    updateFileList();
+}
+
+function clearCommand() {
+    document.getElementById('commandPrompt').value = '';
+    uploadedFiles = [];
+    updateFileList();
+    document.getElementById('resultsArea').style.display = 'none';
+}
+
+function executeCommand() {
+    const command = document.getElementById('commandPrompt').value;
+    if (!command.trim() && uploadedFiles.length === 0) {
+        Swal.fire('تنبيه', 'الرجاء إدخال أمر أو رفع ملف', 'warning');
+        return;
+    }
+    
+    // تعطيل الزر وإظهار التحميل
+    const btn = document.getElementById('executeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner me-2"></span>جاري التنفيذ...';
+    
+    const formData = new FormData();
+    formData.append('command', command);
+    
+    uploadedFiles.forEach(file => {
+        formData.append('files[]', file);
+    });
+    
+    fetch('/ai/api/execute-command', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>تنفيذ الأمر';
+        
+        if (data.success) {
+            displayResults(data);
+            updateCommandHistory();
+            clearCommand();
+        } else {
+            Swal.fire('خطأ', data.error || 'حدث خطأ في تنفيذ الأمر', 'error');
+        }
+    })
+    .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>تنفيذ الأمر';
+        Swal.fire('خطأ', 'حدث خطأ في الاتصال', 'error');
+    });
+}
+
+function displayResults(data) {
+    const area = document.getElementById('resultsArea');
+    const content = document.getElementById('resultsContent');
+    
+    let html = '';
+    
+    if (data.result && data.result.integration) {
+        const integration = data.result.integration;
+        
+        html += `<p class="text-success"><i class="fas fa-check-circle me-2"></i>${data.result.summary?.text || 'تم التنفيذ بنجاح'}</p>`;
+        
+        if (integration.results && integration.results.length > 0) {
+            integration.results.forEach(result => {
+                if (result.count > 0) {
+                    html += `
+                        <div class="result-card">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-0">
+                                    <span class="result-badge ${result.action || result.type} me-2">
+                                        ${result.action || result.type}
+                                    </span>
+                                    ${result.model || 'نتيجة'}
+                                </h6>
+                                <span class="badge bg-primary">${result.count} عنصر</span>
+                            </div>
+                            <p class="mb-0 text-muted small">${result.message || ''}</p>
+                        </div>
+                    `;
+                }
+            });
+        }
+        
+        if (integration.total_count > 0) {
+            html += `<div class="alert alert-success mt-3">إجمالي العناصر المتأثرة: ${integration.total_count}</div>`;
+        }
+    }
+    
+    if (data.result && data.result.analysis) {
+        html += `
+            <div class="alert alert-info mt-3">
+                <small>تحليل: ${JSON.stringify(data.result.analysis)}</small>
+            </div>
+        `;
+    }
+    
+    content.innerHTML = html || '<p class="text-muted">لا توجد نتائج مفصلة</p>';
+    area.style.display = 'block';
+}
+
+// ============================================
+// دوال البحث الدلالي
+// ============================================
+function performSemanticSearch() {
+    const query = document.getElementById('searchQuery').value;
+    const type = document.getElementById('searchType').value;
+    const limit = document.getElementById('searchLimit').value;
+    
+    if (!query.trim()) {
+        Swal.fire('تنبيه', 'الرجاء إدخال نص البحث', 'warning');
+        return;
+    }
+    
+    const filters = type ? { type: type } : {};
+    
+    fetch('/ai/api/semantic-search', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            query: query,
+            filters: filters,
+            limit: parseInt(limit)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displaySearchResults(data.results);
+        }
+    });
+}
+
+function displaySearchResults(results) {
+    const area = document.getElementById('searchResultsArea');
+    const content = document.getElementById('searchResultsContent');
+    
+    if (!results || results.length === 0) {
+        content.innerHTML = '<p class="text-muted text-center py-3">لا توجد نتائج</p>';
+    } else {
+        let html = '';
+        results.forEach(result => {
+            const score = Math.round(result.score * 100);
+            html += `
+                <div class="search-result">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="similarity-score">${score}%</div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="badge bg-info">${result.metadata?.type || 'غير معروف'}</span>
+                                <small class="text-muted">ID: ${result.id}</small>
+                            </div>
+                            <p class="mb-0">${result.text.substring(0, 200)}...</p>
+                            ${result.tags ? `<small class="text-muted mt-2 d-block">الوسوم: ${result.tags.join(', ')}</small>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        content.innerHTML = html;
+    }
+    
+    area.style.display = 'block';
+}
+
+// ============================================
+// دوال التحليلات
+// ============================================
+function indexOrganization() {
+    Swal.fire({
+        title: 'جاري الفهرسة...',
+        html: 'قد تستغرق العملية بضع دقائق',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch('/ai/api/index-organization', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.close();
+        if (data.success) {
+            Swal.fire('تم', `تمت فهرسة ${data.stats.projects_indexed} مشروع و ${data.stats.tasks_indexed} مهمة`, 'success');
+            document.getElementById('indexedCount').innerText = data.stats.projects_indexed + data.stats.tasks_indexed;
+        }
+    });
+}
+
+function findSimilarProjects() {
+    const projectId = document.getElementById('projectSelect').value;
+    if (!projectId) {
+        Swal.fire('تنبيه', 'الرجاء اختيار مشروع', 'warning');
+        return;
+    }
+    
+    fetch(`/ai/api/find-similar/${projectId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayAnalyticsResults('مشاريع مشابهة', data.similar_projects);
+        }
+    });
+}
+
+function clusterProjects() {
+    fetch('/ai/api/cluster-projects?n_clusters=5')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayClusters(data.clusters);
+        }
+    });
+}
+
+function displayAnalyticsResults(title, items) {
+    const area = document.getElementById('analyticsResultsArea');
+    
+    if (!items || items.length === 0) {
+        area.innerHTML = '<p class="text-muted text-center py-3">لا توجد نتائج</p>';
+    } else {
+        let html = `<h6 class="mb-3">${title}</h6>`;
+        items.forEach(item => {
+            html += `
+                <div class="result-card">
+                    <p class="mb-1 fw-bold">${item.text || 'عنصر'}</p>
+                    <small class="text-muted">التشابه: ${Math.round(item.score * 100)}%</small>
+                </div>
+            `;
+        });
+        area.innerHTML = html;
+    }
+    
+    area.style.display = 'block';
+}
+
+function displayClusters(clusters) {
+    const container = document.getElementById('clustersContent');
+    
+    // تجميع حسب الكلاستر
+    const grouped = {};
+    clusters.forEach(item => {
+        const cluster = item.cluster;
+        if (!grouped[cluster]) grouped[cluster] = [];
+        grouped[cluster].push(item);
+    });
+    
+    let html = '';
+    Object.keys(grouped).forEach(cluster => {
+        html += `
+            <div class="result-card mb-3">
+                <h6 class="mb-2">المجموعة ${parseInt(cluster) + 1}</h6>
+                <ul class="list-unstyled">
+        `;
+        grouped[cluster].forEach(item => {
+            html += `<li><small>• ${item.text.substring(0, 50)}...</small></li>`;
+        });
+        html += '</ul></div>';
+    });
+    
+    container.innerHTML = html;
+}
+
+// ============================================
+// دوال مساعدة
+// ============================================
+function loadCommand(commandId) {
+    // يمكن إضافة دالة لجلب تفاصيل الأمر
+    console.log('Loading command:', commandId);
+}
+
+function quickAction(action) {
+    switch(action) {
+        case 'index':
+            indexOrganization();
+            break;
+        case 'report':
+            useSuggestion('اعرض تقرير شامل بجميع المشاريع والمهام');
+            switchTab('commands');
+            break;
+        case 'similar':
+            switchTab('analytics');
+            break;
+        case 'cluster':
+            switchTab('clusters');
+            clusterProjects();
+            break;
+    }
+}
+
+function updateCommandHistory() {
+    fetch('/ai/api/recent-commands')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const history = document.getElementById('commandHistory');
+            let html = '';
+            data.commands.forEach(cmd => {
+                html += `
+                    <div class="history-item ${cmd.status}" onclick="loadCommand(${cmd.id})">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <small class="history-time">${new Date(cmd.created_at).toLocaleTimeString()}</small>
+                            <span class="badge bg-${cmd.status === 'completed' ? 'success' : 'warning'}">${cmd.status}</span>
+                        </div>
+                        <div class="history-text">${cmd.text}</div>
+                    </div>
+                `;
+            });
+            history.innerHTML = html;
+        }
+    });
+}
+
+// تحميل قائمة المشاريع عند فتح الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    // يمكن إضافة كود لجلب المشاريع
+});
+</script>
+{% endblock %}

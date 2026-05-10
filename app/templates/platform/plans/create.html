@@ -1,0 +1,184 @@
+{# templates/platform/plans/create.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('plans.add_new') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title">{{ _('plans.add_new') }}</h1>
+            <p class="text-muted mb-0">{{ _('plans.create_new_plan') }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('platform.plans') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-{{ 'right' if get_direction() == 'rtl' else 'left' }} me-2"></i>{{ _('common.back') }}
+            </a>
+        </div>
+    </div>
+    
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form method="POST">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('plans.plan_id') }} *</label>
+                        <input type="text" name="plan_id" class="form-control" required>
+                        <div class="form-text">{{ _('plans.plan_id_hint') }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('plans.name') }} *</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('plans.name_ar') }}</label>
+                        <input type="text" name="name_ar" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('plans.display_order') }}</label>
+                        <input type="number" name="display_order" class="form-control" value="0">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ _('plans.description') }}</label>
+                        <textarea name="description" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ _('plans.description_ar') }}</label>
+                        <textarea name="description_ar" class="form-control" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('plans.price_monthly') }}</label>
+                        <input type="number" step="0.01" name="price_monthly" class="form-control" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('plans.price_yearly') }}</label>
+                        <input type="number" step="0.01" name="price_yearly" class="form-control" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('plans.currency') }}</label>
+                        <select name="currency" class="form-select">
+                            <option value="SAR">SAR - ريال سعودي</option>
+                            <option value="USD">USD - دولار أمريكي</option>
+                            <option value="EUR">EUR - يورو</option>
+                            <option value="GBP">GBP - جنيه إسترليني</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('plans.max_users') }}</label>
+                        <input type="number" name="max_users" class="form-control" value="0">
+                        <div class="form-text">0 = {{ _('plans.unlimited') }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('plans.max_projects') }}</label>
+                        <input type="number" name="max_projects" class="form-control" value="0">
+                        <div class="form-text">0 = {{ _('plans.unlimited') }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('plans.storage_gb') }}</label>
+                        <input type="number" name="storage_gb" class="form-control" value="0">
+                        <div class="form-text">0 = {{ _('plans.unlimited') }}</div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="form-label">{{ _('plans.features') }}</label>
+                        <div id="featuresList">
+                            <div class="input-group mb-2">
+                                <input type="text" name="features[]" class="form-control" placeholder="{{ _('plans.feature') }}">
+                                <button type="button" class="btn btn-outline-danger remove-feature">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addFeature" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus"></i> {{ _('plans.add_feature') }}
+                        </button>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="form-label">{{ _('plans.features_ar') }}</label>
+                        <div id="featuresArList">
+                            <div class="input-group mb-2">
+                                <input type="text" name="features_ar[]" class="form-control" placeholder="{{ _('plans.feature') }}">
+                                <button type="button" class="btn btn-outline-danger remove-feature-ar">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="addFeatureAr" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus"></i> {{ _('plans.add_feature') }}
+                        </button>
+                    </div>
+                    
+                    <div class="col-12">
+                        <hr>
+                        <div class="form-check form-switch">
+                            <input type="checkbox" name="is_featured" class="form-check-input" id="isFeatured">
+                            <label class="form-check-label" for="isFeatured">{{ _('plans.is_featured') }}</label>
+                        </div>
+                        <div class="form-check form-switch mt-2">
+                            <input type="checkbox" name="is_active" class="form-check-input" id="isActive" checked>
+                            <label class="form-check-label" for="isActive">{{ _('plans.is_active') }}</label>
+                        </div>
+                        <div class="form-check form-switch mt-2">
+                            <input type="checkbox" name="is_default" class="form-check-input" id="isDefault">
+                            <label class="form-check-label" for="isDefault">{{ _('plans.is_default') }}</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <hr>
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('platform.plans') }}" class="btn btn-lg btn-outline-secondary">{{ _('common.cancel') }}</a>
+                            <button type="submit" class="btn btn-lg btn-gradient">
+                                <i class="fas fa-save me-2"></i>{{ _('common.save') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Add Feature (English)
+    $('#addFeature').click(function() {
+        $('#featuresList').append(`
+            <div class="input-group mb-2">
+                <input type="text" name="features[]" class="form-control" placeholder="{{ _('plans.feature') }}">
+                <button type="button" class="btn btn-outline-danger remove-feature">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `);
+    });
+    
+    // Remove Feature (English)
+    $(document).on('click', '.remove-feature', function() {
+        $(this).closest('.input-group').remove();
+    });
+    
+    // Add Feature (Arabic)
+    $('#addFeatureAr').click(function() {
+        $('#featuresArList').append(`
+            <div class="input-group mb-2">
+                <input type="text" name="features_ar[]" class="form-control" placeholder="{{ _('plans.feature') }}">
+                <button type="button" class="btn btn-outline-danger remove-feature-ar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `);
+    });
+    
+    // Remove Feature (Arabic)
+    $(document).on('click', '.remove-feature-ar', function() {
+        $(this).closest('.input-group').remove();
+    });
+});
+</script>
+{% endblock %}

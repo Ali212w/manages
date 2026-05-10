@@ -1,0 +1,236 @@
+{# templates/supplier/notifications.html #}
+
+{% extends "supplier/base.html" %}
+
+{% block title %}الإشعارات{% endblock %}
+
+{% block page_title %}مركز الإشعارات{% endblock %}
+{% block page_subtitle %}جميع الإشعارات والتنبيهات الخاصة بك{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notifications-full-page {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .notification-card-full {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .notification-card-full:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    
+    .notification-card-full.unread {
+        background: linear-gradient(90deg, #fef9e8, white);
+        border-right: 3px solid var(--primary);
+    }
+    
+    .filters-bar {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-chip {
+        padding: 0.4rem 1rem;
+        border-radius: 50px;
+        background: white;
+        border: 1px solid #eef2f7;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .filter-chip.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    
+    .filter-chip:hover:not(.active) {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notifications-full-page">
+    <div class="filters-bar">
+        <button class="filter-chip active" data-filter="all">الكل</button>
+        <button class="filter-chip" data-filter="unread">غير مقروء</button>
+        <button class="filter-chip" data-filter="delivery">التسليمات</button>
+        <button class="filter-chip" data-filter="task">المهام</button>
+        <button class="filter-chip" data-filter="project">المشاريع</button>
+        <button class="filter-chip" data-filter="resource">الموارد</button>
+    </div>
+    
+    <div id="notificationsContainer">
+        <!-- سيتم تحميل الإشعارات بواسطة JavaScript -->
+        <div class="text-center py-5">
+            <div class="loading-spinner"></div>
+            <p class="mt-3 text-muted">جاري تحميل الإشعارات...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentFilter = 'all';
+
+document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        currentFilter = this.dataset.filter;
+        loadAllNotifications();
+    });
+});
+
+function loadAllNotifications() {
+    fetch('/supplier/api/notifications?limit=100')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderFullNotifications(data.notifications);
+            }
+        });
+}
+
+function renderFullNotifications(notifications) {
+    const container = document.getElementById('notificationsContainer');
+    
+    let filtered = notifications;
+    if (currentFilter === 'unread') {
+        filtered = notifications.filter(n => !n.is_read);
+    } else if (currentFilter !== 'all') {
+        filtered = notifications.filter(n => n.notification_type.includes(currentFilter));
+    }
+    
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state-advanced text-center py-5">
+                <i class="far fa-bell-slash fa-3x text-muted mb-3"></i>
+                <h5>لا توجد إشعارات</h5>
+                <p class="text-muted">ليس لديك أي إشعارات في هذا التصنيف</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    filtered.forEach(notification => {
+        const unreadClass = notification.is_read ? '' : 'unread';
+        const iconClass = getNotificationIconClass(notification.notification_type);
+        const iconHtml = getNotificationIconHtml(notification.notification_type);
+        
+        html += `
+            <div class="notification-card-full ${unreadClass}" onclick="openNotification(${notification.id}, '${notification.related_link || ''}')">
+                <div class="d-flex">
+                    <div class="notification-icon-advanced ${iconClass}" style="width: 50px; height: 50px; border-radius: 15px; margin-left: 1rem;">
+                        ${iconHtml}
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                            <h6 class="mb-0 fw-bold">${escapeHtml(notification.title)}</h6>
+                            <small class="text-muted">${formatTime(notification.created_at)}</small>
+                        </div>
+                        <p class="mb-2 text-secondary">${escapeHtml(notification.message)}</p>
+                        ${notification.related_link ? `
+                            <span class="text-primary small">
+                                <i class="fas fa-arrow-left"></i> اضغط للتفاصيل
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function getNotificationIconClass(notificationType) {
+    if (notificationType.includes('delivery')) return 'delivery';
+    if (notificationType.includes('task')) return 'task';
+    if (notificationType.includes('project')) return 'project';
+    if (notificationType.includes('resource')) return 'resource';
+    return 'default';
+}
+
+function getNotificationIconHtml(notificationType) {
+    if (notificationType.includes('delivery')) {
+        if (notificationType.includes('pending')) return '<i class="fas fa-clock fa-lg"></i>';
+        if (notificationType.includes('confirmed')) return '<i class="fas fa-check-double fa-lg"></i>';
+        if (notificationType.includes('rejected')) return '<i class="fas fa-times-circle fa-lg"></i>';
+        return '<i class="fas fa-truck fa-lg"></i>';
+    }
+    if (notificationType.includes('task')) {
+        if (notificationType.includes('assigned')) return '<i class="fas fa-user-plus fa-lg"></i>';
+        if (notificationType.includes('started')) return '<i class="fas fa-play fa-lg"></i>';
+        if (notificationType.includes('completed')) return '<i class="fas fa-check-circle fa-lg"></i>';
+        if (notificationType.includes('overdue')) return '<i class="fas fa-exclamation-triangle fa-lg"></i>';
+        return '<i class="fas fa-tasks fa-lg"></i>';
+    }
+    if (notificationType.includes('project')) {
+        if (notificationType.includes('created')) return '<i class="fas fa-plus-circle fa-lg"></i>';
+        if (notificationType.includes('started')) return '<i class="fas fa-play fa-lg"></i>';
+        if (notificationType.includes('completed')) return '<i class="fas fa-trophy fa-lg"></i>';
+        return '<i class="fas fa-project-diagram fa-lg"></i>';
+    }
+    if (notificationType.includes('remaining_items_reminder')) {
+        return '<i class="fas fa-boxes fa-lg"></i>';
+    }
+    if (notificationType.includes('resource')) {
+        return '<i class="fas fa-cube fa-lg"></i>';
+    }
+    return '<i class="fas fa-bell fa-lg"></i>';
+}
+
+function openNotification(notificationId, link) {
+    fetch(`/supplier/api/notifications/${notificationId}/read`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    }).then(() => {
+        if (link) {
+            window.location.href = link;
+        } else {
+            window.location.href = `/supplier/notifications/${notificationId}`;
+        }
+    });
+}
+
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+    
+    if (diff < 60) return 'الآن';
+    if (diff < 3600) return `${Math.floor(diff / 60)} دقيقة`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} ساعة`;
+    return date.toLocaleDateString('ar-SA');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// تحميل الإشعارات عند فتح الصفحة
+document.addEventListener('DOMContentLoaded', loadAllNotifications);
+</script>
+{% endblock %}

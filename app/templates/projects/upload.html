@@ -1,0 +1,1231 @@
+{% extends "company/base.html" %}
+
+{% block title %}رفع وتحليل الملفات - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}رفع وتحليل الملفات{% endblock %}
+{% block page_subtitle %}قم برفع ملفات مشروعك وسيقوم النظام بتحليلها وتوزيعها تلقائياً{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Upload Container */
+    .upload-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem 0;
+    }
+    
+    /* Upload Area */
+    .upload-area {
+        background: white;
+        border: 3px dashed #eef2f7;
+        border-radius: 30px;
+        padding: 4rem 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .upload-area::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.03) 0%, rgba(67, 97, 238, 0.01) 100%);
+        transform: rotate(45deg);
+        transition: all 0.3s ease;
+    }
+    
+    .upload-area:hover {
+        border-color: var(--primary);
+        background: rgba(67, 97, 238, 0.02);
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    
+    .upload-area.dragover {
+        border-color: var(--primary);
+        background: rgba(67, 97, 238, 0.05);
+        transform: scale(1.02);
+    }
+    
+    .upload-icon {
+        font-size: 5rem;
+        color: var(--primary);
+        margin-bottom: 1.5rem;
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    .upload-area h3 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1rem;
+    }
+    
+    .upload-area p {
+        color: #6c757d;
+        margin-bottom: 1.5rem;
+    }
+    
+    .btn-browse {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 1rem 2.5rem;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .btn-browse:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+    }
+    
+    .upload-info {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    /* Project Type Selection */
+    .project-type-section {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .project-type-section h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .project-type-section h3 i {
+        color: var(--primary);
+    }
+    
+    .project-type-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+    }
+    
+    .project-type-card {
+        background: #f8f9fa;
+        border: 2px solid transparent;
+        border-radius: 15px;
+        padding: 1.5rem 0.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .project-type-card i {
+        font-size: 2rem;
+        color: #6c757d;
+        transition: all 0.3s;
+    }
+    
+    .project-type-card span {
+        font-weight: 600;
+        color: #6c757d;
+        transition: all 0.3s;
+    }
+    
+    .project-type-card:hover {
+        background: white;
+        border-color: var(--primary);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .project-type-card:hover i,
+    .project-type-card:hover span {
+        color: var(--primary);
+    }
+    
+    .project-type-card.selected {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-color: var(--primary);
+    }
+    
+    .project-type-card.selected i,
+    .project-type-card.selected span {
+        color: white;
+    }
+    
+    /* Files List */
+    .files-list {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .files-list h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .files-list h3 i {
+        color: var(--primary);
+    }
+    
+    .files-container {
+        max-height: 400px;
+        overflow-y: auto;
+        margin-bottom: 1.5rem;
+    }
+    
+    .files-container::-webkit-scrollbar {
+        width: 5px;
+    }
+    
+    .files-container::-webkit-scrollbar-track {
+        background: #eef2f7;
+    }
+    
+    .files-container::-webkit-scrollbar-thumb {
+        background: var(--primary);
+        border-radius: 10px;
+    }
+    
+    .file-item {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.3s;
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .file-item:hover {
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateX(-5px);
+    }
+    
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+    }
+    
+    .file-info i {
+        font-size: 2rem;
+        color: var(--primary);
+    }
+    
+    .file-details h4 {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.25rem;
+    }
+    
+    .file-details p {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+    
+    .file-progress {
+        width: 200px;
+        margin: 0 1rem;
+    }
+    
+    .file-progress-bar {
+        height: 6px;
+        background: #eef2f7;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 0.25rem;
+    }
+    
+    .file-progress-fill {
+        height: 100%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 3px;
+        transition: width 0.3s;
+    }
+    
+    .file-progress span {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .file-remove {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .file-remove:hover {
+        background: var(--danger);
+        color: white;
+        transform: rotate(90deg);
+    }
+    
+    .files-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+    
+    .btn-analyze {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-analyze:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+    }
+    
+    .btn-analyze i {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    
+    .btn-cancel {
+        background: #eef2f7;
+        color: #6c757d;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-cancel:hover {
+        background: var(--danger);
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(249, 65, 68, 0.2);
+    }
+    
+    /* Analysis Progress */
+    .analysis-progress {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .progress-card {
+        text-align: center;
+    }
+    
+    .progress-card h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 2rem;
+    }
+    
+    .progress-bar-container {
+        height: 10px;
+        background: #eef2f7;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 5px;
+        transition: width 0.3s;
+    }
+    
+    #progressStatus {
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+    
+    .analysis-steps {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .step {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        position: relative;
+        transition: all 0.3s;
+    }
+    
+    .step i:first-child {
+        font-size: 2rem;
+        color: #6c757d;
+    }
+    
+    .step span {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .step .step-icon {
+        font-size: 1rem;
+    }
+    
+    .step.active {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        transform: scale(1.05);
+        box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+    }
+    
+    .step.active i:first-child,
+    .step.active span,
+    .step.active .step-icon {
+        color: white;
+    }
+    
+    .step.completed {
+        background: rgba(76, 201, 240, 0.1);
+    }
+    
+    .step.completed i:first-child,
+    .step.completed span,
+    .step.completed .step-icon {
+        color: var(--success);
+    }
+    
+    /* Analysis Results */
+    .analysis-results {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .results-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .results-header h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+    
+    .results-header h2 i {
+        margin-left: 0.5rem;
+    }
+    
+    .results-header p {
+        color: #6c757d;
+    }
+    
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .result-card {
+        background: #f8f9fa;
+        border-radius: 20px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .result-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .result-card h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .result-card h3 i {
+        color: var(--primary);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .result-card p {
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+    
+    .btn-view {
+        background: transparent;
+        border: 2px solid var(--primary);
+        color: var(--primary);
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .btn-view:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .project-summary {
+        grid-column: span 4;
+        text-align: right;
+    }
+    
+    .summary-details {
+        background: white;
+        border-radius: 15px;
+        padding: 1rem;
+    }
+    
+    .summary-details p {
+        margin: 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .summary-details strong {
+        color: var(--dark);
+        min-width: 120px;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .badge.success {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .results-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+    }
+    
+    .btn-secondary {
+        background: #eef2f7;
+        color: #6c757d;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-secondary:hover {
+        background: #e2e6ea;
+        transform: translateY(-3px);
+    }
+    
+    /* Responsive */
+    @media (max-width: 992px) {
+        .results-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .project-summary {
+            grid-column: span 2;
+        }
+        
+        .analysis-steps {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .results-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .project-summary {
+            grid-column: span 1;
+        }
+        
+        .analysis-steps {
+            grid-template-columns: 1fr;
+        }
+        
+        .file-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .file-progress {
+            width: 100%;
+        }
+        
+        .files-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <!-- Upload Area -->
+    <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">
+            <i class="fas fa-cloud-upload-alt"></i>
+        </div>
+        <h3>اسحب وأفلت الملفات هنا</h3>
+        <p>أو</p>
+        <button class="btn-browse" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-folder-open"></i> تصفح الملفات
+        </button>
+        <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" style="display: none;">
+        <p class="upload-info">يدعم: PDF, DOC, DOCX, XLS, XLSX, TXT, CSV (حتى 500MB)</p>
+    </div>
+
+    <!-- Project Type Selection -->
+    <div class="project-type-section">
+        <h3><i class="fas fa-tag"></i> نوع المشروع</h3>
+        <div class="project-type-grid">
+            <div class="project-type-card" data-type="engineering">
+                <i class="fas fa-hard-hat"></i>
+                <span>مشروع هندسي</span>
+            </div>
+            <div class="project-type-card" data-type="software">
+                <i class="fas fa-code"></i>
+                <span>مشروع برمجي</span>
+            </div>
+            <div class="project-type-card" data-type="administrative">
+                <i class="fas fa-tasks"></i>
+                <span>مشروع إداري</span>
+            </div>
+            <div class="project-type-card" data-type="research">
+                <i class="fas fa-flask"></i>
+                <span>مشروع بحثي</span>
+            </div>
+            <div class="project-type-card" data-type="agricultural">
+                <i class="fas fa-seedling"></i>
+                <span>مشروع زراعي</span>
+            </div>
+            <div class="project-type-card" data-type="commercial">
+                <i class="fas fa-chart-bar"></i>
+                <span>مشروع تجاري</span>
+            </div>
+            <div class="project-type-card" data-type="general">
+                <i class="fas fa-folder"></i>
+                <span>عام</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Files List -->
+    <div class="files-list" id="filesList" style="display: none;">
+        <h3><i class="fas fa-list"></i> الملفات المرفوعة</h3>
+        <div class="files-container" id="filesContainer"></div>
+        <div class="files-actions">
+            <button class="btn-analyze" id="analyzeBtn" onclick="analyzeFiles()">
+                <i class="fas fa-brain"></i>
+                <span>تحليل الملفات بالذكاء الاصطناعي</span>
+            </button>
+            <button class="btn-cancel" onclick="clearFiles()">
+                <i class="fas fa-times"></i>
+                <span>إلغاء</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Analysis Progress -->
+    <div class="analysis-progress" id="analysisProgress" style="display: none;">
+        <div class="progress-card">
+            <h3><i class="fas fa-cog fa-spin"></i> جاري التحليل...</h3>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            <p id="progressStatus">بدء التحليل...</p>
+            
+            <div class="analysis-steps">
+                <div class="step" id="step1">
+                    <i class="fas fa-file"></i>
+                    <span>قراءة الملفات</span>
+                    <i class="fas fa-clock step-icon"></i>
+                </div>
+                <div class="step" id="step2">
+                    <i class="fas fa-robot"></i>
+                    <span>تحليل بالذكاء الاصطناعي</span>
+                    <i class="fas fa-clock step-icon"></i>
+                </div>
+                <div class="step" id="step3">
+                    <i class="fas fa-sitemap"></i>
+                    <span>استخراج هيكل المشروع</span>
+                    <i class="fas fa-clock step-icon"></i>
+                </div>
+                <div class="step" id="step4">
+                    <i class="fas fa-chart-line"></i>
+                    <span>توزيع الأنشطة</span>
+                    <i class="fas fa-clock step-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Results -->
+    <div class="analysis-results" id="analysisResults" style="display: none;">
+        <div class="results-header">
+            <h2><i class="fas fa-check-circle" style="color: #4CAF50;"></i> تم التحليل بنجاح!</h2>
+            <p>تم استخراج وتحليل جميع بيانات المشروع</p>
+        </div>
+
+        <div class="results-grid">
+            <!-- Project Summary -->
+            <div class="result-card project-summary">
+                <h3><i class="fas fa-project-diagram"></i> ملخص المشروع</h3>
+                <div id="projectSummary"></div>
+            </div>
+
+            <!-- BOM Items -->
+            <div class="result-card bom-items">
+                <h3><i class="fas fa-list-ul"></i> بنود BOM</h3>
+                <div class="stat-number" id="bomCount">0</div>
+                <p>بند تم استخراجها</p>
+                <button class="btn-view" onclick="viewBOM()">
+                    <i class="fas fa-eye"></i> عرض التفاصيل
+                </button>
+            </div>
+
+            <!-- Activities -->
+            <div class="result-card activities">
+                <h3><i class="fas fa-tasks"></i> الأنشطة</h3>
+                <div class="stat-number" id="activitiesCount">0</div>
+                <p>نشاط تم تحديدها</p>
+                <button class="btn-view" onclick="viewActivities()">
+                    <i class="fas fa-eye"></i> عرض التفاصيل
+                </button>
+            </div>
+
+            <!-- Milestones -->
+            <div class="result-card milestones">
+                <h3><i class="fas fa-flag"></i> المعالم</h3>
+                <div class="stat-number" id="milestonesCount">0</div>
+                <p>معلم رئيسي</p>
+                <button class="btn-view" onclick="viewMilestones()">
+                    <i class="fas fa-eye"></i> عرض التفاصيل
+                </button>
+            </div>
+        </div>
+
+        <div class="results-actions">
+            <button class="btn-primary" onclick="viewProject()">
+                <i class="fas fa-eye"></i>
+                <span>عرض المشروع</span>
+            </button>
+            <button class="btn-secondary" onclick="uploadMore()">
+                <i class="fas fa-upload"></i>
+                <span>رفع المزيد</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ========== Upload Page JavaScript ==========
+
+let uploadedFiles = [];
+let selectedProjectType = 'general';
+let analysisResult = null;
+
+// تهيئة الصفحة
+$(document).ready(function() {
+    initializeUploadArea();
+    initializeProjectTypeSelection();
+});
+
+// ========== Upload Area Functions ==========
+function initializeUploadArea() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+
+    // دراج أند دروب
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = Array.from(e.dataTransfer.files);
+        handleFiles(files);
+    });
+
+    // اختيار الملفات
+    fileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        handleFiles(files);
+    });
+
+    // النقر على منطقة الرفع
+    uploadArea.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'I') {
+            fileInput.click();
+        }
+    });
+}
+
+function initializeProjectTypeSelection() {
+    $('.project-type-card').click(function() {
+        $('.project-type-card').removeClass('selected');
+        $(this).addClass('selected');
+        selectedProjectType = $(this).data('type');
+    });
+    
+    // اختيار النوع الافتراضي
+    $('.project-type-card[data-type="general"]').addClass('selected');
+}
+
+// ========== File Handling ==========
+function handleFiles(files) {
+    const validFiles = files.filter(file => {
+        const extension = file.name.split('.').pop().toLowerCase();
+        const validExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'csv'];
+        return validExtensions.includes(extension) && file.size <= 500 * 1024 * 1024;
+    });
+
+    if (validFiles.length === 0) {
+        showNotification('يرجى رفع ملفات صالحة (PDF, DOC, XLS, TXT, CSV) بحجم أقل من 500MB', 'error');
+        return;
+    }
+
+    validFiles.forEach(file => {
+        uploadedFiles.push(file);
+        displayFile(file);
+    });
+
+    $('#filesList').show();
+    scrollToElement('filesList');
+}
+
+function displayFile(file) {
+    const fileIcon = getFileIcon(file.name);
+    const fileSize = formatFileSize(file.size);
+    const fileId = `file-${Date.now()}-${Math.random()}`;
+
+    const fileHtml = `
+        <div class="file-item" id="${fileId}">
+            <div class="file-info">
+                <i class="fas ${fileIcon}"></i>
+                <div class="file-details">
+                    <h4>${file.name}</h4>
+                    <p>${fileSize}</p>
+                </div>
+            </div>
+            <div class="file-progress">
+                <div class="file-progress-bar">
+                    <div class="file-progress-fill" style="width: 0%"></div>
+                </div>
+                <span>في الانتظار...</span>
+            </div>
+            <div class="file-remove" onclick="removeFile('${fileId}')">
+                <i class="fas fa-times"></i>
+            </div>
+        </div>
+    `;
+
+    $('#filesContainer').append(fileHtml);
+}
+
+function getFileIcon(filename) {
+    const extension = filename.split('.').pop().toLowerCase();
+    const icons = {
+        'pdf': 'fa-file-pdf',
+        'doc': 'fa-file-word',
+        'docx': 'fa-file-word',
+        'xls': 'fa-file-excel',
+        'xlsx': 'fa-file-excel',
+        'txt': 'fa-file-alt',
+        'csv': 'fa-file-csv'
+    };
+    return icons[extension] || 'fa-file';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function removeFile(fileId) {
+    $(`#${fileId}`).remove();
+    const fileName = $(`#${fileId} h4`).text();
+    uploadedFiles = uploadedFiles.filter(f => f.name !== fileName);
+    
+    if (uploadedFiles.length === 0) {
+        $('#filesList').hide();
+    }
+}
+
+function clearFiles() {
+    uploadedFiles = [];
+    $('#filesContainer').empty();
+    $('#filesList').hide();
+}
+
+// ========== Analysis Functions ==========
+async function analyzeFiles() {
+    if (uploadedFiles.length === 0) {
+        showNotification('الرجاء رفع ملفات أولاً', 'warning');
+        return;
+    }
+
+    // إظهار شاشة التقدم
+    $('#analysisProgress').show();
+    scrollToElement('analysisProgress');
+    
+    // بدء التقدم
+    await simulateProgress();
+    
+    // رفع الملفات للخادم
+    await uploadFilesToServer();
+}
+
+async function simulateProgress() {
+    const steps = ['step1', 'step2', 'step3', 'step4'];
+    const stepMessages = [
+        'جاري قراءة الملفات...',
+        'تحليل بالذكاء الاصطناعي...',
+        'استخراج هيكل المشروع...',
+        'توزيع الأنشطة...'
+    ];
+
+    for (let i = 0; i < steps.length; i++) {
+        // تفعيل الخطوة الحالية
+        $(`#${steps[i]}`).addClass('active');
+        
+        // تحديث شريط التقدم
+        const progress = ((i + 1) / steps.length) * 100;
+        $('#progressBar').css('width', `${progress}%`);
+        $('#progressStatus').text(stepMessages[i]);
+
+        // محاكاة وقت المعالجة
+        await sleep(2000);
+
+        // إكمال الخطوة
+        $(`#${steps[i]}`).removeClass('active').addClass('completed');
+        $(`#${steps[i]} .step-icon`).removeClass('fa-clock fa-spinner').addClass('fa-check-circle');
+    }
+
+    $('#progressStatus').text('اكتمل التحليل بنجاح!');
+}
+
+async function uploadFilesToServer() {
+    const formData = new FormData();
+    
+    uploadedFiles.forEach(file => {
+        formData.append('files', file);
+    });
+    
+    formData.append('project_type', selectedProjectType);
+    formData.append('org_id', '{{ g.company.id }}');
+
+    try {
+        const response = await fetch('/projects/ai/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            analysisResult = result;
+            await sleep(1000);
+            $('#analysisProgress').hide();
+            displayResults(result);
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        $('#analysisProgress').hide();
+        showNotification('حدث خطأ أثناء رفع الملفات: ' + error.message, 'error');
+    }
+}
+
+function displayResults(result) {
+    // تحديث الإحصائيات
+    $('#bomCount').text(result.analysis_summary?.bom_items || 0);
+    $('#activitiesCount').text(result.analysis_summary?.activities || 0);
+    $('#milestonesCount').text(result.analysis_summary?.milestones || 0);
+
+    // عرض ملخص المشروع
+    const summaryHtml = `
+        <div class="summary-details">
+            <p><i class="fas fa-project-diagram text-primary"></i> <strong>اسم المشروع:</strong> ${result.analysis_summary?.project_name || 'غير محدد'}</p>
+            <p><i class="fas fa-files text-primary"></i> <strong>عدد الملفات:</strong> ${result.files.length}</p>
+            <p><i class="fas fa-check-circle text-success"></i> <strong>حالة التحليل:</strong> <span class="badge success">مكتمل</span></p>
+        </div>
+    `;
+    $('#projectSummary').html(summaryHtml);
+
+    // إظهار النتائج
+    $('#analysisResults').show();
+    scrollToElement('analysisResults');
+}
+
+// ========== Navigation Functions ==========
+function viewBOM() {
+    showNotification('جاري تحميل بنود BOM...', 'info');
+    // TODO: تنفيذ عرض بنود BOM
+}
+
+function viewActivities() {
+    showNotification('جاري تحميل الأنشطة...', 'info');
+    // TODO: تنفيذ عرض الأنشطة
+}
+
+function viewMilestones() {
+    showNotification('جاري تحميل المعالم...', 'info');
+    // TODO: تنفيذ عرض المعالم
+}
+
+function viewProject() {
+    if (analysisResult?.project_id) {
+        window.location.href = `/projects/project/${analysisResult.project_id}`;
+    } else {
+        showNotification('لا يوجد مشروع لعرضه', 'warning');
+    }
+}
+
+function uploadMore() {
+    $('#analysisResults').hide();
+    $('#filesContainer').empty();
+    uploadedFiles = [];
+    analysisResult = null;
+    $('#filesList').hide();
+}
+
+// ========== Utility Functions ==========
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function scrollToElement(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function showNotification(message, type = 'info') {
+    // التحقق من وجود عنصر الإشعارات
+    let notificationContainer = document.getElementById('notificationContainer');
+    
+    if (!notificationContainer) {
+        notificationContainer = document.createElement('div');
+        notificationContainer.id = 'notificationContainer';
+        notificationContainer.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            pointer-events: none;
+        `;
+        document.body.appendChild(notificationContainer);
+    }
+    
+    // إنشاء عنصر الإشعار
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.style.cssText = `
+        background: white;
+        color: var(--dark);
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        transform: translateY(-100px);
+        opacity: 0;
+        transition: all 0.3s ease;
+        pointer-events: none;
+        border-right: 4px solid ${getNotificationColor(type)};
+    `;
+    
+    notification.innerHTML = `
+        <i class="fas ${getNotificationIcon(type)}" style="color: ${getNotificationColor(type)};"></i>
+        <span>${message}</span>
+    `;
+    
+    notificationContainer.appendChild(notification);
+    
+    // إظهار الإشعار
+    setTimeout(() => {
+        notification.style.transform = 'translateY(0)';
+        notification.style.opacity = '1';
+    }, 100);
+    
+    // إخفاء الإشعار بعد 3 ثواني
+    setTimeout(() => {
+        notification.style.transform = 'translateY(-100px)';
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 3000);
+}
+
+function getNotificationColor(type) {
+    const colors = {
+        'success': 'var(--success)',
+        'error': 'var(--danger)',
+        'warning': 'var(--warning)',
+        'info': 'var(--info)'
+    };
+    return colors[type] || 'var(--info)';
+}
+
+function getNotificationIcon(type) {
+    const icons = {
+        'success': 'fa-check-circle',
+        'error': 'fa-exclamation-circle',
+        'warning': 'fa-exclamation-triangle',
+        'info': 'fa-info-circle'
+    };
+    return icons[type] || 'fa-info-circle';
+}
+</script>
+{% endblock %}

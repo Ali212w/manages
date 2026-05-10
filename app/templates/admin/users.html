@@ -1,0 +1,444 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}إدارة المستخدمين - {{ super() }}{% endblock %}
+
+{% block styles %}
+<style>
+    .users-container {
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 56px);
+        padding: 2rem;
+    }
+    
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .search-filter-bar {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .filter-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 1rem;
+    }
+    
+    .filter-tag {
+        background-color: #e9ecef;
+        border-radius: 20px;
+        padding: 5px 15px;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .filter-tag .remove-tag {
+        cursor: pointer;
+        color: #666;
+    }
+    
+    .user-card {
+        background-color: white;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s;
+    }
+    
+    .user-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .user-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-left: 1rem;
+    }
+    
+    .user-info {
+        flex: 1;
+    }
+    
+    .user-name {
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+    
+    .user-email {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .user-body {
+        padding: 1.5rem;
+    }
+    
+    .user-details {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .user-details li {
+        margin-bottom: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .user-details .label {
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .user-actions {
+        padding: 1.5rem;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 10px;
+    }
+    
+    .user-status-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+    }
+    
+    .export-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    @media (max-width: 768px) {
+        .users-container {
+            padding: 1rem;
+        }
+        
+        .search-filter-bar {
+            flex-direction: column;
+        }
+        
+        .export-actions {
+            margin-top: 1rem;
+            justify-content: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="users-container">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-0">إدارة المستخدمين</h2>
+            <p class="text-muted mb-0">إدارة جميع مستخدمي النظام</p>
+        </div>
+        <a href="{{ url_for('admin.create_user') }}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>إضافة مستخدم
+        </a>
+    </div>
+    
+    <!-- Search and Filter Bar -->
+    <div class="search-filter-bar">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" name="search" 
+                           placeholder="بحث بالاسم أو البريد الإلكتروني" 
+                           value="{{ request.args.get('search', '') }}">
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <select class="form-select" name="role">
+                    <option value="">جميع الأدوار</option>
+                    <option value="admin" {% if request.args.get('role') == 'admin' %}selected{% endif %}>مدير</option>
+                    <option value="project_manager" {% if request.args.get('role') == 'project_manager' %}selected{% endif %}>مدير مشاريع</option>
+                    <option value="supervisor" {% if request.args.get('role') == 'supervisor' %}selected{% endif %}>مشرف</option>
+                    <option value="delegate" {% if request.args.get('role') == 'delegate' %}selected{% endif %}>مندوب</option>
+                    <option value="employee" {% if request.args.get('role') == 'employee' %}selected{% endif %}>موظف</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="">جميع الحالات</option>
+                    <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>نشط</option>
+                    <option value="inactive" {% if request.args.get('status') == 'inactive' %}selected{% endif %}>غير نشط</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-2"></i>تصفية
+                </button>
+            </div>
+        </form>
+        
+        {% if request.args.get('search') or request.args.get('role') or request.args.get('status') %}
+        <div class="filter-tags">
+            {% if request.args.get('search') %}
+            <span class="filter-tag">
+                بحث: {{ request.args.get('search') }}
+                <span class="remove-tag" onclick="removeFilter('search')">&times;</span>
+            </span>
+            {% endif %}
+            
+            {% if request.args.get('role') %}
+            <span class="filter-tag">
+                دور: {{ request.args.get('role') }}
+                <span class="remove-tag" onclick="removeFilter('role')">&times;</span>
+            </span>
+            {% endif %}
+            
+            {% if request.args.get('status') %}
+            <span class="filter-tag">
+                حالة: {{ request.args.get('status') }}
+                <span class="remove-tag" onclick="removeFilter('status')">&times;</span>
+            </span>
+            {% endif %}
+            
+            <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-outline-secondary">
+                إزالة جميع الفلاتر
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Export Actions -->
+    <div class="export-actions mb-3">
+        <button class="btn btn-outline-success" onclick="exportToExcel('usersTable', 'المستخدمون')">
+            <i class="fas fa-file-excel me-2"></i>تصدير إلى Excel
+        </button>
+        <button class="btn btn-outline-danger" onclick="exportToPDF('usersTable', 'المستخدمون')">
+            <i class="fas fa-file-pdf me-2"></i>تصدير إلى PDF
+        </button>
+        <button class="btn btn-outline-info" onclick="printPage()">
+            <i class="fas fa-print me-2"></i>طباعة
+        </button>
+    </div>
+    
+    <!-- Users Grid -->
+    {% if users %}
+    <div class="row">
+        {% for user in users %}
+        <div class="col-lg-4 col-md-6">
+            <div class="user-card">
+                <div class="user-header d-flex align-items-center">
+                    <div class="user-avatar">
+                        {{ user.full_name[0] }}
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">{{ user.full_name }}</div>
+                        <div class="user-email">{{ user.email }}</div>
+                    </div>
+                    <div class="user-status-badge">
+                        {% if user.is_active %}
+                        <span class="badge bg-success">نشط</span>
+                        {% else %}
+                        <span class="badge bg-danger">غير نشط</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="user-body">
+                    <ul class="user-details">
+                        <li>
+                            <span class="label">الدور:</span>
+                            <span class="value">
+                                <span class="badge bg-info">{{ user.role }}</span>
+                            </span>
+                        </li>
+                        <li>
+                            <span class="label">رقم الهاتف:</span>
+                            <span class="value">{{ user.phone or 'غير محدد' }}</span>
+                        </li>
+                        <li>
+                            <span class="label">تاريخ التسجيل:</span>
+                            <span class="value">{{ user.created_at.strftime('%Y-%m-%d') }}</span>
+                        </li>
+                        <li>
+                            <span class="label">آخر دخول:</span>
+                            <span class="value">
+                                {% if user.last_login %}
+                                {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                لم يسجل دخول بعد
+                                {% endif %}
+                            </span>
+                        </li>
+                        {% if user.department %}
+                        <li>
+                            <span class="label">القسم:</span>
+                            <span class="value">{{ user.department.name }}</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <div class="user-actions">
+                    <a href="{{ url_for('admin.view_user', user_id=user.id) }}" 
+                       class="btn btn-sm btn-outline-primary flex-fill">
+                        <i class="fas fa-eye me-1"></i>عرض
+                    </a>
+                    <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" 
+                       class="btn btn-sm btn-outline-warning flex-fill">
+                        <i class="fas fa-edit me-1"></i>تعديل
+                    </a>
+                    {% if user.id != current_user.id %}
+                    <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" 
+                          class="flex-fill" onsubmit="return confirm('هل أنت متأكد من حذف هذا المستخدم؟')">
+                        <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                            <i class="fas fa-trash me-1"></i>حذف
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Users Table (for export/print) -->
+    <div id="usersTable" class="d-none">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>الاسم</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>رقم الهاتف</th>
+                    <th>الدور</th>
+                    <th>القسم</th>
+                    <th>الحالة</th>
+                    <th>تاريخ التسجيل</th>
+                    <th>آخر دخول</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.full_name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.phone or '-' }}</td>
+                    <td>{{ user.role }}</td>
+                    <td>{{ user.department.name if user.department else '-' }}</td>
+                    <td>{{ 'نشط' if user.is_active else 'غير نشط' }}</td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        {% if user.last_login %}
+                        {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-users fa-4x text-muted mb-3"></i>
+        <h4>لا يوجد مستخدمون</h4>
+        <p class="text-muted">لم يتم العثور على مستخدمين مطابقين للبحث</p>
+        <a href="{{ url_for('admin.create_user') }}" class="btn btn-primary mt-2">
+            <i class="fas fa-user-plus me-2"></i>إضافة مستخدم جديد
+        </a>
+    </div>
+    {% endif %}
+    
+    <!-- Pagination -->
+    {% if users|length > 0 %}
+    <nav aria-label="تصفح الصفحات">
+        <ul class="pagination justify-content-center">
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1">السابق</a>
+            </li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link" href="#">التالي</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // إزالة الفلاتر
+        window.removeFilter = function(filterName) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete(filterName);
+            window.location.href = url.toString();
+        };
+        
+        // البحث المباشر
+        let searchTimeout;
+        $('input[name="search"]').on('keyup', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                $(this).closest('form').submit();
+            }, 500);
+        });
+        
+        // تغيير الفلاتر مباشرة
+        $('select[name="role"], select[name="status"]').on('change', function() {
+            $(this).closest('form').submit();
+        });
+        
+        // تهيئة إدارة المستخدمين
+        initializeUsersManagement();
+    });
+    
+    function initializeUsersManagement() {
+        // Bulk actions
+        $('.bulk-action').change(function() {
+            const selectedUsers = $('.user-checkbox:checked');
+            const action = $(this).val();
+            
+            if (selectedUsers.length > 0 && action) {
+                if (confirm(`هل تريد ${action} ${selectedUsers.length} مستخدم؟`)) {
+                    // تنفيذ الإجراء
+                    console.log(`تنفيذ ${action} على ${selectedUsers.length} مستخدم`);
+                }
+            }
+        });
+        
+        // Check/uncheck all
+        $('#checkAll').change(function() {
+            $('.user-checkbox').prop('checked', $(this).prop('checked'));
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,261 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}تفاصيل المستخدم - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-user me-2"></i>تفاصيل المستخدم
+                    </h1>
+                    <p class="text-muted mb-0">عرض وتعديل معلومات المستخدم</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-warning">
+                        <i class="fas fa-edit me-1"></i>تعديل
+                    </a>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right me-1"></i>العودة للقائمة
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- الملف الشخصي -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    {{ user.full_name[0] if user.full_name else '?' }}
+                </div>
+                <h3 class="text-center mb-1">{{ user.full_name }}</h3>
+                <p class="text-center mb-0 opacity-75">
+                    {% if user.full_name_ar %}{{ user.full_name_ar }}{% endif %}
+                </p>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-6 text-center">
+                        <h5 class="text-primary">{{ user.employee_id or '-' }}</h5>
+                        <small class="text-muted">الرقم الوظيفي</small>
+                    </div>
+                    <div class="col-6 text-center">
+                        <h5 class="text-success">{{ user.national_id or '-' }}</h5>
+                        <small class="text-muted">رقم الهوية</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted">البريد الإلكتروني</label>
+                    <p class="mb-0">{{ user.email }}</p>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="form-label text-muted">الهاتف</label>
+                        <p class="mb-0">{{ user.phone or '-' }}</p>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label text-muted">الجوال</label>
+                        <p class="mb-0">{{ user.mobile or '-' }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted">المسمى الوظيفي</label>
+                    <p class="mb-0">{{ user.job_title or '-' }}</p>
+                    {% if user.job_title_ar %}
+                    <small class="text-muted">{{ user.job_title_ar }}</small>
+                    {% endif %}
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="form-label text-muted">تاريخ الميلاد</label>
+                        <p class="mb-0">{{ user.birth_date.strftime('%Y-%m-%d') if user.birth_date else '-' }}</p>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label text-muted">تاريخ التعيين</label>
+                        <p class="mb-0">{{ user.hire_date.strftime('%Y-%m-%d') if user.hire_date else '-' }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="row">
+                    <div class="col-6">
+                        <span class="badge role-{{ user.role }}">
+                            {% if user.role == 'admin' %}
+                            مدير
+                            {% elif user.role == 'project_manager' %}
+                            مدير مشروع
+                            {% elif user.role == 'supervisor' %}
+                            مشرف
+                            {% elif user.role == 'delegate' %}
+                            مندوب
+                            {% else %}
+                            موظف
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="col-6 text-end">
+                        {% if user.is_active %}
+                        <span class="badge bg-success">نشط</span>
+                        {% else %}
+                        <span class="badge bg-danger">غير نشط</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- المهام والنشاط -->
+    <div class="col-lg-8">
+        <!-- المهام المعينة -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>المهام المعينة</h5>
+            </div>
+            <div class="card-body">
+                {% if assigned_tasks %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>المهمة</th>
+                                <th>المشروع</th>
+                                <th>الحالة</th>
+                                <th>تاريخ البدء</th>
+                                <th>تاريخ الانتهاء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in assigned_tasks %}
+                            <tr>
+                                <td>{{ task.task_name }}</td>
+                                <td>{{ task.project.name }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if task.status == 'completed' else 'warning' }}">
+                                        {{ task.status }}
+                                    </span>
+                                </td>
+                                <td>{{ task.planned_start_date.strftime('%Y-%m-%d') if task.planned_start_date else '-' }}</td>
+                                <td>{{ task.planned_end_date.strftime('%Y-%m-%d') if task.planned_end_date else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">لا توجد مهام معينة</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- المشاريع التي يديرها -->
+        {% if managed_projects %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-project-diagram me-2"></i>المشاريع التي يديرها</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>اسم المشروع</th>
+                                <th>الموقع</th>
+                                <th>التقدم</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in managed_projects %}
+                            <tr>
+                                <td>{{ project.name }}</td>
+                                <td>{{ project.site_name }}</td>
+                                <td>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-success" 
+                                             style="width: {{ project.progress_percentage }}%"></div>
+                                    </div>
+                                    <small>{{ project.progress_percentage }}%</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if project.status == 'active' else 'warning' }}">
+                                        {{ project.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- المهارات -->
+        {% if user_skills %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-star me-2"></i>المهارات</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    {% for skill in user_skills %}
+                    <span class="badge bg-info">
+                        {{ skill.skill_name }}
+                        {% if skill.skill_level %}
+                        <span class="badge bg-white text-info ms-1">{{ skill.skill_level }}</span>
+                        {% endif %}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- سجل الدخول -->
+        {% if login_history %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>سجل الدخول</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>الوقت</th>
+                                <th>عنوان IP</th>
+                                <th>الجهاز</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for login in login_history[:5] %}
+                            <tr>
+                                <td>{{ login.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ login.time }}</td>
+                                <td>{{ login.ip }}</td>
+                                <td>{{ login.device }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

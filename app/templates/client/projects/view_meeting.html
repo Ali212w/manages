@@ -1,0 +1,268 @@
+{% extends "client/base.html" %}
+
+{% block title %}{{ meeting.title }} - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4><i class="fas fa-calendar-alt me-2"></i> {{ meeting.title }}</h4>
+                <p class="text-muted mb-0">{{ project.name }}</p>
+            </div>
+            <a href="{{ url_for('client.project_meetings', project_id=project.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> العودة للقائمة
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Meeting Header -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i> معلومات الاجتماع</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="info-row">
+                    <span class="info-label">نوع الاجتماع:</span>
+                    <span class="info-value">{{ meeting.meeting_type or 'عام' }}</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-row">
+                    <span class="info-label">الحالة:</span>
+                    <span class="info-value">
+                        {% if meeting.status == 'completed' %}
+                        <span class="badge bg-success">منعقد</span>
+                        {% elif meeting.status == 'scheduled' %}
+                        <span class="badge bg-primary">مجدول</span>
+                        {% elif meeting.status == 'cancelled' %}
+                        <span class="badge bg-danger">ملغي</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-row">
+                    <span class="info-label">رمز الاجتماع:</span>
+                    <span class="info-value">{{ meeting.meeting_code or '-' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date & Location -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-calendar me-2"></i> التاريخ والوقت</h6>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-label">التاريخ المقرر:</span>
+                    <span class="info-value">{{ meeting.scheduled_date.strftime('%Y-%m-%d') if meeting.scheduled_date else '-' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">وقت البدء:</span>
+                    <span class="info-value">{{ meeting.start_time.strftime('%H:%M') if meeting.start_time else '-' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">وقت الانتهاء:</span>
+                    <span class="info-value">{{ meeting.end_time.strftime('%H:%M') if meeting.end_time else '-' }}</span>
+                </div>
+                {% if meeting.actual_start_time %}
+                <div class="info-row">
+                    <span class="info-label">البدء الفعلي:</span>
+                    <span class="info-value">{{ meeting.actual_start_time.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                {% endif %}
+                {% if meeting.actual_end_time %}
+                <div class="info-row">
+                    <span class="info-label">الانتهاء الفعلي:</span>
+                    <span class="info-value">{{ meeting.actual_end_time.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i> الموقع والمشاركون</h6>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-label">الموقع:</span>
+                    <span class="info-value">{{ meeting.location or 'غير محدد' }}</span>
+                </div>
+                {% if meeting.is_virtual and meeting.virtual_link %}
+                <div class="info-row">
+                    <span class="info-label">رابط الاجتماع:</span>
+                    <span class="info-value">
+                        <a href="{{ meeting.virtual_link }}" target="_blank">{{ meeting.virtual_link }}</a>
+                    </span>
+                </div>
+                {% endif %}
+                <div class="info-row">
+                    <span class="info-label">المنظم:</span>
+                    <span class="info-value">{{ meeting.organizer.full_name if meeting.organizer else '-' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">سكرتير الاجتماع:</span>
+                    <span class="info-value">{{ meeting.secretary.full_name if meeting.secretary else '-' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Agenda -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-list-ul me-2"></i> جدول الأعمال</h6>
+    </div>
+    <div class="card-body">
+        {% if meeting.agenda %}
+        <ul class="list-group list-group-flush">
+            {% for item in meeting.agenda %}
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>{{ item }}</span>
+                    {% if loop.index <= (meeting.agenda|length) // 2 %}
+                    <span class="badge bg-success">تم المناقشة</span>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted mb-0">لا يوجد جدول أعمال</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Minutes -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i> محضر الاجتماع</h6>
+    </div>
+    <div class="card-body">
+        <p>{{ meeting.minutes or 'لا يوجد محضر اجتماع' }}</p>
+    </div>
+</div>
+
+<!-- Decisions -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-gavel me-2"></i> القرارات والتوصيات</h6>
+    </div>
+    <div class="card-body">
+        {% if meeting.decisions %}
+        <ul>
+            {% for decision in meeting.decisions %}
+            <li>{{ decision }}</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted mb-0">لا توجد قرارات مسجلة</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Action Items -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-tasks me-2"></i> بنود العمل</h6>
+    </div>
+    <div class="card-body p-0">
+        {% if meeting.action_items %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>البنـد</th>
+                        <th>المسؤول</th>
+                        <th>تاريخ الانتهاء</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in meeting.action_items %}
+                    <tr>
+                        <td>{{ item.description if item is string else item.get('description', '-') }}</td>
+                        <td>{{ item.assigned_to if item is mapping else '-' }}</td>
+                        <td>{{ item.due_date if item is mapping else '-' }}</td>
+                        <td>
+                            {% if item.status is defined and item.status == 'completed' %}
+                            <span class="badge bg-success">مكتمل</span>
+                            {% else %}
+                            <span class="badge bg-warning">قيد التنفيذ</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <p class="text-muted mb-0">لا توجد بنود عمل</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Attendees -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-users me-2"></i> الحضور</h6>
+    </div>
+    <div class="card-body">
+        {% if meeting.attendees %}
+        <div class="d-flex flex-wrap gap-2">
+            {% for attendee in meeting.attendees %}
+            <span class="badge bg-light text-dark p-2">
+                <i class="fas fa-user me-1"></i> {{ attendee }}
+            </span>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">لا توجد قائمة حضور</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Attachments -->
+{% if meeting.documents and meeting.documents|length > 0 %}
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-paperclip me-2"></i> المرفقات</h6>
+    </div>
+    <div class="card-body">
+        <div class="list-group">
+            {% for doc in meeting.documents %}
+            <a href="{{ doc.url if doc is mapping else doc }}" class="list-group-item list-group-item-action" target="_blank">
+                <i class="fas fa-file-alt me-2"></i>
+                {{ doc.name if doc is mapping else 'مستند' }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    @media print {
+        .btn, .top-navbar, .sidebar, .action-buttons {
+            display: none !important;
+        }
+        .main-content {
+            margin-right: 0 !important;
+        }
+    }
+</style>
+{% endblock %}

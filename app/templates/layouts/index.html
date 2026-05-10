@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('app_name') }} | {{ _('smart_platform') }}{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 text-center text-lg-start" data-aos="fade-right">
+                <h1 class="hero-title">{{ _('hero_title') }}</h1>
+                <p class="hero-subtitle">{{ _('hero_subtitle') }}</p>
+                {% if not current_user.is_authenticated %}
+                <div class="d-flex justify-content-center justify-content-lg-start gap-3 flex-wrap">
+                    <a href="{{ url_for('auth.register_company') }}" class="btn btn-gradient btn-lg">
+                        <i class="fas fa-user-plus"></i> {{ _('start_free_trial') }}
+                    </a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-sign-in-alt"></i> {{ _('login') }}
+                    </a>
+                </div>
+                <p class="mt-3 small opacity-75">{{ _('free_trial_notice') }}</p>
+                {% endif %}
+            </div>
+            <div class="col-lg-6 text-center" data-aos="fade-left">
+                <div class="hero-image">
+                    <!-- Dashboard Mockup SVG -->
+                    <svg viewBox="0 0 520 360" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:500px;filter:drop-shadow(0 24px 48px rgba(0,0,0,.3))">
+                      <!-- Card background -->
+                      <rect width="520" height="360" rx="18" fill="#fff" opacity=".97"/>
+                      <!-- Top bar -->
+                      <rect width="520" height="52" rx="18" fill="#6366f1"/>
+                      <rect y="34" width="520" height="18" fill="#6366f1"/>
+                      <circle cx="22" cy="26" r="8" fill="#fff" opacity=".3"/>
+                      <circle cx="44" cy="26" r="8" fill="#fff" opacity=".3"/>
+                      <circle cx="66" cy="26" r="8" fill="#fff" opacity=".3"/>
+                      <rect x="90" y="18" width="160" height="16" rx="8" fill="#fff" opacity=".15"/>
+                      <rect x="420" y="16" width="80" height="20" rx="10" fill="#10b981" opacity=".9"/>
+                      <!-- Stat cards row -->
+                      <rect x="16" y="68" width="110" height="70" rx="12" fill="#f1f5f9"/>
+                      <rect x="16" y="68" width="110" height="4" rx="2" fill="#6366f1"/>
+                      <text x="26" y="100" font-size="22" font-weight="800" fill="#1e293b">12</text>
+                      <text x="26" y="120" font-size="10" fill="#64748b">المشاريع</text>
+
+                      <rect x="138" y="68" width="110" height="70" rx="12" fill="#f1f5f9"/>
+                      <rect x="138" y="68" width="110" height="4" rx="2" fill="#10b981"/>
+                      <text x="148" y="100" font-size="22" font-weight="800" fill="#1e293b">84</text>
+                      <text x="148" y="120" font-size="10" fill="#64748b">المهام</text>
+
+                      <rect x="260" y="68" width="110" height="70" rx="12" fill="#f1f5f9"/>
+                      <rect x="260" y="68" width="110" height="4" rx="2" fill="#6366f1"/>
+                      <text x="270" y="100" font-size="22" font-weight="800" fill="#1e293b">7</text>
+                      <text x="270" y="120" font-size="10" fill="#64748b">الفريق</text>
+
+                      <rect x="382" y="68" width="122" height="70" rx="12" fill="#f1f5f9"/>
+                      <rect x="382" y="68" width="122" height="4" rx="2" fill="#10b981"/>
+                      <text x="392" y="100" font-size="22" font-weight="800" fill="#1e293b">98%</text>
+                      <text x="392" y="120" font-size="10" fill="#64748b">الرضا</text>
+
+                      <!-- Chart area -->
+                      <rect x="16" y="154" width="300" height="140" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+                      <text x="28" y="174" font-size="11" font-weight="700" fill="#334155">تقدم المشاريع</text>
+                      <!-- Bar chart bars -->
+                      <rect x="36"  y="240" width="28" height="50" rx="6" fill="#6366f1" opacity=".8"/>
+                      <rect x="76"  y="220" width="28" height="70" rx="6" fill="#6366f1"/>
+                      <rect x="116" y="230" width="28" height="60" rx="6" fill="#10b981" opacity=".8"/>
+                      <rect x="156" y="200" width="28" height="90" rx="6" fill="#6366f1"/>
+                      <rect x="196" y="215" width="28" height="75" rx="6" fill="#10b981"/>
+                      <rect x="236" y="225" width="28" height="65" rx="6" fill="#6366f1" opacity=".7"/>
+                      <rect x="276" y="205" width="28" height="85" rx="6" fill="#10b981" opacity=".9"/>
+                      <!-- Baseline -->
+                      <line x1="28" y1="292" x2="300" y2="292" stroke="#e2e8f0" stroke-width="1.5"/>
+
+                      <!-- Tasks panel -->
+                      <rect x="328" y="154" width="176" height="140" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+                      <text x="340" y="174" font-size="11" font-weight="700" fill="#334155">المهام الأخيرة</text>
+                      <!-- Task rows -->
+                      <circle cx="348" cy="196" r="5" fill="#10b981"/>
+                      <rect x="360" y="191" width="100" height="8" rx="4" fill="#e2e8f0"/>
+                      <circle cx="348" cy="216" r="5" fill="#6366f1"/>
+                      <rect x="360" y="211" width="80"  height="8" rx="4" fill="#e2e8f0"/>
+                      <circle cx="348" cy="236" r="5" fill="#f59e0b"/>
+                      <rect x="360" y="231" width="120" height="8" rx="4" fill="#e2e8f0"/>
+                      <circle cx="348" cy="256" r="5" fill="#10b981"/>
+                      <rect x="360" y="251" width="90"  height="8" rx="4" fill="#e2e8f0"/>
+                      <circle cx="348" cy="276" r="5" fill="#ef4444"/>
+                      <rect x="360" y="271" width="70"  height="8" rx="4" fill="#e2e8f0"/>
+
+                      <!-- Bottom progress bars -->
+                      <rect x="16" y="308" width="488" height="38" rx="10" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+                      <rect x="28" y="320" width="120" height="6" rx="3" fill="#e2e8f0"/>
+                      <rect x="28" y="320" width="90"  height="6" rx="3" fill="#6366f1"/>
+                      <rect x="160" y="320" width="120" height="6" rx="3" fill="#e2e8f0"/>
+                      <rect x="160" y="320" width="60"  height="6" rx="3" fill="#10b981"/>
+                      <rect x="296" y="320" width="120" height="6" rx="3" fill="#e2e8f0"/>
+                      <rect x="296" y="320" width="100" height="6" rx="3" fill="#6366f1"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="py-5">
+    <div class="container">
+        <h2 class="section-title text-center">{{ _('why_choose_us') }}</h2>
+        <div class="row g-4 mt-2">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-robot text-primary"></i>
+                    </div>
+                    <h4 class="feature-title">{{ _('ai_powered') }}</h4>
+                    <p class="text-muted">{{ _('ai_powered_desc') }}</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-tasks text-success"></i>
+                    </div>
+                    <h4 class="feature-title">{{ _('sequential_tasks') }}</h4>
+                    <p class="text-muted">{{ _('sequential_tasks_desc') }}</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users-cog text-info"></i>
+                    </div>
+                    <h4 class="feature-title">{{ _('permission_system') }}</h4>
+                    <p class="text-muted">{{ _('permission_system_desc') }}</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="400">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line text-warning"></i>
+                    </div>
+                    <h4 class="feature-title">{{ _('reports_analytics') }}</h4>
+                    <p class="text-muted">{{ _('reports_analytics_desc') }}</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="500">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bell text-danger"></i>
+                    </div>
+                    <h4 class="feature-title">{{ _('smart_notifications') }}</h4>
+                    <p class="text-muted">{{ _('smart_notifications_desc') }}</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="600">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt text-secondary"></i>
+                    </div>
+                    <h4 class="feature-title">{{ _('security') }}</h4>
+                    <p class="text-muted">{{ _('security_desc') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="section-title text-center">{{ _('how_it_works') }}</h2>
+        <div class="row mt-4">
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+                <div class="text-center">
+                    <div class="bg-gradient text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px; font-size: 1.8rem; font-weight: bold;">1</div>
+                    <h5>{{ _('step1_title') }}</h5>
+                    <p class="text-muted">{{ _('step1_desc') }}</p>
+                </div>
+            </div>
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+                <div class="text-center">
+                    <div class="bg-gradient text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px; font-size: 1.8rem; font-weight: bold;">2</div>
+                    <h5>{{ _('step2_title') }}</h5>
+                    <p class="text-muted">{{ _('step2_desc') }}</p>
+                </div>
+            </div>
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+                <div class="text-center">
+                    <div class="bg-gradient text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px; font-size: 1.8rem; font-weight: bold;">3</div>
+                    <h5>{{ _('step3_title') }}</h5>
+                    <p class="text-muted">{{ _('step3_desc') }}</p>
+                </div>
+            </div>
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
+                <div class="text-center">
+                    <div class="bg-gradient text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px; font-size: 1.8rem; font-weight: bold;">4</div>
+                    <h5>{{ _('step4_title') }}</h5>
+                    <p class="text-muted">{{ _('step4_desc') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-3" data-aos="zoom-in" data-aos-delay="100">
+                <div class="stat-card-landing">
+                    <div class="stat-number">+500</div>
+                    <div class="stat-label">{{ _('projects_completed') }}</div>
+                </div>
+            </div>
+            <div class="col-md-3" data-aos="zoom-in" data-aos-delay="200">
+                <div class="stat-card-landing">
+                    <div class="stat-number">+1000</div>
+                    <div class="stat-label">{{ _('active_users') }}</div>
+                </div>
+            </div>
+            <div class="col-md-3" data-aos="zoom-in" data-aos-delay="300">
+                <div class="stat-card-landing">
+                    <div class="stat-number">+50K</div>
+                    <div class="stat-label">{{ _('tasks_completed') }}</div>
+                </div>
+            </div>
+            <div class="col-md-3" data-aos="zoom-in" data-aos-delay="400">
+                <div class="stat-card-landing">
+                    <div class="stat-number">98%</div>
+                    <div class="stat-label">{{ _('client_satisfaction') }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+<section id="pricing" class="py-5">
+    <div class="container">
+        <h2 class="section-title text-center">{{ _('pricing_plans') }}</h2>
+        <div class="row g-4 mt-2">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h4 class="mb-2">Basic</h4>
+                        <div class="pricing-price">
+                            $29<span class="fs-6">/{{ _('month') }}</span>
+                        </div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('projects_5') }}</li>
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('users_10') }}</li>
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('storage_10gb') }}</li>
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('basic_support') }}</li>
+                        <li class="text-muted"><i class="fas fa-times-circle text-danger"></i> {{ _('advanced_reports') }}</li>
+                        <li class="text-muted"><i class="fas fa-times-circle text-danger"></i> {{ _('custom_api') }}</li>
+                    </ul>
+                    <a href="{{ url_for('auth.subscribe') }}" class="btn btn-outline-gradient btn-pricing">
+                        {{ _('choose_plan') }}
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="pricing-card popular">
+                    <div class="popular-badge">{{ _('most_popular') }}</div>
+                    <div class="pricing-header">
+                        <h4 class="mb-2">Pro</h4>
+                        <div class="pricing-price">
+                            $79<span class="fs-6">/{{ _('month') }}</span>
+                        </div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('unlimited_projects') }}</li>
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('users_50') }}</li>
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('storage_50gb') }}</li>
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('priority_support') }}</li>
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('advanced_reports') }}</li>
+                        <li class="text-muted"><i class="fas fa-times-circle text-danger"></i> {{ _('custom_api') }}</li>
+                    </ul>
+                    <a href="{{ url_for('auth.subscribe') }}" class="btn btn-gradient btn-pricing">
+                        {{ _('choose_plan') }}
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h4 class="mb-2">Enterprise</h4>
+                        <div class="pricing-price">
+                            $199<span class="fs-6">/{{ _('month') }}</span>
+                        </div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('unlimited_projects') }}</li>
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('unlimited_users') }}</li>
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('storage_200gb') }}</li>
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('vip_support') }}</li>
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('advanced_reports') }}</li>
+                        <li><i class="fas fa-check-circle text-success"></i> {{ _('custom_api') }}</li>
+                    </ul>
+                    <a href="{{ url_for('auth.subscribe') }}" class="btn btn-outline-gradient btn-pricing">
+                        {{ _('choose_plan') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <h2 class="mb-4">{{ _('cta_title') }}</h2>
+        <p class="lead mb-4">{{ _('cta_subtitle') }}</p>
+        <a href="{{ url_for('auth.register_company') }}" class="btn-cta">
+            <i class="fas fa-rocket"></i> {{ _('start_free_trial') }}
+        </a>
+    </div>
+</section>
+{% endblock %}

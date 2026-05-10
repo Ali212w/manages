@@ -1,0 +1,271 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ wbs.name }} - تفاصيل WBS{% endblock %}
+
+{% block page_title %}تفاصيل عنصر WBS{% endblock %}
+{% block page_subtitle %}{{ wbs.wbs_code }} - {{ wbs.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-container {
+        max-width: 1000px;
+        margin: 2rem auto;
+    }
+    
+    .detail-card {
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+        overflow: hidden;
+        border: 1px solid #eef2f7;
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05), rgba(67, 97, 238, 0.1));
+        padding: 2rem;
+        border-bottom: 3px solid var(--primary);
+    }
+    
+    .card-body {
+        padding: 2rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .info-box {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.2rem;
+        text-align: center;
+    }
+    
+    .info-box .label {
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+    
+    .info-box .value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--dark);
+    }
+    
+    .progress-lg {
+        height: 20px;
+        background: #eef2f7;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 1rem 0;
+    }
+    
+    .progress-lg .progress-bar {
+        height: 100%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 10px;
+    }
+    
+    .section {
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    .children-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .children-list li {
+        padding: 0.8rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .children-list li:hover {
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .btn-edit {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+    
+    .btn-edit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <div class="detail-card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-2">{{ wbs.name }}</h2>
+                    <p class="mb-0 text-muted">
+                        <i class="fas fa-code ms-2"></i>{{ wbs.wbs_code }}
+                        <span class="mx-3">|</span>
+                        <i class="fas fa-layer-group ms-2"></i>المستوى {{ wbs.level }}
+                        <span class="mx-3">|</span>
+                        <i class="fas fa-folder ms-2"></i>{{ wbs.wbs_path }}
+                    </p>
+                </div>
+                <a href="{{ url_for('primavera.wbs_edit', wbs_id=wbs.id) }}" class="btn-edit">
+                    <i class="fas fa-edit"></i>
+                    تعديل
+                </a>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <!-- معلومات سريعة -->
+            <div class="info-grid">
+                <div class="info-box">
+                    <div class="label">الميزانية</div>
+                    <div class="value">{{ "{:,.0f}".format(wbs.budget or 0) }}</div>
+                    <small class="text-muted">ر.س</small>
+                </div>
+                <div class="info-box">
+                    <div class="label">التكلفة المخططة</div>
+                    <div class="value">{{ "{:,.0f}".format(wbs.planned_cost or 0) }}</div>
+                    <small class="text-muted">ر.س</small>
+                </div>
+                <div class="info-box">
+                    <div class="label">التكلفة الفعلية</div>
+                    <div class="value">{{ "{:,.0f}".format(wbs.actual_cost or 0) }}</div>
+                    <small class="text-muted">ر.س</small>
+                </div>
+            </div>
+            
+            <!-- تقدم العنصر -->
+            <div class="section">
+                <h5 class="section-title">
+                    <i class="fas fa-chart-line ms-2"></i>
+                    التقدم
+                </h5>
+                <div class="progress-lg">
+                    <div class="progress-bar" style="width: {{ progress }}%"></div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>{{ "%.1f"|format(progress) }}% مكتمل</span>
+                    <span>{{ stats.total_activities }} نشاط</span>
+                    <span>{{ stats.completed_activities }} مكتمل</span>
+                </div>
+            </div>
+            
+            <!-- الوصف -->
+            {% if wbs.description %}
+            <div class="section">
+                <h5 class="section-title">
+                    <i class="fas fa-align-left ms-2"></i>
+                    الوصف
+                </h5>
+                <p class="text-muted">{{ wbs.description }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- العناصر الفرعية -->
+            {% if children %}
+            <div class="section">
+                <h5 class="section-title">
+                    <i class="fas fa-sitemap ms-2"></i>
+                    العناصر الفرعية
+                </h5>
+                <ul class="children-list">
+                    {% for child in children %}
+                    <li>
+                        <i class="fas fa-folder text-primary"></i>
+                        <div style="flex: 1;">
+                            <strong>{{ child.name }}</strong>
+                            <small class="text-muted me-2">{{ child.wbs_code }}</small>
+                        </div>
+                        <span class="badge bg-primary">{{ child.progress_percentage }}%</span>
+                        <a href="{{ url_for('primavera.wbs_detail', wbs_id=child.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <!-- الأنشطة المرتبطة -->
+            {% if activities %}
+            <div class="section">
+                <h5 class="section-title">
+                    <i class="fas fa-tasks ms-2"></i>
+                    الأنشطة المرتبطة
+                </h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>الكود</th>
+                                <th>الاسم</th>
+                                <th>الحالة</th>
+                                <th>التقدم</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in activities %}
+                            <tr>
+                                <td>{{ activity.activity_id }}</td>
+                                <td>{{ activity.activity_name }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if activity.status == 'completed' 
+                                                            else 'primary' if activity.status == 'in_progress' 
+                                                            else 'secondary' }}">
+                                        {{ activity.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="progress" style="width: 100px;">
+                                        <div class="progress-bar" style="width: {{ activity.progress_percentage }}%"></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('primavera.activity_detail', activity_id=activity.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

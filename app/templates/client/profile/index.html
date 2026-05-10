@@ -1,0 +1,696 @@
+{% extends "client/base.html" %}
+
+{% block title %}الملف الشخصي - {{ user.full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 30px;
+        color: white;
+        margin-bottom: 30px;
+    }
+    
+    .avatar-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid white;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    }
+    
+    .avatar-upload-btn {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: white;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #667eea;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-upload-btn:hover {
+        transform: scale(1.1);
+        background: #667eea;
+        color: white;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 24px;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .info-value {
+        color: #2b2d42;
+    }
+    
+    .activity-timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -20px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+    }
+    
+    .timeline-item:last-child::before {
+        display: none;
+    }
+    
+    .timeline-dot {
+        position: absolute;
+        left: -25px;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #4361ee;
+        border: 2px solid white;
+    }
+    
+    .skill-badge {
+        background: #f0f2f5;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+    
+    .skill-badge:hover {
+        background: #4361ee;
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .edit-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .profile-header {
+            text-align: center;
+        }
+        .edit-btn {
+            position: static;
+            margin-top: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- زر تعديل الملف الشخصي -->
+<div class="position-relative mb-4">
+    <a href="{{ url_for('client.edit_profile') }}" class="btn btn-outline-primary edit-btn">
+        <i class="fas fa-edit me-2"></i> تعديل الملف الشخصي
+    </a>
+</div>
+
+<!-- Header Section -->
+<div class="profile-header">
+    <div class="row align-items-center">
+        <div class="col-md-3 text-center text-md-start">
+            <div class="avatar-wrapper">
+                {% if user.profile_image and user.profile_image != 'default.jpg' %}
+                <img src="{{ url_for('static', filename='uploads/avatars/' + user.profile_image) }}" 
+                     class="avatar" id="profileAvatar" alt="{{ user.full_name }}">
+                {% else %}
+                <div class="avatar bg-white d-flex align-items-center justify-content-center" style="width: 120px; height: 120px; border-radius: 50%;">
+                    <i class="fas fa-user fa-4x text-primary"></i>
+                </div>
+                {% endif %}
+                <label for="avatarUpload" class="avatar-upload-btn">
+                    <i class="fas fa-camera fa-sm"></i>
+                </label>
+                <input type="file" id="avatarUpload" style="display: none;" accept="image/*">
+            </div>
+        </div>
+        <div class="col-md-6 text-center text-md-start mt-3 mt-md-0">
+            <h2 class="mb-1">{{ user.full_name }}</h2>
+            <p class="mb-2 opacity-75">
+                <i class="fas fa-envelope me-2"></i> {{ user.email }}
+                {% if user.phone %}
+                <span class="mx-2">|</span>
+                <i class="fas fa-phone me-2"></i> {{ user.phone }}
+                {% endif %}
+            </p>
+            <p class="mb-0 opacity-75">
+                <i class="fas fa-calendar-alt me-2"></i> عضو منذ: {{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'غير محدد' }}
+                {% if last_login %}
+                <span class="mx-2">|</span>
+                <i class="fas fa-clock me-2"></i> آخر نشاط: {{ time_ago(last_login) }}
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-md-3 text-center text-md-end mt-3 mt-md-0">
+            <div class="bg-white bg-opacity-25 rounded-3 p-3 d-inline-block">
+                <div class="small">عدد المشاريع</div>
+                <h3 class="mb-0">{{ stats.total_projects }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary bg-opacity-10 text-primary mx-auto">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3 class="mb-1">{{ "%.1f"|format(stats.avg_progress) }}%</h3>
+            <small class="text-muted">متوسط التقدم</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-success bg-opacity-10 text-success mx-auto">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 class="mb-1">{{ stats.completed_projects }}</h3>
+            <small class="text-muted">مشاريع مكتملة</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-warning bg-opacity-10 text-warning mx-auto">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <h3 class="mb-1">{{ stats.active_projects }}</h3>
+            <small class="text-muted">مشاريع نشطة</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-danger bg-opacity-10 text-danger mx-auto">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="mb-1">{{ stats.delayed_projects }}</h3>
+            <small class="text-muted">مشاريع متأخرة</small>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Tabs -->
+<div class="card">
+    <div class="card-header bg-white">
+        <ul class="nav nav-tabs card-header-tabs" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">
+                    <i class="fas fa-info-circle me-2"></i> المعلومات الشخصية
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab">
+                    <i class="fas fa-chart-line me-2"></i> النشاط والإحصائيات
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#skills" type="button" role="tab">
+                    <i class="fas fa-code me-2"></i> المهارات
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                    <i class="fas fa-shield-alt me-2"></i> الأمان
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body">
+        <div class="tab-content">
+            <!-- Tab 1: المعلومات الشخصية -->
+            <div class="tab-pane fade show active" id="info" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3"><i class="fas fa-user me-2 text-primary"></i> المعلومات الأساسية</h6>
+                        <div class="info-row">
+                            <span class="info-label">الاسم الكامل:</span>
+                            <span class="info-value">{{ user.full_name }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">الاسم (إنجليزي):</span>
+                            <span class="info-value">{{ user.full_name_en if user.full_name_en else '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">البريد الإلكتروني:</span>
+                            <span class="info-value">{{ user.email }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">رقم الجوال:</span>
+                            <span class="info-value">{{ user.mobile or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">رقم الهاتف:</span>
+                            <span class="info-value">{{ user.phone or '-' }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3"><i class="fas fa-briefcase me-2 text-primary"></i> المعلومات المهنية</h6>
+                        <div class="info-row">
+                            <span class="info-label">المسمى الوظيفي:</span>
+                            <span class="info-value">{{ user.job_title or '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">القسم:</span>
+                            <span class="info-value">{{ user.department.name if user.department else '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">الشركة:</span>
+                            <span class="info-value">{{ g.company.name if g.company else '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">تاريخ الانضمام:</span>
+                            <span class="info-value">{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '-' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">عدد مرات تسجيل الدخول:</span>
+                            <span class="info-value">{{ login_count }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% if user.bio %}
+                <div class="mt-4">
+                    <h6 class="mb-2"><i class="fas fa-align-left me-2 text-primary"></i> نبذة عني</h6>
+                    <p class="text-muted">{{ user.bio }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Tab 2: النشاط والإحصائيات -->
+            <div class="tab-pane fade" id="activity" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6 class="mb-3"><i class="fas fa-chart-line me-2 text-primary"></i> نشاط آخر 30 يوم</h6>
+                        <canvas id="activityChart" height="250"></canvas>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="mb-3"><i class="fas fa-list me-2 text-primary"></i> آخر الأنشطة</h6>
+                        <div class="activity-timeline">
+                            {% for activity in recent_activities %}
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <small class="text-muted">{{ activity.timestamp.strftime('%Y-%m-%d %H:%M') if activity.timestamp else '-' }}</small>
+                                    <p class="mb-0 small">{{ activity.action }}</p>
+                                    <span class="badge bg-secondary">{{ activity.entity_type or 'عام' }}</span>
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">لا توجد أنشطة مسجلة</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6 class="mb-3"><i class="fas fa-chart-pie me-2 text-primary"></i> توزيع المشاريع</h6>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="stat-card text-center p-3">
+                                    <h4 class="text-primary mb-0">{{ stats.total_projects }}</h4>
+                                    <small>إجمالي المشاريع</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card text-center p-3">
+                                    <h4 class="text-success mb-0">{{ stats.completed_projects }}</h4>
+                                    <small>مكتملة</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card text-center p-3">
+                                    <h4 class="text-warning mb-0">{{ stats.active_projects }}</h4>
+                                    <small>نشطة</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card text-center p-3">
+                                    <h4 class="text-danger mb-0">{{ stats.delayed_projects }}</h4>
+                                    <small>متأخرة</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: المهارات -->
+            <div class="tab-pane fade" id="skills" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="mb-0"><i class="fas fa-code me-2 text-primary"></i> المهارات والخبرات</h6>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addSkillModal">
+                        <i class="fas fa-plus"></i> إضافة مهارة
+                    </button>
+                </div>
+                
+                {% if skills %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% for skill in skills %}
+                    <div class="skill-badge d-inline-flex align-items-center">
+                        <span>{{ skill.skill_name }}</span>
+                        {% if skill.proficiency_level %}
+                        <span class="badge bg-primary ms-2">{{ skill.proficiency_level }}/5</span>
+                        {% endif %}
+                        <i class="fas fa-times-circle ms-2 text-danger delete-skill" data-id="{{ skill.id }}" style="cursor: pointer;"></i>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-code fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لا توجد مهارات مضافة</p>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addSkillModal">
+                        <i class="fas fa-plus"></i> أضف مهارتك الأولى
+                    </button>
+                </div>
+                {% endif %}
+                
+                <!-- إحصائيات المشاريع -->
+                <div class="mt-4">
+                    <h6 class="mb-3"><i class="fas fa-chart-simple me-2 text-primary"></i> إحصائيات المشاريع</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-row">
+                                <span class="info-label">إجمالي الميزانية:</span>
+                                <span class="info-value">{{ formatCurrency(stats.total_budget) }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">إجمالي التكلفة الفعلية:</span>
+                                <span class="info-value">{{ formatCurrency(stats.total_actual_cost) }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">الفرق:</span>
+                                <span class="info-value {% if stats.total_budget - stats.total_actual_cost >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ formatCurrency(stats.total_budget - stats.total_actual_cost) }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-row">
+                                <span class="info-label">متوسط التقدم:</span>
+                                <span class="info-value">{{ "%.1f"|format(stats.avg_progress) }}%</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">الإشعارات غير المقروءة:</span>
+                                <span class="info-value">{{ unread_notifications }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: الأمان -->
+            <div class="tab-pane fade" id="security" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3"><i class="fas fa-key me-2 text-primary"></i> تغيير كلمة المرور</h6>
+                        <form id="changePasswordForm">
+                            <div class="mb-3">
+                                <label class="form-label">كلمة المرور الحالية</label>
+                                <input type="password" class="form-control" id="currentPassword" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">كلمة المرور الجديدة</label>
+                                <input type="password" class="form-control" id="newPassword" required>
+                                <small class="text-muted">يجب أن تكون 8 أحرف على الأقل</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">تأكيد كلمة المرور الجديدة</label>
+                                <input type="password" class="form-control" id="confirmPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> تغيير كلمة المرور
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3"><i class="fas fa-shield-alt me-2 text-primary"></i> إعدادات الأمان</h6>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            للحفاظ على أمان حسابك، يرجى استخدام كلمة مرور قوية وتغييرها بشكل دوري.
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">آخر تغيير لكلمة المرور:</span>
+                            <span class="info-value">{{ user.password_updated_at.strftime('%Y-%m-%d') if user.password_updated_at else 'غير محدد' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">آخر تسجيل دخول:</span>
+                            <span class="info-value">{{ last_login.strftime('%Y-%m-%d %H:%M') if last_login else 'غير محدد' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Skill Modal -->
+<div class="modal fade" id="addSkillModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-code me-2"></i> إضافة مهارة جديدة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">اسم المهارة</label>
+                    <input type="text" class="form-control" id="skillName" placeholder="مثال: إدارة المشاريع">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">مستوى الإتقان</label>
+                    <select class="form-select" id="skillLevel">
+                        <option value="1">مبتدئ</option>
+                        <option value="2">مبتدئ متقدم</option>
+                        <option value="3">متوسط</option>
+                        <option value="4">متقدم</option>
+                        <option value="5">خبير</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">سنوات الخبرة</label>
+                    <input type="number" class="form-control" id="skillYears" step="0.5" placeholder="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="saveSkillBtn">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// رفع الصورة
+$('#avatarUpload').change(function() {
+    const formData = new FormData();
+    formData.append('avatar', this.files[0]);
+    
+    $.ajax({
+        url: '{{ url_for("client.upload_avatar") }}',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                $('#profileAvatar').attr('src', response.avatar_url + '?t=' + new Date().getTime());
+                showToast('success', 'تم تحديث الصورة بنجاح');
+            } else {
+                showToast('error', response.error);
+            }
+        }
+    });
+});
+
+// تغيير كلمة المرور
+$('#changePasswordForm').submit(function(e) {
+    e.preventDefault();
+    
+    const currentPassword = $('#currentPassword').val();
+    const newPassword = $('#newPassword').val();
+    const confirmPassword = $('#confirmPassword').val();
+    
+    if (newPassword !== confirmPassword) {
+        showToast('error', 'كلمة المرور الجديدة غير متطابقة');
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        showToast('error', 'كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+        return;
+    }
+    
+    $.ajax({
+        url: '{{ url_for("client.change_password") }}',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword,
+            confirm_password: confirmPassword
+        }),
+        success: function(response) {
+            if (response.success) {
+                showToast('success', response.message);
+                $('#changePasswordForm')[0].reset();
+            } else {
+                showToast('error', response.error);
+            }
+        }
+    });
+});
+
+// إضافة مهارة
+$('#saveSkillBtn').click(function() {
+    const skillName = $('#skillName').val();
+    const skillLevel = $('#skillLevel').val();
+    const skillYears = $('#skillYears').val();
+    
+    if (!skillName) {
+        showToast('error', 'الرجاء إدخال اسم المهارة');
+        return;
+    }
+    
+    $.ajax({
+        url: '{{ url_for("client.api_add_skill") }}',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            skill_name: skillName,
+            proficiency_level: skillLevel,
+            experience_years: skillYears
+        }),
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                showToast('error', response.error);
+            }
+        }
+    });
+});
+
+// حذف مهارة
+$('.delete-skill').click(function() {
+    const skillId = $(this).data('id');
+    if (confirm('هل أنت متأكد من حذف هذه المهارة؟')) {
+        $.ajax({
+            url: `/client/api/skills/${skillId}/delete`,
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    showToast('error', response.error);
+                }
+            }
+        });
+    }
+});
+
+// رسم بياني للنشاط
+$.get('{{ url_for("client.api_profile_activity") }}', function(response) {
+    if (response.success && response.activity) {
+        const ctx = document.getElementById('activityChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: response.activity.map(a => a.date),
+                datasets: [{
+                    label: 'عدد الأنشطة',
+                    data: response.activity.map(a => a.count),
+                    borderColor: '#4361ee',
+                    backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+});
+
+// إحصائيات إضافية
+$.get('{{ url_for("client.api_profile_stats") }}', function(response) {
+    if (response.success) {
+        // يمكن استخدام البيانات لتحديث أي عناصر إضافية
+        console.log('Profile stats:', response.stats);
+    }
+});
+
+function showToast(type, message) {
+    // يمكنك استخدام أي مكتبة toast أو alert بسيط
+    alert(message);
+}
+</script>
+{% endblock %}

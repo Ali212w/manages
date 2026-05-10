@@ -1,0 +1,185 @@
+{% extends "company/base.html" %}
+{% from 'company/departments/partials/department_tree.html' import render_department %}
+{% block title %}إدارة الأقسام - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}إدارة الأقسام{% endblock %}
+{% block page_subtitle %}عرض وتنظيم الهيكل التنظيمي للشركة{% endblock %}
+
+{% block content %}
+<!-- إحصائيات سريعة -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="fas fa-building"></i>
+            </div>
+            <h2 class="stat-value">{{ departments|length }}</h2>
+            <p class="stat-label">إجمالي الأقسام</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="fas fa-users"></i>
+            </div>
+            <h2 class="stat-value">{{ departments|map(attribute='employees')|map('length')|sum }}</h2>
+            <p class="stat-label">إجمالي الموظفين</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="fas fa-sitemap"></i>
+            </div>
+            <h2 class="stat-value">{{ departments|selectattr('parent_id', 'none')|list|length }}</h2>
+            <p class="stat-label">أقسام رئيسية</p>
+        </div>
+    </div>
+</div>
+
+<!-- زر إضافة قسم جديد -->
+<div class="d-flex justify-content-end mb-4">
+    <a href="{{ url_for('company.create_department') }}" class="btn-primary-gradient">
+        <i class="fas fa-plus-circle me-2"></i>إضافة قسم جديد
+    </a>
+</div>
+
+<!-- قائمة الأقسام -->
+<div class="table-card">
+    <div class="table-header">
+        <h5 class="table-title"><i class="fas fa-building me-2 text-primary"></i>الأقسام</h5>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>القسم</th>
+                    <th>كود القسم</th>
+                    <th>القسم الرئيسي</th>
+                    <th>مدير القسم</th>
+                    <th>عدد الموظفين</th>
+                    <th>الأقسام الفرعية</th>
+                    <th>الميزانية</th>
+                    <th>الحالة</th>
+                    <th>المشاريع</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dept in departments %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="user-avatar me-2" style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), var(--secondary));">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div>
+                                <strong>{{ dept.name }}</strong>
+                             
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-secondary">{{ dept.dept_code }}</span></td>
+                    <td>
+                        {% if dept.parent %}
+                            {{ dept.parent.name }}
+                        {% else %}
+                            <span class="text-muted">قسم رئيسي</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if dept.manager %}
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar me-2" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                                    {{ dept.manager.full_name[0] }}
+                                </div>
+                                {{ dept.manager.full_name }}
+                            </div>
+                        {% else %}
+                            <span class="text-muted">غير معين</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-info">{{ dept.employees|length }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-warning">{{ dept.sub_departments|length }}</span>
+                    </td>
+                    <td>{{ dept.budget|format_currency }}</td>
+                    <td>
+                        {% if dept.is_active %}
+                            <span class="badge-status active">نشط</span>
+                        {% else %}
+                            <span class="badge-status inactive">غير نشط</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-info">{{ dept.primavera_projects_count }}</span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('company.view_department', dept_id=dept.id) }}" class="action-btn" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ url_for('company.edit_department', dept_id=dept.id) }}" class="action-btn" title="تعديل">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button class="action-btn" onclick="toggleDepartmentStatus({{ dept.id }})" title="تفعيل/تعطيل">
+                            <i class="fas {% if dept.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" class="text-center py-5">
+                        <i class="fas fa-building fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">لا توجد أقسام</h5>
+                        <p class="text-muted">لم يتم إضافة أي أقسام بعد</p>
+                        <a href="{{ url_for('company.create_department') }}" class="btn-primary-gradient mt-3">
+                            <i class="fas fa-plus-circle me-2"></i>إضافة قسم جديد
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- هيكل الأقسام (عرض شجري) -->
+{% if departments|selectattr('parent_id', 'none')|list %}
+<div class="table-card mt-4">
+    <div class="table-header">
+        <h5 class="table-title"><i class="fas fa-sitemap me-2 text-primary"></i>الهيكل التنظيمي</h5>
+    </div>
+    
+    <div class="organization-chart p-4">
+        {% for dept in departments if not dept.parent_id %}
+            {{ render_department(dept, 0) }}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<script>
+function toggleDepartmentStatus(deptId) {
+    fetch(`/company/departments/${deptId}/toggle-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess(data.message);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error);
+        }
+    });
+}
+</script>
+{% endblock %}

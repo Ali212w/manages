@@ -1,0 +1,361 @@
+<div class="row">
+    <div class="col-md-6">
+        <div class="info-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0">
+                    <i class="fas fa-arrow-left text-primary"></i> المهام السابقة
+                </h6>
+                <button class="btn btn-sm btn-outline-primary" onclick="showAddPredecessorModal()">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>كود المهمة</th>
+                            <th>اسم المهمة</th>
+                            <th>نوع العلاقة</th>
+                            <th>التأخير</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pred in predecessors %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('tasks.task_detail', task_id=pred.predecessor_task_id) }}" class="fw-bold text-primary">
+                                    {{ pred.predecessor.task_code }}
+                                </a>
+                            </td>
+                            <td>{{ pred.predecessor.task_name }}</td>
+                            <td>
+                                <select class="form-select form-select-sm" onchange="updateDependency({{ pred.id }}, 'dependency_type', this.value)">
+                                    <option value="FS" {% if pred.dependency_type == 'FS' %}selected{% endif %}>FS</option>
+                                    <option value="SS" {% if pred.dependency_type == 'SS' %}selected{% endif %}>SS</option>
+                                    <option value="FF" {% if pred.dependency_type == 'FF' %}selected{% endif %}>FF</option>
+                                    <option value="SF" {% if pred.dependency_type == 'SF' %}selected{% endif %}>SF</option>
+                                </select>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-1">
+                                    <input type="number" class="form-control form-control-sm" value="{{ pred.lag }}" 
+                                           style="width: 60px;" min="0" step="0.1"
+                                           onchange="updateDependency({{ pred.id }}, 'lag', this.value)">
+                                    <select class="form-select form-select-sm" style="width: 70px;" onchange="updateDependency({{ pred.id }}, 'lag_type', this.value)">
+                                        <option value="days" {% if pred.lag_type == 'days' %}selected{% endif %}>أيام</option>
+                                        <option value="hours" {% if pred.lag_type == 'hours' %}selected{% endif %}>ساعات</option>
+                                    </select>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteDependency({{ pred.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-3">
+                                <p class="text-muted mb-0">لا توجد مهام سابقة</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="info-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0">
+                    <i class="fas fa-arrow-right text-primary"></i> المهام التالية
+                </h6>
+                <button class="btn btn-sm btn-outline-primary" onclick="showAddSuccessorModal()">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>كود المهمة</th>
+                            <th>اسم المهمة</th>
+                            <th>نوع العلاقة</th>
+                            <th>التأخير</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for succ in successors %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('tasks.task_detail', task_id=succ.successor_task_id) }}" class="fw-bold text-primary">
+                                    {{ succ.successor.task_code }}
+                                </a>
+                            </td>
+                            <td>{{ succ.successor.task_name }}</td>
+                            <td>
+                                <select class="form-select form-select-sm" onchange="updateDependency({{ succ.id }}, 'dependency_type', this.value)">
+                                    <option value="FS" {% if succ.dependency_type == 'FS' %}selected{% endif %}>FS</option>
+                                    <option value="SS" {% if succ.dependency_type == 'SS' %}selected{% endif %}>SS</option>
+                                    <option value="FF" {% if succ.dependency_type == 'FF' %}selected{% endif %}>FF</option>
+                                    <option value="SF" {% if succ.dependency_type == 'SF' %}selected{% endif %}>SF</option>
+                                </select>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-1">
+                                    <input type="number" class="form-control form-control-sm" value="{{ succ.lag }}" 
+                                           style="width: 60px;" min="0" step="0.1"
+                                           onchange="updateDependency({{ succ.id }}, 'lag', this.value)">
+                                    <select class="form-select form-select-sm" style="width: 70px;" onchange="updateDependency({{ succ.id }}, 'lag_type', this.value)">
+                                        <option value="days" {% if succ.lag_type == 'days' %}selected{% endif %}>أيام</option>
+                                        <option value="hours" {% if succ.lag_type == 'hours' %}selected{% endif %}>ساعات</option>
+                                    </select>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteDependency({{ succ.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-3">
+                                <p class="text-muted mb-0">لا توجد مهام تالية</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة مهمة سابقة -->
+<div class="modal fade" id="addPredecessorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة مهمة سابقة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="predecessorForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">المهمة السابقة</label>
+                        <select class="form-select" id="predecessorTaskId" required>
+                            <option value="">اختر المهمة</option>
+                            {% for t in all_tasks %}
+                                {% if t.id != task.id %}
+                                <option value="{{ t.id }}">{{ t.task_code }} - {{ t.task_name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نوع العلاقة</label>
+                        <select class="form-select" id="predType">
+                            <option value="FS">Finish to Start (FS)</option>
+                            <option value="SS">Start to Start (SS)</option>
+                            <option value="FF">Finish to Finish (FF)</option>
+                            <option value="SF">Start to Finish (SF)</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">التأخير</label>
+                            <input type="number" class="form-control" id="predLag" value="0" min="0" step="0.1">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">الوحدة</label>
+                            <select class="form-select" id="predLagType">
+                                <option value="days">أيام</option>
+                                <option value="hours">ساعات</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="addPredecessor()">إضافة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة مهمة تالية -->
+<div class="modal fade" id="addSuccessorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة مهمة تالية</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="successorForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">المهمة التالية</label>
+                        <select class="form-select" id="successorTaskId" required>
+                            <option value="">اختر المهمة</option>
+                            {% for t in all_tasks %}
+                                {% if t.id != task.id %}
+                                <option value="{{ t.id }}">{{ t.task_code }} - {{ t.task_name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نوع العلاقة</label>
+                        <select class="form-select" id="succType">
+                            <option value="FS">Finish to Start (FS)</option>
+                            <option value="SS">Start to Start (SS)</option>
+                            <option value="FF">Finish to Finish (FF)</option>
+                            <option value="SF">Start to Finish (SF)</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">التأخير</label>
+                            <input type="number" class="form-control" id="succLag" value="0" min="0" step="0.1">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">الوحدة</label>
+                            <select class="form-select" id="succLagType">
+                                <option value="days">أيام</option>
+                                <option value="hours">ساعات</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="addSuccessor()">إضافة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAddPredecessorModal() {
+    new bootstrap.Modal(document.getElementById('addPredecessorModal')).show();
+}
+
+function showAddSuccessorModal() {
+    new bootstrap.Modal(document.getElementById('addSuccessorModal')).show();
+}
+
+function addPredecessor() {
+    const data = {
+        predecessor_id: document.getElementById('predecessorTaskId').value,
+        dependency_type: document.getElementById('predType').value,
+        lag: document.getElementById('predLag').value,
+        lag_type: document.getElementById('predLagType').value
+    };
+    
+    if (!data.predecessor_id) {
+        showWarning('الرجاء اختيار مهمة سابقة');
+        return;
+    }
+    
+    fetch(`/tasks/api/{{ task.id }}/predecessor`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addPredecessorModal')).hide();
+            showSuccess('تم إضافة العلاقة');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'حدث خطأ');
+        }
+    });
+}
+
+function addSuccessor() {
+    const data = {
+        successor_id: document.getElementById('successorTaskId').value,
+        dependency_type: document.getElementById('succType').value,
+        lag: document.getElementById('succLag').value,
+        lag_type: document.getElementById('succLagType').value
+    };
+    
+    if (!data.successor_id) {
+        showWarning('الرجاء اختيار مهمة تالية');
+        return;
+    }
+    
+    fetch(`/tasks/api/{{ task.id }}/successor`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addSuccessorModal')).hide();
+            showSuccess('تم إضافة العلاقة');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showError(data.error || 'حدث خطأ');
+        }
+    });
+}
+
+function updateDependency(id, field, value) {
+    const data = {};
+    data[field] = value;
+    
+    fetch(`/tasks/api/dependency/${id}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            showError(data.error || 'حدث خطأ في التحديث');
+        }
+    });
+}
+
+function deleteDependency(id) {
+    confirmDelete('هل أنت متأكد من حذف هذه العلاقة؟', function() {
+        fetch(`/tasks/api/dependency/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('تم حذف العلاقة');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.error || 'حدث خطأ');
+            }
+        });
+    });
+}
+</script>

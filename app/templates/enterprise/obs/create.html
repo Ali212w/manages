@@ -1,0 +1,112 @@
+{% extends "company/base.html" %}
+
+{% block title %}إنشاء عنصر OBS جديد{% endblock %}
+
+{% block page_title %}إنشاء عنصر OBS جديد{% endblock %}
+{% block page_subtitle %}إضافة عنصر جديد إلى هيكل المسؤولية{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .info-alert {
+        background: rgba(76, 201, 240, 0.05);
+        border-right: 4px solid var(--success);
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid #eef2f7;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <div class="info-alert">
+            <div class="d-flex">
+                <div class="me-3">
+                    <i class="fas fa-users-cog fa-2x text-success"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-2">OBS - Organizational Breakdown Structure</h6>
+                    <p class="text-muted mb-0">هيكل المسؤولية يحدد المسؤولين والصلاحيات في المؤسسة.</p>
+                </div>
+            </div>
+        </div>
+        
+        <form method="POST" action="{{ url_for('enterprise.obs_create') }}">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">رمز OBS</label>
+                    <input type="text" name="obs_code" class="form-control" required 
+                           placeholder="مثال: OBS-001">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">الاسم</label>
+                    <input type="text" name="name" class="form-control" required 
+                           placeholder="اسم العنصر">
+                </div>
+            </div>
+            
+            <div class="row">
+        
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">العنصر الأب</label>
+                    <select name="parent_id" class="form-select">
+                        <option value="">-- عنصر رئيسي --</option>
+                        {% for parent in parents %}
+                        <option value="{{ parent.id }}">{{ parent.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">الوصف</label>
+                <textarea name="description" class="form-control" rows="3"></textarea>
+            </div>
+             
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">المسؤول</label>
+                    <select name="responsible_id" class="form-select">
+                        <option value="">-- غير معين --</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('enterprise.obs_list') }}" class="btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-2"></i> العودة
+                </a>
+                <button type="submit" class="btn-primary-gradient">
+                    <i class="fas fa-save me-2"></i> إنشاء العنصر
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

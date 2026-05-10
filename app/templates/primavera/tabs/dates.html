@@ -1,0 +1,78 @@
+<!-- templates/primavera/tabs/project/dates.html -->
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-calendar-alt text-primary"></i>
+        Schedule Dates
+    </h6>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Project Planned Start</div>
+            <input type="date" class="field-input" id="plannedStart" 
+                   value="{{ project.planned_start.strftime('%Y-%m-%d') if project.planned_start }}">
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Must Finish By</div>
+            <input type="date" class="field-input" id="mustFinishBy" 
+                   value="{{ project.must_finish_by.strftime('%Y-%m-%d') if project.must_finish_by }}">
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Data Date</div>
+            <input type="date" class="field-input" id="dataDate" 
+                   value="{{ project.data_date.strftime('%Y-%m-%d') if project.data_date else now.strftime('%Y-%m-%d') }}">
+        </div>
+    </div>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Finish</div>
+            <div class="field-value" id="plannedFinish">
+                {{ project.planned_finish.strftime('%Y-%m-%d') if project.planned_finish else '—' }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="field-group mt-4">
+    <h6 class="field-group-title">
+        <i class="fas fa-clock text-primary"></i>
+        Anticipated Dates
+    </h6>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Anticipated Start</div>
+            <input type="date" class="field-input" id="anticipatedStart" 
+                   value="{{ project.anticipated_start.strftime('%Y-%m-%d') if project.anticipated_start }}">
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Anticipated Finish</div>
+            <input type="date" class="field-input" id="anticipatedFinish" 
+                   value="{{ project.anticipated_finish.strftime('%Y-%m-%d') if project.anticipated_finish }}">
+        </div>
+    </div>
+</div>
+
+<div class="field-group mt-4">
+    <h6 class="field-group-title">
+        <i class="fas fa-check-circle text-primary"></i>
+        Actual Dates
+    </h6>
+    
+    <div class="field-row">
+        <div class="field-col">
+            <div class="field-label">Actual Start</div>
+            <input type="date" class="field-input" id="actualStart" 
+                   value="{{ project.actual_start.strftime('%Y-%m-%d') if project.actual_start }}">
+        </div>
+        
+        <div class="field-col">
+            <div class="field-label">Actual Finish</div>
+            <input type="date" class="field-input" id="actualFinish" 
+                   value="{{ project.actual_finish.strftime('%Y-%m-%d') if project.actual_finish }}">
+        </div>
+    </div>
+</div>

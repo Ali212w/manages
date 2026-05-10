@@ -1,0 +1,793 @@
+<!-- templates/company/executive_dashboard.html -->
+
+{% extends "company/base.html" %}
+
+{% block title %}لوحة التحكم التنفيذية - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}لوحة التحكم التنفيذية{% endblock %}
+{% block page_subtitle %}مراقبة لحظية لأداء المشاريع والمؤشرات المالية{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.css" rel="stylesheet">
+<style>
+/* ============================================
+   تنسيقات عامة
+============================================ */
+.dashboard-container {
+    padding: 1rem;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+/* ============================================
+   مؤشر التحديث المباشر
+============================================ */
+.live-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 30px;
+    font-size: 0.7rem;
+    color: #ef4444;
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+/* ============================================
+   بطاقات المؤشرات الرئيسية (KPI Cards)
+============================================ */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+    background: white;
+    border-radius: 24px;
+    padding: 1.25rem;
+    transition: all 0.3s;
+    border: 1px solid #eef2f7;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary);
+}
+
+.kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.kpi-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.kpi-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.kpi-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+}
+
+.kpi-trend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.trend-up { color: #10b981; }
+.trend-down { color: #ef4444; }
+.trend-neutral { color: #6b7280; }
+
+/* ============================================
+   الرسوم البيانية
+============================================ */
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 24px;
+    padding: 1.25rem;
+    border: 1px solid #eef2f7;
+    transition: all 0.3s;
+}
+
+.chart-card-full {
+    grid-column: span 2;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #eef2f7;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.chart-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-title i {
+    color: var(--primary);
+}
+
+.chart-legend {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    color: #64748b;
+}
+
+.legend-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.chart-container {
+    height: 280px;
+    width: 100%;
+}
+
+.chart-clickable {
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.chart-clickable:hover {
+    opacity: 0.8;
+}
+
+/* ============================================
+   جدول المشاريع
+============================================ */
+.projects-table-wrapper {
+    background: white;
+    border-radius: 24px;
+    padding: 1.25rem;
+    border: 1px solid #eef2f7;
+    overflow-x: auto;
+}
+
+.projects-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 0.5rem;
+}
+
+.projects-table th {
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    font-weight: 600;
+    font-size: 0.7rem;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: right;
+}
+
+.projects-table td {
+    padding: 1rem;
+    background: white;
+    border-radius: 12px;
+    vertical-align: middle;
+    border: 1px solid #eef2f7;
+}
+
+.project-progress {
+    width: 120px;
+}
+
+.progress-bar-custom {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+/* ============================================
+   مؤشرات الأداء
+============================================ */
+.performance-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.performance-good { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.performance-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.performance-critical { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+/* ============================================
+   التنبيهات الفورية
+============================================ */
+.alerts-container {
+    background: white;
+    border-radius: 24px;
+    padding: 1.25rem;
+    border: 1px solid #eef2f7;
+    margin-top: 1.5rem;
+}
+
+.alerts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.alerts-list {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.alert-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s;
+    border: 1px solid transparent;
+}
+
+.alert-item:hover {
+    background: #f8fafc;
+    border-color: #eef2f7;
+}
+
+.alert-critical { background: rgba(239, 68, 68, 0.05); border-right: 3px solid #ef4444; }
+.alert-warning { background: rgba(245, 158, 11, 0.05); border-right: 3px solid #f59e0b; }
+.alert-info { background: rgba(59, 130, 246, 0.05); border-right: 3px solid #3b82f6; }
+
+.alert-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.alert-content { flex: 1; }
+.alert-title { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; }
+.alert-message { font-size: 0.7rem; color: #64748b; line-height: 1.4; }
+.alert-time { font-size: 0.6rem; color: #94a3b8; white-space: nowrap; }
+
+.btn-dismiss {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.btn-dismiss:hover {
+    background: #e2e8f0;
+    color: #ef4444;
+}
+
+/* ============================================
+   الـ Modals للتفاصيل
+============================================ */
+.detail-modal .modal-dialog { max-width: 800px; }
+.detail-card {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid #eef2f7;
+}
+
+.detail-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #eef2f7;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.detail-label { font-weight: 600; color: #64748b; }
+.detail-value { font-weight: 500; color: #1e293b; }
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-badge.success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.status-badge.warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.status-badge.danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.status-badge.info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+
+.progress-detail { margin: 1rem 0; }
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+.progress-track {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+
+.kpi-mini {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 0.75rem;
+    text-align: center;
+}
+.kpi-mini-value { font-size: 1.25rem; font-weight: 700; }
+
+/* ============================================
+   استجابة الشاشات
+============================================ */
+@media (max-width: 1024px) {
+    .chart-grid { grid-template-columns: 1fr; }
+    .chart-card-full { grid-column: span 1; }
+}
+@media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+    .projects-table th, .projects-table td { padding: 0.5rem; font-size: 0.75rem; }
+    .alert-item { flex-wrap: wrap; }
+    .alert-time { width: 100%; text-align: left; margin-top: 0.25rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- مؤشر التحديث المباشر -->
+    <div class="d-flex justify-content-end mb-3">
+        <div class="live-indicator">
+            <span class="live-dot"></span>
+            <span id="lastUpdateTime">تحديث مباشر</span>
+        </div>
+    </div>
+
+    <!-- بطاقات المؤشرات الرئيسية -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span class="kpi-title">إجمالي المشاريع</span>
+                <div class="kpi-icon bg-primary bg-opacity-10"><i class="fas fa-chart-line text-primary"></i></div>
+            </div>
+            <div class="kpi-value" id="totalProjects">0</div>
+            <div class="kpi-trend" id="projectsTrend"><i class="fas fa-chart-line"></i><span>تحميل...</span></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span class="kpi-title">مشاريع نشطة</span>
+                <div class="kpi-icon bg-success bg-opacity-10"><i class="fas fa-play-circle text-success"></i></div>
+            </div>
+            <div class="kpi-value" id="activeProjects">0</div>
+            <div class="kpi-trend" id="activeTrend"></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span class="kpi-title">إجمالي الميزانية</span>
+                <div class="kpi-icon bg-warning bg-opacity-10"><i class="fas fa-wallet text-warning"></i></div>
+            </div>
+            <div class="kpi-value" id="totalBudget">0</div>
+            <div class="kpi-trend" id="budgetTrend"></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span class="kpi-title">إجمالي المصروفات</span>
+                <div class="kpi-icon bg-danger bg-opacity-10"><i class="fas fa-chart-simple text-danger"></i></div>
+            </div>
+            <div class="kpi-value" id="totalActual">0</div>
+            <div class="kpi-trend" id="actualTrend"></div>
+        </div>
+    </div>
+
+    <!-- الرسوم البيانية -->
+    <div class="chart-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i class="fas fa-chart-line text-primary"></i> تقدم المشاريع (لحظي)</div>
+                <div class="chart-legend"><div class="legend-item"><div class="legend-color" style="background: #4361ee;"></div><span>نسبة الإنجاز</span></div></div>
+            </div>
+            <div class="chart-container" id="progressChart"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header"><div class="chart-title"><i class="fas fa-chart-pie text-primary"></i> توزيع الميزانية</div></div>
+            <div class="chart-container" id="budgetChart"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header"><div class="chart-title"><i class="fas fa-chart-line text-primary"></i> مؤشر أداء التكلفة (CPI)</div></div>
+            <div class="chart-container" id="cpiChart"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header"><div class="chart-title"><i class="fas fa-chart-line text-primary"></i> مؤشر أداء الجدول (SPI)</div></div>
+            <div class="chart-container" id="spiChart"></div>
+        </div>
+        <div class="chart-card chart-card-full">
+            <div class="chart-header">
+                <div class="chart-title"><i class="fas fa-chart-line text-primary"></i> تحليل القيمة المكتسبة (EVM)</div>
+                <div class="chart-legend">
+                    <div class="legend-item"><div class="legend-color" style="background: #3b82f6;"></div><span>القيمة المخططة (PV)</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background: #10b981;"></div><span>القيمة المكتسبة (EV)</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background: #ef4444;"></div><span>التكلفة الفعلية (AC)</span></div>
+                </div>
+            </div>
+            <div class="chart-container" id="evmChart"></div>
+        </div>
+    </div>
+
+    <!-- جدول المشاريع -->
+    <div class="projects-table-wrapper">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="chart-title"><i class="fas fa-table"></i> حالة المشاريع</div>
+            <button class="btn btn-sm btn-outline-primary" onclick="refreshData()"><i class="fas fa-sync-alt"></i> تحديث</button>
+        </div>
+        <div class="table-responsive">
+            <table class="projects-table">
+                <thead><tr><th>المشروع</th><th>التقدم</th><th>الميزانية</th><th>المصروفات</th><th>الفرق</th><th>CPI</th><th>SPI</th><th>الحالة</th></tr></thead>
+                <tbody id="projectsTableBody"><tr><td colspan="8" class="text-center py-4"><div class="spinner-border text-primary"></div> جاري التحميل...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- التنبيهات الفورية -->
+    <div class="alerts-container">
+        <div class="alerts-header"><div class="chart-title"><i class="fas fa-bell"></i> التنبيهات الفورية <span class="badge bg-danger ms-2" id="alertsCount">0</span></div></div>
+        <div id="alertsList" class="alerts-list"><div class="text-center text-muted py-3">لا توجد تنبيهات جديدة</div></div>
+    </div>
+</div>
+
+<!-- Modal عرض تفاصيل المشروع -->
+<div class="modal fade detail-modal" id="projectDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title" id="projectDetailTitle"><i class="fas fa-project-diagram me-2"></i>تفاصيل المشروع</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body" id="projectDetailBody"><div class="text-center py-4"><div class="spinner-border text-primary"></div> جاري التحميل...</div></div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button><a href="#" id="viewProjectLink" class="btn btn-primary" target="_blank"><i class="fas fa-arrow-left me-1"></i> عرض المشروع كاملاً</a></div>
+    </div></div>
+</div>
+
+<!-- Modal عرض تفاصيل الميزانية -->
+<div class="modal fade detail-modal" id="budgetDetailModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="fas fa-wallet me-2"></i>تفاصيل الميزانية</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body" id="budgetDetailBody"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button></div>
+    </div></div>
+</div>
+
+<!-- Modal عرض تحليل التكاليف -->
+<div class="modal fade detail-modal" id="costAnalysisModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="fas fa-chart-line me-2"></i>تحليل التكاليف (EVM)</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body" id="costAnalysisBody"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button></div>
+    </div></div>
+</div>
+
+<!-- Modal عرض تحليل الجدول -->
+<div class="modal fade detail-modal" id="scheduleAnalysisModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="fas fa-calendar-alt me-2"></i>تحليل الجدول الزمني</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body" id="scheduleAnalysisBody"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button></div>
+    </div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.js"></script>
+<script>
+// ============================================
+// نظام الرسوم البيانية التفاعلية
+// ============================================
+let charts = {}, projectsData = [], updateInterval = null;
+
+// ============================================
+// جلب البيانات
+// ============================================
+async function fetchDashboardData() {
+    try {
+        const response = await fetch('/company/api/dashboard/live-data');
+        const data = await response.json();
+        if (data.success) updateDashboard(data);
+        else console.error('خطأ في جلب البيانات:', data.error);
+    } catch (error) { console.error('خطأ في الاتصال:', error); }
+}
+
+function updateDashboard(data) {
+    projectsData = data.projects || [];
+    updateKPIs(data.kpis);
+    updateCharts(data);
+    updateProjectsTable(data.projects);
+    updateAlerts(data.alerts);
+    const lastUpdate = document.getElementById('lastUpdateTime');
+    if (lastUpdate) lastUpdate.innerHTML = `آخر تحديث: ${new Date().toLocaleTimeString('ar-SA')}`;
+}
+
+// ============================================
+// تحديث المؤشرات
+// ============================================
+function updateKPIs(kpis) {
+    const elements = { totalProjects: kpis.overall?.total_projects || 0, activeProjects: kpis.overall?.active_projects || 0, totalBudget: formatCurrency(kpis.overall?.total_budget || 0), totalActual: formatCurrency(kpis.overall?.total_actual_cost || 0) };
+    for (const [id, value] of Object.entries(elements)) { const el = document.getElementById(id); if (el) el.textContent = value; }
+    if (kpis.trends) { updateTrend('projectsTrend', kpis.trends.projects); updateTrend('activeTrend', kpis.trends.active); updateTrend('budgetTrend', kpis.trends.budget); updateTrend('actualTrend', kpis.trends.actual); }
+}
+function updateTrend(elementId, trend) {
+    const el = document.getElementById(elementId);
+    if (!el || !trend) return;
+    const trendClass = trend.direction === 'up' ? 'trend-up' : 'trend-down';
+    const trendIcon = trend.direction === 'up' ? 'fa-arrow-up' : 'fa-arrow-down';
+    el.innerHTML = `<i class="fas ${trendIcon} ${trendClass}"></i><span class="${trendClass}">${trend.percentage > 0 ? '+' : ''}${trend.percentage.toFixed(1)}%</span><small class="text-muted">منذ أسبوع</small>`;
+}
+
+// ============================================
+// إنشاء الرسوم البيانية
+// ============================================
+function createProgressChart(data, labels) {
+    const options = {
+        chart: { type: 'line', height: 280, toolbar: { show: true }, animations: { speed: 800 }, events: { dataPointSelection: (e, c, config) => { const p = projectsData[config.dataPointIndex]; if (p) showProjectDetails(p.id); } } },
+        series: [{ name: 'نسبة الإنجاز (%)', data: data, color: '#4361ee' }, { name: 'التقدم المستهدف', data: data.map(p => Math.min(p + 15, 100)), color: '#10b981', dashArray: 5 }],
+        xaxis: { categories: labels, labels: { rotate: -45 } }, yaxis: { min: 0, max: 100, title: { text: '%' } }, stroke: { curve: 'smooth', width: 3 }, markers: { size: 5, hover: { size: 7 } }, tooltip: { y: { formatter: (val) => val.toFixed(1) + '%' } }
+    };
+    charts.progress = new ApexCharts(document.querySelector("#progressChart"), options); charts.progress.render(); makeChartClickable('#progressChart');
+}
+function createBudgetChart(data, labels) {
+    const options = {
+        chart: { type: 'donut', height: 280, events: { dataPointSelection: (e, c, config) => { const p = projectsData[config.dataPointIndex]; if (p) showBudgetDetails(p); } } },
+        series: data, labels: labels, colors: ['#4361ee', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a'], legend: { position: 'bottom' }, dataLabels: { enabled: true, formatter: (val) => val.toFixed(1) + '%' }, plotOptions: { pie: { donut: { size: '65%' } } }, tooltip: { y: { formatter: (val) => formatCurrency(val) } }
+    };
+    charts.budget = new ApexCharts(document.querySelector("#budgetChart"), options); charts.budget.render(); makeChartClickable('#budgetChart');
+}
+function createCPIChart(data, labels) {
+    const options = {
+        chart: { type: 'bar', height: 280, toolbar: { show: true }, events: { dataPointSelection: (e, c, config) => { const p = projectsData[config.dataPointIndex]; if (p) showCostAnalysis(p); } } },
+        series: [{ name: 'CPI', data: data }], xaxis: { categories: labels, labels: { rotate: -45 } }, yaxis: { min: 0, max: 2, title: { text: 'CPI' } }, plotOptions: { bar: { borderRadius: 8, dataLabels: { position: 'top' } } }, dataLabels: { enabled: true, formatter: (val) => val.toFixed(2), offsetY: -20 }, annotations: { yaxis: [{ y: 1, borderColor: '#ef4444', label: { text: 'CPI = 1', style: { color: '#ef4444' } } }] }, colors: data.map(v => getCPIColor(v))
+    };
+    charts.cpi = new ApexCharts(document.querySelector("#cpiChart"), options); charts.cpi.render(); makeChartClickable('#cpiChart');
+}
+function createSPIChart(data, labels) {
+    const options = {
+        chart: { type: 'bar', height: 280, toolbar: { show: true }, events: { dataPointSelection: (e, c, config) => { const p = projectsData[config.dataPointIndex]; if (p) showScheduleAnalysis(p); } } },
+        series: [{ name: 'SPI', data: data }], xaxis: { categories: labels, labels: { rotate: -45 } }, yaxis: { min: 0, max: 2, title: { text: 'SPI' } }, plotOptions: { bar: { borderRadius: 8, dataLabels: { position: 'top' } } }, dataLabels: { enabled: true, formatter: (val) => val.toFixed(2), offsetY: -20 }, annotations: { yaxis: [{ y: 1, borderColor: '#ef4444', label: { text: 'SPI = 1', style: { color: '#ef4444' } } }] }, colors: data.map(v => getSPIColor(v))
+    };
+    charts.spi = new ApexCharts(document.querySelector("#spiChart"), options); charts.spi.render(); makeChartClickable('#spiChart');
+}
+function createEVMChart(pvData, evData, acData, labels) {
+    const options = {
+        chart: { type: 'line', height: 300, toolbar: { show: true }, animations: { speed: 800 }, events: { dataPointSelection: (e, c, config) => { const p = projectsData[config.dataPointIndex]; if (p) showCostAnalysis(p); } } },
+        series: [{ name: 'PV (القيمة المخططة)', data: pvData, color: '#3b82f6' }, { name: 'EV (القيمة المكتسبة)', data: evData, color: '#10b981' }, { name: 'AC (التكلفة الفعلية)', data: acData, color: '#ef4444' }],
+        xaxis: { categories: labels, labels: { rotate: -45 } }, yaxis: { title: { text: 'المبلغ (SAR)' }, labels: { formatter: (val) => formatCurrency(val) } }, stroke: { width: 2, curve: 'smooth' }, markers: { size: 4, hover: { size: 6 } }, tooltip: { y: { formatter: (val) => formatCurrency(val) } }
+    };
+    charts.evm = new ApexCharts(document.querySelector("#evmChart"), options); charts.evm.render(); makeChartClickable('#evmChart');
+}
+function updateCharts(data) {
+    if (charts.progress) charts.progress.updateSeries([{ name: 'نسبة الإنجاز (%)', data: data.project_progress }]);
+    else createProgressChart(data.project_progress, data.project_names);
+    if (charts.budget) charts.budget.updateSeries(data.budget_distribution);
+    else createBudgetChart(data.budget_distribution, data.project_names);
+    if (charts.cpi) charts.cpi.updateSeries([{ name: 'CPI', data: data.cpi_data }]);
+    else createCPIChart(data.cpi_data, data.project_names);
+    if (charts.spi) charts.spi.updateSeries([{ name: 'SPI', data: data.spi_data }]);
+    else createSPIChart(data.spi_data, data.project_names);
+    if (charts.evm) charts.evm.updateSeries([{ name: 'PV', data: data.evm_pv }, { name: 'EV', data: data.evm_ev }, { name: 'AC', data: data.evm_ac }]);
+    else createEVMChart(data.evm_pv, data.evm_ev, data.evm_ac, data.project_names);
+}
+
+// ============================================
+// دوال الألوان
+// ============================================
+function getCPIColor(v) { if (v >= 1.0) return '#10b981'; if (v >= 0.8) return '#f59e0b'; return '#ef4444'; }
+function getSPIColor(v) { if (v >= 1.0) return '#10b981'; if (v >= 0.8) return '#f59e0b'; return '#ef4444'; }
+function getProgressColor(v) { if (v >= 80) return '#10b981'; if (v >= 50) return '#f59e0b'; if (v >= 20) return '#ef4444'; return '#6c757d'; }
+function makeChartClickable(sel) { const el = document.querySelector(sel); if (el) el.classList.add('chart-clickable'); }
+
+// ============================================
+// عرض التفاصيل في الـ Modals
+// ============================================
+async function showProjectDetails(projectId) {
+    const modal = new bootstrap.Modal(document.getElementById('projectDetailModal')), body = document.getElementById('projectDetailBody'), title = document.getElementById('projectDetailTitle'), viewLink = document.getElementById('viewProjectLink');
+    body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div> جاري التحميل...</div>'; modal.show();
+    try {
+        const res = await fetch(`/company/api/project/${projectId}/details`), data = await res.json();
+        if (data.success) {
+            const p = data.project, progressColor = getProgressColor(p.progress), cpiColor = getCPIColor(p.cpi), spiColor = getSPIColor(p.spi);
+            title.innerHTML = `<i class="fas fa-project-diagram me-2"></i>${p.name}`; viewLink.href = `/company/project/${p.id}`;
+            body.innerHTML = `
+                <div class="detail-card"><div class="detail-title"><i class="fas fa-info-circle text-primary"></i>معلومات أساسية</div>
+                <div class="detail-row"><span class="detail-label">كود المشروع</span><span class="detail-value">${p.code}</span></div>
+                <div class="detail-row"><span class="detail-label">الحالة</span><span class="detail-value"><span class="status-badge ${p.status_color}">${p.status_text}</span></span></div>
+                <div class="detail-row"><span class="detail-label">تاريخ البدء المخطط</span><span class="detail-value">${p.planned_start || 'غير محدد'}</span></div>
+                <div class="detail-row"><span class="detail-label">تاريخ الانتهاء المخطط</span><span class="detail-value">${p.planned_finish || 'غير محدد'}</span></div></div>
+                <div class="detail-card"><div class="detail-title"><i class="fas fa-chart-line text-primary"></i>التقدم والإنجاز</div>
+                <div class="progress-detail"><div class="progress-label"><span>نسبة الإنجاز</span><span class="fw-bold">${p.progress.toFixed(1)}%</span></div>
+                <div class="progress-track"><div class="progress-fill" style="width: ${p.progress}%; background: ${progressColor};"></div></div></div>
+                <div class="row mt-3"><div class="col-md-6"><div class="kpi-mini"><div class="kpi-mini-value" style="color: ${cpiColor}">${p.cpi.toFixed(2)}</div><div class="text-muted small">مؤشر أداء التكلفة (CPI)</div><div class="small ${p.cpi >= 1 ? 'text-success' : (p.cpi >= 0.8 ? 'text-warning' : 'text-danger')}">${p.cpi >= 1 ? 'جيد' : (p.cpi >= 0.8 ? 'متوسط' : 'ضعيف')}</div></div></div>
+                <div class="col-md-6"><div class="kpi-mini"><div class="kpi-mini-value" style="color: ${spiColor}">${p.spi.toFixed(2)}</div><div class="text-muted small">مؤشر أداء الجدول (SPI)</div><div class="small ${p.spi >= 1 ? 'text-success' : (p.spi >= 0.8 ? 'text-warning' : 'text-danger')}">${p.spi >= 1 ? 'متقدم' : (p.spi >= 0.8 ? 'متأخر قليلاً' : 'متأخر جداً')}</div></div></div></div></div>
+                <div class="detail-card"><div class="detail-title"><i class="fas fa-wallet text-primary"></i>المالية والميزانية</div>
+                <div class="detail-row"><span class="detail-label">الميزانية المخططة</span><span class="detail-value">${formatCurrency(p.budget)}</span></div>
+                <div class="detail-row"><span class="detail-label">التكلفة الفعلية</span><span class="detail-value ${p.variance > 0 ? 'text-danger' : 'text-success'}">${formatCurrency(p.actual_cost)}</span></div>
+                <div class="detail-row"><span class="detail-label">الفارق</span><span class="detail-value ${p.variance > 0 ? 'text-danger' : 'text-success'}">${p.variance > 0 ? '+' : ''}${formatCurrency(p.variance)}</span></div>
+                <div class="detail-row"><span class="detail-label">نسبة الصرف</span><span class="detail-value">${((p.actual_cost / p.budget) * 100).toFixed(1)}%</span></div></div>`;
+        }
+    } catch (error) { body.innerHTML = `<div class="alert alert-danger">حدث خطأ في تحميل البيانات</div>`; }
+}
+function showBudgetDetails(p) {
+    const modal = new bootstrap.Modal(document.getElementById('budgetDetailModal')), body = document.getElementById('budgetDetailBody');
+    const percentSpent = ((p.actual_cost / p.budget) * 100).toFixed(1), remaining = p.budget - p.actual_cost, remainingPercent = (remaining / p.budget * 100).toFixed(1);
+    body.innerHTML = `<div class="detail-card"><div class="detail-title"><i class="fas fa-chart-pie text-primary"></i>توزيع ميزانية المشروع: ${p.name}</div>
+        <div class="progress-detail mt-3"><div class="progress-label"><span>الصرف حتى الآن</span><span class="fw-bold">${percentSpent}%</span></div><div class="progress-track"><div class="progress-fill" style="width: ${percentSpent}%; background: #4361ee;"></div></div></div>
+        <div class="progress-detail mt-2"><div class="progress-label"><span>المتبقي</span><span class="fw-bold">${remainingPercent}%</span></div><div class="progress-track"><div class="progress-fill" style="width: ${remainingPercent}%; background: #10b981;"></div></div></div>
+        <div class="row mt-3"><div class="col-md-6"><div class="detail-row"><span class="detail-label">الميزانية الكلية</span><span class="detail-value">${formatCurrency(p.budget)}</span></div></div><div class="col-md-6"><div class="detail-row"><span class="detail-label">المصروفات</span><span class="detail-value">${formatCurrency(p.actual_cost)}</span></div></div></div>
+        <div class="detail-row"><span class="detail-label">المبلغ المتبقي</span><span class="detail-value ${remaining >= 0 ? 'text-success' : 'text-danger'}">${formatCurrency(remaining)}</span></div></div>`;
+    modal.show();
+}
+function showCostAnalysis(p) {
+    const modal = new bootstrap.Modal(document.getElementById('costAnalysisModal')), body = document.getElementById('costAnalysisBody');
+    const cpiColor = getCPIColor(p.cpi), cpiStatus = p.cpi >= 1 ? 'أداء ممتاز' : (p.cpi >= 0.8 ? 'أداء مقبول' : 'أداء ضعيف');
+    body.innerHTML = `<div class="detail-card"><div class="detail-title"><i class="fas fa-chart-line text-primary"></i>تحليل أداء التكلفة - ${p.name}</div>
+        <div class="row"><div class="col-md-6"><div class="kpi-mini mb-3"><div class="kpi-mini-value" style="color: ${cpiColor}">${p.cpi.toFixed(2)}</div><div class="text-muted small">مؤشر أداء التكلفة (CPI)</div><div class="small">${cpiStatus}</div></div></div><div class="col-md-6"><div class="kpi-mini mb-3"><div class="kpi-mini-value">${p.spi.toFixed(2)}</div><div class="text-muted small">مؤشر أداء الجدول (SPI)</div></div></div></div>
+        <div class="detail-row"><span class="detail-label">القيمة المكتسبة (EV)</span><span class="detail-value">${formatCurrency(p.budget * (p.progress / 100))}</span></div>
+        <div class="detail-row"><span class="detail-label">القيمة المخططة (PV)</span><span class="detail-value">${formatCurrency(p.budget)}</span></div>
+        <div class="detail-row"><span class="detail-label">التكلفة الفعلية (AC)</span><span class="detail-value">${formatCurrency(p.actual_cost)}</span></div>
+        <div class="alert alert-info mt-3"><i class="fas fa-lightbulb me-2"></i>${getCostRecommendation(p.cpi)}</div></div>`;
+    modal.show();
+}
+function showScheduleAnalysis(p) {
+    const modal = new bootstrap.Modal(document.getElementById('scheduleAnalysisModal')), body = document.getElementById('scheduleAnalysisBody');
+    const spiColor = getSPIColor(p.spi), spiStatus = p.spi >= 1 ? 'متقدم عن الجدول' : (p.spi >= 0.8 ? 'متأخر قليلاً' : 'متأخر جداً');
+    body.innerHTML = `<div class="detail-card"><div class="detail-title"><i class="fas fa-calendar-alt text-primary"></i>تحليل الجدول الزمني - ${p.name}</div>
+        <div class="kpi-mini mb-3"><div class="kpi-mini-value" style="color: ${spiColor}">${p.spi.toFixed(2)}</div><div class="text-muted small">مؤشر أداء الجدول (SPI)</div><div class="small">${spiStatus}</div></div>
+        <div class="detail-row"><span class="detail-label">نسبة الإنجاز</span><span class="detail-value">${p.progress.toFixed(1)}%</span></div>
+        <div class="detail-row"><span class="detail-label">التقدم المطلوب في هذه المرحلة</span><span class="detail-value">${Math.min(p.progress + 10, 100).toFixed(1)}%</span></div>
+        <div class="detail-row"><span class="detail-label">الفجوة</span><span class="detail-value ${p.progress < (p.progress + 10) ? 'text-danger' : 'text-success'}">${(p.progress - Math.min(p.progress + 10, 100)).toFixed(1)}%</span></div>
+        <div class="alert alert-info mt-3"><i class="fas fa-lightbulb me-2"></i>${getScheduleRecommendation(p.spi)}</div></div>`;
+    modal.show();
+}
+function getCostRecommendation(cpi) {
+    if (cpi >= 1) return 'أداء التكلفة ممتاز. استمر في مراقبة المصروفات للحفاظ على هذا المستوى.';
+    if (cpi >= 0.8) return 'يوجد تجاوز بسيط في التكاليف. يوصى بمراجعة المصروفات غير الضرورية.';
+    return '⚠️ تنبيه: تجاوز كبير في التكاليف! مطلوب تدخل فوري لمراجعة الميزانية وتقليل المصروفات.';
+}
+function getScheduleRecommendation(spi) {
+    if (spi >= 1) return 'الأداء الزمني ممتاز. المشروع متقدم عن الجدول المخطط.';
+    if (spi >= 0.8) return 'يوجد تأخير بسيط في الجدول. يوصى بمتابعة المهام الحرجة عن كثب.';
+    return '⚠️ تنبيه: تأخير خطير في الجدول الزمني! مطلوب إعادة تخطيط فوري للمهام المتأخرة.';
+}
+
+// ============================================
+// تحديث الجدول والتنبيهات
+// ============================================
+function updateProjectsTable(projects) {
+    const tbody = document.getElementById('projectsTableBody');
+    if (!projects || projects.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">لا توجد مشاريع</td></tr>'; return; }
+    let html = '';
+    projects.forEach(p => {
+        const progressClass = p.progress >= 80 ? 'success' : (p.progress >= 50 ? 'warning' : 'info'), varianceClass = p.variance >= 0 ? 'text-success' : 'text-danger', cpiClass = p.cpi >= 1 ? 'performance-good' : (p.cpi >= 0.8 ? 'performance-warning' : 'performance-critical'), spiClass = p.spi >= 1 ? 'performance-good' : (p.spi >= 0.8 ? 'performance-warning' : 'performance-critical');
+        html += `<tr><td><div class="fw-bold">${escapeHtml(p.name)}</div><small class="text-muted">${p.code}</small></td><td class="project-progress"><div class="fw-bold mb-1">${p.progress.toFixed(1)}%</div><div class="progress-bar-custom"><div class="progress-fill bg-${progressClass}" style="width: ${p.progress}%"></div></div></td><td class="fw-bold">${formatCurrency(p.budget)}</td><td>${formatCurrency(p.actual_cost)}</td><td class="${varianceClass} fw-bold">${p.variance >= 0 ? '+' : ''}${formatCurrency(p.variance)}</td><td><span class="performance-badge ${cpiClass}">${p.cpi.toFixed(2)}</span></td><td><span class="performance-badge ${spiClass}">${p.spi.toFixed(2)}</span></td><td><span class="badge bg-${p.status_color}">${p.status_text}</span></td><td class="text-center">
+                    <button class="btn btn-sm btn-outline-primary" onclick="showProjectDetails(${p.id})" title="عرض التفاصيل">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td></tr>`;
+    });
+    tbody.innerHTML = html;
+}
+function updateAlerts(alerts) {
+    const list = document.getElementById('alertsList'), count = document.getElementById('alertsCount');
+    if (!alerts || alerts.length === 0) { list.innerHTML = '<div class="text-center text-muted py-3">لا توجد تنبيهات جديدة</div>'; count.textContent = '0'; return; }
+    let html = '';
+    alerts.forEach(a => {
+        const alertClass = a.type === 'critical' ? 'alert-critical' : (a.type === 'warning' ? 'alert-warning' : 'alert-info'), iconClass = a.type === 'critical' ? 'fa-exclamation-triangle' : (a.type === 'warning' ? 'fa-clock' : 'fa-info-circle'), bgClass = a.type === 'critical' ? 'bg-danger' : (a.type === 'warning' ? 'bg-warning' : 'bg-info');
+        html += `<div class="alert-item ${alertClass}" data-id="${a.id}"><div class="alert-icon ${bgClass} bg-opacity-10"><i class="fas ${iconClass} text-${a.type}"></i></div><div class="alert-content"><div class="alert-title">${escapeHtml(a.title)}</div><div class="alert-message">${escapeHtml(a.message)}</div></div><div class="alert-time">${a.time || 'الآن'}</div><button class="btn-dismiss" onclick="dismissAlert(${a.id})"><i class="fas fa-times"></i></button></div>`;
+    });
+    list.innerHTML = html; count.textContent = alerts.length;
+}
+function dismissAlert(id) { const alert = document.querySelector(`.alert-item[data-id="${id}"]`); if (alert) { alert.remove(); const cnt = document.getElementById('alertsCount'); const newCnt = Math.max(0, parseInt(cnt.textContent) - 1); cnt.textContent = newCnt; if (document.querySelectorAll('.alert-item').length === 0) document.getElementById('alertsList').innerHTML = '<div class="text-center text-muted py-3">لا توجد تنبيهات جديدة</div>'; } }
+
+// ============================================
+// دوال مساعدة
+// ============================================
+function formatCurrency(v) { return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0); }
+function escapeHtml(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+function refreshData() { fetchDashboardData(); }
+function startAutoRefresh() { if (updateInterval) clearInterval(updateInterval); updateInterval = setInterval(() => fetchDashboardData(), 10000); }
+document.addEventListener('DOMContentLoaded', () => { fetchDashboardData(); startAutoRefresh(); });
+window.addEventListener('beforeunload', () => { if (updateInterval) clearInterval(updateInterval); });
+</script>
+{% endblock %}

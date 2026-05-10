@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "samuelcolvin.jinjahtml",
+        "ms-python.python",
+        "ms-python.pylance",
+        "ecmel.vscode-html-css"
+    ]
+}

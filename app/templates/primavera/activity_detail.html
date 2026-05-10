@@ -1,0 +1,983 @@
+{% extends "company/base.html" %}
+
+{% block title %}تفاصيل النشاط - {{ activity.activity_name }}{% endblock %}
+
+{% block page_title %}{{ activity.activity_name }}{% endblock %}
+{% block page_subtitle %}النشاط: {{ activity.activity_id }} | المشروع: {{ activity.project.name if activity.project }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .activity-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    /* بطاقة المعلومات الرئيسية */
+    .info-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        margin-bottom: 2rem;
+    }
+    
+    .info-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    .info-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .info-title i {
+        color: var(--primary);
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.5rem 1.2rem;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .status-not_started {
+        background: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+    }
+    
+    .status-in_progress {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+    }
+    
+    .status-completed {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+    }
+    
+    .type-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+    
+    .type-task { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .type-milestone { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .type-resource { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    
+    .critical-badge {
+        background: rgba(249, 65, 68, 0.1);
+        color: var(--danger);
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    /* جدول المعلومات */
+    .info-table {
+        width: 100%;
+    }
+    
+    .info-table tr {
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .info-table tr:last-child {
+        border-bottom: none;
+    }
+    
+    .info-table th {
+        width: 200px;
+        padding: 0.8rem;
+        color: #6c757d;
+        font-weight: 600;
+        background: #f8f9fa;
+        border-radius: 10px 0 0 10px;
+    }
+    
+    .info-table td {
+        padding: 0.8rem;
+        color: var(--dark);
+        font-weight: 500;
+        background: #f8f9fa;
+        border-radius: 0 10px 10px 0;
+    }
+    
+    /* بطاقات الإحصائيات */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1rem;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--primary);
+        line-height: 1.2;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.8rem;
+        margin-top: 0.3rem;
+    }
+    
+    /* دائرة التقدم */
+    .progress-circle-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 1rem 0;
+    }
+    
+    .progress-circle {
+        position: relative;
+        width: 180px;
+        height: 180px;
+    }
+    
+    .progress-circle svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+    
+    .progress-circle-bg {
+        fill: none;
+        stroke: #eef2f7;
+        stroke-width: 8;
+    }
+    
+    .progress-circle-progress {
+        fill: none;
+        stroke: var(--primary);
+        stroke-width: 8;
+        stroke-linecap: round;
+        transition: stroke-dasharray 0.3s;
+    }
+    
+    .progress-circle-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    /* الأنشطة المرتبطة */
+    .related-activities {
+        margin-top: 2rem;
+    }
+    
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s;
+        cursor: pointer;
+        border-right: 3px solid transparent;
+    }
+    
+    .activity-item:hover {
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateX(-5px);
+    }
+    
+    .activity-item.critical {
+        border-right-color: var(--danger);
+    }
+    
+    .activity-item.completed {
+        opacity: 0.7;
+    }
+    
+    .activity-icon {
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 1rem;
+    }
+    
+    .activity-info {
+        flex: 1;
+    }
+    
+    .activity-name {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+    
+    .activity-meta {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .activity-status {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-left: 0.5rem;
+    }
+    
+    .status-dot-not_started { background: #6c757d; }
+    .status-dot-in_progress { background: var(--primary); }
+    .status-dot-completed { background: var(--success); }
+    
+    /* الجدول الزمني المصغر */
+    .mini-timeline {
+        margin-top: 2rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+    }
+    
+    .timeline-bar {
+        height: 40px;
+        background: #eef2f7;
+        border-radius: 20px;
+        position: relative;
+        margin: 1rem 0;
+    }
+    
+    .timeline-progress {
+        height: 100%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 20px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 0 1rem;
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        top: -25px;
+        transform: translateX(-50%);
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    /* أزرار الإجراءات */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+    
+    .action-btn {
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        border: 2px solid #eef2f7;
+        background: white;
+        color: #6c757d;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    
+    .action-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .action-btn.primary {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border: none;
+        color: white;
+    }
+    
+    .action-btn.primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+    }
+    
+    .action-btn.warning {
+        border-color: var(--warning);
+        color: var(--warning);
+    }
+    
+    .action-btn.warning:hover {
+        background: var(--warning);
+        color: white;
+    }
+    
+    .action-btn.danger {
+        border-color: var(--danger);
+        color: var(--danger);
+    }
+    
+    .action-btn.danger:hover {
+        background: var(--danger);
+        color: white;
+    }
+    
+    /* التعليقات والملاحظات */
+    .comments-section {
+        margin-top: 2rem;
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .comment-item {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .comment-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    
+    .comment-content {
+        flex: 1;
+    }
+    
+    .comment-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.3rem;
+    }
+    
+    .comment-author {
+        font-weight: 600;
+    }
+    
+    .comment-date {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .comment-text {
+        color: #6c757d;
+        line-height: 1.6;
+    }
+    
+    /* استجابة */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .info-table th,
+        .info-table td {
+            display: block;
+            width: 100%;
+        }
+        
+        .info-table th {
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .info-table td {
+            border-radius: 0 0 10px 10px;
+            margin-bottom: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="activity-container">
+    <!-- شريط التنقل السريع -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('company.dashboard') }}">الرئيسية</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('company.projects') }}">المشاريع</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('company.view_project', project_id=activity.project.original_project.id) if activity.project and activity.project.original_project else '#' }}">
+                {{ activity.project.name if activity.project }}
+            </a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('primavera.activities_list', project_id=activity.project_id) }}">الأنشطة</a></li>
+            <li class="breadcrumb-item active">{{ activity.activity_id }}</li>
+        </ol>
+    </nav>
+    
+    <!-- رأس الصفحة مع الحالة -->
+    <div class="info-card">
+        <div class="info-header">
+            <h5 class="info-title">
+                <i class="fas fa-info-circle"></i>
+                معلومات النشاط
+            </h5>
+            <div>
+                <span class="type-badge type-{{ activity.activity_type.split('_')[0] }}">
+                    {% if activity.activity_type == 'task_dependent' %}مهمة
+                    {% elif activity.activity_type == 'start_milestone' %}معلم بداية
+                    {% elif activity.activity_type == 'finish_milestone' %}معلم نهاية
+                    {% elif activity.activity_type == 'resource_dependent' %}تعتمد على مورد
+                    {% else %}{{ activity.activity_type }}{% endif %}
+                </span>
+                <span class="status-badge status-{{ activity.status }}">
+                    {% if activity.status == 'not_started' %}لم تبدأ
+                    {% elif activity.status == 'in_progress' %}قيد التنفيذ
+                    {% elif activity.status == 'completed' %}مكتملة
+                    {% endif %}
+                </span>
+                {% if activity.is_critical %}
+                <span class="critical-badge ms-2">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    في المسار الحرج
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <h4 class="mb-3">{{ activity.activity_name }}</h4>
+                {% if activity.activity_name_ar %}
+                <h6 class="text-muted mb-4">{{ activity.activity_name_ar }}</h6>
+                {% endif %}
+                
+                {% if activity.description %}
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-2">الوصف:</h6>
+                    <p class="text-muted">{{ activity.description }}</p>
+                </div>
+                {% endif %}
+                
+                <table class="info-table">
+                    <tr>
+                        <th>المعرف</th>
+                        <td>{{ activity.activity_id }}</td>
+                    </tr>
+                    <tr>
+                        <th>الكود</th>
+                        <td>{{ activity.activity_code or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>WBS</th>
+                        <td>
+                            {% if activity.wbs %}
+                            {{ activity.wbs.wbs_code }} - {{ activity.wbs.name }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>التقويم</th>
+                        <td>
+                            {% if activity.calendar %}
+                            {{ activity.calendar.name }}
+                            {% else %}
+                            تقويم المشروع
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>المسؤول</th>
+                        <td>
+                            {% if activity.responsible %}
+                            {{ activity.responsible.full_name }}
+                            {% else %}
+                            <span class="text-muted">غير معين</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="progress-circle-container">
+                    <div class="progress-circle">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="progress-circle-bg" cx="50" cy="50" r="45"></circle>
+                            <circle class="progress-circle-progress" cx="50" cy="50" r="45" 
+                                    stroke-dasharray="{{ activity.progress_percentage }}, 100"
+                                    stroke-dashoffset="25"></circle>
+                        </svg>
+                        <div class="progress-circle-text">{{ activity.progress_percentage|round }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- إحصائيات سريعة -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ activity.original_duration }}</div>
+            <div class="stat-label">المدة المخططة (أيام)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ activity.remaining_duration|round(1) }}</div>
+            <div class="stat-label">المدة المتبقية (أيام)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ activity.total_float|round(1) }}</div>
+            <div class="stat-label">الوقت السماحي</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ activity.weight }}</div>
+            <div class="stat-label">الوزن النسبي</div>
+        </div>
+    </div>
+    
+    <!-- التواريخ والجدول الزمني -->
+    <div class="info-card">
+        <h5 class="info-title mb-4">
+            <i class="fas fa-calendar-alt"></i>
+            الجدول الزمني
+        </h5>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-muted mb-3">التواريخ المخططة</h6>
+                <table class="table table-borderless">
+                    <tr>
+                        <td class="text-muted">تاريخ البدء:</td>
+                        <td class="fw-bold">{{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">تاريخ الانتهاء:</td>
+                        <td class="fw-bold">{{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish else '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="col-md-6">
+                <h6 class="text-muted mb-3">التواريخ الفعلية</h6>
+                <table class="table table-borderless">
+                    <tr>
+                        <td class="text-muted">تاريخ البدء:</td>
+                        <td class="fw-bold">{{ activity.actual_start.strftime('%Y-%m-%d') if activity.actual_start else 'لم يبدأ' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">تاريخ الانتهاء:</td>
+                        <td class="fw-bold">{{ activity.actual_finish.strftime('%Y-%m-%d') if activity.actual_finish else 'لم يكتمل' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- شريط التقدم الزمني -->
+        {% if activity.planned_start and activity.planned_finish %}
+        {% set total_days = (activity.planned_finish - activity.planned_start).days %}
+        {% set elapsed_days = (now.date() - activity.planned_start.date()).days if now and activity.planned_start else 0 %}
+        {% set progress_percent = (elapsed_days / total_days * 100) if total_days > 0 else 0 %}
+        
+        <div class="mini-timeline mt-4">
+            <h6 class="text-muted mb-3">التقدم الزمني</h6>
+            <div class="timeline-bar">
+                <div class="timeline-progress" style="width: {{ progress_percent }}%;">
+                    {{ progress_percent|round }}%
+                </div>
+                <span class="timeline-marker" style="left: 0%;">البداية</span>
+                <span class="timeline-marker" style="left: 100%;">النهاية</span>
+                <span class="timeline-marker" style="left: {{ progress_percent }}%;">الآن</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- المهام السابقة والتالية -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="info-card related-activities">
+                <h5 class="info-title mb-4">
+                    <i class="fas fa-arrow-right"></i>
+                    المهام السابقة (تعتمد عليها)
+                </h5>
+                
+                {% set predecessors = activity.predecessors|map(attribute='predecessor')|list %}
+                {% if predecessors %}
+                    {% for pred in predecessors %}
+                    <div class="activity-item {{ 'critical' if pred.is_critical }} {{ 'completed' if pred.status == 'completed' }}"
+                         onclick="window.location.href='{{ url_for('primavera.activity_detail', activity_id=pred.id) }}'">
+                        <div class="activity-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="activity-info">
+                            <div class="activity-name">{{ pred.activity_name }}</div>
+                            <div class="activity-meta">
+                                {{ pred.activity_id }} • المدة: {{ pred.original_duration }} يوم
+                            </div>
+                        </div>
+                        <div class="activity-status status-dot-{{ pred.status }}"></div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center py-4">لا توجد مهام سابقة</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="info-card related-activities">
+                <h5 class="info-title mb-4">
+                    <i class="fas fa-arrow-left"></i>
+                    المهام التالية (تعتمد عليها)
+                </h5>
+                
+                {% set successors = activity.successors|map(attribute='successor')|list %}
+                {% if successors %}
+                    {% for succ in successors %}
+                    <div class="activity-item {{ 'critical' if succ.is_critical }} {{ 'completed' if succ.status == 'completed' }}"
+                         onclick="window.location.href='{{ url_for('primavera.activity_detail', activity_id=succ.id) }}'">
+                        <div class="activity-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="activity-info">
+                            <div class="activity-name">{{ succ.activity_name }}</div>
+                            <div class="activity-meta">
+                                {{ succ.activity_id }} • المدة: {{ succ.original_duration }} يوم
+                            </div>
+                        </div>
+                        <div class="activity-status status-dot-{{ succ.status }}"></div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center py-4">لا توجد مهام تالية</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- الموارد المستخدمة -->
+    {% if activity.resources %}
+    <div class="info-card">
+        <h5 class="info-title mb-4">
+            <i class="fas fa-tools"></i>
+            الموارد المستخدمة
+        </h5>
+        
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>المورد</th>
+                        <th>النوع</th>
+                        <th>الكمية المخططة</th>
+                        <th>الكمية الفعلية</th>
+                        <th>التكلفة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for resource in activity.resources %}
+                    <tr>
+                        <td>{{ resource.resource.name if resource.resource }}</td>
+                        <td>
+                            {% if resource.resource.resource_type == 'labor' %}
+                            <span class="badge bg-primary">عمال</span>
+                            {% elif resource.resource.resource_type == 'material' %}
+                            <span class="badge bg-success">مواد</span>
+                            {% elif resource.resource.resource_type == 'equipment' %}
+                            <span class="badge bg-warning">معدات</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ resource.planned_quantity }} {{ resource.resource.unit if resource.resource }}</td>
+                        <td>{{ resource.actual_quantity or 0 }} {{ resource.resource.unit if resource.resource }}</td>
+                        <td>{{ "{:,.0f}".format(resource.planned_cost) }} ر.س</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    <div class="section-card">
+        <h5 class="section-title">
+            <i class="fas fa-database me-2 text-primary"></i>
+            الحقول المخصصة (UDF)
+        </h5>
+        
+        <div id="udf-fields" class="row">
+            <!-- سيتم تحميل UDF الخاصة بالأنشطة -->
+            <div class="col-12 text-center py-3">
+                <i class="fas fa-spinner fa-spin"></i> جاري تحميل الحقول المخصصة...
+            </div>
+        </div>
+    </div>
+    <!-- التعليقات والملاحظات -->
+    <div class="comments-section">
+        <h5 class="info-title mb-4">
+            <i class="fas fa-comments"></i>
+            التعليقات والملاحظات
+        </h5>
+        
+        <div class="comments-list">
+            <!-- نموذج إضافة تعليق جديد -->
+            <div class="d-flex gap-3 mb-4">
+                <div class="comment-avatar">
+                    {{ current_user.full_name[0] }}
+                </div>
+                <div class="flex-grow-1">
+                    <textarea class="form-control" rows="2" placeholder="أضف تعليقاً..."></textarea>
+                    <div class="text-start mt-2">
+                        <button class="btn-primary-gradient btn-sm" onclick="addComment()">
+                            <i class="fas fa-paper-plane me-1"></i> إضافة تعليق
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- التعليقات الموجودة -->
+            <div class="comment-item">
+                <div class="comment-avatar">م</div>
+                <div class="comment-content">
+                    <div class="comment-header">
+                        <span class="comment-author">مدير المشروع</span>
+                        <span class="comment-date">منذ ساعتين</span>
+                    </div>
+                    <div class="comment-text">
+                        تم تحديث التقدم إلى 50%. يرجى متابعة العمل.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="comment-item">
+                <div class="comment-avatar">أ</div>
+                <div class="comment-content">
+                    <div class="comment-header">
+                        <span class="comment-author">أحمد محمد</span>
+                        <span class="comment-date">منذ 5 ساعات</span>
+                    </div>
+                    <div class="comment-text">
+                        واجهتنا مشكلة في توريد المواد، سنقوم بحلها غداً.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- أزرار الإجراءات -->
+    <div class="action-buttons">
+        <a href="{{ url_for('primavera.activities_list', project_id=activity.project_id) }}" class="action-btn">
+            <i class="fas fa-arrow-right me-2"></i>
+            العودة للأنشطة
+        </a>
+        
+        <button class="action-btn warning" onclick="updateProgress()">
+            <i class="fas fa-chart-line me-2"></i>
+            تحديث التقدم
+        </button>
+        
+        <button class="action-btn" onclick="editActivity()">
+            <i class="fas fa-edit me-2"></i>
+            تعديل
+        </button>
+        
+        <button class="action-btn primary" onclick="assignResource()">
+            <i class="fas fa-plus-circle me-2"></i>
+            إضافة مورد
+        </button>
+        
+        <button class="action-btn danger" onclick="deleteActivity()">
+            <i class="fas fa-trash-alt me-2"></i>
+            حذف
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// بيانات النشاط بصيغة JSON للاستخدام في JavaScript
+let activityData = {{ activity.to_dict()|tojson|safe }};
+console.log('Activity Data:', activityData);
+
+function updateProgress() {
+    Swal.fire({
+        title: 'تحديث التقدم',
+        html: `
+            <div class="text-center">
+                <input type="range" class="form-range" id="progressRange" min="0" max="100" value="${activityData.progress_percentage}">
+                <div class="mt-3">
+                    <span class="h4" id="progressValue">${activityData.progress_percentage}%</span>
+                </div>
+                <textarea class="form-control mt-3" id="progressNotes" placeholder="ملاحظات..." rows="2"></textarea>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'حفظ',
+        cancelButtonText: 'إلغاء',
+        didOpen: () => {
+            const range = document.getElementById('progressRange');
+            const value = document.getElementById('progressValue');
+            range.addEventListener('input', (e) => {
+                value.textContent = e.target.value + '%';
+            });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire('تم التحديث', '', 'success').then(() => {
+                location.reload();
+            });
+        }
+    });
+}
+
+function editActivity() {
+    window.location.href = "{{ url_for('primavera.activities_list', project_id=activity.project_id) }}?edit={{ activity.id }}";
+}
+
+function assignResource() {
+    Swal.fire({
+        title: 'إضافة مورد',
+        html: `
+            <select class="form-select mb-3" id="resourceSelect">
+                <option value="">اختر المورد</option>
+                <option value="1">عمال - 50 ر.س/ساعة</option>
+                <option value="2">خرسانة - 300 ر.س/م3</option>
+                <option value="3">رافعة - 500 ر.س/يوم</option>
+            </select>
+            <input type="number" class="form-control" id="resourceQuantity" placeholder="الكمية" min="0" step="0.1">
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'إضافة',
+        cancelButtonText: 'إلغاء'
+    });
+}
+
+function deleteActivity() {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا النشاط؟ لا يمكن التراجع عن هذا الإجراء!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire('تم الحذف', '', 'success').then(() => {
+                window.location.href = "{{ url_for('primavera.activities_list', project_id=activity.project_id) }}";
+            });
+        }
+    });
+}
+function loadActivityUDFs() {
+    fetch(`/enterprise/api/udf/list?type=activity`)
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('udf-fields');
+            if (data.udfs.length > 0) {
+                let html = '';
+                data.udfs.forEach(udf => {
+                    const currentValue = {{ activity.udf_values|tojson }}[udf.name] || '';
+                    html += `
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">${udf.label}</label>
+                            ${renderUDFInput(udf, currentValue, {{ activity.id }})}
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p class="text-muted text-center">لا توجد حقول مخصصة</p>';
+            }
+        });
+}
+
+function renderUDFInput(udf, value, activityId) {
+    if (udf.data_type === 'text') {
+        return `<input type="text" class="form-control" value="${value}" onchange="updateUDF(${activityId}, '${udf.name}', this.value)">`;
+    } else if (udf.data_type === 'number') {
+        return `<input type="number" class="form-control" value="${value}" onchange="updateUDF(${activityId}, '${udf.name}', this.value)">`;
+    } else if (udf.data_type === 'date') {
+        return `<input type="date" class="form-control" value="${value}" onchange="updateUDF(${activityId}, '${udf.name}', this.value)">`;
+    } else if (udf.data_type === 'boolean') {
+        return `
+            <select class="form-select" onchange="updateUDF(${activityId}, '${udf.name}', this.value)">
+                <option value="true" ${value === 'true' ? 'selected' : ''}>نعم</option>
+                <option value="false" ${value === 'false' ? 'selected' : ''}>لا</option>
+            </select>
+        `;
+    } else if (udf.data_type === 'list') {
+        let options = '<option value="">اختر...</option>';
+        udf.list_values.forEach(val => {
+            options += `<option value="${val}" ${value === val ? 'selected' : ''}>${val}</option>`;
+        });
+        return `<select class="form-select" onchange="updateUDF(${activityId}, '${udf.name}', this.value)">${options}</select>`;
+    }
+    return '';
+}
+
+function updateUDF(activityId, udfName, value) {
+    fetch(`/enterprise/api/apply-udf/activity/${activityId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            udf_name: udfName,
+            value: value
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('تم تحديث الحقل المخصص');
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', loadActivityUDFs);
+function addComment() {
+    // TODO: تنفيذ إضافة تعليق
+    Swal.fire('تمت الإضافة', '', 'success');
+}
+</script>
+{% endblock %}

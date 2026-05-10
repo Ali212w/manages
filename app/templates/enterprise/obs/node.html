@@ -1,0 +1,44 @@
+<div class="obs-node level-{{ node.level }}" id="obs-{{ node.id }}">
+    <div class="node-content">
+        <div class="node-icon">
+            <i class="fas fa-user-tie"></i>
+        </div>
+        
+        <div class="node-info">
+            <div class="node-name">
+                <span>{{ node.name }}</span>
+                <span class="node-code">{{ node.obs_code }}</span>
+                {% if node.responsible %}
+                <span class="responsible-badge">
+                    <i class="fas fa-user-check"></i>
+                    {{ node.responsible.full_name }}
+                </span>
+                {% endif %}
+            </div>
+            {% if node.description %}
+            <div class="small text-muted">{{ node.description }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="node-actions">
+            <a class="action-btn" href="{{ url_for('enterprise.obs_view', obs_id=node.id ) }}"title="عرض">
+                <i class="fas fa-eye me-1"></i>
+            </a>
+            <a class="action-btn" href="{{ url_for('enterprise.obs_edit', obs_id=node.id ) }}"title="تعديل">
+                <i class="fas fa-edit"></i>
+            </a>
+            <a href="{{ url_for('enterprise.obs_create_child', parent_id=node.id ) }} "  title="إضافة عنصر فرعي">
+                <i class="fas fa-plus"></i>
+            </a>
+            <a class="action-btn delete" href="{{ url_for('enterprise.obs_delete', obs_id=node.id ) }}" title="حذف">
+                <i class="fas fa-trash"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+{% for child in node.children %}
+    {% with node=child %}
+        {% include 'enterprise/obs/node.html' %}
+    {% endwith %}
+{% endfor %}

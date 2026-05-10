@@ -1,0 +1,115 @@
+<div class="row">
+    <div class="col-md-6">
+        <div class="info-card">
+            <h6 class="info-card-title">
+                <i class="fas fa-play-circle text-success"></i> التنفيذ
+            </h6>
+            <table class="info-table">
+                <tr>
+                    <td>تاريخ البدء الفعلي:</td>
+                    <td class="fw-bold">
+                        {{ task.execution.actual_start.strftime('%Y-%m-%d %H:%M') if task.execution and task.execution.actual_start else '-' }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>تاريخ الانتهاء الفعلي:</td>
+                    <td class="fw-bold">
+                        {{ task.execution.actual_finish.strftime('%Y-%m-%d %H:%M') if task.execution and task.execution.actual_finish else '-' }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>المدة الفعلية (ساعات):</td>
+                    <td class="fw-bold">{{ task.execution.actual_duration or '-' }}</td>
+                </tr>
+                <tr>
+                    <td>جودة الإنجاز:</td>
+                    <td>
+                        {% if task.progress.completion_quality %}
+                            <span class="badge bg-{{ 'success' if task.progress.completion_quality == 'excellent' else 'info' if task.progress.completion_quality == 'good' else 'warning' if task.progress.completion_quality == 'fair' else 'danger' }}">
+                                {{ task.progress.completion_quality }}
+                            </span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="info-card">
+            <h6 class="info-card-title">
+                <i class="fas fa-check-circle text-primary"></i> التحقق
+            </h6>
+            <table class="info-table">
+                <tr>
+                    <td>يتطلب تحقق:</td>
+                    <td>
+                        {% if task.verification and task.verification.verification_required %}
+                            <span class="badge bg-warning">نعم</span>
+                        {% else %}
+                            <span class="badge bg-secondary">لا</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>تم التحقق بواسطة:</td>
+                    <td>{{ task.verification.verified_by_user.full_name if task.verification and task.verification.verified_by_user else '-' }}</td>
+                </tr>
+                <tr>
+                    <td>تاريخ التحقق:</td>
+                    <td>{{ task.verification.verified_at.strftime('%Y-%m-%d %H:%M') if task.verification and task.verification.verified_at else '-' }}</td>
+                </tr>
+                <tr>
+                    <td>ملاحظات التحقق:</td>
+                    <td>{{ task.verification.notes if task.verification else '-' }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="info-card">
+            <h6 class="info-card-title">
+                <i class="fas fa-chart-line text-primary"></i> أداء التنفيذ
+            </h6>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="border rounded p-3 text-center">
+                        <small class="text-muted">التقدم المخطط</small>
+                        <h4 class="mb-0">{{ task.planning.estimated_effort or 0 }} ساعة</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3 text-center">
+                        <small class="text-muted">الوقت الفعلي</small>
+                        <h4 class="mb-0">{{ task.execution.actual_duration or 0 }} ساعة</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3 text-center {% if (task.execution.actual_duration or 0) <= (task.planning.estimated_effort or 0) %}bg-success bg-opacity-10{% else %}bg-danger bg-opacity-10{% endif %}">
+                        <small class="text-muted">الفرق</small>
+                        <h4 class="mb-0 {% if (task.execution.actual_duration or 0) <= (task.planning.estimated_effort or 0) %}text-success{% else %}text-danger{% endif %}">
+                            {{ (task.execution.actual_duration or 0) - (task.planning.estimated_effort or 0) }} ساعة
+                        </h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3 text-center">
+                        <small class="text-muted">كفاءة التنفيذ</small>
+                        <h4 class="mb-0">
+                            {% if task.planning.estimated_effort and task.planning.estimated_effort > 0 %}
+                                {{ "%.1f"|format(((task.planning.estimated_effort / (task.execution.actual_duration or 1)) * 100)) }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,330 @@
+{% extends "company/base.html" %}
+
+{% block title %}تفاصيل طلب {{ type_info.name }} #{{ request.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-header {
+        background: linear-gradient(135deg, 
+            {% if request_type == 'material' %}#3498db 0%, #2980b9 100%
+            {% else %}#00b894 0%, #019874 100%{% endif %});
+        border-radius: 25px;
+        padding: 30px;
+        color: white;
+        margin-bottom: 30px;
+    }
+    .info-card {
+        background: white;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+        border-left: 4px solid;
+        transition: transform 0.3s ease;
+    }
+    .info-card:hover { transform: translateY(-3px); }
+    .info-card.details { border-left-color: #667eea; }
+    .info-card.items { border-left-color: #3498db; }
+    .info-card.deliveries { border-left-color: #00b894; }
+    
+    .item-card {
+        background: #f8f9fa;
+        border-radius: 14px;
+        padding: 15px;
+        margin-bottom: 12px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    .item-card:hover {
+        border-color: #3498db;
+        box-shadow: 0 5px 15px rgba(52,152,219,0.1);
+    }
+    .delivery-card {
+        background: #f8f9fa;
+        border-radius: 14px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-right: 4px solid;
+        transition: all 0.3s ease;
+    }
+    .delivery-card.confirmed { border-right-color: #00b894; }
+    .delivery-card.rejected { border-right-color: #d63031; }
+    .delivery-card.pending { border-right-color: #fdcb6e; }
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -22px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #667eea;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #667eea;
+    }
+    .photo-gallery {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+    .photo-thumb {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .photo-thumb:hover { transform: scale(1.05); }
+    .btn-back {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 12px 25px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: transform 0.2s ease;
+    }
+    .btn-back:hover { transform: translateX(-5px); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="detail-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2 class="mb-2">
+                    <i class="{{ type_info.icon }} me-3"></i>
+                    طلب {{ type_info.name }} #{{ requests.id }}
+                </h2>
+                <p class="mb-0 text-white-50">
+                    المشروع: {{ requests.project.name }} | الرمز: {{ requests.project.project_code }}
+                </p>
+            </div>
+            <div>
+                <span class="status-badge status-{{ requests.status }} px-3 py-2 rounded-pill bg-white bg-opacity-20">
+                    {% if requests.status == 'pending' %}
+                        <i class="fas fa-clock me-1"></i> في انتظار العرض
+                    {% elif requests.status == 'started' %}
+                        <i class="fas fa-play-circle me-1"></i> قيد التنفيذ
+                    {% elif requests.status == 'completed' %}
+                        <i class="fas fa-check-circle me-1"></i> مكتمل
+                    {% elif requests.status == 'cancelled' %}
+                        <i class="fas fa-ban me-1"></i> ملغي
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- معلومات الطلب -->
+            <div class="info-card details">
+                <h5 class="mb-3"><i class="fas fa-info-circle text-primary me-2"></i> معلومات الطلب</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">رقم الطلب</div>
+                        <div class="fw-bold">#{{ requests.id }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">تاريخ الإنشاء</div>
+                        <div class="fw-bold">{{ requests.created_at.strftime('%Y-%m-%d %H:%M') if requests.created_at else 'غير محدد' }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">التسليم المطلوب</div>
+                        <div class="fw-bold {% if requests.required_date and requests.required_date < now.date() and requests.status not in ['completed', 'cancelled'] %}text-danger{% endif %}">
+                            {{ requests.required_date.strftime('%Y-%m-%d') if requests.required_date else 'غير محدد' }}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">المورد</div>
+                        <div class="fw-bold">{{ requests.supplier.full_name }}</div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="text-muted small">موقع التسليم</div>
+                        <div class="fw-bold">{{ requests.site_location or 'غير محدد' }}</div>
+                    </div>
+                </div>
+                {% if requests.notes %}
+                <div class="mt-2 p-2 bg-light rounded"><i class="fas fa-sticky-note me-2"></i>{{ request.notes }}</div>
+                {% endif %}
+            </div>
+
+            <!-- {{ type_info.name }} المطلوبة -->
+            <div class="info-card items">
+                <h5 class="mb-3"><i class="fas {{ type_info.icon }} text-primary me-2"></i> {{ type_info.name }} المطلوبة</h5>
+                {% for item in items %}
+                <div class="item-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="fw-bold mb-1">
+                                {{ item.resource_name if request_type == 'material' else item.equipment_name }}
+                            </h6>
+                            <div class="d-flex gap-3 mt-2">
+                                <span class="badge bg-secondary">المطلوب: {{ item.required_quantity }} {{ item.unit }}</span>
+                                <span class="badge bg-success">المسلم: {{ item.delivered_quantity }} {{ item.unit }}</span>
+                                <span class="badge bg-warning">المتبقي: {{ item.remaining_quantity }} {{ item.unit }}</span>
+                            </div>
+                            {% if item.offer_price %}
+                            <div class="mt-2">
+                                <span class="text-muted small">عرض السعر:</span>
+                                <span class="fw-bold">{{ item.offer_price }} {{ item.offer_currency }}</span>
+                                {% if item.offer_status == 'approved' %}
+                                    <span class="badge bg-success ms-2">معتمد</span>
+                                {% elif item.offer_status == 'pending' %}
+                                    <span class="badge bg-warning ms-2">في انتظار الموافقة</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <div class="small text-muted">السعر الإجمالي</div>
+                            <div class="fw-bold text-success">{{ (item.delivered_quantity * item.unit_price)|round(2) if item.unit_price else 0 }} {{ item.offer_currency or 'SAR' }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- سجل التسليمات -->
+            {% if deliveries %}
+            <div class="info-card deliveries">
+                <h5 class="mb-3"><i class="fas fa-truck text-success me-2"></i> سجل التسليمات</h5>
+                {% for delivery in deliveries %}
+                <div class="delivery-card {{ delivery.status }}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="fw-bold">{{ delivery.delivery_number }}</div>
+                            <small class="text-muted">{{ delivery.delivery_date.strftime('%Y-%m-%d %H:%M') if delivery.delivery_date else 'تاريخ غير محدد' }}</small>
+                        </div>
+                        <div>
+                            {% if delivery.status == 'confirmed' %}
+                                <span class="badge bg-success">تم التأكيد</span>
+                            {% elif delivery.status == 'rejected' %}
+                                <span class="badge bg-danger">مرفوض</span>
+                            {% else %}
+                                <span class="badge bg-warning">في انتظار التأكيد</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        {% for item in delivery.delivered_items %}
+                        <div class="d-flex justify-content-between align-items-center small mb-1">
+                            <span>{{ item.name }}: {{ item.quantity }} {{ item.unit }}</span>
+                            <span>{{ item.unit_price }} {{ item.currency }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if delivery.photos %}
+                    <div class="photo-gallery">
+                        {% for photo in delivery.photos %}
+                        <img src="{{ photo }}" class="photo-thumb" onclick="openModal('{{ photo }}')">
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- سجل التحديثات -->
+            {% if updates %}
+            <div class="info-card">
+                <h5 class="mb-3"><i class="fas fa-history text-primary me-2"></i> سجل التحديثات</h5>
+                <div class="timeline">
+                    {% for update in updates %}
+                    <div class="timeline-item">
+                        <div class="mb-1">
+                            <span class="badge bg-primary">{{ update.new_status }}</span>
+                            <small class="text-muted ms-2">{{ update.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                        <div class="small">{{ update.message }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <!-- ملخص الطلب -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="fas fa-chart-pie text-primary me-2"></i> ملخص الطلب</h5>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>نسبة الإنجاز</span>
+                        <span class="text-success">{{ "%.1f"|format(requests.completion_percentage) }}%</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ requests.completion_percentage }}%"></div>
+                    </div>
+                </div>
+                <div class="row text-center py-2">
+                    <div class="col-4">
+                        <h4 class="text-primary mb-0">{{ items|sum(attribute='required_quantity')|round(1) }}</h4>
+                        <small class="text-muted">المطلوب</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-success mb-0">{{ items|sum(attribute='delivered_quantity')|round(1) }}</h4>
+                        <small class="text-muted">المسلم</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-warning mb-0">{{ items|sum(attribute='remaining_quantity')|round(1) }}</h4>
+                        <small class="text-muted">المتبقي</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- أزرار الإجراءات -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="fas fa-cog text-primary me-2"></i> الإجراءات</h5>
+                <a href="{{ url_for('company.procurement_requests_list') }}" class="btn btn-back w-100">
+                    <i class="fas fa-arrow-right me-2"></i> العودة إلى القائمة
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal لعرض الصور -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">صورة التسليم</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" style="max-height: 70vh;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openModal(imageUrl) {
+        document.getElementById('modalImage').src = imageUrl;
+        new bootstrap.Modal(document.getElementById('imageModal')).show();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,283 @@
+{% extends "client/base.html" %}
+
+{% block title %}طلبات التغيير - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4><i class="fas fa-exchange-alt me-2"></i> طلبات التغيير</h4>
+                <p class="text-muted mb-0">{{ project.name }}</p>
+            </div>
+            <a href="{{ url_for('client.project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> العودة للمشروع
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-warning">{{ stats.submitted }}</h3>
+            <small>قيد المراجعة</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-success">{{ stats.approved }}</h3>
+            <small>موافق عليها</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-danger">{{ stats.rejected }}</h3>
+            <small>مرفوضة</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <h3 class="text-info">{{ stats.implemented }}</h3>
+            <small>منفذة</small>
+        </div>
+    </div>
+</div>
+
+<!-- Change Requests Table -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-list me-2"></i> قائمة طلبات التغيير</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم الطلب</th>
+                        <th>العنوان</th>
+                        <th>النوع</th>
+                        <th>التكلفة المقدرة</th>
+                        <th>التكلفة الفعلية</th>
+                        <th>الحالة</th>
+                        <th>تاريخ الطلب</th>
+                        <th>تاريخ القرار</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cr in change_requests %}
+                    <tr class="{% if cr.status == 'submitted' %}table-warning{% endif %}">
+                        <td><span class="badge bg-secondary">{{ cr.cr_number }}</span></td>
+                        <td>
+                            <strong>{{ cr.title }}</strong>
+                            {% if cr.description %}
+                            <br><small class="text-muted">{{ cr.description|truncate(50) }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ cr.change_type or '-' }}</td>
+                        <td>{{ "{:,.0f}".format(cr.estimated_cost) if cr.estimated_cost else '-' }} ريال</td>
+                        <td>{{ "{:,.0f}".format(cr.actual_cost) if cr.actual_cost else '-' }} ريال</td>
+                        <td>
+                            {% if cr.status == 'submitted' %}
+                            <span class="badge bg-warning">قيد المراجعة</span>
+                            {% elif cr.status == 'approved' %}
+                            <span class="badge bg-success">موافق</span>
+                            {% elif cr.status == 'rejected' %}
+                            <span class="badge bg-danger">مرفوض</span>
+                            {% elif cr.status == 'implemented' %}
+                            <span class="badge bg-info">منفذ</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ cr.requested_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ cr.decision_date.strftime('%Y-%m-%d') if cr.decision_date else '-' }}</td>
+                        <td>
+                            {% if cr.status == 'submitted' %}
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-success approve-change" data-cr-id="{{ cr.id }}">
+                                    <i class="fas fa-check"></i> موافقة
+                                </button>
+                                <button class="btn btn-sm btn-danger reject-change" data-cr-id="{{ cr.id }}">
+                                    <i class="fas fa-times"></i> رفض
+                                </button>
+                            </div>
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-primary view-change" data-cr-id="{{ cr.id }}">
+                                <i class="fas fa-eye"></i> عرض
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <i class="fas fa-exchange-alt fa-3x text-muted mb-3 d-block"></i>
+                            <p class="text-muted">لا توجد طلبات تغيير</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Change Request Review Modal -->
+<div class="modal fade" id="changeRequestModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">مراجعة طلب التغيير</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="crDetails"></div>
+                <hr>
+                <div class="mb-3">
+                    <label class="form-label">ملاحظات القرار</label>
+                    <textarea id="crNotes" class="form-control" rows="3" placeholder="أدخل ملاحظاتك حول هذا الطلب..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="rejectCrBtn">رفض الطلب</button>
+                <button type="button" class="btn btn-success" id="approveCrBtn">الموافقة على الطلب</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount || 0);
+    }
+    
+    $('.approve-change').click(function() {
+        const crId = $(this).data('cr-id');
+        showChangeModal(crId);
+        $('#approveCrBtn').off('click').click(() => submitDecision(crId, 'approve'));
+        $('#rejectCrBtn').off('click').click(() => submitDecision(crId, 'reject'));
+    });
+    
+    $('.reject-change').click(function() {
+        const crId = $(this).data('cr-id');
+        showChangeModal(crId);
+        $('#approveCrBtn').off('click').click(() => submitDecision(crId, 'approve'));
+        $('#rejectCrBtn').off('click').click(() => submitDecision(crId, 'reject'));
+    });
+    
+    $('.view-change').click(function() {
+        const crId = $(this).data('cr-id');
+        showChangeModal(crId, true);
+    });
+    
+    function showChangeModal(crId, readonly = false) {
+        $.get(`/api/change-request/${crId}`, function(response) {
+            if (response.success) {
+                const cr = response.change_request;
+                $('#crDetails').html(`
+                    <div class="mb-3">
+                        <h6>${cr.title}</h6>
+                        <p class="text-muted">${cr.description || 'لا يوجد وصف'}</p>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">رقم الطلب</small>
+                                <strong>${cr.cr_number}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">النوع</small>
+                                <strong>${cr.change_type || '-'}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">تاريخ الطلب</small>
+                                <strong>${cr.requested_date}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">التكلفة المقدرة</small>
+                                <strong class="text-warning">${formatCurrency(cr.estimated_cost)}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">التكلفة الفعلية</small>
+                                <strong class="text-info">${formatCurrency(cr.actual_cost)}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">الحالة</small>
+                                <strong>${cr.status}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="border rounded p-3">
+                            <small class="text-muted d-block mb-2">تأثير النطاق</small>
+                            <p>${cr.impact_scope || 'لا يوجد'}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="border rounded p-3">
+                                <small class="text-muted d-block mb-2">تأثير الجدول الزمني</small>
+                                <p>${cr.impact_schedule || 'لا يوجد'}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border rounded p-3">
+                                <small class="text-muted d-block mb-2">تأثير التكلفة</small>
+                                <p>${cr.impact_cost || 'لا يوجد'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    ${cr.decision_notes ? `
+                    <div class="alert alert-info">
+                        <small class="d-block">ملاحظات القرار السابق:</small>
+                        <p class="mb-0">${cr.decision_notes}</p>
+                    </div>
+                    ` : ''}
+                `);
+                
+                if (readonly) {
+                    $('#crNotes').prop('disabled', true).val('');
+                    $('.modal-footer').hide();
+                } else {
+                    $('#crNotes').prop('disabled', false).val('');
+                    $('.modal-footer').show();
+                }
+                
+                $('#changeRequestModal').modal('show');
+            }
+        });
+    }
+    
+    function submitDecision(crId, decision) {
+        const notes = $('#crNotes').val();
+        $.ajax({
+            url: `/client/projects/{{ project.id }}/change-requests/${crId}/review`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ decision: decision, notes: notes }),
+            success: function(response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert('حدث خطأ: ' + response.error);
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

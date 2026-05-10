@@ -1,0 +1,18 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}خطأ في الخادم{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h1>500</h1>
+        <h2>خطأ في الخادم</h2>
+        <p>عذراً، حدث خطأ غير متوقع. فريق الدعم الفني تم إبلاغه.</p>
+        <a href="{{ url_for('index') }}" class="btn-primary">
+            <i class="fas fa-home"></i>
+            العودة للرئيسية
+        </a>
+    </div>
+</div>
+{% endblock %}

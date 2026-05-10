@@ -1,0 +1,312 @@
+{# templates/platform/notifications/index.html #}
+{% extends "platform/base.html" %}
+
+{% block title %}{{ _('platform.notifications') }}{% endblock %}
+
+{% block content %}
+<div class="animate-fadeInUp">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="page-title">{{ _('platform.notifications') }}</h1>
+            <p class="text-muted mb-0">{{ _('platform.notifications_description') }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button id="markAllReadBtn" class="btn btn-outline-primary">
+                <i class="fas fa-check-double me-2"></i>{{ _('platform.mark_all_read') }}
+            </button>
+            <button id="deleteAllReadBtn" class="btn btn-outline-danger">
+                <i class="fas fa-trash-alt me-2"></i>{{ _('platform.delete_all_read') }}
+            </button>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-primary">{{ stats.total }}</h3>
+                <small>{{ _('platform.total_notifications') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-warning">{{ stats.unread }}</h3>
+                <small>{{ _('platform.unread') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-danger">{{ stats.high_priority }}</h3>
+                <small>{{ _('platform.high_priority') }}</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center p-3">
+                <h3 class="mb-0 text-danger">{{ stats.critical }}</h3>
+                <small>{{ _('platform.critical') }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters Bar -->
+    <div class="filters-bar">
+        <div class="row g-3 w-100">
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small text-muted">{{ _('platform.notification_type') }}</label>
+                <select id="typeFilter" class="form-select">
+                    <option value="all" {% if filters.type == 'all' %}selected{% endif %}>{{ _('platform.all_types') }}</option>
+                    {% for type in types %}
+                    <option value="{{ type }}" {% if filters.type == type %}selected{% endif %}>
+                        {{ _('platform.notification_type_' + type) if _('platform.notification_type_' + type) != 'platform.notification_type_' + type else type.replace('_', ' ').title() }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small text-muted">{{ _('platform.priority') }}</label>
+                <select id="priorityFilter" class="form-select">
+                    <option value="all" {% if filters.priority == 'all' %}selected{% endif %}>{{ _('platform.all_priorities') }}</option>
+                    <option value="low" {% if filters.priority == 'low' %}selected{% endif %}>{{ _('priority.low') }}</option>
+                    <option value="medium" {% if filters.priority == 'medium' %}selected{% endif %}>{{ _('priority.medium') }}</option>
+                    <option value="high" {% if filters.priority == 'high' %}selected{% endif %}>{{ _('priority.high') }}</option>
+                    <option value="critical" {% if filters.priority == 'critical' %}selected{% endif %}>{{ _('priority.critical') }}</option>
+                </select>
+            </div>
+            <div class="col-lg-4 col-md-12 d-flex align-items-end">
+                <div class="d-flex gap-2 w-100">
+                    <button id="applyFilters" class="btn btn-primary flex-grow-1">
+                        <i class="fas fa-filter me-2"></i>{{ _('common.filter') }}
+                    </button>
+                    <button id="resetFilters" class="btn btn-outline-secondary">
+                        <i class="fas fa-undo me-2"></i>{{ _('common.reset') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notifications List -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="notifications-list">
+                {% for notification in notifications.items %}
+                <div class="notification-item {% if not notification.is_read %}unread{% endif %} p-3 border-bottom" data-id="{{ notification.id }}">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="notification-icon bg-{{ notification.get_priority_class() }}-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <i class="{{ notification.get_icon_class() }} fa-lg text-{{ notification.get_priority_class() }}"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                <div>
+                                    <h6 class="mb-1 {% if not notification.is_read %}fw-bold{% endif %}">
+                                        {{ notification.get_title() }}
+                                    </h6>
+                                    <p class="text-muted small mb-1">{{ notification.get_message()|truncate(150) }}</p>
+                                </div>
+                                {{ notification.get_priority_badge()|safe }}
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="text-muted small">
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ notification.time_ago }}
+                                </div>
+                                <div class="btn-group">
+                                    {% if not notification.is_read %}
+                                    <button class="btn btn-sm btn-outline-primary mark-read-btn" data-id="{{ notification.id }}">
+                                        <i class="fas fa-check me-1"></i>{{ _('platform.mark_read') }}
+                                    </button>
+                                    {% endif %}
+                                    {% if notification.action_url %}
+                                    <a href="{{ notification.action_url }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-external-link-alt me-1"></i>{{ notification.get_action_text() }}
+                                    </a>
+                                    {% endif %}
+                                    <a href="{{ url_for('platform.platform_notification_detail', notif_id=notification.id) }}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye me-1"></i>{{ _('common.view') }}
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger delete-notif-btn" data-id="{{ notification.id }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">{{ _('platform.no_notifications') }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {% if notifications.pages > 1 %}
+        <div class="card-footer bg-transparent">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    {% if notifications.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('platform.platform_notifications', page=notifications.prev_num, type=filters.type, priority=filters.priority, read=filters.read) }}">
+                            <i class="fas fa-chevron-{{ 'right' if get_direction() == 'rtl' else 'left' }}"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in notifications.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == notifications.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('platform.platform_notifications', page=page_num, type=filters.type, priority=filters.priority, read=filters.read) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if notifications.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('platform.platform_notifications', page=notifications.next_num, type=filters.type, priority=filters.priority, read=filters.read) }}">
+                            <i class="fas fa-chevron-{{ 'left' if get_direction() == 'rtl' else 'right' }}"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.notification-item {
+    transition: background 0.2s ease;
+}
+.notification-item:hover {
+    background: rgba(67, 97, 238, 0.03);
+}
+.notification-item.unread {
+    background: rgba(67, 97, 238, 0.05);
+    border-left: 3px solid var(--primary-color);
+}
+.bg-danger-light {
+    background: rgba(239, 68, 68, 0.1);
+}
+.bg-warning-light {
+    background: rgba(245, 158, 11, 0.1);
+}
+.bg-info-light {
+    background: rgba(59, 130, 246, 0.1);
+}
+.bg-success-light {
+    background: rgba(16, 185, 129, 0.1);
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    // Apply Filters
+    $('#applyFilters').click(function() {
+        const type = $('#typeFilter').val();
+        const priority = $('#priorityFilter').val();
+        const read = $('#readFilter').val();
+        window.location.href = "{{ url_for('platform.platform_notifications') }}?type=" + type + "&priority=" + priority + "&read=" + read;
+    });
+    
+    // Reset Filters
+    $('#resetFilters').click(function() {
+        window.location.href = "{{ url_for('platform.platform_notifications') }}";
+    });
+    
+    // Mark as Read
+    $('.mark-read-btn').click(function() {
+        const notifId = $(this).data('id');
+        const $item = $(this).closest('.notification-item');
+        
+        $.ajax({
+            url: "{{ url_for('platform.platform_mark_notification_read', notif_id=0) }}".replace('0', notifId),
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    $item.removeClass('unread');
+                    $item.find('.mark-read-btn').remove();
+                    toastr.success('{{ _("platform.marked_as_read") }}');
+                    updateUnreadCount();
+                }
+            }
+        });
+    });
+    
+    // Mark All Read
+    $('#markAllReadBtn').click(function() {
+        $.ajax({
+            url: "{{ url_for('platform.platform_mark_all_notifications_read') }}",
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    $('.notification-item').removeClass('unread');
+                    $('.mark-read-btn').remove();
+                    toastr.success(response.message);
+                    updateUnreadCount();
+                }
+            }
+        });
+    });
+    
+    // Delete Notification
+    $('.delete-notif-btn').click(function() {
+        const notifId = $(this).data('id');
+        const $item = $(this).closest('.notification-item');
+        
+        if (confirm('{{ _("platform.confirm_delete_notification") }}')) {
+            $.ajax({
+                url: "{{ url_for('platform.platform_delete_notification', notif_id=0) }}".replace('0', notifId),
+                method: 'DELETE',
+                success: function(response) {
+                    if (response.success) {
+                        $item.fadeOut(300, function() {
+                            $(this).remove();
+                            if ($('.notification-item').length === 0) {
+                                location.reload();
+                            }
+                        });
+                        toastr.success('{{ _("platform.notification_deleted") }}');
+                        updateUnreadCount();
+                    }
+                }
+            });
+        }
+    });
+    
+    // Delete All Read
+    $('#deleteAllReadBtn').click(function() {
+        if (confirm('{{ _("platform.confirm_delete_all_read") }}')) {
+            $.ajax({
+                url: "{{ url_for('platform.platform_delete_all_read_notifications') }}",
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    }
+                }
+            });
+        }
+    });
+    
+    function updateUnreadCount() {
+        $.ajax({
+            url: "{{ url_for('platform.api_platform_unread_count') }}",
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    $('.unread-count-badge').text(response.count);
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

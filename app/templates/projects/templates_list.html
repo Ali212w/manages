@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}قوالب المشاريع{% endblock %}
+
+{% block extra_css %}
+<style>
+    .templates-header {
+        background: linear-gradient(135deg, #6f42c1 0%, #007bff 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .format-card {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+        height: 100%;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+    
+    .format-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        border-color: #007bff;
+    }
+    
+    .format-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+    }
+    
+    .format-excel .format-icon { color: #28a745; }
+    .format-word .format-icon { color: #007bff; }
+    .format-csv .format-icon { color: #17a2b8; }
+    .format-json .format-icon { color: #ffc107; }
+    .format-pdf .format-icon { color: #dc3545; }
+    .format-html .format-icon { color: #6f42c1; }
+    
+    .options-panel {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 30px;
+    }
+    
+    .preview-modal .modal-body {
+        padding: 0;
+    }
+    
+    .preview-frame {
+        width: 100%;
+        height: 70vh;
+        border: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="templates-header">
+    <h1><i class="fas fa-file-alt"></i> قوالب المشاريع</h1>
+    <p class="lead">اختر الصيغة المناسبة لتحميل قالب المشروع</p>
+    <p class="mb-0">بعد تعبئة القالب، يمكنك رفعه لاستخراج البيانات تلقائياً</p>
+</div>
+
+<!-- خيارات التحميل -->
+<div class="options-panel">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="includeExamples" checked>
+                <label class="form-check-label">تضمين أمثلة توضيحية</label>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <select class="form-select" id="language">
+                <option value="ar">اللغة العربية</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- قائمة القوالب -->
+<div class="row mt-4">
+    {% for format in formats %}
+    <div class="col-md-4 col-lg-3 mb-4">
+        <div class="format-card format-{{ format.format }}" onclick="downloadTemplate('{{ format.format }}')">
+            <div class="text-center">
+                <div class="format-icon">
+                    <i class="fas {{ format.icon }}"></i>
+                </div>
+                <h4>{{ format.name }}</h4>
+                <p class="text-muted small">{{ format.description }}</p>
+                <div class="mt-3">
+                    <button class="btn btn-outline-{{ format.color }} btn-sm" onclick="event.stopPropagation(); previewTemplate('{{ format.format }}')">
+                        <i class="fas fa-eye"></i> معاينة
+                    </button>
+                    <button class="btn btn-{{ format.color }} btn-sm" onclick="event.stopPropagation(); downloadTemplate('{{ format.format }}')">
+                        <i class="fas fa-download"></i> تحميل
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- معلومات إضافية -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> معلومات عن القوالب</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>مميزات القوالب:</h6>
+                        <ul>
+                            <li>متوافقة مع نظام الاستخراج الذكي</li>
+                            <li>تدعم التسلسل الهرمي للمهام</li>
+                            <li>تتضمن جميع الحقول المطلوبة</li>
+                            <li>قابلة للتخصيص حسب احتياجك</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>كيفية الاستخدام:</h6>
+                        <ol>
+                            <li>اختر الصيغة المناسبة</li>
+                            <li>حمّل القالب</li>
+                            <li>عبّئ البيانات في الملف</li>
+                            <li>ارفع الملف في صفحة إنشاء المشروع</li>
+                            <li>سيتم استخراج البيانات تلقائياً</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal المعاينة -->
+<div class="modal fade preview-modal" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-eye"></i> معاينة القالب</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <iframe id="previewFrame" class="preview-frame"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" onclick="downloadCurrentTemplate()">
+                    <i class="fas fa-download"></i> تحميل القالب
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentFormat = 'excel';
+
+function downloadTemplate(format) {
+    const includeExamples = document.getElementById('includeExamples').checked;
+    const language = document.getElementById('language').value;
+    
+    window.location.href = `/project/template/download/${format}?examples=${includeExamples}&lang=${language}`;
+}
+
+<!-- في templates/project/templates_list.html، قم بتعديل دالة previewTemplate -->
+
+function previewTemplate(format) {
+    currentFormat = format;
+    const includeExamples = document.getElementById('includeExamples').checked;
+    const language = document.getElementById('language').value;
+    
+    // توجيه المستخدم لصفحة المعاينة بدلاً من محاولة العرض في modal
+    window.location.href = `/project/template/preview/${format}?examples=${includeExamples}&lang=${language}`;
+    
+    /* الطريقة القديمة (إذا أردت استخدام modal بدلاً من صفحة منفصلة)
+    const previewFrame = document.getElementById('previewFrame');
+    
+    // محاولة عرض الملف حسب الصيغة
+    if (format === 'pdf') {
+        previewFrame.src = `/project/template/download/${format}?examples=${includeExamples}&lang=${language}`;
+    } else if (format === 'html') {
+        previewFrame.src = `/project/template/download/${format}?examples=${includeExamples}&lang=${language}`;
+    } else {
+        // للصيغ الأخرى، نعرض صفحة معلومات
+        previewFrame.srcdoc = `
+            <html>
+                <body style="font-family: Arial; padding: 20px; text-align: center;">
+                    <h2>معاينة ${format.toUpperCase()}</h2>
+                    <p>لا يمكن معاينة هذا النوع من الملفات مباشرة</p>
+                    <p>قم بتحميل الملف لفتحه في البرنامج المناسب</p>
+                    <button onclick="parent.downloadTemplate('${format}')" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        تحميل الملف
+                    </button>
+                </body>
+            </html>
+        `;
+    }
+    
+    new bootstrap.Modal(document.getElementById('previewModal')).show();
+    */
+}
+
+function downloadCurrentTemplate() {
+    downloadTemplate(currentFormat);
+}
+</script>
+{% endblock %}

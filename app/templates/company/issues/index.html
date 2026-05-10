@@ -1,0 +1,366 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ _('issues') }} - {{ _('company_dashboard') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Priority Colors */
+    .priority-critical { background-color: #dc3545; color: white; }
+    .priority-high { background-color: #fd7e14; color: white; }
+    .priority-medium { background-color: #ffc107; color: #2c3e50; }
+    .priority-low { background-color: #28a745; color: white; }
+    
+    /* Status Colors */
+    .status-open { background-color: #dc3545; color: white; }
+    .status-in-progress { background-color: #ffc107; color: #2c3e50; }
+    .status-resolved { background-color: #17a2b8; color: white; }
+    .status-closed { background-color: #6c757d; color: white; }
+    
+    /* Issue Card */
+    .issue-card {
+        transition: all 0.3s ease;
+        border: none;
+        border-radius: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .issue-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .issue-code {
+        font-family: monospace;
+        font-size: 12px;
+        background: #f8f9fa;
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+    
+    /* Filter Bar */
+    .filter-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    .filter-btn {
+        border-radius: 30px;
+        padding: 6px 18px;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+    }
+    
+    .filter-btn.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    /* Stat Card */
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s;
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Page Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div>
+            <h4 class="mb-1 fw-bold">
+                <i class="fas fa-bug me-2 text-danger"></i>
+                {{ _('issues_management') }}
+            </h4>
+            <p class="text-muted mb-0 small">{{ _('manage_all_issues') }}</p>
+        </div>
+        <div class="mt-3 mt-md-0">
+            <a href="{{ url_for('company.create_issue') }}" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus me-2"></i>
+                {{ _('report_issue') }}
+            </a>
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary mx-auto">
+                    <i class="fas fa-bug fa-2x"></i>
+                </div>
+                <h3 class="mb-0 fw-bold">{{ stats.total|default(0) }}</h3>
+                <small class="text-muted">{{ _('total_issues') }}</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-danger bg-opacity-10 text-danger mx-auto">
+                    <i class="fas fa-exclamation-circle fa-2x"></i>
+                </div>
+                <h3 class="mb-0 fw-bold">{{ stats.open|default(0) }}</h3>
+                <small class="text-muted">{{ _('open_issues') }}</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning mx-auto">
+                    <i class="fas fa-spinner fa-2x"></i>
+                </div>
+                <h3 class="mb-0 fw-bold">{{ stats.in_progress|default(0) }}</h3>
+                <small class="text-muted">{{ _('in_progress_issues') }}</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-success bg-opacity-10 text-success mx-auto">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+                <h3 class="mb-0 fw-bold">{{ stats.resolved|default(0) }}</h3>
+                <small class="text-muted">{{ _('resolved_issues') }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Priority Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                <span class="badge priority-critical px-3 py-2">{{ _('critical') }}: {{ stats.critical|default(0) }}</span>
+                <span class="badge priority-high px-3 py-2">{{ _('high') }}: {{ stats.high|default(0) }}</span>
+                <span class="badge priority-medium px-3 py-2">{{ _('medium') }}: {{ stats.medium|default(0) }}</span>
+                <span class="badge priority-low px-3 py-2">{{ _('low') }}: {{ stats.low|default(0) }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-auto">
+                <span class="text-muted small">{{ _('filter_by') }}:</span>
+            </div>
+            <div class="col-md-auto">
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-sm filter-btn {% if status_filter == 'all' %}active{% endif %}" data-filter="status" data-value="all">
+                        {{ _('all') }}
+                    </button>
+                    <button class="btn btn-sm filter-btn {% if status_filter == 'open' %}active{% endif %}" data-filter="status" data-value="open">
+                        <i class="fas fa-exclamation-circle me-1"></i> {{ _('open') }}
+                    </button>
+                    <button class="btn btn-sm filter-btn {% if status_filter == 'in_progress' %}active{% endif %}" data-filter="status" data-value="in_progress">
+                        <i class="fas fa-spinner me-1"></i> {{ _('in_progress') }}
+                    </button>
+                    <button class="btn btn-sm filter-btn {% if status_filter == 'resolved' %}active{% endif %}" data-filter="status" data-value="resolved">
+                        <i class="fas fa-check-circle me-1"></i> {{ _('resolved') }}
+                    </button>
+                    <button class="btn btn-sm filter-btn {% if status_filter == 'closed' %}active{% endif %}" data-filter="status" data-value="closed">
+                        <i class="fas fa-archive me-1"></i> {{ _('closed') }}
+                    </button>
+                </div>
+            </div>
+            <div class="col-md">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" id="searchInput" class="form-control border-start-0" 
+                           placeholder="{{ _('search_issues') }}" value="{{ search_query }}">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Issues List -->
+    <div id="issuesContainer">
+        {% if issues %}
+            {% for issue in issues %}
+            <div class="card issue-card">
+                <div class="card-body">
+                    <div class="row align-items-start">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                                <span class="issue-code">{{ issue.issue_code }}</span>
+                                <span class="badge priority-{{ issue.priority }}">
+                                    {{ _(issue.priority) }}
+                                </span>
+                                <span class="badge status-{{ issue.status }}">
+                                    {{ _(issue.status) }}
+                                </span>
+                                <span class="badge bg-secondary">{{ issue.category or _('general') }}</span>
+                            </div>
+                            <h5 class="mb-2">
+                                <a href="{{ url_for('company.view_issue', issue_id=issue.id) }}" class="text-decoration-none text-dark">
+                                    {{ issue.title }}
+                                </a>
+                            </h5>
+                            <p class="text-muted small mb-2">{{ issue.description|truncate(100) if issue.description else '' }}</p>
+                            <div class="d-flex flex-wrap gap-3 mt-2">
+                                <div class="small text-muted">
+                                    <i class="fas fa-project-diagram me-1"></i>
+                                    {{ issue.project.name if issue.project else '-' }}
+                                </div>
+                                <div class="small text-muted">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    {{ issue.reported_date.strftime('%Y-%m-%d') if issue.reported_date else '-' }}
+                                </div>
+                                <div class="small text-muted">
+                                    <i class="fas fa-user me-1"></i>
+                                    {{ _('reporter') }}: {{ issue.reporter.full_name if issue.reporter else '-' }}
+                                </div>
+                                {% if issue.assigned_to %}
+                                <div class="small text-muted">
+                                    <i class="fas fa-user-check me-1"></i>
+                                    {{ _('assigned_to') }}: {{ issue.assignee.full_name if issue.assignee else '-' }}
+                                </div>
+                                {% endif %}
+                                {% if issue.due_date %}
+                                <div class="small {% if issue.due_date < now.date() %}text-danger{% else %}text-muted{% endif %}">
+                                    <i class="fas fa-hourglass-half me-1"></i>
+                                    {{ _('due_date') }}: {{ issue.due_date.strftime('%Y-%m-%d') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <div class="btn-group">
+                                <a href="{{ url_for('company.view_issue', issue_id=issue.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i> {{ _('view') }}
+                                </a>
+                                <a href="{{ url_for('company.edit_issue', issue_id=issue.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit me-1"></i> {{ _('edit') }}
+                                </a>
+                                {% if issue.status != 'closed' %}
+                                <button class="btn btn-sm btn-outline-success update-status" data-id="{{ issue.id }}" data-status="resolved">
+                                    <i class="fas fa-check me-1"></i> {{ _('resolve') }}
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-bug fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">{{ _('no_issues_found') }}</h5>
+            <p class="text-muted">{{ _('no_issues_message') }}</p>
+            <a href="{{ url_for('company.create_issue') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> {{ _('report_first_issue') }}
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i> {{ _('update_issue_status') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ _('new_status') }}</label>
+                    <select id="newStatus" class="form-select">
+                        <option value="open">{{ _('open') }}</option>
+                        <option value="in_progress">{{ _('in_progress') }}</option>
+                        <option value="resolved">{{ _('resolved') }}</option>
+                        <option value="closed">{{ _('closed') }}</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('resolution_notes') }}</label>
+                    <textarea id="resolutionNotes" class="form-control" rows="3" 
+                              placeholder="{{ _('enter_resolution_notes') }}"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                <button type="button" class="btn btn-primary" id="confirmUpdateStatus">{{ _('update') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentIssueId = null;
+
+// Filter functionality
+$('.filter-btn').click(function() {
+    const filterType = $(this).data('filter');
+    const filterValue = $(this).data('value');
+    
+    if (filterType === 'status') {
+        window.location.href = `{{ url_for('company.issues_list') }}?status=${filterValue}&priority={{ priority_filter }}&project_id={{ project_filter }}&search={{ search_query }}`;
+    }
+});
+
+// Search functionality
+let searchTimeout;
+$('#searchInput').on('keyup', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        const search = $(this).val();
+        window.location.href = `{{ url_for('company.issues_list') }}?status={{ status_filter }}&priority={{ priority_filter }}&project_id={{ project_filter }}&search=${search}`;
+    }, 500);
+});
+
+// Update status
+$('.update-status').click(function() {
+    currentIssueId = $(this).data('id');
+    const currentStatus = $(this).data('status');
+    $('#newStatus').val(currentStatus);
+    $('#resolutionNotes').val('');
+    $('#updateStatusModal').modal('show');
+});
+
+$('#confirmUpdateStatus').click(function() {
+    const newStatus = $('#newStatus').val();
+    const resolution = $('#resolutionNotes').val();
+    
+    $.ajax({
+        url: `/company/issues/${currentIssueId}/update-status`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ status: newStatus, resolution: resolution }),
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('{{ _("error_occurred") }}');
+            }
+        },
+        error: function() {
+            alert('{{ _("error_occurred") }}');
+        }
+    });
+});
+</script>
+{% endblock %}

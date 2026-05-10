@@ -1,0 +1,183 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ _('edit_issue') }} - {{ issue.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .form-section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .priority-option {
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid transparent;
+    }
+    
+    .priority-option.selected {
+        border-color: var(--primary-color);
+        transform: scale(1.02);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-edit me-2"></i> {{ _('edit_issue') }}</h4>
+            <div>
+                <a href="{{ url_for('company.view_issue', issue_id=issue.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-2"></i> {{ _('back_to_issue') }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="POST">
+    <!-- Basic Information -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-info-circle"></i> {{ _('basic_information') }}</h5>
+        
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label class="form-label">{{ _('title') }} <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" value="{{ issue.title }}" required>
+            </div>
+            
+            <div class="col-md-12 mb-3">
+                <label class="form-label">{{ _('title_arabic') }}</label>
+                <input type="text" name="title_ar" class="form-control" value="{{ issue.title_ar or '' }}">
+            </div>
+            
+            <div class="col-md-12 mb-3">
+                <label class="form-label">{{ _('description') }}</label>
+                <textarea name="description" class="form-control" rows="5">{{ issue.description or '' }}</textarea>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('category') }}</label>
+                <select name="category" class="form-select">
+                    <option value="technical" {% if issue.category == 'technical' %}selected{% endif %}>{{ _('technical') }}</option>
+                    <option value="quality" {% if issue.category == 'quality' %}selected{% endif %}>{{ _('quality') }}</option>
+                    <option value="safety" {% if issue.category == 'safety' %}selected{% endif %}>{{ _('safety') }}</option>
+                    <option value="schedule" {% if issue.category == 'schedule' %}selected{% endif %}>{{ _('schedule') }}</option>
+                    <option value="cost" {% if issue.category == 'cost' %}selected{% endif %}>{{ _('cost') }}</option>
+                    <option value="communication" {% if issue.category == 'communication' %}selected{% endif %}>{{ _('communication') }}</option>
+                    <option value="other" {% if issue.category == 'other' %}selected{% endif %}>{{ _('other') }}</option>
+                </select>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('project') }}</label>
+                <select name="project_id" class="form-select" disabled>
+                    <option value="{{ issue.project.id }}">{{ issue.project.name }}</option>
+                </select>
+                <input type="hidden" name="project_id" value="{{ issue.project.id }}">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Priority & Assignment -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-flag"></i> {{ _('priority_and_assignment') }}</h5>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('priority') }} <span class="text-danger">*</span></label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="priority-option text-center p-3 rounded {% if issue.priority == 'critical' %}selected border-primary{% endif %}" data-priority="critical">
+                        <i class="fas fa-skull-crosswalk fa-2x text-danger"></i>
+                        <div class="mt-1">{{ _('critical') }}</div>
+                    </div>
+                    <div class="priority-option text-center p-3 rounded {% if issue.priority == 'high' %}selected border-primary{% endif %}" data-priority="high">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                        <div class="mt-1">{{ _('high') }}</div>
+                    </div>
+                    <div class="priority-option text-center p-3 rounded {% if issue.priority == 'medium' %}selected border-primary{% endif %}" data-priority="medium">
+                        <i class="fas fa-chart-line fa-2x text-info"></i>
+                        <div class="mt-1">{{ _('medium') }}</div>
+                    </div>
+                    <div class="priority-option text-center p-3 rounded {% if issue.priority == 'low' %}selected border-primary{% endif %}" data-priority="low">
+                        <i class="fas fa-arrow-down fa-2x text-success"></i>
+                        <div class="mt-1">{{ _('low') }}</div>
+                    </div>
+                </div>
+                <input type="hidden" name="priority" id="priorityInput" value="{{ issue.priority }}">
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('assign_to') }}</label>
+                <select name="assigned_to" class="form-select">
+                    <option value="">{{ _('select_user') }}</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}" {% if issue.assigned_to == user.id %}selected{% endif %}>
+                        {{ user.full_name }} ({{ user.job_title or user.role }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('due_date') }}</label>
+                <input type="date" name="due_date" class="form-control" value="{{ issue.due_date.strftime('%Y-%m-%d') if issue.due_date else '' }}">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resolution (if resolved/closed) -->
+    {% if issue.status in ['resolved', 'closed'] %}
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-check-circle"></i> {{ _('resolution_information') }}</h5>
+        
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label class="form-label">{{ _('resolution') }}</label>
+                <textarea name="resolution" class="form-control" rows="4">{{ issue.resolution or '' }}</textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('resolution_date') }}</label>
+                <input type="text" class="form-control" value="{{ issue.resolution_date.strftime('%Y-%m-%d %H:%M') if issue.resolution_date else '-' }}" disabled>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('resolved_by') }}</label>
+                <input type="text" class="form-control" value="{{ issue.assignee.full_name if issue.assignee else '-' }}" disabled>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Submit Buttons -->
+    <div class="d-flex gap-3">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i> {{ _('save_changes') }}
+        </button>
+        <a href="{{ url_for('company.view_issue', issue_id=issue.id) }}" class="btn btn-secondary">
+            <i class="fas fa-times me-2"></i> {{ _('cancel') }}
+        </a>
+    </div>
+</form>
+
+<script>
+// Priority selection
+$('.priority-option').click(function() {
+    $('.priority-option').removeClass('selected border-primary');
+    $(this).addClass('selected border-primary');
+    const priority = $(this).data('priority');
+    $('#priorityInput').val(priority);
+});
+</script>
+{% endblock %}

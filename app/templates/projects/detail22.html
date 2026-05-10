@@ -1,0 +1,660 @@
+<style>
+/* ============================================
+   تصميم نافذة المشروع للعرض أسفل الهيكل الشجري
+   مع تبويبات أفقية
+============================================ */
+
+.project-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+/* رأس النافذة */
+.project-header {
+    background: linear-gradient(135deg, #f8fafc, #ffffff);
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid #eef2f7;
+}
+
+.project-header h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--dark, #1e293b);
+}
+
+.project-header .project-code {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+.project-header .project-meta {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    flex-wrap: wrap;
+}
+
+/* شريط المعلومات السريعة */
+.quick-info-bar {
+    background: white;
+    padding: 1rem 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(67, 97, 238, 0.1);
+    color: var(--primary, #4361ee);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-bottom: 0.2rem;
+}
+
+.info-value {
+    font-weight: 700;
+    color: var(--dark, #1e293b);
+    font-size: 0.9rem;
+}
+
+/* شريط التبويبات الأفقي */
+.project-tabs {
+    background: white;
+    padding: 0;
+    border-bottom: 1px solid #eef2f7;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scrollbar-width: thin;
+}
+
+.project-tabs::-webkit-scrollbar {
+    height: 3px;
+}
+
+.project-tabs::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.project-tabs::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+}
+
+.project-tabs .nav-tabs {
+    border-bottom: none;
+    flex-wrap: nowrap;
+    display: inline-flex;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.project-tabs .nav-item {
+    display: inline-block;
+    margin: 0;
+}
+
+.project-tabs .nav-link {
+    border: none;
+    color: #64748b;
+    font-weight: 600;
+    padding: 0.85rem 1.25rem;
+    margin: 0;
+    border-radius: 0;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    position: relative;
+    background: transparent;
+    cursor: pointer;
+}
+
+.project-tabs .nav-link:hover {
+    color: var(--primary, #4361ee);
+    background: #f8fafc;
+}
+
+.project-tabs .nav-link.active {
+    color: var(--primary, #4361ee);
+    background: white;
+}
+
+.project-tabs .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary, #4361ee);
+}
+
+.project-tabs .nav-link i {
+    margin-left: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.tab-badge {
+    background: #e2e8f0;
+    color: #475569;
+    padding: 0.15rem 0.4rem;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    margin-right: 0.5rem;
+}
+
+/* محتوى التبويبات - مخفي حتى الضغط */
+.tab-content-container {
+    background: white;
+    padding: 1.5rem;
+    min-height: 400px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* تنسيق أزرار التحكم */
+.action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #eef2f7;
+    background: #f8fafc;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-action:hover {
+    background: #f1f5f9;
+}
+
+.btn-action-primary {
+    background: var(--primary, #4361ee);
+    border-color: var(--primary, #4361ee);
+    color: white;
+}
+
+.btn-action-primary:hover {
+    background: var(--secondary, #3f37c9);
+}
+
+.btn-action-danger {
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.btn-action-danger:hover {
+    background: #dc2626;
+    color: white;
+}
+
+/* حالة فارغة */
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #94a3b8;
+}
+
+.empty-state i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: #cbd5e1;
+}
+
+/* تنسيقات التبويبات الداخلية */
+.info-card {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.info-card-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--dark, #1e293b);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eef2f7;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.field-wrapper {
+    margin-bottom: 0.75rem;
+}
+
+.field-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-bottom: 0.2rem;
+}
+
+.field-value {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--dark, #1e293b);
+}
+
+/* شريط التقدم */
+.progress-large {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    border-radius: 10px;
+    transition: width 0.3s;
+}
+
+/* تجاوب */
+@media (max-width: 768px) {
+    .project-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .quick-info-bar {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 0.75rem 1rem;
+    }
+    
+    .tab-content-container {
+        padding: 1rem;
+    }
+    
+    .action-buttons {
+        flex-wrap: wrap;
+    }
+    
+    .project-tabs .nav-link {
+        padding: 0.6rem 1rem;
+        font-size: 0.75rem;
+    }
+}
+</style>
+
+<div class="project-container">
+    <!-- رأس النافذة -->
+    <div class="project-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h3>{{ project.name }}</h3>
+                <div class="project-code">
+                    <i class="fas fa-code me-1"></i>
+                    {{ project.project_code }}
+                </div>
+                <div class="project-meta">
+                    <span><i class="fas fa-layer-group me-1"></i>{{ project.category or 'غير مصنف' }}</span>
+                    <span><i class="fas fa-user me-1"></i>مدير المشروع: {{ project.project_manager.full_name if project.project_manager else '-' }}</span>
+                </div>
+            </div>
+            <button class="btn-action btn-action-primary" onclick="editProject()">
+                <i class="fas fa-edit me-1"></i>
+                تعديل
+            </button>
+        </div>
+    </div>
+    
+    <!-- شريط المعلومات السريعة -->
+    <div class="quick-info-bar">
+        <div class="info-item">
+            <div class="info-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="info-content">
+                <div class="info-label">تاريخ البداية</div>
+                <div class="info-value">{{ project.dates.planned_start.strftime('%Y-%m-%d') if project.dates and project.dates.planned_start else '-' }}</div>
+            </div>
+        </div>
+        <div class="info-item">
+            <div class="info-icon">
+                <i class="fas fa-flag-checkered"></i>
+            </div>
+            <div class="info-content">
+                <div class="info-label">تاريخ النهاية</div>
+                <div class="info-value {% if project.is_overdue %}text-danger{% endif %}">
+                    {{ project.dates.planned_finish.strftime('%Y-%m-%d') if project.dates and project.dates.planned_finish else '-' }}
+                </div>
+            </div>
+        </div>
+        <div class="info-item">
+            <div class="info-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="info-content">
+                <div class="info-label">نسبة الإنجاز</div>
+                <div class="info-value">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="progress-large flex-grow-1" style="width: 80px;">
+                            <div class="progress-fill" style="width: {{ project.get_progress() }}%"></div>
+                        </div>
+                        <span>{{ "%.1f"|format(project.get_progress()) }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="info-item">
+            <div class="info-icon">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <div class="info-content">
+                <div class="info-label">الحالة</div>
+                <div class="info-value">
+                    <span class="badge bg-{{ 'success' if project.status == 'completed' else 'primary' if project.status == 'in_progress' else 'secondary' }}">
+                        {{ project.status }}
+                    </span>
+                    {% if project.is_overdue %}
+                    <span class="badge bg-danger ms-1">متأخر</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- شريط التبويبات الأفقي -->
+    <div class="project-tabs">
+        <ul class="nav nav-tabs" id="projectTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="general-tab" data-tab="general" type="button" role="tab">
+                    <i class="fas fa-info-circle"></i> عام
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="activities-tab" data-tab="activities" type="button" role="tab">
+                    <i class="fas fa-tasks"></i> الأنشطة
+                    <span class="tab-badge">{{ stats.total_activities }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tasks-tab" data-tab="tasks" type="button" role="tab">
+                    <i class="fas fa-check-circle"></i> المهام
+                    <span class="tab-badge">{{ stats.total_tasks }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="budget-tab" data-tab="budget" type="button" role="tab">
+                    <i class="fas fa-coins"></i> الميزانية
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="performance-tab" data-tab="performance" type="button" role="tab">
+                    <i class="fas fa-chart-line"></i> الأداء
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="milestones-tab" data-tab="milestones" type="button" role="tab">
+                    <i class="fas fa-flag"></i> المعالم
+                    <span class="tab-badge">{{ milestones|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="risks-tab" data-tab="risks" type="button" role="tab">
+                    <i class="fas fa-shield-alt"></i> المخاطر
+                    <span class="tab-badge">{{ stats.risks }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="documents-tab" data-tab="documents" type="button" role="tab">
+                    <i class="fas fa-file-alt"></i> المستندات
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="notebook-tab" data-tab="notebook" type="button" role="tab">
+                    <i class="fas fa-book"></i> الملاحظات
+                </button>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- محتوى التبويبات -->
+    <div class="tab-content-container">
+        <div class="tab-content">
+            <!-- General Tab -->
+            <div class="tab-pane active" id="general" role="tabpanel">
+                {% include 'projects/tabs/general.html' %}
+            </div>
+            
+            <!-- Activities Tab -->
+            <div class="tab-pane" id="activities" role="tabpanel">
+                {% include 'projects/tabs/activities.html' %}
+            </div>
+            
+            <!-- Tasks Tab -->
+            <div class="tab-pane" id="tasks" role="tabpanel">
+                {% include 'projects/tabs/tasks.html' %}
+            </div>
+            
+            <!-- Budget Tab -->
+            <div class="tab-pane" id="budget" role="tabpanel">
+                {% include 'projects/tabs/budget.html' %}
+            </div>
+            
+            <!-- Performance Tab -->
+            <div class="tab-pane" id="performance" role="tabpanel">
+                {% include 'projects/tabs/performance.html' %}
+            </div>
+            
+            <!-- Milestones Tab -->
+            <div class="tab-pane" id="milestones" role="tabpanel">
+                {% include 'projects/tabs/milestones.html' %}
+            </div>
+            
+            <!-- Risks Tab -->
+            <div class="tab-pane" id="risks" role="tabpanel">
+                {% include 'projects/tabs/risks.html' %}
+            </div>
+            
+            <!-- Documents Tab -->
+            <div class="tab-pane" id="documents" role="tabpanel">
+                {% include 'projects/tabs/documents.html' %}
+            </div>
+            
+            <!-- Notebook Tab -->
+            <div class="tab-pane" id="notebook" role="tabpanel">
+                {% include 'projects/tabs/notebook.html' %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- أزرار التحكم -->
+    <div class="action-buttons">
+        <button class="btn-action" onclick="closeDetails()">
+            <i class="fas fa-times me-1"></i>
+            إغلاق
+        </button>
+        <button class="btn-action" onclick="refreshProject()">
+            <i class="fas fa-sync-alt me-1"></i>
+            تحديث
+        </button>
+        <a href="{{ url_for('projects.project_resource_requests', project_id=project.id) }}" class="btn-action">
+            <i class="fas fa-truck me-1"></i>
+            طلبات التوريد
+        </a>
+    </div>
+</div>
+
+<script>
+// دوال التحكم في نافذة المشروع مع تبويبات أفقية
+
+// وظيفة تبديل التبويبات
+function switchProjectTab(tabId) {
+    // إخفاء جميع التبويبات
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+    });
+    
+    // إزالة التحديد من جميع الأزرار
+    document.querySelectorAll('.project-tabs .nav-link').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // إظهار التبويب المحدد
+    const selectedPane = document.getElementById(tabId);
+    if (selectedPane) {
+        selectedPane.classList.add('active');
+    }
+    
+    // تحديد الزر النشط
+    const activeButton = document.querySelector(`.project-tabs .nav-link[data-tab="${tabId}"]`);
+    if (activeButton) {
+        activeButton.classList.add('active');
+    }
+    
+    // حفظ التبويب النشط في localStorage
+    localStorage.setItem('activeProjectTab', tabId);
+}
+
+// تعديل المشروع
+function editProject() {
+    window.location.href = "{{ url_for('projects.edit_project', project_id=project.id) }}";
+}
+
+// إغلاق التفاصيل
+function closeDetails() {
+    if (window.parent && window.parent.closeDetails) {
+        window.parent.closeDetails();
+    }
+}
+
+// تحديث الصفحة
+function refreshProject() {
+    if (window.parent && window.parent.refreshTree) {
+        window.parent.refreshTree();
+    } else {
+        location.reload();
+    }
+}
+
+// جعل الدوال متاحة عالمياً
+window.editProject = editProject;
+window.closeDetails = closeDetails;
+window.refreshProject = refreshProject;
+window.switchProjectTab = switchProjectTab;
+
+// دوال مساعدة عامة
+function showSuccess(message) {
+    Swal.fire({
+        icon: 'success',
+        title: 'تم بنجاح',
+        text: message,
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+    });
+}
+
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'خطأ',
+        text: message
+    });
+}
+
+function formatCurrency(amount, currency = 'SAR') {
+    return new Intl.NumberFormat('ar-SA', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount || 0);
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('ar-SA');
+}
+
+// تهيئة التبويبات عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    // ربط أحداث النقر على أزرار التبويبات
+    const tabButtons = document.querySelectorAll('.project-tabs .nav-link');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tabId = this.getAttribute('data-tab');
+            if (tabId) {
+                switchProjectTab(tabId);
+            }
+        });
+    });
+    
+    // استعادة آخر تبويب نشط من localStorage
+    const activeTab = localStorage.getItem('activeProjectTab');
+    if (activeTab) {
+        // التحقق من وجود التبويب
+        const tabExists = document.getElementById(activeTab);
+        if (tabExists) {
+            switchProjectTab(activeTab);
+        }
+    }
+});
+</script>

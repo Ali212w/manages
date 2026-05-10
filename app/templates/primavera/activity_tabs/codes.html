@@ -1,0 +1,317 @@
+<div class="card">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="fas fa-tags text-primary me-2"></i>
+            Activity Codes
+        </h6>
+        <div>
+            <button class="btn btn-primary btn-sm" onclick="showAssignModal()">
+                <i class="fas fa-plus me-1"></i>Assign
+            </button>
+            <button class="btn btn-outline-danger btn-sm" onclick="removeSelectedCodes()">
+                <i class="fas fa-trash me-1"></i>Remove
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th width="50">
+                            <input type="checkbox" id="selectAll" onclick="toggleAll()">
+                        </th>
+                        <th>Activity Code</th>
+                        <th>Code Value</th>
+                        <th>Code Description</th>
+                    </tr>
+                </thead>
+                <tbody id="assignmentsTable">
+                    <!-- يتم تعبئتها عبر JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- مودال تعيين كود -->
+<div class="modal fade" id="assignCodeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Assign Activity Code</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignForm">
+                    <div class="mb-3">
+                        <label class="form-label">Activity Code</label>
+                        <select class="form-select" id="dictionarySelect" required>
+                            <option value="">-- Select Code Type --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Code Value</label>
+                        <select class="form-select" id="codeValueSelect" required>
+                            <option value="">-- Select Code Value --</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="assignCode()">Assign</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let activityId = {{ activity.id }};
+let selectedAssignments = [];
+
+// ============================================
+// تحميل التعيينات
+// ============================================
+function loadAssignments() {
+    fetch(`/codes/activity/${activityId}/assignments`)
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('assignmentsTable');
+            if (data.success && data.assignments.length > 0) {
+                tbody.innerHTML = data.assignments.map(a => {
+                    if (a.assigned_code) {
+                        return `
+                            <tr data-id="${a.assigned_code.id}" data-dictionary-id="${a.dictionary_id}">
+                                <td><input type="checkbox" class="code-select" value="${a.assigned_code.id}"></td>
+                                <td>
+                                    <span class="code-color" style="display:inline-block; width:16px; height:16px; background-color: ${a.assigned_code.display_color}; border-radius:4px; margin-left:5px;"></span>
+                                    ${a.dictionary_name}
+                                </td>
+                                <td>${a.assigned_code.code_value}</td>
+                                <td>${a.assigned_code.description || '-'}</td>
+                            </tr>
+                        `;
+                    }
+                    return '';
+                }).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3">No codes assigned</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading assignments:', error);
+            document.getElementById('assignmentsTable').innerHTML = '<tr><td colspan="4" class="text-center py-3 text-danger">Error loading data</td></tr>';
+        });
+}
+
+// ============================================
+// تحميل قواميس الأكواد
+// ============================================
+function loadDictionaries() {
+    fetch('/codes/activity/dictionaries')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('dictionarySelect');
+            select.innerHTML = '<option value="">-- Select Code Type --</option>';
+            if (data.success) {
+                data.dictionaries.forEach(d => {
+                    select.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+                });
+            }
+        })
+        .catch(error => console.error('Error loading dictionaries:', error));
+}
+
+// ============================================
+// تحميل قيم الأكواد عند اختيار قاموس
+// ============================================
+document.getElementById('dictionarySelect').addEventListener('change', function() {
+    const dictId = this.value;
+    if (!dictId) {
+        document.getElementById('codeValueSelect').innerHTML = '<option value="">-- Select Code Value --</option>';
+        return;
+    }
+    
+    fetch(`/codes/activity/api/dictionarys/${dictId}/codes`)
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('codeValueSelect');
+            select.innerHTML = '<option value="">-- Select Code Value --</option>';
+            if (data.success) {
+                function addOptions(codes, level = 0) {
+                    codes.forEach(code => {
+                        const option = document.createElement('option');
+                        option.value = code.id;
+                        option.textContent = '—'.repeat(level) + ' ' + code.code_value;
+                        select.appendChild(option);
+                        
+                        if (code.children) {
+                            addOptions(code.children, level + 1);
+                        }
+                    });
+                }
+                addOptions(data.codes);
+            }
+        })
+        .catch(error => console.error('Error loading code values:', error));
+});
+
+// ============================================
+// عرض مودال التعيين
+// ============================================
+function showAssignModal() {
+    loadDictionaries();
+    // إعادة تعيين حقول المودال
+    document.getElementById('dictionarySelect').value = '';
+    document.getElementById('codeValueSelect').innerHTML = '<option value="">-- Select Code Value --</option>';
+    new bootstrap.Modal(document.getElementById('assignCodeModal')).show();
+}
+
+// ============================================
+// تعيين كود
+// ============================================
+function assignCode() {
+    const dictId = document.getElementById('dictionarySelect').value;
+    const codeId = document.getElementById('codeValueSelect').value;
+    
+    if (!dictId || !codeId) {
+        alert('Please select both Code Type and Code Value');
+        return;
+    }
+    
+    fetch(`/codes/activity/${activityId}/assign`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            dictionary_id: dictId,
+            code_value_id: codeId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('assignCodeModal')).hide();
+            loadAssignments();
+            showSuccess('Code assigned successfully');
+        } else {
+            showError(data.error || 'Error assigning code');
+        }
+    })
+    .catch(error => {
+        console.error('Error assigning code:', error);
+        showError('Connection error');
+    });
+}
+
+// ============================================
+// تحديد/إلغاء تحديد الكل
+// ============================================
+function toggleAll() {
+    const checkboxes = document.querySelectorAll('.code-select');
+    const selectAll = document.getElementById('selectAll');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+}
+
+// ============================================
+// إزالة الأكواد المحددة
+// ============================================
+function removeSelectedCodes() {
+    const selected = [];
+    document.querySelectorAll('.code-select:checked').forEach(cb => {
+        // نأخذ الـ dictionary_id من الصف
+        const row = cb.closest('tr');
+        if (row) {
+            const dictId = row.dataset.dictionaryId;
+            if (dictId) selected.push(dictId);
+        }
+    });
+    
+    if (selected.length === 0) {
+        alert('Please select at least one code to remove');
+        return;
+    }
+    
+    if (confirm('Are you sure you want to remove the selected codes?')) {
+        // إزالة كل كود على حدة
+        const promises = selected.map(dictId => 
+            fetch(`/codes/activity/${activityId}/unassign`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ dictionary_id: dictId })
+            })
+        );
+        
+        Promise.all(promises)
+            .then(() => {
+                loadAssignments();
+                showSuccess('Selected codes removed successfully');
+            })
+            .catch(error => {
+                console.error('Error removing codes:', error);
+                showError('Error removing codes');
+            });
+    }
+}
+
+// ============================================
+// دوال مساعدة للإشعارات
+// ============================================
+function showSuccess(message) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: message,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    } else {
+        alert(message);
+    }
+}
+
+function showError(message) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: message
+        });
+    } else {
+        alert('Error: ' + message);
+    }
+}
+
+// ============================================
+// تهيئة الصفحة
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    loadAssignments();
+});
+</script>
+
+<style>
+.code-color {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.modal-header .btn-close-white {
+    filter: invert(1);
+}
+</style>

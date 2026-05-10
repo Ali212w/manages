@@ -1,0 +1,95 @@
+{% extends "company/base.html" %}
+
+{% block title %}إنشاء مورد جديد{% endblock %}
+
+{% block page_title %}إنشاء مورد جديد{% endblock %}
+{% block page_subtitle %}إضافة مورد جديد (عمال، معدات، مواد){% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <form method="POST" action="{{ url_for('enterprise.resource_create') }}">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">رمز المورد</label>
+                    <input type="text" name="resource_id" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">الاسم</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label required-field">نوع المورد</label>
+                    <select name="resource_type" class="form-select" required>
+                        <option value="labor">عمال (Labor)</option>
+                        <option value="material">مواد (Material)</option>
+                        <option value="equipment">معدات (Equipment)</option>
+                        <option value="non_labor">أخرى (Non-Labor)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">الوحدة</label>
+                    <input type="text" name="unit" class="form-control" placeholder="ساعة/طن/م3">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">التكلفة للوحدة</label>
+                    <input type="number" name="cost_per_unit" class="form-control" value="0" step="0.01">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">العملة</label>
+                    <select name="currency" class="form-select">
+                        <option value="SAR">ريال سعودي</option>
+                        <option value="USD">دولار أمريكي</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الكمية المتاحة</label>
+                    <input type="number" name="available_quantity" class="form-control" value="0" min="0">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">التقويم</label>
+                    <select name="calendar_id" class="form-select">
+                        <option value="">-- تقويم افتراضي --</option>
+                        {% for cal in calendars %}
+                        <option value="{{ cal.id }}">{{ cal.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">المواصفات (JSON)</label>
+                <textarea name="specifications" class="form-control" rows="3">{}</textarea>
+                <small class="text-muted">مثال: {"weight": "10kg", "dimensions": "2x3m"}</small>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('enterprise.resources_list') }}" class="btn-outline-secondary">
+                    <i class="fas fa-arrow-right me-2"></i> العودة
+                </a>
+                <button type="submit" class="btn-primary-gradient">
+                    <i class="fas fa-save me-2"></i> إنشاء المورد
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

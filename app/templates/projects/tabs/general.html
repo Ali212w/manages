@@ -1,0 +1,152 @@
+<div class="card">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-info-circle text-primary me-2"></i>General Information</h6>
+    </div>
+    <div class="card-body">
+        <!-- الصف الأول: EPS ID, EPS Name, Status -->
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">EPS ID</label>
+                <select class="form-select" id="eps_id" onchange="updateEPSInfo()">
+                    <option value="">-- Select EPS --</option>
+                    {% for eps in eps_list %}
+                    <option value="{{ eps.id }}" data-code="{{ eps.eps_code }}" {% if project.eps_id == eps.id %}selected{% endif %}>
+                        {{ eps.eps_code }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">EPS Name</label>
+                <input type="text" class="form-control bg-light" id="eps_name" value="{{ project.eps.name if project.eps else '' }}" readonly>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Status</label>
+                <select class="form-select" id="status">
+                    <option value="planning" {% if project.status == 'planning' %}selected{% endif %}>Planned</option>
+                    <option value="active" {% if project.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if project.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    <option value="what-if" {% if project.status == 'what-if' %}selected{% endif %}>What-If</option>
+                    <option value="template" {% if project.status == 'template' %}selected{% endif %}>Template</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Responsible Manager</label>
+                <select class="form-select" id="responsible_manager">
+                    <option value="">-- Select Manager --</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}" {% if project.obs and project.obs.responsible_id == user.id %}selected{% endif %}>
+                        {{ user.full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- الصف الثاني: Project Leveling Priority, Check Out Status -->
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Project Leveling Priority</label>
+                <input type="number" class="form-control" id="priority_level" value="{{ project.priority_level }}" min="1" max="100">
+                <small class="text-muted">1 = Highest, 100 = Lowest</small>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Check Out Status</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light" id="checkout_status_icon">
+                        {% if project.checked_out_by %}
+                        <i class="fas fa-lock text-warning"></i>
+                        {% else %}
+                        <i class="fas fa-lock-open text-success"></i>
+                        {% endif %}
+                    </span>
+                    <input type="text" class="form-control bg-light" id="checkout_status" 
+                           value="{% if project.checked_out_by %}Checked Out{% else %}Not Checked Out{% endif %}" readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Checked Out By</label>
+                <input type="text" class="form-control bg-light" id="checked_out_by" 
+                       value="{{ project.checked_out_by or '' }}" readonly>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Date Checked Out</label>
+                <input type="text" class="form-control bg-light" id="date_checked_out" 
+                       value="{{ project.checked_out_date.strftime('%Y-%m-%d %H:%M') if project.checked_out_date else '' }}" readonly>
+            </div>
+        </div>
+
+        <!-- الصف الثالث: Project Website, Financial Calendar -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Project Website URL</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                    <input type="url" class="form-control" id="website" value="{{ project.website or '' }}" placeholder="https://...">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Financial Period Calendar</label>
+                <select class="form-select" id="financial_calendar">
+                    <option value="">-- Select Calendar --</option>
+                    {% for cal in calendars %}
+                    <option value="{{ cal.id }}" {% if project.financial_calendar_id == cal.id %}selected{% endif %}>
+                        {{ cal.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- أزرار التحكم -->
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <button class="btn btn-outline-secondary btn-sm" onclick="resetGeneral()">
+                <i class="fas fa-undo me-1"></i>Reset
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="saveGeneral()">
+                <i class="fas fa-save me-1"></i>Apply
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateEPSInfo() {
+    const select = document.getElementById('eps_id');
+    const selectedOption = select.options[select.selectedIndex];
+    const epsName = selectedOption.text.split(' - ')[1] || '';
+    document.getElementById('eps_name').value = epsName;
+}
+
+function resetGeneral() {
+    location.reload();
+}
+
+function saveGeneral() {
+    const data = {
+        eps_id: document.getElementById('eps_id').value,
+        status: document.getElementById('status').value,
+        responsible_manager: document.getElementById('responsible_manager').value,
+        priority_level: document.getElementById('priority_level').value,
+        website: document.getElementById('website').value,
+        financial_calendar_id: document.getElementById('financial_calendar').value
+    };
+    
+    fetch(`/projects/api/{{ project.id }}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ general: data })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('General information updated successfully');
+        } else {
+            showError(data.error || 'Error updating general information');
+        }
+    });
+}
+</script>

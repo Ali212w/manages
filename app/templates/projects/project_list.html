@@ -1,0 +1,952 @@
+{% extends "company/base.html" %}
+
+{% block title %}قائمة المشاريع - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}المشاريع{% endblock %}
+{% block page_subtitle %}إدارة جميع مشاريع المؤسسة{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Header Actions */
+    .header-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn-primary-gradient {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border: none;
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
+        color: white;
+    }
+    
+    .btn-outline-primary {
+        border: 2px solid var(--primary);
+        color: var(--primary);
+        background: transparent;
+        padding: 0.6rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-outline-primary:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    /* Filter Card */
+    .filter-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .input-group {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .input-group-text {
+        background: #f8f9fa;
+        border: 2px solid #eef2f7;
+        border-left: none;
+        color: #6c757d;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .input-group .form-control {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    
+    /* View Toggle */
+    .view-toggle {
+        display: inline-flex;
+        background: #eef2f7;
+        border-radius: 12px;
+        padding: 0.25rem;
+    }
+    
+    .btn-check:checked + .btn-outline-primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+    
+    .btn-outline-primary {
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .btn-outline-primary:hover {
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+    }
+    
+    /* Project Card */
+    .project-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+    
+    .card-header {
+        padding: 1.5rem 1.5rem 0.5rem;
+        background: transparent;
+        border: none;
+    }
+    
+    .badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+    
+    .badge.bg-primary { background: rgba(67, 97, 238, 0.1) !important; color: var(--primary); }
+    .badge.bg-success { background: rgba(76, 201, 240, 0.1) !important; color: var(--success); }
+    .badge.bg-warning { background: rgba(248, 150, 30, 0.1) !important; color: var(--warning); }
+    .badge.bg-danger { background: rgba(249, 65, 68, 0.1) !important; color: var(--danger); }
+    .badge.bg-info { background: rgba(72, 149, 239, 0.1) !important; color: var(--info); }
+    .badge.bg-secondary { background: rgba(108, 117, 125, 0.1) !important; color: #6c757d; }
+    
+    .dropdown-toggle {
+        background: #f8f9fa;
+        border: none;
+        border-radius: 10px;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .dropdown-toggle:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .dropdown-menu {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        padding: 0.5rem;
+    }
+    
+    .dropdown-item {
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s;
+    }
+    
+    .dropdown-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .dropdown-item.text-danger:hover {
+        background: rgba(249, 65, 68, 0.1);
+    }
+    
+    .card-title a {
+        font-weight: 700;
+        color: var(--dark);
+        transition: all 0.3s;
+    }
+    
+    .card-title a:hover {
+        color: var(--primary);
+    }
+    
+    .card-body {
+        padding: 1rem 1.5rem;
+        flex: 1;
+    }
+    
+    .progress {
+        height: 6px;
+        background: #eef2f7;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        border-radius: 3px;
+    }
+    
+    .progress-bar.bg-primary { background: var(--primary); }
+    .progress-bar.bg-success { background: var(--success); }
+    .progress-bar.bg-warning { background: var(--warning); }
+    .progress-bar.bg-danger { background: var(--danger); }
+    
+    .team-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid white;
+        margin-left: -8px;
+        transition: all 0.3s;
+    }
+    
+    .team-avatar:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+    }
+    
+    .team-avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .team-avatar.placeholder {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: bold;
+    }
+    
+    .team-avatar.more {
+        background: #6c757d;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: bold;
+    }
+    
+    .card-footer {
+        padding: 1rem 1.5rem 1.5rem;
+        background: transparent;
+        border: none;
+    }
+    
+    .btn-sm {
+        padding: 0.4rem 1rem;
+        border-radius: 10px;
+        font-size: 0.85rem;
+    }
+    
+    /* Table View */
+    .table {
+        width: 100%;
+        margin-bottom: 0;
+    }
+    
+    .table thead th {
+        background: #f8f9fa;
+        padding: 1rem;
+        font-weight: 600;
+        color: var(--dark);
+        border: none;
+        font-size: 0.9rem;
+    }
+    
+    .table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .table tbody tr:hover td {
+        background: #f8f9fa;
+    }
+    
+    .table .progress {
+        width: 80px;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        border-radius: 8px;
+    }
+    
+    /* Pagination */
+    .pagination {
+        gap: 0.25rem;
+    }
+    
+    .page-link {
+        border: none;
+        border-radius: 10px;
+        color: #6c757d;
+        padding: 0.5rem 0.8rem;
+        transition: all 0.3s;
+    }
+    
+    .page-link:hover {
+        background: #f8f9fa;
+        color: var(--primary);
+    }
+    
+    .page-item.active .page-link {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+    }
+    
+    .page-item.disabled .page-link {
+        background: #f8f9fa;
+        color: #adb5bd;
+    }
+    
+    /* Modal */
+    .modal-content {
+        border: none;
+        border-radius: 20px;
+    }
+    
+    .modal-header {
+        border-bottom: 2px solid #eef2f7;
+        padding: 1.5rem;
+    }
+    
+    .modal-title {
+        font-weight: 700;
+        color: var(--dark);
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modal-footer {
+        border-top: 2px solid #eef2f7;
+        padding: 1.5rem;
+    }
+    
+    .modal .btn-secondary {
+        background: #eef2f7;
+        border: none;
+        color: #6c757d;
+        border-radius: 12px;
+        padding: 0.6rem 1.5rem;
+    }
+    
+    .modal .btn-secondary:hover {
+        background: #e2e6ea;
+    }
+    
+    /* Form Check */
+    .form-check-input:checked {
+        background-color: var(--primary);
+        border-color: var(--primary);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .header-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .filter-card .row > div {
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div></div> <!-- Empty div for spacing -->
+    
+    <div class="header-actions">
+        <a href="{{ url_for('project.create') }}" class="btn-primary-gradient">
+            <i class="fas fa-plus me-1"></i> مشروع جديد
+        </a>
+        <a href="{{ url_for('project.upload') }}" class="btn-outline-primary">
+            <i class="fas fa-upload me-1"></i> رفع ملف
+        </a>
+    </div>
+</div>
+
+<!-- Filters Card -->
+<div class="filter-card">
+    <form method="GET" id="projectsFilterForm">
+        <div class="row g-3">
+            <!-- Search -->
+            <div class="col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" name="search" placeholder="بحث في المشاريع..." 
+                           value="{{ request.args.get('search', '') }}">
+                </div>
+            </div>
+            
+            <!-- Status Filter -->
+            <div class="col-lg-2">
+                <select class="form-select" name="status">
+                    <option value="">جميع الحالات</option>
+                    <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>معلقة</option>
+                    <option value="planning" {% if request.args.get('status') == 'planning' %}selected{% endif %}>تحت التخطيط</option>
+                    <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>نشطة</option>
+                    <option value="on_hold" {% if request.args.get('status') == 'on_hold' %}selected{% endif %}>معلقة</option>
+                    <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>مكتملة</option>
+                    <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>ملغاة</option>
+                </select>
+            </div>
+            
+            <!-- Manager Filter -->
+            <div class="col-lg-2">
+                <select class="form-select" name="manager_id">
+                    <option value="">جميع المدراء</option>
+                    {% for manager in managers %}
+                    <option value="{{ manager.id }}" {% if request.args.get('manager_id') == manager.id|string %}selected{% endif %}>
+                        {{ manager.full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Date Range -->
+            <div class="col-lg-4">
+                <div class="input-group">
+                    <input type="date" class="form-control" name="start_date" 
+                           value="{{ request.args.get('start_date', '') }}">
+                    <span class="input-group-text">إلى</span>
+                    <input type="date" class="form-control" name="end_date" 
+                           value="{{ request.args.get('end_date', '') }}">
+                </div>
+            </div>
+            
+            <!-- Filter Buttons -->
+            <div class="col-12">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <button type="submit" class="btn-primary-gradient">
+                            <i class="fas fa-filter me-1"></i> تصفية
+                        </button>
+                        <a href="{{ url_for('project.list') }}" class="btn-outline-primary ms-2">
+                            <i class="fas fa-times me-1"></i> إلغاء
+                        </a>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-outline-primary" data-bs-toggle="modal" data-bs-target="#exportModal">
+                            <i class="fas fa-download me-1"></i> تصدير
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Projects Grid/List View -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="view-toggle">
+                    <input type="radio" class="btn-check" name="viewType" id="gridView" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary" for="gridView">
+                        <i class="fas fa-th-large"></i>
+                    </label>
+                    <input type="radio" class="btn-check" name="viewType" id="listView" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="listView">
+                        <i class="fas fa-list"></i>
+                    </label>
+                </div>
+                <span class="ms-3 text-muted">عرض {{ projects.total }} مشروع</span>
+            </div>
+            <div>
+                <select class="form-select form-select-sm" id="sortBy" style="width: auto; display: inline-block;">
+                    <option value="created_at_desc">الأحدث أولاً</option>
+                    <option value="created_at_asc">الأقدم أولاً</option>
+                    <option value="name_asc">بالاسم (أ-ي)</option>
+                    <option value="name_desc">بالاسم (ي-أ)</option>
+                    <option value="progress_desc">الأكثر تقدماً</option>
+                    <option value="progress_asc">الأقل تقدماً</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Projects Grid -->
+<div class="row g-4 mb-4" id="projectsGridView">
+    {% for project in projects.items %}
+    <div class="col-xl-4 col-lg-6 col-md-6">
+        <div class="project-card">
+            <!-- Project Header -->
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <span class="badge bg-{{ project.status_color }} mb-2">{{ project.status_label }}</span>
+                        {% if project.priority == 'high' %}
+                        <span class="badge bg-danger">عالية</span>
+                        {% elif project.priority == 'critical' %}
+                        <span class="badge bg-danger">
+                            <i class="fas fa-exclamation-triangle me-1"></i> حرجة
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('project.detail', project_id=project.id) }}">
+                                    <i class="fas fa-eye ms-2"></i> عرض التفاصيل
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('project.edit', project_id=project.id) }}">
+                                    <i class="fas fa-edit ms-2"></i> تعديل
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('project.clone', project_id=project.id) }}">
+                                    <i class="fas fa-copy ms-2"></i> نسخ
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" 
+                                   onclick="confirmDelete('{{ project.id }}', '{{ project.name }}')">
+                                    <i class="fas fa-trash ms-2"></i> حذف
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h5 class="card-title mb-2">
+                    <a href="{{ url_for('project.detail', project_id=project.id) }}" class="text-decoration-none">
+                        {{ project.name }}
+                    </a>
+                </h5>
+                <p class="text-muted small mb-3">
+                    <i class="fas fa-hashtag me-1"></i> {{ project.project_code }}
+                </p>
+            </div>
+            
+            <!-- Project Body -->
+            <div class="card-body">
+                <!-- Progress -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted">التقدم</small>
+                        <small class="fw-bold">{{ project.progress_percentage }}%</small>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-{{ project.progress_color }}" style="width: {{ project.progress_percentage }}%"></div>
+                    </div>
+                </div>
+                
+                <!-- Project Info -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">المدير</small>
+                        <div class="d-flex align-items-center mt-1">
+                            {% if project.manager_avatar %}
+                            <img src="{{ project.manager_avatar }}" class="rounded-circle ms-2" width="20" height="20" alt="">
+                            {% else %}
+                            <i class="fas fa-user-circle ms-2 text-muted"></i>
+                            {% endif %}
+                            <small>{{ project.manager_name|truncate(15) }}</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">الموقع</small>
+                        <small>
+                            <i class="fas fa-map-marker-alt me-1"></i>
+                            {{ project.site_name|truncate(15) if project.site_name else 'غير محدد' }}
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Dates -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">تاريخ البدء</small>
+                        <small>{{ project.planned_start_date.strftime('%Y-%m-%d') if project.planned_start_date else 'غير محدد' }}</small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">تاريخ الانتهاء</small>
+                        <small class="{% if project.is_overdue %}text-danger{% endif %}">
+                            {{ project.planned_end_date.strftime('%Y-%m-%d') if project.planned_end_date else 'غير محدد' }}
+                            {% if project.is_overdue %}
+                            <i class="fas fa-exclamation-circle ms-1"></i>
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Budget -->
+                <div class="mb-3">
+                    <small class="text-muted d-block">الميزانية</small>
+                    <div class="d-flex justify-content-between">
+                        <small class="fw-bold">{{ "{:,.0f}".format(project.used_budget) }} ر.س</small>
+                        <small class="text-muted">من {{ "{:,.0f}".format(project.contract_value) }} ر.س</small>
+                    </div>
+                </div>
+                
+                <!-- Team Preview -->
+                <div class="mb-3">
+                    <small class="text-muted d-block">الفريق</small>
+                    <div class="d-flex">
+                        {% for member in project.team_members[:3] %}
+                        {% if member.avatar_url %}
+                        <img src="{{ member.avatar_url }}" class="team-avatar" 
+                             alt="{{ member.full_name }}" data-bs-toggle="tooltip" title="{{ member.full_name }}">
+                        {% else %}
+                        <div class="team-avatar placeholder" data-bs-toggle="tooltip" title="{{ member.full_name }}">
+                            {{ member.full_name[0] }}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        {% if project.team_count > 3 %}
+                        <div class="team-avatar more" data-bs-toggle="tooltip" title="{{ project.team_count - 3 }} أعضاء آخرين">
+                            +{{ project.team_count - 3 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Project Footer -->
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted">
+                            <i class="fas fa-tasks me-1"></i>
+                            {{ project.task_count }} مهام
+                        </small>
+                    </div>
+                    <a href="{{ url_for('company.view_project', project_id=project.id) }}" class="btn-primary-gradient btn-sm">
+                        <i class="fas fa-external-link-alt me-1"></i> فتح
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Projects List View (Hidden by Default) -->
+<div class="d-none" id="projectsListView">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>اسم المشروع</th>
+                            <th>الكود</th>
+                            <th>التقدم</th>
+                            <th>الحالة</th>
+                            <th>المدير</th>
+                            <th>الموعد النهائي</th>
+                            <th>الميزانية</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects.items %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle p-2 ms-2 bg-light">
+                                        <i class="fas fa-project-diagram text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ project.name }}</div>
+                                        <small class="text-muted">{{ project.site_name }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <code>{{ project.project_code }}</code>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 ms-2" style="height: 6px; width: 80px;">
+                                        <div class="progress-bar bg-{{ project.progress_color }}" 
+                                             style="width: {{ project.progress_percentage }}%"></div>
+                                    </div>
+                                    <small class="text-muted">{{ project.progress_percentage }}%</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ project.status_color }}">{{ project.status_label }}</span>
+                                {% if project.priority == 'high' %}
+                                <span class="badge bg-danger ms-1">عالية</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if project.manager_avatar %}
+                                    <img src="{{ project.manager_avatar }}" class="rounded-circle ms-2" width="24" height="24" alt="">
+                                    {% endif %}
+                                    <small>{{ project.manager_name }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <small>{{ project.planned_end_date.strftime('%Y-%m-%d') if project.planned_end_date else 'غير محدد' }}</small>
+                                {% if project.is_overdue %}
+                                <br>
+                                <small class="text-danger">
+                                    <i class="fas fa-exclamation-circle me-1"></i> متأخر
+                                </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="fw-bold">{{ "{:,.0f}".format(project.used_budget) }} ر.س</small>
+                                <br>
+                                <small class="text-muted">من {{ "{:,.0f}".format(project.contract_value) }} ر.س</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('project.detail', project_id=project.id) }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('project.edit', project_id=project.id) }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" 
+                                            data-bs-toggle="dropdown">
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('project.clone', project_id=project.id) }}">
+                                                <i class="fas fa-copy ms-2"></i> نسخ
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#" 
+                                               onclick="confirmDelete('{{ project.id }}', '{{ project.name }}')">
+                                                <i class="fas fa-trash ms-2"></i> حذف
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if projects.pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not projects.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('project.list', page=projects.prev_num, **request.args) }}">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+        
+        {% for page_num in projects.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+            {% if page_num %}
+                {% if page_num == projects.page %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('project.list', page=page_num, **request.args) }}">
+                        {{ page_num }}
+                    </a>
+                </li>
+                {% endif %}
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        <li class="page-item {% if not projects.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('project.list', page=projects.next_num, **request.args) }}">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-download ms-2 text-primary"></i>تصدير المشاريع</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('projects.export') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نوع الملف</label>
+                        <select class="form-select" name="format">
+                            <option value="excel">Excel (.xlsx)</option>
+                            <option value="csv">CSV (.csv)</option>
+                            <option value="pdf">PDF (.pdf)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">الحقول المطلوبة</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="fields[]" value="basic" checked>
+                            <label class="form-check-label">المعلومات الأساسية</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="fields[]" value="financial" checked>
+                            <label class="form-check-label">المعلومات المالية</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="fields[]" value="schedule">
+                            <label class="form-check-label">الجدول الزمني</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="fields[]" value="team">
+                            <label class="form-check-label">الفريق</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn-primary-gradient">تصدير</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle between grid and list view
+    const gridView = document.getElementById('gridView');
+    const listView = document.getElementById('listView');
+    const gridViewDiv = document.getElementById('projectsGridView');
+    const listViewDiv = document.getElementById('projectsListView');
+    
+    gridView.addEventListener('change', function() {
+        if (this.checked) {
+            gridViewDiv.classList.remove('d-none');
+            listViewDiv.classList.add('d-none');
+        }
+    });
+    
+    listView.addEventListener('change', function() {
+        if (this.checked) {
+            gridViewDiv.classList.add('d-none');
+            listViewDiv.classList.remove('d-none');
+        }
+    });
+    
+    // Sort functionality
+    document.getElementById('sortBy').addEventListener('change', function() {
+        const sortBy = this.value;
+        window.location.href = window.location.pathname + '?sort=' + sortBy + '&' + new URLSearchParams(window.location.search).toString();
+    });
+    
+    // Confirm delete function
+    window.confirmDelete = function(projectId, projectName) {
+        Swal.fire({
+            title: 'تأكيد الحذف',
+            text: `هل أنت متأكد من حذف المشروع "${projectName}"؟`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--danger)',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'نعم، احذف',
+            cancelButtonText: 'إلغاء'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/projects/api/projects/${projectId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'تم الحذف',
+                            text: 'تم حذف المشروع بنجاح',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ',
+                            text: 'حدث خطأ أثناء حذف المشروع: ' + data.message
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'حدث خطأ أثناء حذف المشروع'
+                    });
+                });
+            }
+        });
+    };
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

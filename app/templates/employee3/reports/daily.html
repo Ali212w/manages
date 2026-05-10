@@ -1,0 +1,118 @@
+{% extends "employee/base.html" %}
+
+{% block title %}التقارير اليومية - نظام المهام{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">التقارير اليومية</h2>
+        <p class="text-muted">سجل التقارير اليومية التي قمت بإعدادها</p>
+    </div>
+    <div>
+        <a href="{{ url_for('employee.create_daily_report') }}" class="btn-primary-gradient">
+            <i class="fas fa-plus-circle me-2"></i>تقرير جديد
+        </a>
+    </div>
+</div>
+
+<!-- التقارير -->
+<div class="row">
+    {% for report in reports %}
+    <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-day me-2 text-primary"></i>
+                    {{ report.report_date.strftime('%Y-%m-%d') }}
+                </h5>
+                <span class="badge bg-{{ 'success' if report.review_status == 'approved' else 'warning' if report.review_status == 'pending' else 'danger' }}">
+                    {% if report.review_status == 'approved' %}مقبول
+                    {% elif report.review_status == 'pending' %}قيد المراجعة
+                    {% elif report.review_status == 'rejected' %}مرفوض
+                    {% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="fw-bold">ملخص العمل:</h6>
+                    <p class="text-muted">{{ report.work_summary or 'لا يوجد ملخص'|truncate(100) }}</p>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">الحالة الجوية</small>
+                        <span>{{ report.weather_condition or 'غير محدد' }}</span>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">درجة الحرارة</small>
+                        <span>{{ report.temperature or '--' }} °C</span>
+                    </div>
+                </div>
+                
+                {% if report.supervisor_notes %}
+                <div class="alert alert-info py-2">
+                    <small><i class="fas fa-comment me-1"></i>ملاحظات المشرف: {{ report.supervisor_notes }}</small>
+                </div>
+                {% endif %}
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <small class="text-muted">
+                        <i class="far fa-clock me-1"></i>
+                        {{ report.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </small>
+                    <a href="#" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>عرض التفاصيل
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-file-alt fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">لا توجد تقارير يومية</h5>
+                <p class="small text-muted">قم بإنشاء أول تقرير يومي لك</p>
+                <a href="{{ url_for('employee.create_daily_report') }}" class="btn-primary-gradient mt-3">
+                    <i class="fas fa-plus-circle me-2"></i>إنشاء تقرير
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- إحصائيات التقارير -->
+{% if reports %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2 text-primary"></i>
+                    إحصائيات التقارير
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <h3 class="text-primary">{{ reports|length }}</h3>
+                        <p class="text-muted">إجمالي التقارير</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h3 class="text-success">{{ reports|selectattr('review_status', 'equalto', 'approved')|list|length }}</h3>
+                        <p class="text-muted">تقارير مقبولة</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h3 class="text-warning">{{ reports|selectattr('review_status', 'equalto', 'pending')|list|length }}</h3>
+                        <p class="text-muted">قيد المراجعة</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

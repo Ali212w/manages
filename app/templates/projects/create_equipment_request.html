@@ -1,0 +1,268 @@
+{% extends "company/base.html" %}
+
+{% block title %}إنشاء طلب معدات - {{ project.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px 30px;
+        color: white;
+    }
+    .equipment-item {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    .equipment-item:hover {
+        border-color: #667eea;
+        box-shadow: 0 5px 15px rgba(102,126,234,0.1);
+    }
+    .btn-add-item {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 12px;
+        font-weight: 600;
+        transition: transform 0.2s ease;
+    }
+    .btn-add-item:hover {
+        transform: scale(1.02);
+    }
+    .supplier-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    .supplier-card.selected {
+        border-color: #667eea;
+        background: #f0f0ff;
+    }
+    .supplier-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="form-card">
+                <div class="form-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1"><i class="fas fa-tools me-2"></i> طلب معدات جديد</h2>
+                            <p class="mb-0 text-white-50">المشروع: {{ project.name }}</p>
+                        </div>
+                        <a href="{{ url_for('projects.project_equipment_requests', project_id=project.id) }}" class="btn btn-light">
+                            <i class="fas fa-arrow-right me-2"></i> العودة
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="p-4">
+                    <form method="POST" id="equipmentRequestForm">
+                        <!-- اختيار المورد -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold mb-3">
+                                <i class="fas fa-truck me-2 text-primary"></i> اختيار المورد
+                            </label>
+                            <div class="row">
+                                {% for supplier in suppliers %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="supplier-card card h-100" data-supplier-id="{{ supplier.id }}" onclick="selectSupplier(this, {{ supplier.id }})">
+                                        <div class="card-body text-center">
+                                            <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex p-3 mb-3">
+                                                <i class="fas fa-building fa-2x text-primary"></i>
+                                            </div>
+                                            <h6 class="mb-1">{{ supplier.full_name }}</h6>
+                                            <small class="text-muted">{{ supplier.email }}</small>
+                                            <div class="mt-2">
+                                                <span class="badge bg-success">مورد معتمد</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" name="supplier_id" id="supplier_id" required>
+                        </div>
+                        
+                        <!-- تاريخ التسليم المطلوب -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-calendar-alt me-2 text-primary"></i> تاريخ التسليم المطلوب
+                            </label>
+                            <input type="date" name="required_date" class="form-control form-control-lg" value="{{ default_date_str }}" required style="border-radius: 12px;">
+                        </div>
+                        
+                        <!-- موقع التسليم -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-map-marker-alt me-2 text-primary"></i> موقع التسليم
+                            </label>
+                            <input type="text" name="site_location" class="form-control form-control-lg" value="{{ project.location.site_name if project.location else '' }}" placeholder="موقع التسليم" style="border-radius: 12px;">
+                        </div>
+                        
+                        <!-- المعدات المطلوبة -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-label fw-bold mb-0">
+                                    <i class="fas fa-microchip me-2 text-primary"></i> المعدات المطلوبة
+                                </label>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="addEquipmentItem()">
+                                    <i class="fas fa-plus me-1"></i> إضافة معدة
+                                </button>
+                            </div>
+                            <div id="equipment-items-container">
+                                {% if equipment_list %}
+                                    {% for equipment in equipment_list %}
+                                    <div class="equipment-item" data-equipment-id="{{ equipment.id }}">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="rounded-circle bg-info bg-opacity-10 p-2 me-3">
+                                                        <i class="fas fa-microchip text-info"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">{{ equipment.name }}</h6>
+                                                        <small class="text-muted">{{ equipment.resource_id }} - {{ equipment.equipment_type|default('معدة') }}</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="input-group">
+                                                    <input type="number" name="quantities[]" class="form-control" step="1" min="1" placeholder="الكمية" required>
+                                                    <span class="input-group-text">{{ equipment.unit }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2 text-end">
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="removeEquipmentItem(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="equipment_ids[]" value="{{ equipment.id }}">
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <div id="no-equipment-message" class="text-center py-4 {% if equipment_list %}d-none{% endif %}">
+                                <i class="fas fa-microchip fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">لا توجد معدات متاحة للطلب أو تم طلبها بالفعل</p>
+                            </div>
+                        </div>
+                        
+                        <!-- ملاحظات إضافية -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-sticky-note me-2 text-primary"></i> ملاحظات إضافية
+                            </label>
+                            <textarea name="notes" class="form-control" rows="3" placeholder="أي تفاصيل إضافية أو متطلبات خاصة..." style="border-radius: 12px;"></textarea>
+                        </div>
+                        
+                        <!-- أزرار الإجراء -->
+                        <div class="d-flex justify-content-between pt-3">
+                            <a href="{{ url_for('projects.project_equipment_requests', project_id=project.id) }}" class="btn btn-secondary btn-lg px-4">
+                                <i class="fas fa-times me-2"></i> إلغاء
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg px-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                                <i class="fas fa-paper-plane me-2"></i> إرسال الطلب
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedSupplierId = null;
+    
+    function selectSupplier(element, supplierId) {
+        // إزالة التحديد السابق
+        document.querySelectorAll('.supplier-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        element.classList.add('selected');
+        selectedSupplierId = supplierId;
+        document.getElementById('supplier_id').value = supplierId;
+    }
+    
+    function addEquipmentItem() {
+        const container = document.getElementById('equipment-items-container');
+        const message = document.getElementById('no-equipment-message');
+        
+        // إنشاء عنصر جديد
+        const newItem = document.createElement('div');
+        newItem.className = 'equipment-item';
+        newItem.innerHTML = `
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-info bg-opacity-10 p-2 me-3">
+                            <i class="fas fa-microchip text-info"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">معدة جديدة</h6>
+                            <small class="text-muted">أدخل الاسم والكمية</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <input type="text" name="equipment_names[]" class="form-control" placeholder="اسم المعدة" required>
+                        <input type="number" name="quantities[]" class="form-control" step="1" min="1" placeholder="الكمية" required>
+                        <input type="text" name="units[]" class="form-control" placeholder="الوحدة" style="width: 80px;">
+                    </div>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeEquipmentItem(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(newItem);
+        
+        if (message) message.classList.add('d-none');
+    }
+    
+    function removeEquipmentItem(button) {
+        button.closest('.equipment-item').remove();
+        const container = document.getElementById('equipment-items-container');
+        if (container.children.length === 0) {
+            document.getElementById('no-equipment-message').classList.remove('d-none');
+        }
+    }
+    
+    // التحقق من صحة النموذج قبل الإرسال
+    document.getElementById('equipmentRequestForm').addEventListener('submit', function(e) {
+        if (!selectedSupplierId) {
+            e.preventDefault();
+            alert('الرجاء اختيار المورد');
+            return false;
+        }
+        const items = document.querySelectorAll('.equipment-item');
+        if (items.length === 0) {
+            e.preventDefault();
+            alert('الرجاء إضافة معدة واحدة على الأقل');
+            return false;
+        }
+        return true;
+    });
+</script>
+{% endblock %}

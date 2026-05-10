@@ -1,0 +1,167 @@
+<!-- templates/primavera/tabs/project/notebook.html -->
+<div class="field-group">
+    <h6 class="field-group-title">
+        <i class="fas fa-book text-primary"></i>
+        Project Notebook
+    </h6>
+    
+    <!-- قائمة المواضيع مثل Primavera -->
+    <div class="mb-4">
+        <label class="field-label">Notebook Topics</label>
+        <select class="field-input mb-3" id="notebookTopic">
+            <optgroup label="Project Management">
+                <option value="Constraints">Constraints</option>
+                <option value="Change Management">Change Management</option>
+                <option value="Sponsor Feedback">Sponsor Feedback</option>
+                <option value="Lessons Learned">Lessons Learned</option>
+                <option value="Business Benefits">Business Benefits</option>
+            </optgroup>
+            <optgroup label="Project Definition">
+                <option value="Rationale">Rationale</option>
+                <option value="Objectives">Objectives</option>
+                <option value="Scope">Scope</option>
+                <option value="Business Justification">Business Justification</option>
+            </optgroup>
+            <optgroup label="Project Control">
+                <option value="Changes">Changes</option>
+                <option value="Corrective Actions">Corrective Actions</option>
+                <option value="Anticipated Problems">Anticipated Problems</option>
+                <option value="Progress Photographs">Progress Photographs</option>
+            </optgroup>
+            <optgroup label="Project Boundaries">
+                <option value="Entry Criteria">Entry Criteria</option>
+                <option value="Exit Criteria">Exit Criteria</option>
+            </optgroup>
+            <optgroup label="General">
+                <option value="Tools / Techniques">Tools / Techniques</option>
+                <option value="Comments">Comments</option>
+            </optgroup>
+        </select>
+    </div>
+    
+    <!-- محرر الملاحظات -->
+    <div class="mb-3">
+        <textarea class="field-input" id="notebookContent" rows="6" 
+                  placeholder="Enter your notes here...">{{ project.notebook_content or '' }}</textarea>
+    </div>
+    
+    <!-- أزرار التنسيق -->
+    <div class="btn-group mb-4" role="group">
+        <button class="btn btn-sm btn-outline-secondary" onclick="formatNotebook('bold')">
+            <i class="fas fa-bold"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="formatNotebook('italic')">
+            <i class="fas fa-italic"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="formatNotebook('underline')">
+            <i class="fas fa-underline"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="formatNotebook('insertUnorderedList')">
+            <i class="fas fa-list-ul"></i>
+        </button>
+    </div>
+    
+    <!-- سجل الملاحظات -->
+    <h6 class="field-group-title mt-4">
+        <i class="fas fa-history"></i>
+        Notebook History
+    </h6>
+    
+    <div class="table-responsive">
+        <table class="primavera-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Topic</th>
+                    <th>Author</th>
+                    <th>Preview</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="notebookEntriesList">
+                {% for entry in notebook_entries %}
+                <tr>
+                    <td>{{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ entry.topic }}</td>
+                    <td>{{ entry.author.full_name }}</td>
+                    <td>{{ entry.content[:50] }}...</td>
+                    <td>
+                        <button class="btn btn-sm btn-link" onclick="viewEntry({{ entry.id }})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+let currentNotebookEntries = {{ notebook_entries|tojson|safe }};
+
+function addNotebookEntry() {
+    const topic = document.getElementById('notebookTopic').value;
+    const content = document.getElementById('notebookContent').value;
+    
+    if (!content.trim()) {
+        Swal.fire('تنبيه', 'الرجاء إدخال محتوى الملاحظة', 'warning');
+        return;
+    }
+    
+    fetch('/primavera/api/project/{{ project.id }}/notebook/entry', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            topic: topic,
+            content: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire('تم', 'تم إضافة الملاحظة', 'success');
+            document.getElementById('notebookContent').value = '';
+            loadNotebookEntries();
+        }
+    });
+}
+
+function formatNotebook(command) {
+    document.execCommand(command, false, null);
+}
+
+function loadNotebookEntries() {
+    fetch('/primavera/api/project/{{ project.id }}/notebook/entries')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateNotebookTable(data.entries);
+        }
+    });
+}
+
+function updateNotebookTable(entries) {
+    const tbody = document.getElementById('notebookEntriesList');
+    tbody.innerHTML = '';
+    
+    entries.forEach(entry => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${new Date(entry.created_at).toLocaleString()}</td>
+                <td>${entry.topic}</td>
+                <td>${entry.author}</td>
+                <td>${entry.content.substring(0, 50)}...</td>
+                <td>
+                    <button class="btn btn-sm btn-link" onclick="viewEntry(${entry.id})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+}
+</script>

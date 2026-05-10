@@ -1,0 +1,218 @@
+{% extends "employee/base.html" %}
+
+{% block title %}{{ _('emp.my_activities') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .activity-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        margin-bottom: 20px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.05);
+        cursor: pointer;
+    }
+    
+    .activity-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .activity-header {
+        padding: 15px 20px;
+        background: linear-gradient(135deg, #f8f9fa, #fff);
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .activity-body {
+        padding: 15px 20px;
+    }
+    
+    .activity-progress {
+        height: 8px;
+        border-radius: 4px;
+        background: #e0e0e0;
+        overflow: hidden;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .stat-card-mini {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 15px;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-gradient mb-1">
+            <i class="fas fa-microchip me-2"></i> {{ _('emp.my_activities') }}
+        </h2>
+        <p class="text-muted">{{ _('emp.manage_and_track_your_activities') }}</p>
+    </div>
+</div>
+
+<!-- إحصائيات سريعة -->
+<div class="stats-grid">
+    <div class="stat-card-mini">
+        <div class="display-6 fw-bold text-primary">{{ stats.total }}</div>
+        <small class="text-muted">{{ _('emp.total_activities') }}</small>
+    </div>
+    <div class="stat-card-mini">
+        <div class="display-6 fw-bold text-success">{{ stats.completed }}</div>
+        <small class="text-muted">{{ _('emp.completed') }}</small>
+    </div>
+    <div class="stat-card-mini">
+        <div class="display-6 fw-bold text-info">{{ stats.in_progress }}</div>
+        <small class="text-muted">{{ _('emp.in_progress') }}</small>
+    </div>
+    <div class="stat-card-mini">
+        <div class="display-6 fw-bold text-warning">{{ stats.not_started }}</div>
+        <small class="text-muted">{{ _('emp.not_started') }}</small>
+    </div>
+    <div class="stat-card-mini">
+        <div class="display-6 fw-bold text-danger">{{ stats.critical }}</div>
+        <small class="text-muted">{{ _('emp.critical') }}</small>
+    </div>
+</div>
+
+<!-- شريط البحث والتصفية -->
+<div class="filter-bar mb-4">
+    <div class="row">
+        <div class="col-md-4 mb-2 mb-md-0">
+            <select id="statusFilter" class="form-select" onchange="filterByStatus(this.value)">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>{{ _('emp.all_status') }}</option>
+                <option value="not_started" {% if status_filter == 'not_started' %}selected{% endif %}>{{ _('emp.not_started') }}</option>
+                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>{{ _('emp.in_progress') }}</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>{{ _('emp.completed') }}</option>
+                <option value="delayed" {% if status_filter == 'delayed' %}selected{% endif %}>{{ _('emp.delayed') }}</option>
+            </select>
+        </div>
+        <div class="col-md-4 mb-2 mb-md-0">
+            <select id="projectFilter" class="form-select" onchange="filterByProject(this.value)">
+                <option value="all" {% if project_filter == 'all' %}selected{% endif %}>{{ _('emp.all_projects') }}</option>
+                {% for project in projects %}
+                <option value="{{ project.id }}" {% if project_filter|int == project.id %}selected{% endif %}>{{ project.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <input type="text" id="searchInput" class="form-control" placeholder="{{ _('emp.search_activities') }}..." value="{{ search_query }}">
+                <button class="btn btn-primary" onclick="searchActivities()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- قائمة الأنشطة -->
+{% for activity in activities %}
+<div class="activity-card" onclick="window.location.href='{{ url_for('employee.view_activity', activity_id=activity.id) }}'">
+    <div class="activity-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0 fw-bold">{{ activity.activity_name }}</h5>
+                <small class="text-muted">{{ activity.activity_id }}</small>
+            </div>
+            <div>
+                {{ get_status_badge(activity.status) | safe }}
+            </div>
+        </div>
+    </div>
+    <div class="activity-body">
+        <div class="row align-items-center">
+            <div class="col-md-5 mb-2 mb-md-0">
+                <div class="d-flex gap-3">
+                    <div>
+                        <small class="text-muted">{{ _('emp.project') }}</small>
+                        <div class="fw-bold">{{ activity.project.name if activity.project else '-' }}</div>
+                    </div>
+                    <div>
+                        <small class="text-muted">{{ _('emp.wbs') }}</small>
+                        <div class="fw-bold">{{ activity.wbs.wbs_code if activity.wbs else '-' }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2 mb-md-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">{{ _('emp.progress') }}</small>
+                    <small class="fw-bold">{{ activity.progress_percentage|round|int }}%</small>
+                </div>
+                <div class="activity-progress mt-1">
+                    <div class="bg-success" style="width: {{ activity.progress_percentage }}%; height: 100%; border-radius: 4px;"></div>
+                </div>
+            </div>
+            <div class="col-md-3 text-md-end">
+                <div class="d-flex gap-3 justify-content-md-end">
+                    <div>
+                        <small class="text-muted">{{ _('emp.tasks') }}</small>
+                        <div class="fw-bold">{{ activity.tasks.count() }}</div>
+                    </div>
+                    <div>
+                        <small class="text-muted">{{ _('emp.cost') }}</small>
+                        <div class="fw-bold text-{% if activity.cost_variance > 0 %}danger{% else %}success{% endif %}">
+                            {{ format_currency(activity.actual_cost) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if activity.status == 'delayed' %}
+        <div class="alert alert-danger mt-2 mb-0 p-2 small">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            {{ _('emp.activity_is_delayed') }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-microchip fa-4x text-muted mb-3"></i>
+    <h4 class="text-muted">{{ _('emp.no_activities') }}</h4>
+    <p class="text-muted">{{ _('emp.no_activities_assigned') }}</p>
+</div>
+{% endfor %}
+
+<script>
+    function filterByStatus(status) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('status', status);
+        window.location.href = url.toString();
+    }
+    
+    function filterByProject(projectId) {
+        const url = new URL(window.location.href);
+        if (projectId === 'all') {
+            url.searchParams.delete('project_id');
+        } else {
+            url.searchParams.set('project_id', projectId);
+        }
+        window.location.href = url.toString();
+    }
+    
+    function searchActivities() {
+        const query = document.getElementById('searchInput').value;
+        const url = new URL(window.location.href);
+        if (query) {
+            url.searchParams.set('search', query);
+        } else {
+            url.searchParams.delete('search');
+        }
+        window.location.href = url.toString();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,817 @@
+{% extends "company/base.html" %}
+
+{% block title %}تعديل بيانات المستخدم - {{ user.full_name }}{% endblock %}
+
+{% block page_title %}تعديل بيانات المستخدم{% endblock %}
+{% block page_subtitle %}{{ user.full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Form Card */
+    .form-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .section-title i {
+        color: var(--primary);
+        font-size: 1.2rem;
+    }
+    
+    /* Form Controls */
+    .form-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .required-field::after {
+        content: '*';
+        color: var(--danger);
+        margin-right: 4px;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        transition: all 0.3s;
+        font-size: 0.95rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .form-control[readonly] {
+        background: #f8f9fa;
+        cursor: not-allowed;
+    }
+    
+    /* User Avatar */
+    .user-avatar-large {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        font-weight: bold;
+        margin: 0 auto 1rem;
+        border: 4px solid white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-upload {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .avatar-upload-btn {
+        background: transparent;
+        border: 2px solid var(--primary);
+        color: var(--primary);
+        padding: 0.5rem 1.5rem;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .avatar-upload-btn:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    /* Role Cards */
+    .role-info {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .role-badge {
+        display: inline-block;
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .role-badge.org_admin { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .role-badge.project_manager { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .role-badge.supervisor { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .role-badge.delegate { background: rgba(72, 149, 239, 0.1); color: var(--info); }
+    .role-badge.employee { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+    
+    .permission-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .permission-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    /* Password Strength */
+    .password-strength {
+        margin-top: 0.5rem;
+    }
+    
+    .strength-bar {
+        height: 5px;
+        background: #eef2f7;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 0.3rem;
+    }
+    
+    .strength-fill {
+        height: 100%;
+        width: 0;
+        transition: width 0.3s;
+    }
+    
+    .strength-fill.weak { background: var(--danger); }
+    .strength-fill.medium { background: var(--warning); }
+    .strength-fill.strong { background: var(--success); }
+    
+    .strength-text {
+        font-size: 0.8rem;
+    }
+    
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid #eef2f7;
+    }
+    
+    .btn-primary-gradient {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border: none;
+        color: white;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-primary-gradient:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+        color: white;
+    }
+    
+    .btn-outline-secondary {
+        border: 2px solid #eef2f7;
+        color: #6c757d;
+        background: transparent;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+    
+    .btn-outline-secondary:hover {
+        background: #eef2f7;
+        color: var(--dark);
+    }
+    
+    .btn-danger {
+        background: var(--danger);
+        border: none;
+        color: white;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-danger:hover {
+        background: #d32f2f;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(249, 65, 68, 0.2);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .form-card {
+            padding: 1.5rem;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .permission-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="form-card">
+            <form method="POST" action="{{ url_for('company.edit_user', user_id=user.id) }}" id="editUserForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <!-- User Avatar -->
+                <div class="avatar-upload">
+                    <div class="user-avatar-large">
+                        {{ user.full_name[0] }}
+                    </div>
+                    <button type="button" class="avatar-upload-btn" onclick="document.getElementById('avatarInput').click()">
+                        <i class="fas fa-camera"></i>
+                        تغيير الصورة
+                    </button>
+                    <input type="file" id="avatarInput" style="display: none;" accept="image/*">
+                </div>
+                
+                <!-- Personal Information Section -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-user"></i>
+                        المعلومات الشخصية
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required-field">الاسم الكامل </label>
+                            <input type="text" name="full_name" class="form-control" 
+                                   value="{{ user.full_name }}" required>
+                        </div>
+                      
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required-field">البريد الإلكتروني</label>
+                            <input type="email" name="email" class="form-control" 
+                                   value="{{ user.email }}" required dir="ltr">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رقم الهاتف</label>
+                            <input type="tel" name="phone" class="form-control" 
+                                   value="{{ user.phone or '' }}" dir="ltr">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رقم الجوال</label>
+                            <input type="tel" name="mobile" class="form-control" 
+                                   value="{{ user.mobile or '' }}" dir="ltr">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رقم الموظف</label>
+                            <input type="text" name="employee_id" class="form-control" 
+                                   value="{{ user.employee_id or '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">المسمى الوظيفي (عربي)</label>
+                            <input type="text" name="job_title" class="form-control" 
+                                   value="{{ user.job_title or '' }}">
+                        </div>
+                       
+                    </div>
+                </div>
+                
+                <!-- Role & Department Section -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-briefcase"></i>
+                        الدور والصلاحيات
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required-field">الدور</label>
+                            <select name="role" class="form-select" id="roleSelect" required>
+                                <option value="org_admin" {% if user.role == 'org_admin' %}selected{% endif %}>
+                                    مدير شركة
+                                </option>
+                                <option value="project_manager" {% if user.role == 'project_manager' %}selected{% endif %}>
+                                    مدير مشروع
+                                </option>
+                                <option value="supervisor" {% if user.role == 'supervisor' %}selected{% endif %}>
+                                    مشرف
+                                </option>
+                                <option value="delegate" {% if user.role == 'delegate' %}selected{% endif %}>
+                                    مندوب
+                                </option>
+                                <option value="employee" {% if user.role == 'employee' %}selected{% endif %}>
+                                    موظف
+                                </option>
+                                <option value="supplier" {% if user.role == 'supplier' %}selected{% endif %}>
+                                    مورد
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">القسم</label>
+                            <select name="dept_id" class="form-select">
+                                <option value="">-- بدون قسم --</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept.id }}" {% if user.dept_id == dept.id %}selected{% endif %}>
+                                    {{ dept.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Role Information -->
+                    <div class="role-info" id="roleInfo">
+                        <div class="role-badge {{ user.role }}">
+                            {% if user.role == 'org_admin' %}
+                                <i class="fas fa-crown me-1"></i> مدير شركة
+                            {% elif user.role == 'project_manager' %}
+                                <i class="fas fa-tasks me-1"></i> مدير مشروع
+                            {% elif user.role == 'supervisor' %}
+                                <i class="fas fa-eye me-1"></i> مشرف
+                            {% elif user.role == 'delegate' %}
+                                <i class="fas fa-user-check me-1"></i> مندوب
+                            {% else %}
+                                <i class="fas fa-user me-1"></i> موظف
+                            {% endif %}
+                        </div>
+                        
+                        <div class="permission-grid" id="permissionsGrid">
+                            <!-- سيتم تحديثها ديناميكياً عبر JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Account Status Section -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-shield-alt"></i>
+                        حالة الحساب
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_user_active" 
+                                       id="isActive" {% if user.is_user_active %}checked{% endif %}>
+                                <label class="form-check-label" for="isActive">الحساب نشط</label>
+                            </div>
+                            <small class="text-muted">إذا كان الحساب غير نشط، لن يتمكن المستخدم من تسجيل الدخول</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_verified" 
+                                       id="isVerified" {% if user.is_verified %}checked{% endif %}>
+                                <label class="form-check-label" for="isVerified">تم التحقق من البريد</label>
+                            </div>
+                            <small class="text-muted">تأكيد أن البريد الإلكتروني تم التحقق منه</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Change Password Section -->
+                <div class="form-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-key"></i>
+                        تغيير كلمة المرور
+                    </h5>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        اترك الحقول فارغة إذا لم ترد تغيير كلمة المرور
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">كلمة المرور الجديدة</label>
+                            <div class="input-group">
+                                <input type="password" name="new_password" class="form-control" 
+                                       id="newPassword" placeholder="أدخل كلمة المرور الجديدة">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('newPassword')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength" id="passwordStrength" style="display: none;">
+                                <div class="strength-bar">
+                                    <div class="strength-fill" id="strengthBar" style="width: 0%"></div>
+                                </div>
+                                <div class="strength-text" id="strengthText"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تأكيد كلمة المرور</label>
+                            <div class="input-group">
+                                <input type="password" name="confirm_password" class="form-control" 
+                                       id="confirmPassword" placeholder="أعد إدخال كلمة المرور">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirmPassword')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted" id="passwordMatch"></small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <div>
+                        <button type="button" class="btn-danger" onclick="confirmDelete({{ user.id }})">
+                            <i class="fas fa-trash me-2"></i>
+                            حذف المستخدم
+                        </button>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('company.view_user', user_id=user.id) }}" class="btn-outline-secondary me-2">
+                            <i class="fas fa-times me-2"></i>
+                            إلغاء
+                        </a>
+                        <button type="submit" class="btn-primary-gradient">
+                            <i class="fas fa-save me-2"></i>
+                            حفظ التغييرات
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Form (Hidden) -->
+<form id="deleteForm" method="POST" action="{{ url_for('company.delete_user', user_id=user.id) }}" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ============================================
+// إدارة الصلاحيات حسب الدور
+// ============================================
+const permissionsMap = {
+    'org_admin': [
+        { id: 'manage_users', name: 'إدارة المستخدمين', enabled: true },
+        { id: 'manage_projects', name: 'إدارة المشاريع', enabled: true },
+        { id: 'manage_departments', name: 'إدارة الأقسام', enabled: true },
+        { id: 'view_reports', name: 'عرض التقارير', enabled: true },
+        { id: 'approve_expenses', name: 'الموافقة على المصروفات', enabled: true },
+        { id: 'manage_company', name: 'إدارة الشركة', enabled: true }
+    ],
+    'project_manager': [
+        { id: 'manage_projects', name: 'إدارة المشاريع', enabled: true },
+        { id: 'create_tasks', name: 'إنشاء مهام', enabled: true },
+        { id: 'assign_tasks', name: 'تعيين المهام', enabled: true },
+        { id: 'view_reports', name: 'عرض التقارير', enabled: true },
+        { id: 'approve_expenses', name: 'الموافقة على المصروفات', enabled: false },
+        { id: 'manage_users', name: 'إدارة المستخدمين', enabled: false }
+    ],
+    'supervisor': [
+        { id: 'view_projects', name: 'عرض المشاريع', enabled: true },
+        { id: 'view_tasks', name: 'عرض المهام', enabled: true },
+        { id: 'update_progress', name: 'تحديث التقدم', enabled: true },
+        { id: 'upload_documents', name: 'رفع المستندات', enabled: true },
+        { id: 'create_tasks', name: 'إنشاء مهام', enabled: false },
+        { id: 'manage_users', name: 'إدارة المستخدمين', enabled: false }
+    ],
+    'delegate': [
+        { id: 'view_tasks', name: 'عرض المهام', enabled: true },
+        { id: 'execute_tasks', name: 'تنفيذ المهام', enabled: true },
+        { id: 'update_progress', name: 'تحديث التقدم', enabled: true },
+        { id: 'upload_photos', name: 'رفع صور', enabled: true },
+        { id: 'create_tasks', name: 'إنشاء مهام', enabled: false },
+        { id: 'view_reports', name: 'عرض التقارير', enabled: false }
+    ],
+    'employee': [
+        { id: 'view_tasks', name: 'عرض المهام', enabled: true },
+        { id: 'execute_tasks', name: 'تنفيذ المهام', enabled: true },
+        { id: 'update_progress', name: 'تحديث التقدم', enabled: true },
+        { id: 'view_projects', name: 'عرض المشاريع', enabled: true },
+        { id: 'upload_documents', name: 'رفع المستندات', enabled: false },
+        { id: 'view_reports', name: 'عرض التقارير', enabled: false }
+    ]
+};
+
+function updatePermissions() {
+    const role = document.getElementById('roleSelect').value;
+    const permissions = permissionsMap[role] || permissionsMap['employee'];
+    const grid = document.getElementById('permissionsGrid');
+    
+    grid.innerHTML = permissions.map(perm => `
+        <div class="permission-item">
+            <input class="form-check-input" type="checkbox" 
+                   name="permissions[]" value="${perm.id}" 
+                   id="perm_${perm.id}" ${perm.enabled ? 'checked' : ''}>
+            <label class="form-check-label" for="perm_${perm.id}">
+                ${perm.name}
+            </label>
+        </div>
+    `).join('');
+    
+    // تحديث معلومات الدور
+    const roleInfo = document.querySelector('.role-badge');
+    roleInfo.className = `role-badge ${role}`;
+    
+    const roleNames = {
+        'org_admin': 'مدير شركة',
+        'project_manager': 'مدير مشروع',
+        'supervisor': 'مشرف',
+        'delegate': 'مندوب',
+        'employee': 'موظف'
+    };
+    
+    roleInfo.innerHTML = `<i class="fas ${getRoleIcon(role)} me-1"></i> ${roleNames[role]}`;
+}
+
+function getRoleIcon(role) {
+    const icons = {
+        'org_admin': 'fa-crown',
+        'project_manager': 'fa-tasks',
+        'supervisor': 'fa-eye',
+        'delegate': 'fa-user-check',
+        'employee': 'fa-user'
+    };
+    return icons[role] || 'fa-user';
+}
+
+// ============================================
+// قوة كلمة المرور
+// ============================================
+// function checkPasswordStrength() {
+//     const password = document.getElementById('newPassword').value;
+//     const strengthDiv = document.getElementById('passwordStrength');
+//     const strengthBar = document.getElementById('strengthBar');
+//     const strengthText = document.getElementById('strengthText');
+    
+//     if (password.length === 0) {
+//         strengthDiv.style.display = 'none';
+//         return;
+//     }
+    
+//     strengthDiv.style.display = 'block';
+    
+//     let strength = 0;
+//     let feedback = [];
+    
+//     // طول كلمة المرور
+//     if (password.length >= 8) {
+//         strength += 25;
+//     } else {
+//         feedback.push('8 أحرف على الأقل');
+//     }
+    
+//     // أحرف كبيرة
+//     if (/[A-Z]/.test(password)) {
+//         strength += 25;
+//     } else {
+//         feedback.push('حرف كبير');
+//     }
+    
+//     // أحرف صغيرة
+//     if (/[a-z]/.test(password)) {
+//         strength += 25;
+//     } else {
+//         feedback.push('حرف صغير');
+//     }
+    
+//     // أرقام
+//     if (/[0-9]/.test(password)) {
+//         strength += 25;
+//     } else {
+//         feedback.push('رقم');
+//     }
+    
+//     // رموز خاصة تزيد القوة
+//     if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+//         strength = Math.min(strength + 15, 100);
+//     }
+    
+//     strengthBar.style.width = strength + '%';
+    
+//     if (strength < 50) {
+//         strengthBar.className = 'strength-fill weak';
+//         strengthText.innerHTML = 'كلمة مرور ضعيفة - ' + feedback.join('، ');
+//         strengthText.className = 'strength-text text-danger';
+//     } else if (strength < 75) {
+//         strengthBar.className = 'strength-fill medium';
+//         strengthText.innerHTML = 'كلمة مرور متوسطة';
+//         strengthText.className = 'strength-text text-warning';
+//     } else {
+//         strengthBar.className = 'strength-fill strong';
+//         strengthText.innerHTML = 'كلمة مرور قوية ✓';
+//         strengthText.className = 'strength-text text-success';
+//     }
+// }
+
+// ============================================
+// تطابق كلمة المرور
+// ============================================
+function checkPasswordMatch() {
+    const password = document.getElementById('newPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    const matchDiv = document.getElementById('passwordMatch');
+    
+    if (confirm.length === 0) {
+        matchDiv.innerHTML = '';
+        return;
+    }
+    
+    if (password === confirm) {
+        matchDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i> كلمة المرور متطابقة</span>';
+    } else {
+        matchDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i> كلمة المرور غير متطابقة</span>';
+    }
+}
+
+// ============================================
+// إظهار/إخفاء كلمة المرور
+// ============================================
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+}
+
+// ============================================
+// تأكيد الحذف
+// ============================================
+function confirmDelete(userId) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع عن هذا الإجراء!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('deleteForm').submit();
+        }
+    });
+}
+
+// ============================================
+// التحقق من البريد الإلكتروني
+// ============================================
+document.querySelector('input[name="email"]').addEventListener('blur', function() {
+    const email = this.value;
+    const originalEmail = '{{ user.email }}';
+    
+    if (email && email !== originalEmail) {
+        fetch(`/company/api/check-email?email=${encodeURIComponent(email)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.exists) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'البريد الإلكتروني مستخدم مسبقاً'
+                    });
+                    this.value = originalEmail;
+                }
+            });
+    }
+});
+
+// ============================================
+// رفع الصورة الشخصية
+// ============================================
+document.getElementById('avatarInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            Swal.fire({
+                title: 'تغيير الصورة',
+                text: 'هل تريد حفظ الصورة الجديدة؟',
+                imageUrl: e.target.result,
+                imageHeight: 200,
+                imageAlt: 'الصورة الجديدة',
+                showCancelButton: true,
+                confirmButtonText: 'حفظ',
+                cancelButtonText: 'إلغاء'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // TODO: رفع الصورة إلى الخادم
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم',
+                        text: 'تم تحديث الصورة بنجاح',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// ============================================
+// التحقق من صحة النموذج قبل الإرسال
+// ============================================
+document.getElementById('editUserForm').addEventListener('submit', function(e) {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword || confirmPassword) {
+        if (newPassword !== confirmPassword) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: 'كلمة المرور غير متطابقة'
+            });
+            return;
+        }
+        
+        if (newPassword.length < 8) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'
+            });
+            return;
+        }
+    }
+});
+
+// ============================================
+// التهيئة
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // تحديث الصلاحيات حسب الدور الحالي
+    updatePermissions();
+    
+    // الاستماع لتغيير الدور
+    document.getElementById('roleSelect').addEventListener('change', updatePermissions);
+    
+    // الاستماع لتغيير كلمة المرور
+    document.getElementById('newPassword').addEventListener('input', function() {
+        checkPasswordStrength();
+        checkPasswordMatch();
+    });
+    
+    document.getElementById('confirmPassword').addEventListener('input', checkPasswordMatch);
+});
+</script>
+{% endblock %}

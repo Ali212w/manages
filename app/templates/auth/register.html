@@ -1,0 +1,123 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}إنشاء حساب جديد{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white text-center">
+                <h4><i class="fas fa-user-plus"></i> إنشاء حساب جديد</h4>
+                <p class="mb-0">فترة تجريبية مجانية لمدة 30 يوماً</p>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="org_code" class="form-label">رقم المعرف </label>
+                            {{ form.org_code(class="form-control" + (' is-invalid' if form.org_code.errors else ''), placeholder="أدخل رقم المعرف ") }}
+                            {% for error in form.org_code.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="full_name" class="form-label">الاسم الشركة</label>
+                            {{ form.full_name(class="form-control" + (' is-invalid' if form.full_name.errors else ''), placeholder="اسم الشركة او المؤسسة") }}
+                            {% for error in form.full_name.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">البريد الإلكتروني</label>
+                            {{ form.email(class="form-control" + (' is-invalid' if form.email.errors else ''), placeholder="example@domain.com") }}
+                            {% for error in form.email.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">رقم الهاتف</label>
+                            {{ form.phone(class="form-control" + (' is-invalid' if form.phone.errors else ''), placeholder="05xxxxxxxx") }}
+                            {% for error in form.phone.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">كلمة المرور</label>
+                            {{ form.password(class="form-control" + (' is-invalid' if form.password.errors else ''), placeholder="********") }}
+                            {% for error in form.password.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <small class="text-muted">كلمة المرور يجب أن تكون 6 أحرف على الأقل</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="confirm_password" class="form-label">تأكيد كلمة المرور</label>
+                            {{ form.confirm_password(class="form-control" + (' is-invalid' if form.confirm_password.errors else ''), placeholder="********") }}
+                            {% for error in form.confirm_password.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="terms" required>
+                        <label class="form-check-label" for="terms">
+                            أوافق على <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">الشروط والأحكام</a>
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-user-plus"></i> إنشاء حساب
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">لديك حساب بالفعل؟ <a href="{{ url_for('auth.login') }}">تسجيل الدخول</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal الشروط والأحكام -->
+<div class="modal fade" id="termsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">الشروط والأحكام</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. الفترة التجريبية</h6>
+                <p>تقدم المنصة فترة تجريبية مجانية لمدة 30 يوماً. بعد انتهاء الفترة التجريبية، يجب الاشتراك في إحدى الباقات المدفوعة للاستمرار في استخدام المنصة.</p>
+                
+                <h6>2. استخدام المنصة</h6>
+                <p>يجب استخدام المنصة للأغراض المشروعة فقط. يمنع استخدام المنصة في أي أنشطة غير قانونية أو مخالفة.</p>
+                
+                <h6>3. خصوصية البيانات</h6>
+                <p>نحن نلتزم بحماية خصوصية بياناتك. جميع المعلومات الشخصية محمية وفقاً لسياسة الخصوصية الخاصة بنا.</p>
+                
+                <h6>4. حقوق الملكية الفكرية</h6>
+                <p>جميع حقوق الملكية الفكرية للمنصة ومحتواها محفوظة لصالح المنصة.</p>
+                
+                <h6>5. الإلغاء والاسترداد</h6>
+                <p>يمكنك إلغاء اشتراكك في أي وقت. لا توجد استردادات للمدفوعات بعد بدء فترة الاشتراك.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">موافق</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

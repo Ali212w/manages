@@ -1,0 +1,481 @@
+<!-- templates/company/resource_requests.html -->
+
+{% extends "company/base.html" %}
+
+{% block title %}طلبات التوريد - {{ project.name }}{% endblock %}
+
+{% block page_title %}طلبات التوريد{% endblock %}
+{% block page_subtitle %}{{ project.name }} - {{ project.project_code }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.requests-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.request-card {
+    background: white;
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+    border: 1px solid #eef2f7;
+    transition: all 0.3s;
+    overflow: hidden;
+}
+
+.request-card:hover {
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1);
+}
+
+.request-header {
+    background: linear-gradient(135deg, #f8fafc, #ffffff);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #eef2f7;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.request-number {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.request-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-pending { background: rgba(248, 150, 30, 0.1); color: #f8961e; }
+.status-started { background: rgba(67, 97, 238, 0.1); color: #4361ee; }
+.status-partially_delivered { background: rgba(76, 201, 240, 0.1); color: #4cc9f0; }
+.status-completed { background: rgba(76, 175, 80, 0.1); color: #4caf50; }
+
+.request-body {
+    padding: 1.5rem;
+}
+
+.supplier-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.supplier-avatar {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #4361ee, #3f37c9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.reminder-badge {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    padding: 0.2rem 0.5rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
+}
+
+.items-table {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.items-table th {
+    text-align: right;
+    padding: 0.5rem;
+    background: #f8fafc;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.items-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.progress-bar-custom {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+    width: 100px;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 3px;
+}
+
+.request-footer {
+    background: #f8fafc;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border-top: 1px solid #eef2f7;
+}
+
+.remaining-summary {
+    font-size: 0.85rem;
+}
+
+.remaining-summary .text-warning {
+    font-weight: 700;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-reminder {
+    background: linear-gradient(135deg, #f8961e, #f3722c);
+    border: none;
+    color: white;
+    transition: all 0.3s;
+}
+
+.btn-reminder:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(248, 150, 30, 0.4);
+}
+
+.btn-offers {
+    background: linear-gradient(135deg, #4361ee, #3f37c9);
+    border: none;
+    color: white;
+}
+
+.remaining-items-modal .modal-body {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.remaining-item {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.remaining-item .item-name {
+    font-weight: 700;
+}
+
+.remaining-item .quantity-badge {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="requests-container">
+    {% if resource_requests %}
+        {% for req in resource_requests %}
+        {% set completion_percentage = (req.total_delivered_quantity / req.total_required_quantity * 100) if req.total_required_quantity > 0 else 0 %}
+        {% set remaining_count = req.items|selectattr('remaining_quantity', 'greaterthan', 0)|list|length %}
+        {% set total_remaining = req.total_required_quantity - req.total_delivered_quantity %}
+        
+        <div class="request-card" data-request-id="{{ req.id }}">
+            <div class="request-header">
+                <div>
+                    <span class="request-number">
+                        <i class="fas fa-ticket-alt me-1"></i>
+                        طلب #{{ req.id }}
+                    </span>
+                    <span class="request-status status-{{ req.status }} ms-2">
+                        <i class="fas fa-{% if req.status == 'pending' %}clock{% elif req.status == 'started' %}play{% elif req.status == 'partially_delivered' %}box-open{% elif req.status == 'completed' %}check-circle{% endif %} me-1"></i>
+                        {% if req.status == 'pending' %}معلق
+                        {% elif req.status == 'started' %}بدأ التوريد
+                        {% elif req.status == 'partially_delivered' %}تم تسليم جزئي
+                        {% elif req.status == 'completed' %}مكتمل
+                        {% endif %}
+                    </span>
+                </div>
+                <div>
+                    <span class="text-muted small">
+                        <i class="far fa-calendar-alt me-1"></i>
+                        {{ req.created_at.strftime('%Y-%m-%d') }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="request-body">
+                <div class="supplier-info">
+                    <div class="supplier-avatar">
+                        {{ req.supplier.full_name[0] if req.supplier.full_name else 'م' }}
+                    </div>
+                    <div>
+                        <div class="fw-bold">{{ req.supplier.full_name }}</div>
+                        <small class="text-muted">{{ req.supplier.email }}</small>
+                    </div>
+                    {% if req.last_reminder_sent %}
+                    <div class="reminder-badge ms-auto">
+                        <i class="fas fa-bell me-1"></i>
+                        آخر تذكير: {{ req.last_reminder_sent.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">المواد المطلوبة</small>
+                        <small class="text-muted">التقدم: {{ "%.1f"|format(completion_percentage) }}%</small>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-{{ 'success' if completion_percentage >= 100 else 'primary' }}" 
+                             style="width: {{ completion_percentage }}%"></div>
+                    </div>
+                </div>
+                
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>المادة</th>
+                            <th>المطلوب</th>
+                            <th>المسلم</th>
+                            <th>المتبقي</th>
+                            <th>عرض السعر</th>
+                        </thead>
+                        <tbody>
+                            {% for item in req.items %}
+                            <tr>
+                                <td class="fw-medium">{{ item.resource_name }}</td>
+                                <td>{{ item.required_quantity }} {{ item.unit }}</td>
+                                <td class="text-success">{{ item.delivered_quantity }} {{ item.unit }}</td>
+                                <td class="{% if item.remaining_quantity > 0 %}text-warning{% else %}text-success{% endif %}">
+                                    {{ item.remaining_quantity }} {{ item.unit }}
+                                </td>
+                                <td>
+                                    {% if item.offer_price %}
+                                    <span class="badge bg-{{ 'success' if item.offer_status == 'approved' else 'warning' if item.offer_status == 'pending' else 'danger' }}">
+                                        {{ item.offer_price }} {{ item.offer_currency }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="request-footer">
+                    <div class="remaining-summary">
+                        {% if remaining_count > 0 %}
+                        <span class="text-warning">
+                            <i class="fas fa-box-open me-1"></i>
+                            {{ remaining_count }} مادة متبقية
+                            ({{ total_remaining }} وحدة)
+                        </span>
+                        <button class="btn btn-sm btn-outline-info ms-2" onclick="showRemainingItems({{ req.id }})">
+                            <i class="fas fa-eye me-1"></i> عرض التفاصيل
+                        </button>
+                        {% else %}
+                        <span class="text-success">
+                            <i class="fas fa-check-circle me-1"></i>
+                            جميع المواد تم استلامها
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="action-buttons">
+                        {% if req.status != 'completed' and req.status != 'cancelled' %}
+                        <button class="btn btn-sm btn-outline-secondary" onclick="viewOffers({{ req.id }})">
+                            <i class="fas fa-tags me-1"></i> عروض الأسعار
+                        </button>
+                        <button class="btn btn-sm btn-reminder" onclick="sendReminder({{ req.id }})" 
+                                {% if req.status == 'completed' %}disabled{% endif %}>
+                            <i class="fas fa-bell me-1"></i> إرسال تذكير
+                        </button>
+                        {% endif %}
+                        <a href="{{ url_for('company.view_request_offer', request_id=req.id) }}" class="btn btn-sm btn-offers">
+                            <i class="fas fa-chart-line me-1"></i> تفاصيل
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-truck fa-3x text-muted mb-3"></i>
+            <p class="text-muted">لا توجد طلبات توريد لهذا المشروع</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal عرض المواد المتبقية -->
+<div class="modal fade" id="remainingItemsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-box-open text-warning me-2"></i>
+                    المواد المتبقية للطلب
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="remainingItemsBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function sendReminder(requestId) {
+    Swal.fire({
+        title: 'إرسال تذكير للمورد',
+        text: 'هل أنت متأكد من إرسال تذكير للمورد لتسريع جلب المواد؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، إرسال',
+        cancelButtonText: 'إلغاء',
+        confirmButtonColor: '#f8961e'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/company/api/request/${requestId}/send-reminder`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الإرسال',
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error
+                    });
+                }
+            });
+        }
+    });
+}
+
+function showRemainingItems(requestId) {
+    const modal = new bootstrap.Modal(document.getElementById('remainingItemsModal'));
+    const body = document.getElementById('remainingItemsBody');
+    
+    body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+    modal.show();
+    
+    fetch(`/company/api/request/${requestId}/remaining-items`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.remaining_items && data.remaining_items.length > 0) {
+                let html = `<div class="mb-3">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        إجمالي المواد المتبقية: ${data.total_remaining} وحدة
+                        <br>
+                        التاريخ المطلوب: ${data.required_date || 'غير محدد'}
+                    </div>
+                </div>`;
+                
+                html += '<div class="list-group">';
+                data.remaining_items.forEach(item => {
+                    const progressPercent = (item.delivered_quantity / item.required_quantity * 100);
+                    html += `
+                        <div class="remaining-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="item-name">${escapeHtml(item.name)}</div>
+                                    <small class="text-muted">${item.code || ''}</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="quantity-badge text-warning">
+                                        ${item.remaining_quantity} ${item.unit}
+                                    </div>
+                                    <small class="text-muted">متبقي</small>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>المطلوب: ${item.required_quantity} ${item.unit}</span>
+                                    <span>المسلم: ${item.delivered_quantity} ${item.unit}</span>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar bg-${progressPercent >= 100 ? 'success' : 'primary'}" 
+                                         style="width: ${progressPercent}%"></div>
+                                </div>
+                            </div>
+                            ${item.offer_price ? `
+                            <div class="mt-2 small">
+                                <span class="badge bg-${item.offer_status == 'approved' ? 'success' : (item.offer_status == 'pending' ? 'warning' : 'danger')}">
+                                    عرض سعر: ${item.offer_price} ${item.offer_currency}
+                                </span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                body.innerHTML = html;
+            } else {
+                body.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p class="text-muted">لا توجد مواد متبقية، جميع المواد تم استلامها</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            body.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                    <p class="text-muted">حدث خطأ في تحميل البيانات</p>
+                </div>
+            `;
+        });
+}
+
+function viewOffers(requestId) {
+    window.location.href = `/company/api/request/${requestId}/offers`;
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

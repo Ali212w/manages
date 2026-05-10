@@ -1,0 +1,127 @@
+{# templates/company/plans/index.html #}
+{% extends "company/base.html" %}
+
+{% block title %}{{ _('plans.title') }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold">{{ _('plans.choose_plan') }}</h1>
+        <p class="lead text-muted">{{ _('plans.choose_plan_description') }}</p>
+    </div>
+    
+    <!-- Current Subscription Alert -->
+    {% if current_subscription %}
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-check-circle me-2"></i>
+        {{ _('plans.current_subscription') }}: <strong>{{ current_subscription.plan_name }}</strong>
+        {{ _('plans.expires_on') }} {{ format_date(current_subscription.end_date) }}
+    </div>
+    {% endif %}
+    
+    <!-- Pending Request Alert -->
+    {% if pending_request %}
+    <div class="alert alert-warning mb-4">
+        <i class="fas fa-clock me-2"></i>
+        {{ _('plans.pending_request') }}
+        <a href="{{ url_for('company.subscription_status') }}" class="alert-link">{{ _('plans.view_status') }}</a>
+    </div>
+    {% endif %}
+    
+    <!-- Plans Grid -->
+    <div class="row g-4">
+        {% for plan in plans %}
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 {% if plan.is_featured %}featured-plan{% endif %}">
+                {% if plan.is_featured %}
+                <div class="ribbon">
+                    <span>{{ _('plans.featured') }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="card-body p-4 text-center">
+                    <div class="plan-icon mb-3">
+                        <div class="bg-gradient-primary rounded-circle d-inline-flex align-items-center justify-content-center text-white" style="width: 70px; height: 70px;">
+                            <i class="fas {{ plan.icon or 'fa-layer-group' }} fa-2x"></i>
+                        </div>
+                    </div>
+                    
+                    <h3 class="mb-2">{{ plan.name }}</h3>
+                    <p class="text-muted small">{{ plan.description[:100] }}{% if plan.description|length > 100 %}...{% endif %}</p>
+                    
+                    <div class="plan-price my-3">
+                        <span class="display-5 fw-bold text-primary">{{ format_currency(plan.price_monthly) }}</span>
+                        <span class="text-muted">/ {{ _('subscriptions.month') }}</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="plan-features text-start mt-3">
+                        <div class="mb-2">
+                            <i class="fas fa-users text-primary me-2"></i>
+                            <strong>{{ _('plans.max_users') }}:</strong>
+                            {{ plan.max_users if plan.max_users > 0 else _('plans.unlimited') }}
+                        </div>
+                        <div class="mb-2">
+                            <i class="fas fa-project-diagram text-primary me-2"></i>
+                            <strong>{{ _('plans.max_projects') }}:</strong>
+                            {{ plan.max_projects if plan.max_projects > 0 else _('plans.unlimited') }}
+                        </div>
+                        <div class="mb-3">
+                            <i class="fas fa-database text-primary me-2"></i>
+                            <strong>{{ _('plans.storage_gb') }}:</strong>
+                            {{ plan.storage_gb if plan.storage_gb > 0 else _('plans.unlimited') }}
+                        </div>
+                        
+                        <ul class="list-unstyled">
+                            {% for feature in plan.features[:4] %}
+                            <li class="small mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                {{ feature }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent border-0 pb-4 text-center">
+                    {% if current_subscription and current_subscription.plan == plan.plan_id %}
+                        <button class="btn btn-success" disabled>
+                            <i class="fas fa-check-circle me-2"></i>{{ _('plans.current_plan') }}
+                        </button>
+                    {% elif pending_request %}
+                        <button class="btn btn-secondary" disabled>
+                            <i class="fas fa-clock me-2"></i>{{ _('plans.request_pending') }}
+                        </button>
+                    {% else %}
+                        <a href="{{ url_for('company.subscribe_to_plan', plan_id=plan.plan_id) }}" class="btn btn-gradient w-100">
+                            <i class="fas fa-shopping-cart me-2"></i>{{ _('plans.subscribe_now') }}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.featured-plan {
+    border: 2px solid var(--primary-color);
+    transform: scale(1.02);
+}
+.ribbon {
+    position: absolute;
+    top: 15px;
+    right: -30px;
+    transform: rotate(45deg);
+    background: var(--gradient-primary);
+    color: white;
+    padding: 5px 40px;
+    font-size: 12px;
+    font-weight: bold;
+    width: 120px;
+    text-align: center;
+}
+</style>
+{% endblock %}

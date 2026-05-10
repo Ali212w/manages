@@ -1,0 +1,99 @@
+<div class="task-card" 
+     data-task-id="{{ task.id }}" 
+     data-status="{{ task.status }}"
+     data-project-id="{{ task.project_id }}"
+     data-supervisor-id="{{ task.supervisor_id }}"
+     data-priority="{{ task.priority or 'medium' }}"
+     data-deadline="{{ task.planned_end_date.strftime('%Y-%m-%d') if task.planned_end_date else '' }}"
+     data-progress="{{ task.progress_percentage }}"
+     data-created="{{ task.created_at.timestamp() if task.created_at else 0 }}"
+     id="task-{{ task.id }}">
+    
+    <div class="d-flex justify-content-between align-items-start mb-2">
+        <h6 class="mb-0 flex-grow-1">{{ task.task_name }}</h6>
+        <span class="task-priority priority-{{ task.priority or 'medium' }}"></span>
+    </div>
+    
+    {% if task.description %}
+    <p class="small text-muted mb-2">{{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}</p>
+    {% endif %}
+    
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <small class="text-muted">
+            <i class="fas fa-project-diagram me-1"></i>
+            {{ task.project.project_code if task.project else 'N/A' }}
+        </small>
+        <small class="badge bg-{% if task.status == 'pending' %}secondary{% elif task.status == 'in_progress' %}primary{% elif task.status == 'completed' %}success{% elif task.status == 'on_hold' %}warning{% endif %}">
+            {% if task.status == 'pending' %}معلقة
+            {% elif task.status == 'in_progress' %}قيد التنفيذ
+            {% elif task.status == 'completed' %}مكتملة
+            {% elif task.status == 'on_hold' %}متوقفة
+            {% endif %}
+        </small>
+    </div>
+    
+    <!-- Progress Bar -->
+    <div class="mb-2">
+        <div class="d-flex justify-content-between mb-1">
+            <small class="text-muted">التقدم</small>
+            <small class="text-muted">{{ task.progress_percentage|round(0) }}%</small>
+        </div>
+        <div class="progress" style="height: 4px;">
+            <div class="progress-bar" style="width: {{ task.progress_percentage }}%"></div>
+        </div>
+    </div>
+    
+    <!-- Assignees -->
+    {% if task.assignments %}
+    <div class="task-assignees mb-2">
+        {% for assignment in task.assignments[:3] %}
+        <div class="assignee-avatar" title="{{ assignment.user.full_name }}">
+            {% if assignment.user.avatar_url %}
+            <img src="{{ assignment.user.avatar_url }}" class="rounded-circle" width="30" height="30" alt="صورة الملف الشخصي">
+            {% else %}
+            {{ assignment.user.full_name[0] }}
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% if task.assignments|length > 3 %}
+        <div class="assignee-avatar bg-secondary" title="{{ task.assignments|length - 3 }} آخرون">
+            +{{ task.assignments|length - 3 }}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Deadline -->
+    {% if task.planned_end_date %}
+    {% set days_remaining = (task.planned_end_date - today).days %}
+    <div class="task-deadline deadline-{% if days_remaining < 0 %}overdue{% elif days_remaining == 0 %}today{% else %}future{% endif %}">
+        <i class="fas fa-calendar me-1"></i>
+        {{ task.planned_end_date.strftime('%Y-%m-%d') }}
+        {% if days_remaining < 0 %}
+        <br><small>متأخرة {{ -days_remaining }} يوم</small>
+        {% elif days_remaining == 0 %}
+        <br><small>اليوم</small>
+        {% else %}
+        <br><small>{{ days_remaining }} يوم متبقي</small>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Actions -->
+    <div class="d-flex justify-content-between mt-2">
+        <small class="text-muted">
+            <i class="fas fa-user-tie me-1"></i>
+            {{ task.supervisor.full_name if task.supervisor else 'غير معين' }}
+        </small>
+        <div class="btn-group btn-group-sm">
+            <a href="{{ url_for('task.view', task_id=task.id) }}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye"></i>
+            </a>
+            {% if current_user.role in ['admin', 'project_manager', 'supervisor'] and task.status != 'completed' %}
+            <button class="btn btn-sm btn-outline-success task-action" data-action="complete" data-task-id="{{ task.id }}">
+                <i class="fas fa-check"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>

@@ -1,0 +1,341 @@
+{% extends "company/base.html" %}
+
+{% block title %}أمر جديد - الذكاء الاصطناعي{% endblock %}
+
+{% block page_title %}أمر جديد{% endblock %}
+{% block page_subtitle %}اكتب أمرك بالعربية أو الإنجليزية أو كليهما{% endblock %}
+
+{% block extra_css %}
+<style>
+    .new-command-container {
+        max-width: 800px;
+        margin: 2rem auto;
+    }
+    
+    .command-card {
+        background: white;
+        border-radius: 30px;
+        padding: 2rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+        border: 1px solid #eef2f7;
+    }
+    
+    .example-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .example-item {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 1px solid transparent;
+    }
+    
+    .example-item:hover {
+        background: white;
+        border-color: var(--primary);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .example-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(67, 97, 238, 0.1);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 1rem;
+    }
+    
+    .upload-area {
+        border: 2px dashed #eef2f7;
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 1rem;
+    }
+    
+    .upload-area:hover {
+        border-color: var(--primary);
+        background: rgba(67, 97, 238, 0.02);
+    }
+    
+    .upload-area i {
+        font-size: 3rem;
+        color: var(--primary);
+        margin-bottom: 1rem;
+    }
+    
+    .file-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .file-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: #f8fafc;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn-submit {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        width: 100%;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-submit:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.4);
+    }
+    
+    .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .language-badge {
+        display: inline-block;
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+    
+    .lang-ar { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .lang-en { background: rgba(76, 201, 240, 0.1); color: var(--info); }
+    .lang-mixed { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="new-command-container">
+    <div class="command-card">
+        <!-- أمثلة الأوامر -->
+        <h6 class="mb-3"><i class="fas fa-lightbulb text-warning me-2"></i>أمثلة على الأوامر</h6>
+        
+        <div class="example-grid">
+            <div class="example-item d-flex align-items-center" onclick="useExample('استخرج معلومات المشروع من هذا المستند')">
+                <div class="example-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div>
+                    <strong>استخراج مشروع</strong>
+                    <p class="small text-muted mb-0">استخرج معلومات المشروع من هذا المستند</p>
+                    <span class="language-badge lang-ar">عربي</span>
+                </div>
+            </div>
+            
+            <div class="example-item d-flex align-items-center" onclick="useExample('Generate a project performance report for last month')">
+                <div class="example-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div>
+                    <strong>تقرير أداء</strong>
+                    <p class="small text-muted mb-0">Generate a project performance report</p>
+                    <span class="language-badge lang-en">English</span>
+                </div>
+            </div>
+            
+            <div class="example-item d-flex align-items-center" onclick="useExample('ابحث عن جميع المهام المتأخرة في مشاريع البنية التحتية')">
+                <div class="example-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div>
+                    <strong>بحث متقدم</strong>
+                    <p class="small text-muted mb-0">ابحث عن المهام المتأخرة</p>
+                    <span class="language-badge lang-ar">عربي</span>
+                </div>
+            </div>
+            
+            <div class="example-item d-flex align-items-center" onclick="useExample('Analyze resource utilization and suggest optimization')">
+                <div class="example-icon">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+                <div>
+                    <strong>تحليل موارد</strong>
+                    <p class="small text-muted mb-0">Analyze resources and suggest optimization</p>
+                    <span class="language-badge lang-en">English</span>
+                </div>
+            </div>
+            
+            <div class="example-item d-flex align-items-center" onclick="useExample('قارن أداء مشروعي الطريق السريع والمستشفى المركزي')">
+                <div class="example-icon">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <div>
+                    <strong>مقارنة</strong>
+                    <p class="small text-muted mb-0">قارن بين مشروعين</p>
+                    <span class="language-badge lang-ar">عربي</span>
+                </div>
+            </div>
+            
+            <div class="example-item d-flex align-items-center" onclick="useExample('توقع تاريخ اكتمال مشروع توسعة المطار بناء على التقدم الحالي')">
+                <div class="example-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <strong>تنبؤ</strong>
+                    <p class="small text-muted mb-0">توقع تاريخ الانتهاء</p>
+                    <span class="language-badge lang-mixed">عربي/English</span>
+                </div>
+            </div>
+        </div>
+        
+        <form method="POST" enctype="multipart/form-data" id="commandForm">
+            <!-- حقل الأمر -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-terminal text-primary me-2"></i>
+                    الأمر <span class="text-danger">*</span>
+                </label>
+                <textarea name="command_text" id="command_text" class="form-control" 
+                          rows="4" placeholder="اكتب أمرك هنا... (عربي / English / Mixed)" required></textarea>
+                <div class="mt-2">
+                    <span class="language-badge lang-ar" id="langIndicatorAr" style="display: none;">عربي</span>
+                    <span class="language-badge lang-en" id="langIndicatorEn" style="display: none;">English</span>
+                    <span class="language-badge lang-mixed" id="langIndicatorMixed" style="display: none;">Mixed</span>
+                </div>
+                <small class="text-muted">مثال: "استخرج جميع المهام من جدول الكميات" أو "Generate a budget report for Q1"</small>
+            </div>
+            
+            <!-- رفع الملفات -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-paperclip text-primary me-2"></i>
+                    المرفقات (اختياري)
+                </label>
+                <div class="upload-area" onclick="document.getElementById('files').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h6>انقر لرفع الملفات أو اسحبها وأفلتها هنا</h6>
+                    <p class="text-muted small">PDF, DOCX, XLSX, CSV, TXT, JPG, PNG (حد أقصى 20MB)</p>
+                </div>
+                <input type="file" name="attachments" id="files" class="d-none" 
+                       multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.jpg,.jpeg,.png" onchange="updateFileList()">
+                
+                <!-- قائمة الملفات المختارة -->
+                <ul class="file-list" id="fileList"></ul>
+            </div>
+            
+            <!-- خيارات متقدمة -->
+            <div class="mb-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="generateReport" name="generate_report" value="1">
+                    <label class="form-check-label" for="generateReport">
+                        توليد تقرير مفصل بالنتائج
+                    </label>
+                </div>
+            </div>
+            
+            <!-- زر الإرسال -->
+            <button type="submit" class="btn-submit" id="submitBtn">
+                <i class="fas fa-magic me-2"></i>
+                معالجة الأمر
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+// كشف لغة النص
+document.getElementById('command_text').addEventListener('input', function(e) {
+    const text = e.target.value;
+    const arIndicator = document.getElementById('langIndicatorAr');
+    const enIndicator = document.getElementById('langIndicatorEn');
+    const mixedIndicator = document.getElementById('langIndicatorMixed');
+    
+    // إخفاء الكل
+    arIndicator.style.display = 'none';
+    enIndicator.style.display = 'none';
+    mixedIndicator.style.display = 'none';
+    
+    if (text.length > 0) {
+        // فحص الأحرف العربية
+        const arabicRegex = /[\u0600-\u06FF]/;
+        const englishRegex = /[a-zA-Z]/;
+        
+        const hasArabic = arabicRegex.test(text);
+        const hasEnglish = englishRegex.test(text);
+        
+        if (hasArabic && hasEnglish) {
+            mixedIndicator.style.display = 'inline-block';
+        } else if (hasArabic) {
+            arIndicator.style.display = 'inline-block';
+        } else if (hasEnglish) {
+            enIndicator.style.display = 'inline-block';
+        }
+    }
+});
+
+function useExample(text) {
+    document.getElementById('command_text').value = text;
+    // تشغيل حدث input لتحديث مؤشر اللغة
+    document.getElementById('command_text').dispatchEvent(new Event('input'));
+}
+
+function updateFileList() {
+    const files = document.getElementById('files').files;
+    const fileList = document.getElementById('fileList');
+    fileList.innerHTML = '';
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const li = document.createElement('li');
+        li.className = 'file-item';
+        li.innerHTML = `
+            <i class="fas fa-${getFileIcon(file.name)} ms-2"></i>
+            <span class="flex-grow-1">${file.name}</span>
+            <small class="text-muted">${(file.size / 1024).toFixed(1)} KB</small>
+            <button type="button" class="btn btn-sm btn-link text-danger" onclick="this.closest('li').remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        fileList.appendChild(li);
+    }
+}
+
+function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const icons = {
+        'pdf': 'file-pdf',
+        'docx': 'file-word',
+        'doc': 'file-word',
+        'xlsx': 'file-excel',
+        'xls': 'file-excel',
+        'csv': 'file-csv',
+        'txt': 'file-alt',
+        'jpg': 'file-image',
+        'jpeg': 'file-image',
+        'png': 'file-image'
+    };
+    return icons[ext] || 'file';
+}
+
+document.getElementById('commandForm').addEventListener('submit', function(e) {
+    const command = document.getElementById('command_text').value.trim();
+    if (!command) {
+        e.preventDefault();
+        alert('يرجى إدخال الأمر');
+    }
+});
+</script>
+{% endblock %}

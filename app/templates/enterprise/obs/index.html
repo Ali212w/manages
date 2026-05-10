@@ -1,0 +1,491 @@
+{% extends "company/base.html" %}
+
+{% block title %}OBS - Organizational Breakdown Structure{% endblock %}
+
+{% block page_title %}OBS - Organizational Breakdown Structure{% endblock %}
+{% block page_subtitle %}هيكل المسؤولية - تحديد المسؤولين والصلاحيات{% endblock %}
+
+{% block extra_css %}
+<style>
+    .obs-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .obs-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #eef2f7;
+    }
+    
+    .obs-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .obs-title i {
+        color: var(--success);
+    }
+    
+    .obs-toolbar {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .toolbar-btn {
+        padding: 0.5rem 1rem;
+        border: 2px solid #eef2f7;
+        border-radius: 10px;
+        background: white;
+        color: #6c757d;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .toolbar-btn:hover {
+        border-color: var(--success);
+        color: var(--success);
+    }
+    
+    .toolbar-btn.primary {
+        background: linear-gradient(135deg, var(--success), #45b7af);
+        border: none;
+        color: white;
+    }
+    
+    .toolbar-btn.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 201, 240, 0.3);
+    }
+    
+    .obs-tree {
+        min-height: 400px;
+        border: 1px solid #eef2f7;
+        border-radius: 15px;
+        padding: 1rem;
+        background: #f8f9fa;
+    }
+    
+    .obs-node {
+        margin-bottom: 0.5rem;
+        padding: 0.8rem;
+        border-radius: 10px;
+        transition: all 0.3s;
+        background: white;
+        border: 1px solid #eef2f7;
+    }
+    
+    .obs-node:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-color: var(--success);
+    }
+    
+    .obs-node.level-1 { margin-right: 0; border-right: 3px solid var(--success); }
+    .obs-node.level-2 { margin-right: 2rem; border-right: 3px solid var(--primary); }
+    .obs-node.level-3 { margin-right: 4rem; border-right: 3px solid var(--warning); }
+    
+    .node-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .node-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    
+    .node-info {
+        flex: 1;
+    }
+    
+    .node-name {
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .node-code {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        background: #eef2f7;
+        border-radius: 4px;
+        color: #6c757d;
+    }
+    
+    .responsible-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+    }
+    
+    .node-actions {
+        display: flex;
+        gap: 0.3rem;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .obs-node:hover .node-actions {
+        opacity: 1;
+    }
+    
+    .action-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        border: none;
+        background: #eef2f7;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .action-btn:hover {
+        background: var(--success);
+        color: white;
+    }
+    
+    .action-btn.delete:hover {
+        background: var(--danger);
+    }
+    
+    .matrix-link {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 12px;
+        padding: 1.2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .matrix-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .matrix-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .matrix-title {
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+    
+    .matrix-desc {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="obs-container">
+    <!-- Header -->
+    <div class="obs-header">
+        <h5 class="obs-title">
+            <i class="fas fa-users-cog"></i>
+            Organizational Breakdown Structure (OBS)
+        </h5>
+        
+        <div class="obs-toolbar">
+            <button class="toolbar-btn primary" onclick="showCreateModal()">
+                <i class="fas fa-plus"></i>
+                إضافة عنصر
+            </button>
+        </div>
+    </div>
+    
+    <!-- EPS-OBS Matrix Link -->
+    <div class="matrix-link">
+        <div class="matrix-info">
+            <div class="matrix-icon">
+                <i class="fas fa-link"></i>
+            </div>
+            <div>
+                <h6 class="matrix-title">ربط EPS مع OBS</h6>
+                <p class="matrix-desc">تحديد صلاحيات الوصول للمشاريع بناءً على هيكل المسؤولية</p>
+            </div>
+        </div>
+        <button class="btn btn-outline-success" onclick="showMatrix()">
+            <i class="fas fa-th me-2"></i>عرض مصفوفة الصلاحيات
+        </button>
+    </div>
+    
+    <!-- OBS Tree -->
+    <div class="obs-tree">
+        {% for node in root_nodes %}
+            {% with node=node %}
+                {% include 'enterprise/obs/node.html' %}
+            {% endwith %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-sitemap fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد عناصر OBS</h5>
+            <p class="text-muted">قم بإنشاء هيكل المسؤولية لتحديد الصلاحيات</p>
+            <button class="btn-primary-gradient mt-3" onclick="showCreateModal()">
+                <i class="fas fa-plus me-2"></i>إنشاء أول عنصر
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal إنشاء OBS -->
+<div class="modal fade" id="createOBSModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus-circle me-2 text-success"></i>إنشاء عنصر OBS جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('enterprise.obs_create') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label required-field">رمز OBS</label>
+                        <input type="text" name="obs_code" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label required-field">الاسم</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">الوصف</label>
+                        <textarea name="description" class="form-control" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">العنصر الأب</label>
+                        <select name="parent_id" class="form-select">
+                            <option value="">-- عنصر رئيسي --</option>
+                            {% for parent in parents %}
+                            <option value="{{ parent.id }}">{{ parent.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">المسؤول</label>
+                        <select name="responsible_id" class="form-select">
+                            <option value="">-- غير معين --</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn-primary-gradient">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// دوال إدارة OBS
+function editOBS(obsId) {
+    window.location.href = `/enterprise/obs/${obsId}/edit`;
+}
+
+function deleteOBS(obsId) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا العنصر؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/enterprise/obs/${obsId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken()
+                }
+            })
+            .then(() => location.reload());
+        }
+    });
+}
+
+// دوال إدارة الموارد
+function editResource(resourceId) {
+    window.location.href = `/enterprise/resources/${resourceId}/edit`;
+}
+
+function deleteResource(resourceId) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا المورد؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/enterprise/resources/${resourceId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken()
+                }
+            })
+            .then(() => location.reload());
+        }
+    });
+}
+
+// دوال إدارة التقويمات
+function editCalendar(calendarId) {
+    window.location.href = `/primavera/calendars/${calendarId}/edit`;
+}
+
+function setDefault(calendarId) {
+    fetch(`/primavera/calendars/${calendarId}/set-default`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم',
+                text: 'تم تعيين التقويم كافتراضي',
+                timer: 2000
+            }).then(() => {
+                location.reload();
+            });
+        }
+    });
+}
+
+function deleteCalendar(calendarId) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا التقويم؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/primavera/calendars/${calendarId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken()
+                }
+            })
+            .then(() => location.reload());
+        }
+    });
+}
+
+// دوال مساعدة
+function showSuccess(message) {
+    Swal.fire({
+        icon: 'success',
+        title: 'تم بنجاح',
+        text: message,
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
+
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'خطأ',
+        text: message
+    });
+}
+
+function showWarning(message) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'تنبيه',
+        text: message
+    });
+}
+
+// دوال الفلترة
+function filterByType(type) {
+    const cards = document.querySelectorAll('.resource-card');
+    cards.forEach(card => {
+        if (type === 'all' || card.dataset.type === type) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // تحديث الأزرار النشطة
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.type === type) {
+            btn.classList.add('active');
+        }
+    });
+}
+function showCreateModal() {
+    new bootstrap.Modal(document.getElementById('createOBSModal')).show();
+}
+
+function showMatrix() {
+    window.location.href = "{{ url_for('enterprise.eps_obs_matrix') }}";
+}
+</script>
+{% endblock %}

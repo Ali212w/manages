@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}منصة إدارة المشاريع الذكية{% endblock %}</title>
+    
+    <!-- Bootstrap RTL -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-project-diagram"></i> مدير المشاريع الذكي
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-tachometer-alt"></i> لوحة التحكم
+                            </a>
+                        </li>
+                        <!-- أضف هنا رابط إدارة المستخدمين -->
+                        {% if current_user.role == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_users') }}">
+                                <i class="fas fa-users-cog"></i> إدارة المستخدمين
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('projects_list') }}">
+                                <i class="fas fa-folder"></i> المشاريع
+                            </a>
+                        </li>
+                        {% if current_user.role == 'project_manager' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('new_project') }}">
+                                <i class="fas fa-plus-circle"></i> مشروع جديد
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                        <!-- الإشعارات -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-bell"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-badge" style="display: none;">
+                                    0
+                                </span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown" id="notifications-menu">
+                                <div class="text-center p-3">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                    جاري التحميل...
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <!-- المستخدم -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" 
+                                     class="rounded-circle" width="30" height="30" alt="">
+                                {{ current_user.full_name }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('profile') }}">
+                                    <i class="fas fa-user"></i> الملف الشخصي
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('profile_settings') }}">
+                                    <i class="fas fa-cog"></i> الإعدادات
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('notifications') }}">
+                                    <i class="fas fa-bell"></i> الإشعارات
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                                </a></li>
+                            </ul>
+                        </li>
+                        
+                        <!-- حالة الاشتراك -->
+                        {% if not current_user.is_paid %}
+                            {% if current_user.is_trial_active() %}
+                                <li class="nav-item">
+                                    <span class="nav-link text-warning">
+                                        <i class="fas fa-hourglass-half"></i> 
+                                        متبقي: {{ (current_user.trial_end - now).days }} يوم
+                                    </span>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link btn btn-warning text-dark" href="{{ url_for('subscribe') }}">
+                                        <i class="fas fa-crown"></i> اشترك الآن
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">
+                                <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-success text-white" href="{{ url_for('register') }}">
+                                <i class="fas fa-user-plus"></i> إنشاء حساب
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- رسائل الفلاش -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <!-- المحتوى الرئيسي -->
+    <main class="container mt-4 mb-5">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-light text-center text-lg-start mt-auto">
+        <div class="text-center p-3" style="background-color: rgba(0,0,0,0.05);">
+            © 2024 منصة إدارة المشاريع الذكية. جميع الحقوق محفوظة.
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+    
+    <!-- تحديث الإشعارات -->
+    <script>
+        $(document).ready(function() {
+            updateNotificationsCount();
+            loadNotifications();
+            
+            // تحديث كل 30 ثانية
+            setInterval(function() {
+                updateNotificationsCount();
+            }, 30000);
+        });
+    </script>
+</body>
+</html>

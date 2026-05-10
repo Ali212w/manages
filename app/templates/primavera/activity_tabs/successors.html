@@ -1,0 +1,771 @@
+<!-- templates/primavera/tabs/activity/successors.html -->
+<div class="field-group">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <h6 class="field-group-title mb-0">
+            <i class="fas fa-arrow-right text-primary"></i>
+            Successors
+            <span class="badge bg-primary ms-2" id="successorCount">{{ successors|length }}</span>
+        </h6>
+        <button type="button" class="btn btn-primary btn-sm" id="assignSuccessorBtn">
+            <i class="fas fa-plus me-1"></i> Assign Successor
+        </button>
+    </div>
+    
+    {% if successors and successors|length > 0 %}
+    <div class="table-responsive">
+        <table class="successor-table">
+            <thead>
+                <tr>
+                    <th>Activity ID</th>
+                    <th>Activity Name</th>
+                    <th>Relations</th>
+                    <th>Lag</th>
+                    <th>Activity Status</th>
+                    <th>Primary Resource</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="successorsTable">
+                {% for rel in successors %}
+                <tr class="successor-row" data-relationship-id="{{ rel.id }}" data-successor-id="{{ rel.successor.id }}">
+                    <td>
+                        <span class="activity-id">{{ rel.successor.activity_id }}</span>
+                    </td>
+                    <td>
+                        <span class="activity-name">{{ rel.successor.activity_name }}</span>
+                        {% if rel.successor.is_critical %}
+                        <span class="critical-badge">Critical</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <select class="relation-select" onchange="updateRelation({{ rel.id }}, 'type', this.value)">
+                            <option value="FS" {% if rel.relationship_type == 'FS' %}selected{% endif %}>Finish to Start</option>
+                            <option value="SS" {% if rel.relationship_type == 'SS' %}selected{% endif %}>Start to Start</option>
+                            <option value="FF" {% if rel.relationship_type == 'FF' %}selected{% endif %}>Finish to Finish</option>
+                            <option value="SF" {% if rel.relationship_type == 'SF' %}selected{% endif %}>Start to Finish</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="lag-input-group">
+                            <input type="number" class="lag-input" value="{{ rel.lag_days|default(0) }}" step="0.1" min="0"
+                                   onchange="updateRelation({{ rel.id }}, 'lag', this.value)">
+                            <select class="lag-type-select" onchange="updateRelation({{ rel.id }}, 'lag_type', this.value)">
+                                <option value="days" {% if rel.lag_type == 'days' %}selected{% endif %}>d</option>
+                                <option value="hours" {% if rel.lag_type == 'hours' %}selected{% endif %}>h</option>
+                                <option value="percent" {% if rel.lag_type == 'percent' %}selected{% endif %}>%</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ rel.successor.status }}">
+                            {{ rel.successor.status|replace('_', ' ')|title }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if rel.successor.primary_resource %}
+                        <span class="resource-name">{{ rel.successor.primary_resource.name }}</span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <div class="action-buttons">
+                            <button type="button" class="btn-action btn-assign" onclick="assignResource({{ rel.successor.id }})" 
+                                    title="Assign Resource">
+                                <i class="fas fa-user-plus"></i>
+                            </button>
+                            <button type="button" class="btn-action btn-remove" onclick="deleteRelation({{ rel.id }})" 
+                                    title="Remove">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button type="button" class="btn-action btn-go" onclick="goToActivity({{ rel.successor.id }})" 
+                                    title="Go To Activity">
+                                <i class="fas fa-external-link-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state text-center py-5">
+        <div class="empty-state-icon mb-3">
+            <i class="fas fa-arrow-right fa-3x text-muted"></i>
+        </div>
+        <h6 class="text-muted mb-2">No Successors</h6>
+        <p class="text-muted small mb-3">This activity has no successors. Assign successors to define dependencies.</p>
+        <button type="button" class="btn btn-primary btn-sm" id="assignFirstSuccessorBtn">
+            <i class="fas fa-plus me-1"></i> Assign First Successor
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal إضافة علاقة لاحقة -->
+<div class="modal fade" id="addSuccessorModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle text-primary me-2"></i>
+                    Assign Successor
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="successorForm" onsubmit="return false;">
+                    <!-- اختيار النشاط اللاحق -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-tasks me-1 text-muted"></i>
+                            Successor Activity
+                        </label>
+                        <select class="form-select" id="successorActivity" required>
+                            <option value="">-- Select Activity --</option>
+                            {% for act in all_activities %}
+                                {% if act.id != activity.id %}
+                                <option value="{{ act.id }}" 
+                                        data-code="{{ act.activity_id }}"
+                                        data-name="{{ act.activity_name }}"
+                                        data-status="{{ act.status }}"
+                                        data-resource="{{ act.primary_resource.name if act.primary_resource else '' }}">
+                                    {{ act.activity_id }} - {{ act.activity_name }}
+                                    {% if act.is_critical %}(Critical){% endif %}
+                                </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- معاينة النشاط المحدد -->
+                    <div class="selected-preview mb-3" id="successorSelectedPreview" style="display: none;">
+                        <div class="preview-card">
+                            <div class="preview-row">
+                                <span class="preview-label">Status:</span>
+                                <span class="preview-value" id="successorPreviewStatus"></span>
+                            </div>
+                            <div class="preview-row">
+                                <span class="preview-label">Resource:</span>
+                                <span class="preview-value" id="successorPreviewResource"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- نوع العلاقة -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-code-branch me-1 text-muted"></i>
+                            Relationship Type
+                        </label>
+                        <select class="form-select" id="successorRelType">
+                            <option value="FS">Finish to Start (FS)</option>
+                            <option value="SS">Start to Start (SS)</option>
+                            <option value="FF">Finish to Finish (FF)</option>
+                            <option value="SF">Start to Finish (SF)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- التأخير (Lag) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-clock me-1 text-muted"></i>
+                            Lag
+                        </label>
+                        <div class="lag-input-group">
+                            <input type="number" class="form-control" id="successorLagDays" value="0" step="0.1" min="0" style="flex: 2;">
+                            <select class="form-select" id="successorLagType" style="flex: 1;">
+                                <option value="days">Days</option>
+                                <option value="hours">Hours</option>
+                                <option value="percent">%</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="addSuccessor()">
+                    <i class="fas fa-plus me-1"></i>Assign
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تأكيد الحذف -->
+<div class="modal fade" id="deleteRelationConfirmModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <h6 class="mb-2">Remove Relationship</h6>
+                <p class="text-muted small mb-3">Are you sure you want to remove this successor?</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteRelationBtn">
+                        <i class="fas fa-trash me-1"></i>Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* تنسيق الجدول */
+.successor-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.successor-table thead th {
+    background: #f8fafc;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.successor-table tbody tr {
+    border-bottom: 1px solid #eef2f7;
+    transition: background-color 0.2s;
+}
+
+.successor-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.successor-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+/* تنسيق معرف النشاط */
+.activity-id {
+    font-weight: 600;
+    color: #4361ee;
+    font-family: monospace;
+}
+
+/* تنسيق اسم النشاط */
+.activity-name {
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+.critical-badge {
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* تنسيق علاقات الإدخال */
+.relation-select {
+    padding: 0.4rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    width: 130px;
+    background: white;
+    cursor: pointer;
+}
+
+.lag-input-group {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.lag-input {
+    width: 70px;
+    padding: 0.4rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.lag-type-select {
+    width: 45px;
+    padding: 0.4rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+}
+
+/* تنسيق شارة الحالة */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.status-not_started {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.status-in_progress {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.status-completed {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.status-suspended {
+    background: #fff3cd;
+    color: #b45309;
+}
+
+/* تنسيق اسم المورد */
+.resource-name {
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+/* تنسيق أزرار الإجراءات */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.btn-action {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.btn-assign {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.btn-assign:hover {
+    background: #2563eb;
+    color: white;
+    transform: scale(1.1);
+}
+
+.btn-remove {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.btn-remove:hover {
+    background: #dc2626;
+    color: white;
+    transform: scale(1.1);
+}
+
+.btn-go {
+    background: #e0f2fe;
+    color: #0891b2;
+}
+
+.btn-go:hover {
+    background: #0891b2;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* تنسيق معاينة النشاط */
+.preview-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+.preview-row {
+    display: flex;
+    margin-bottom: 0.3rem;
+}
+
+.preview-label {
+    width: 80px;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.preview-value {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+/* تنسيق الحالة الفارغة */
+.empty-state {
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* تنسيق الشارة */
+.badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.7rem;
+}
+
+/* تنسيق متجاوب */
+@media (max-width: 768px) {
+    .successor-table {
+        font-size: 0.8rem;
+    }
+    
+    .successor-table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .relation-select {
+        width: 100px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .btn-action {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
+}
+</style>
+
+<script>
+// استخدام IIFE لتجنب تلويث النطاق العام
+(function() {
+    'use strict';
+    
+    // متغير خاص داخل النطاق
+    let deleteRelationCallback = null;
+    
+    // تعريف الدوال في النطاق العام
+    window.showAddSuccessorModal = function() {
+        console.log('Opening modal...');
+        
+        // إعادة تعيين النموذج
+        const form = document.getElementById('successorForm');
+        if (form) form.reset();
+        
+        const activitySelect = document.getElementById('successorActivity');
+        if (activitySelect) activitySelect.value = '';
+        
+        const relType = document.getElementById('successorRelType');
+        if (relType) relType.value = 'FS';
+        
+        const lagDays = document.getElementById('successorLagDays');
+        if (lagDays) lagDays.value = '0';
+        
+        const lagType = document.getElementById('successorLagType');
+        if (lagType) lagType.value = 'days';
+        
+        const preview = document.getElementById('successorSelectedPreview');
+        if (preview) preview.style.display = 'none';
+        
+        // إظهار المودال
+        const modalElement = document.getElementById('addSuccessorModal');
+        if (modalElement) {
+            try {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            } catch (e) {
+                console.error('Bootstrap error:', e);
+                alert('Could not open modal. Please check if Bootstrap is loaded.');
+            }
+        } else {
+            console.error('Modal element not found');
+            alert('Modal element not found');
+        }
+    };
+
+    // ربط الأزرار بالدالة بعد تحميل الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, setting up event listeners');
+        
+        // ربط زر Assign Successor الرئيسي
+        const assignBtn = document.getElementById('assignSuccessorBtn');
+        if (assignBtn) {
+            assignBtn.onclick = function(e) {
+                e.preventDefault();
+                window.showAddSuccessorModal();
+            };
+        }
+        
+        // ربط زر Assign First Successor (إذا وجد)
+        const assignFirstBtn = document.getElementById('assignFirstSuccessorBtn');
+        if (assignFirstBtn) {
+            assignFirstBtn.onclick = function(e) {
+                e.preventDefault();
+                window.showAddSuccessorModal();
+            };
+        }
+        
+        // تحديث العداد
+        updateSuccessorCount();
+    });
+
+    // تحديث عدد العلاقات
+    function updateSuccessorCount() {
+        const count = document.querySelectorAll('.successor-row').length;
+        const countElement = document.getElementById('successorCount');
+        if (countElement) {
+            countElement.textContent = count;
+        }
+    }
+
+    // تحديث العلاقة
+    window.updateRelation = function(relationId, field, value) {
+        const data = {};
+        data[field] = value;
+        
+        fetch(`/primavera/api/relationship/${relationId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('Relationship updated successfully');
+            } else {
+                showError(data.error || 'Update failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Network error occurred');
+        });
+    };
+
+    // تعيين مورد للنشاط اللاحق
+    window.assignResource = function(activityId) {
+        window.location.href = `/primavera/activity/${activityId}?tab=resources`;
+    };
+
+    // الذهاب إلى النشاط
+    window.goToActivity = function(activityId) {
+        window.open(`/primavera/activity/${activityId}`, '_blank');
+    };
+
+    // معاينة النشاط المحدد
+    document.getElementById('successorActivity')?.addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        const preview = document.getElementById('successorSelectedPreview');
+        
+        if (this.value) {
+            // تحديث معاينة الحالة
+            const previewStatus = document.getElementById('successorPreviewStatus');
+            if (previewStatus) {
+                const statusText = selected.dataset.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                previewStatus.innerHTML = `<span class="status-badge status-${selected.dataset.status}">${statusText}</span>`;
+            }
+            
+            // تحديث معاينة المورد
+            const previewResource = document.getElementById('successorPreviewResource');
+            if (previewResource) {
+                previewResource.textContent = selected.dataset.resource || 'Not assigned';
+            }
+            
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    });
+
+    // إضافة علاقة جديدة
+    window.addSuccessor = function() {
+        const successorId = document.getElementById('successorActivity')?.value;
+        const relType = document.getElementById('successorRelType')?.value;
+        const lagDays = document.getElementById('successorLagDays')?.value;
+        const lagType = document.getElementById('successorLagType')?.value;
+        
+        if (!successorId) {
+            showWarning('Please select a successor activity');
+            return;
+        }
+        
+        // تعطيل الزر أثناء الإرسال
+        const assignBtn = document.querySelector('#addSuccessorModal .btn-primary');
+        const originalText = assignBtn.innerHTML;
+        assignBtn.disabled = true;
+        assignBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Assigning...';
+        
+        const data = {
+            successor_id: parseInt(successorId),
+            relationship_type: relType,
+            lag: parseFloat(lagDays) || 0,
+            lag_type: lagType
+        };
+        
+        fetch(`/primavera/api/activity/{{ activity.id }}/successor`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // إغلاق المودال
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addSuccessorModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                
+                showSuccess('Successor added successfully');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.error || 'Failed to add successor');
+                assignBtn.disabled = false;
+                assignBtn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Network error occurred');
+            assignBtn.disabled = false;
+            assignBtn.innerHTML = originalText;
+        });
+    };
+
+    // حذف علاقة
+    window.deleteRelation = function(relationId) {
+        deleteRelationCallback = function() {
+            const deleteBtn = document.getElementById('confirmDeleteRelationBtn');
+            const originalText = deleteBtn.innerHTML;
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
+            
+            fetch(`/primavera/api/relationship/${relationId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('deleteRelationConfirmModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                    showSuccess('Relationship removed successfully');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showError(data.error || 'Failed to delete');
+                    deleteBtn.disabled = false;
+                    deleteBtn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('Network error occurred');
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = originalText;
+            });
+        };
+        
+        const modalElement = document.getElementById('deleteRelationConfirmModal');
+        if (modalElement) {
+            try {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            } catch (e) {
+                console.error('Bootstrap error:', e);
+            }
+        }
+    };
+
+    // تأكيد حذف العلاقة
+    document.getElementById('confirmDeleteRelationBtn')?.addEventListener('click', function() {
+        if (deleteRelationCallback) {
+            deleteRelationCallback();
+        }
+    });
+
+    // دوال مساعدة
+    function showSuccess(message) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: message,
+                timer: 1500,
+                showConfirmButton: false
+            });
+        } else {
+            alert('Success: ' + message);
+        }
+    }
+
+    function showError(message) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: message
+            });
+        } else {
+            alert('Error: ' + message);
+        }
+    }
+
+    function showWarning(message) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Warning',
+                text: message
+            });
+        } else {
+            alert('Warning: ' + message);
+        }
+    }
+})();
+</script>

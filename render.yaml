@@ -1,0 +1,84 @@
+# render.yaml — Render Blueprint for manages
+#
+# Steps to use:
+#   1. Push this repo to GitHub (private OK).
+#   2. On Render: New + → "Blueprint" → pick the repo.
+#   3. Render reads this file and creates: web service + Postgres + persistent disk.
+#   4. After first deploy, fill the secret env vars in the dashboard
+#      (SECRET_KEY, JWT_SECRET_KEY, MAIL_*, OPENAI_API_KEY).
+#
+# https://render.com/docs/blueprint-spec
+
+databases:
+  - name: manages-db
+    databaseName: manages
+    user: manages
+    plan: free          # Render free Postgres (good for trial; upgrade later)
+
+services:
+  - type: web
+    name: manages-web
+    runtime: python
+    plan: standard      # 2 GB RAM — required for the heavy ML deps
+    region: oregon      # Change to your nearest region if you want
+    branch: main        # The branch Render auto-deploys from
+    buildCommand: ./build.sh
+    startCommand: gunicorn -k eventlet -w 1 run:app --bind 0.0.0.0:$PORT --timeout 120 --access-logfile - --error-logfile -
+
+    healthCheckPath: /
+
+    # Persistent disk for /uploads (lost on restart without this).
+    disk:
+      name: manages-uploads
+      mountPath: /opt/render/project/src/app/static/uploads
+      sizeGB: 1
+
+    envVars:
+      # Auto-injected from the database above
+      - key: DATABASE_URL
+        fromDatabase:
+          name: manages-db
+          property: connectionString
+
+      # Auto-generate strong secrets (Render will fill these once)
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+
+      # Render injects $PORT automatically; do NOT override
+
+      # Make Flask discover the app for `flask db upgrade`
+      - key: FLASK_APP
+        value: run.py
+
+      # Run in production mode
+      - key: FLASK_ENV
+        value: production
+      - key: SESSION_COOKIE_SECURE
+        value: "True"
+
+      # Disable Redis-dependent features by default; falls back to in-memory.
+      # If you later attach Render Redis, change this to its connection string.
+      - key: REDIS_URL
+        value: ""
+
+      # Limiter storage — memory:// avoids needing Redis
+      - key: RATELIMIT_STORAGE_URI
+        value: "memory://"
+
+      # ----- secrets to fill in the dashboard after first deploy -----
+      - key: MAIL_SERVER
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USE_TLS
+        value: "True"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_DEFAULT_SENDER
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

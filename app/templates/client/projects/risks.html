@@ -1,0 +1,294 @@
+{% extends "client/base.html" %}
+
+{% block title %}المخاطر - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4><i class="fas fa-shield-alt me-2"></i> مخاطر المشروع</h4>
+                <p class="text-muted mb-0">{{ project.name }}</p>
+            </div>
+            <a href="{{ url_for('client.project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> العودة للمشروع
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Risk Matrix -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i> مصفوفة المخاطر</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="riskMatrixChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i> توزيع المخاطر</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="riskDistributionChart" height="250"></canvas>
+                <div class="row mt-3 text-center">
+                    <div class="col-4">
+                        <div class="bg-danger bg-opacity-10 rounded p-2">
+                            <h5 class="text-danger mb-0">{{ stats.critical }}</h5>
+                            <small>حرجة</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-warning bg-opacity-10 rounded p-2">
+                            <h5 class="text-warning mb-0">{{ stats.high }}</h5>
+                            <small>عالية</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-info bg-opacity-10 rounded p-2">
+                            <h5 class="text-info mb-0">{{ stats.medium }}</h5>
+                            <small>متوسطة</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Risks Table -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-list me-2"></i> قائمة المخاطر</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>الكود</th>
+                        <th>العنوان</th>
+                        <th>المستوى</th>
+                        <th>الاحتمالية</th>
+                        <th>التأثير</th>
+                        <th>الدرجة</th>
+                        <th>الحالة</th>
+                        <th>تاريخ التحديد</th>
+                        <th>تاريخ المعالجة</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for risk in risks %}
+                    <tr>
+                        <td><span class="badge bg-secondary">{{ risk.risk_code }}</span></td>
+                        <td>
+                            <strong>{{ risk.title }}</strong>
+                            {% if risk.description %}
+                            <br><small class="text-muted">{{ risk.description|truncate(50) }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if risk.risk_level == 'critical' %}
+                            <span class="badge bg-danger">حرجة</span>
+                            {% elif risk.risk_level == 'high' %}
+                            <span class="badge bg-warning">عالية</span>
+                            {% elif risk.risk_level == 'medium' %}
+                            <span class="badge bg-info">متوسطة</span>
+                            {% else %}
+                            <span class="badge bg-success">منخفضة</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ "%.0f"|format(risk.probability * 100) }}%</td>
+                        <td>{{ "%.0f"|format(risk.impact * 100) }}%</td>
+                        <td>
+                            <div class="progress progress-custom" style="width: 80px;">
+                                <div class="progress-bar bg-{% if risk.severity >= 0.7 %}danger{% elif risk.severity >= 0.5 %}warning{% elif risk.severity >= 0.3 %}info{% else %}success{% endif %}" 
+                                     style="width: {{ risk.severity * 100 }}%"></div>
+                            </div>
+                            <small>{{ "%.0f"|format(risk.severity * 100) }}%</small>
+                        </td>
+                        <td>
+                            {% if risk.status == 'closed' %}
+                            <span class="badge bg-success">مغلق</span>
+                            {% elif risk.status == 'mitigated' %}
+                            <span class="badge bg-info">تم التخفيف</span>
+                            {% else %}
+                            <span class="badge bg-warning">قيد المعالجة</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ risk.identified_date.strftime('%Y-%m-%d') if risk.identified_date else '-' }}</td>
+                        <td>{{ risk.actual_mitigation_date.strftime('%Y-%m-%d') if risk.actual_mitigation_date else '-' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary view-risk" data-risk-id="{{ risk.id }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center py-4">
+                            <i class="fas fa-shield-alt fa-3x text-muted mb-3 d-block"></i>
+                            <p class="text-muted">لا توجد مخاطر مسجلة</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Risk Details Modal -->
+<div class="modal fade" id="riskModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تفاصيل الخطر</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="riskDetails"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Risk Matrix Chart
+    const riskMatrixCtx = document.getElementById('riskMatrixChart').getContext('2d');
+    const riskData = {{ risks|map(attribute='probability')|list|tojson }};
+    const impactData = {{ risks|map(attribute='impact')|list|tojson }};
+    
+    new Chart(riskMatrixCtx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'المخاطر',
+                data: riskData.map((p, i) => ({ x: p * 100, y: impactData[i] * 100 })),
+                backgroundColor: riskData.map((p, i) => {
+                    const severity = p * impactData[i];
+                    if (severity >= 0.7) return '#f44336';
+                    if (severity >= 0.5) return '#ff9800';
+                    if (severity >= 0.3) return '#2196f3';
+                    return '#4caf50';
+                }),
+                pointRadius: 8,
+                pointHoverRadius: 12
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                x: { 
+                    title: { display: true, text: 'الاحتمالية (%)' },
+                    min: 0, max: 100
+                },
+                y: { 
+                    title: { display: true, text: 'التأثير (%)' },
+                    min: 0, max: 100
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `الاحتمالية: ${context.parsed.x}% | التأثير: ${context.parsed.y}%`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Risk Distribution Chart
+    const riskDistCtx = document.getElementById('riskDistributionChart').getContext('2d');
+    new Chart(riskDistCtx, {
+        type: 'bar',
+        data: {
+            labels: ['حرجة', 'عالية', 'متوسطة', 'منخفضة'],
+            datasets: [{
+                label: 'عدد المخاطر',
+                data: [{{ stats.critical }}, {{ stats.high }}, {{ stats.medium }}, {{ stats.low }}],
+                backgroundColor: ['#f44336', '#ff9800', '#2196f3', '#4caf50'],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { position: 'top' } }
+        }
+    });
+    
+    // View Risk Details
+    $('.view-risk').click(function() {
+        const riskId = $(this).data('risk-id');
+        $.get(`/client/api/risk/${riskId}`, function(response) {
+            if (response.success) {
+                const risk = response.risk;
+                $('#riskDetails').html(`
+                    <div class="mb-3">
+                        <h6>${risk.title}</h6>
+                        <p>${risk.description || 'لا يوجد وصف'}</p>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">مستوى الخطر</small>
+                                <strong class="text-${risk.risk_level === 'critical' ? 'danger' : risk.risk_level === 'high' ? 'warning' : 'info'}">${risk.risk_level}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">الاحتمالية</small>
+                                <strong>${risk.probability}%</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">التأثير</small>
+                                <strong>${risk.impact}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="border rounded p-3">
+                            <small class="text-muted d-block mb-2">خطة التخفيف</small>
+                            <p>${risk.mitigation_plan || 'لا توجد خطة تخفيف'}</p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="border rounded p-3">
+                            <small class="text-muted d-block mb-2">خطة الطوارئ</small>
+                            <p>${risk.contingency_plan || 'لا توجد خطة طوارئ'}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="border rounded p-2">
+                                <small class="text-muted d-block">تاريخ التحديد</small>
+                                <strong>${risk.identified_date}</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border rounded p-2">
+                                <small class="text-muted d-block">تاريخ المعالجة المستهدف</small>
+                                <strong>${risk.target_mitigation_date || '-'}</strong>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                $('#riskModal').modal('show');
+            }
+        });
+    });
+</script>
+{% endblock %}

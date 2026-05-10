@@ -1,0 +1,143 @@
+{# Top-level base used by marketing / public pages and as fallback shell #}
+<!DOCTYPE html>
+<html lang="{{ current_lang|default('ar') }}" dir="{{ current_dir|default('rtl') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ _('app_description') }}">
+    <meta name="author" content="ProManage">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}{{ _('app_name') }}{% endblock %} | {{ _('smart_platform') }}</title>
+
+    {# Inline theme bootstrap to apply data-theme before paint -> no FOUC #}
+    <script>(function(){try{var t=localStorage.getItem('najm2-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
+
+    {# Bootstrap (kept for grid + dropdown / modal JS — visual styling overridden by najm2.css) #}
+    {% if current_dir == 'rtl' %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" id="bootstrap-css">
+    {% else %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" id="bootstrap-css">
+    {% endif %}
+
+    {# FontAwesome — local copy first (offline-safe), CDN fallback below #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+
+    {% block extra_css %}{% endblock %}
+
+    {# najm2 design system — loaded LAST so its :root tokens win the cascade. #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/najm2.css') }}">
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div></div>
+
+    <nav class="app-header" style="position: sticky; top: 0; z-index: 30;">
+        <a href="{{ url_for('index') }}" class="flex items-center gap-3" style="text-decoration: none;">
+            <div class="sidebar-brand-icon"><i class="fas fa-chart-line"></i></div>
+            <div>
+                <div class="sidebar-brand-text">{{ _('app_name_short') }}</div>
+                <div class="sidebar-brand-subtitle">{{ _('smart_platform') }}</div>
+            </div>
+        </a>
+
+        <ul class="hidden md:flex items-center gap-1 list-unstyled m-0" style="margin-inline-start: auto;">
+            <li><a class="sidebar-link" href="{{ url_for('index') }}"><i class="fas fa-home"></i><span>{{ _('home') }}</span></a></li>
+            <li><a class="sidebar-link" href="#features"><i class="fas fa-star"></i><span>{{ _('features') }}</span></a></li>
+            <li><a class="sidebar-link" href="#pricing"><i class="fas fa-tags"></i><span>{{ _('pricing') }}</span></a></li>
+            <li><a class="sidebar-link" href="#contact"><i class="fas fa-envelope"></i><span>{{ _('contact') }}</span></a></li>
+        </ul>
+
+        <div class="header-actions">
+            <button class="icon-button" data-theme-toggle title="{{ _('toggle_theme') }}">
+                <i class="fas fa-moon" data-theme-icon></i>
+            </button>
+            <div class="dropdown">
+                <button class="icon-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
+                    <i class="fas fa-language"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item {% if current_lang == 'ar' %}active{% endif %}" href="{{ url_for('change_language', lang='ar') }}"><i class="fas fa-flag"></i> العربية</a></li>
+                    <li><a class="dropdown-item {% if current_lang == 'en' %}active{% endif %}" href="{{ url_for('change_language', lang='en') }}"><i class="fas fa-flag"></i> English</a></li>
+                </ul>
+            </div>
+            {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary"><i class="fas fa-sign-in-alt"></i><span>{{ _('login') }}</span></a>
+            <a href="{{ url_for('auth.register_company') }}" class="btn btn-primary"><i class="fas fa-user-plus"></i><span>{{ _('register') }}</span></a>
+            {% else %}
+            <a href="{{ url_for('company.dashboard') }}" class="btn btn-primary"><i class="fas fa-tachometer-alt"></i><span>{{ _('dashboard') }}</span></a>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-secondary"><i class="fas fa-sign-out-alt"></i><span>{{ _('logout') }}</span></a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="app-content" style="max-width: 1400px; margin: 0 auto; width: 100%;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category|replace('error','danger')|replace('message','info') }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category in ['danger','error'] %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                        <div class="flex-1">{{ message }}</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block footer %}
+    <footer style="background: hsl(var(--card)); border-top: 1px solid hsl(var(--border)); padding: 3rem 1.5rem 1.5rem; margin-top: 3rem;">
+        <div class="row" style="max-width: 1200px; margin: 0 auto;">
+            <div class="col-md-4 mb-4">
+                <h3 class="text-lg font-bold mb-3"><i class="fas fa-chart-line text-primary"></i> {{ _('app_name_short') }}</h3>
+                <p class="text-muted-foreground text-sm">{{ _('footer_description') }}</p>
+                <div class="flex gap-3 mt-4">
+                    <a href="#" class="icon-button"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="icon-button"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="icon-button"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" class="icon-button"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+            <div class="col-md-2 mb-4">
+                <h5 class="text-sm font-semibold mb-3">{{ _('quick_links') }}</h5>
+                <ul class="list-unstyled flex flex-col gap-2 text-sm text-muted-foreground" style="padding: 0;">
+                    <li><a href="#" class="text-muted-foreground">{{ _('about_us') }}</a></li>
+                    <li><a href="#" class="text-muted-foreground">{{ _('features') }}</a></li>
+                    <li><a href="#" class="text-muted-foreground">{{ _('pricing') }}</a></li>
+                    <li><a href="#" class="text-muted-foreground">{{ _('contact') }}</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3 mb-4">
+                <h5 class="text-sm font-semibold mb-3">{{ _('legal') }}</h5>
+                <ul class="list-unstyled flex flex-col gap-2 text-sm text-muted-foreground" style="padding: 0;">
+                    <li><a href="#" class="text-muted-foreground">{{ _('terms_of_service') }}</a></li>
+                    <li><a href="#" class="text-muted-foreground">{{ _('privacy_policy') }}</a></li>
+                    <li><a href="#" class="text-muted-foreground">{{ _('cookie_policy') }}</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3 mb-4">
+                <h5 class="text-sm font-semibold mb-3">{{ _('contact_us') }}</h5>
+                <ul class="list-unstyled flex flex-col gap-2 text-sm text-muted-foreground" style="padding: 0;">
+                    <li><i class="fas fa-envelope"></i> info@promanage.com</li>
+                    <li><i class="fas fa-phone"></i> +966 12 345 6789</li>
+                    <li><i class="fas fa-map-marker-alt"></i> {{ _('address') }}</li>
+                </ul>
+            </div>
+        </div>
+        <div class="text-center text-xs text-muted-foreground mt-4 py-3" style="border-top: 1px solid hsl(var(--border)); max-width: 1200px; margin-left: auto; margin-right: auto;">
+            &copy; 2024 {{ _('app_name') }}. {{ _('all_rights_reserved') }}
+        </div>
+    </footer>
+    {% endblock %}
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
+    <script src="{{ url_for('static', filename='js/najm2-app.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

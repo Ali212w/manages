@@ -1,0 +1,154 @@
+{% extends "company/base.html" %}
+
+{% block title %}إضافة مستخدم جديد - {{ g.company.name }}{% endblock %}
+
+{% block page_title %}إضافة مستخدم جديد{% endblock %}
+{% block page_subtitle %}إنشاء حساب جديد لأحد أعضاء الفريق{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="table-card">
+            <form method="POST" action="{{ url_for('company.create_user') }}" id="createUserForm">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">اسم المستخدم <span class="text-danger">*</span></label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">البريد الإلكتروني <span class="text-danger">*</span></label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">الاسم الكامل  <span class="text-danger">*</span></label>
+                        <input type="text" name="full_name" class="form-control" required>
+                    </div>
+            
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">رقم الهاتف</label>
+                        <input type="tel" name="phone" class="form-control" dir="ltr">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">رقم الجوال</label>
+                        <input type="tel" name="mobile" class="form-control" dir="ltr">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">رقم الموظف</label>
+                        <input type="text" name="employee_id" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">المسمى الوظيفي </label>
+                        <input type="text" name="job_title" class="form-control">
+                    </div>
+                   
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">الدور <span class="text-danger">*</span></label>
+                        <select name="role" class="form-select" required>
+                            <option value="">-- اختر الدور --</option>
+                            <option value="client">المالك</option>
+                            <option value="employee">موظف</option>
+                            <option value="delegate">مندوب</option>
+                            <option value="supervisor">مشرف</option>
+                            <option value="project_manager">مدير مشروع</option>
+                            <option value="consultant">إستشاري</option>
+                            <option value="supplier">مورد</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">القسم</label>
+                        <select name="dept_id" class="form-select">
+                            <option value="">-- اختر القسم --</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">كلمة المرور</label>
+                        <div class="input-group">
+                            <input type="password" name="password" class="form-control" value="Password123!">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">القيمة الافتراضية: Password123!</small>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="is_user_active" id="isActive" checked>
+                            <label class="form-check-label" for="isActive">الحساب نشط</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="is_verified" id="isVerified" checked>
+                            <label class="form-check-label" for="isVerified">تم التحقق</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6 class="fw-bold mb-3">الصلاحيات حسب الدور</h6>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    سيتم منح الصلاحيات تلقائياً بناءً على الدور المختار
+                </div>
+                
+                <div class="text-center">
+                    <button type="submit" class="btn-primary-gradient px-5">
+                        <i class="fas fa-save me-2"></i>حفظ المستخدم
+                    </button>
+                    <a href="{{ url_for('company.users') }}" class="btn btn-outline-secondary ms-2 px-5">
+                        <i class="fas fa-times me-2"></i>إلغاء
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+}
+
+// التحقق من البريد الإلكتروني عند الخروج من الحقل
+document.querySelector('input[name="email"]').addEventListener('blur', function() {
+    const email = this.value;
+    if (email) {
+        fetch(`/company/api/users/search?q=${email}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.results.length > 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'هذا البريد الإلكتروني مستخدم مسبقاً',
+                        confirmButtonColor: '#f8961e'
+                    });
+                    this.value = '';
+                    this.focus();
+                }
+            });
+    }
+});
+</script>
+{% endblock %}

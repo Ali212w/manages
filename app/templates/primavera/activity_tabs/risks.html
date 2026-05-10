@@ -1,0 +1,743 @@
+<!-- templates/primavera/tabs/activity/risks.html -->
+
+<div class="field-group">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h6 class="field-group-title mb-0">
+            <i class="fas fa-exclamation-triangle text-primary"></i>
+            المخاطر المرتبطة
+            <span class="badge bg-primary ms-2" id="risksCount">{{ activity_risks|length }}</span>
+        </h6>
+        <button class="btn btn-sm btn-outline-primary" onclick="showAddRiskModal()">
+            <i class="fas fa-plus me-1"></i> إضافة خطر
+        </button>
+    </div>
+    
+    <!-- قائمة المخاطر -->
+    <div id="risksList">
+        {% if activity_risks and activity_risks|length > 0 %}
+            {% for risk in activity_risks %}
+            <div class="risk-item risk-{{ risk.risk_level }}" data-risk-id="{{ risk.id }}">
+                <div class="risk-indicator">
+                    <span class="risk-level {{ risk.risk_level }}"></span>
+                </div>
+                <div class="risk-content flex-grow-1">
+                    <div class="risk-title fw-bold">{{ risk.title }}</div>
+                    <div class="risk-description small text-muted">{{ risk.description }}</div>
+                    <div class="risk-meta mt-1">
+                        <span class="badge bg-{{ 'danger' if risk.risk_level == 'high' else 'warning' if risk.risk_level == 'medium' else 'info' }}">
+                            {{ risk.risk_level|capitalize }}
+                        </span>
+                        <span class="badge bg-secondary ms-1">{{ risk.probability }}% احتمال</span>
+                        <span class="badge bg-secondary ms-1">{{ risk.impact|replace('_', ' ')|capitalize }} تأثير</span>
+                        <span class="badge bg-{{ 'secondary' if risk.status == 'identified' else 'success' if risk.status == 'mitigated' else 'dark' }} ms-1">
+                            {{ 'محدد' if risk.status == 'identified' else 'قيد التخفيف' if risk.status == 'mitigated' else 'مغلق' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="risk-actions">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-link" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="viewRisk({{ risk.id }})">
+                                    <i class="fas fa-eye me-2"></i> عرض التفاصيل
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="editRisk({{ risk.id }})">
+                                    <i class="fas fa-edit me-2"></i> تعديل
+                                </a>
+                            </li>
+                            {% if risk.status == 'identified' %}
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="mitigateRisk({{ risk.id }})">
+                                    <i class="fas fa-shield-alt me-2"></i> بدء التخفيف
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if risk.status == 'mitigated' %}
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="closeRisk({{ risk.id }})">
+                                    <i class="fas fa-check-circle me-2"></i> إغلاق الخطر
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="deleteRisk({{ risk.id }})">
+                                    <i class="fas fa-trash me-2"></i> حذف
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+            <p class="text-muted">لم يتم تحديد أي مخاطر لهذا النشاط</p>
+            <button class="btn btn-outline-primary btn-sm mt-2" onclick="showAddRiskModal()">
+                <i class="fas fa-plus me-1"></i> إضافة أول خطر
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- ملخص المخاطر -->
+    <div class="risk-summary mt-4">
+        <h6 class="summary-title mb-3">
+            <i class="fas fa-chart-pie text-primary me-2"></i>
+            ملخص المخاطر
+        </h6>
+        
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="summary-card risk-high">
+                    <div class="summary-value">{{ risk_stats.high_count }}</div>
+                    <div class="summary-label">مخاطر عالية</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card risk-medium">
+                    <div class="summary-value">{{ risk_stats.medium_count }}</div>
+                    <div class="summary-label">مخاطر متوسطة</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card risk-low">
+                    <div class="summary-value">{{ risk_stats.low_count }}</div>
+                    <div class="summary-label">مخاطر منخفضة</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="info-box">
+                    <div class="info-label">درجة الخطر الإجمالية</div>
+                    <div class="info-value">{{ risk_stats.overall_score }} / 4</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-box">
+                    <div class="info-label">الإجراء المطلوب</div>
+                    <div class="info-value">
+                        {% if risk_stats.high_count > 0 %}
+                        <span class="badge bg-danger">إجراء فوري مطلوب</span>
+                        {% elif risk_stats.medium_count > 0 %}
+                        <span class="badge bg-warning">تخطيط مطلوب</span>
+                        {% else %}
+                        <span class="badge bg-success">مراقبة فقط</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة/تعديل خطر -->
+<div class="modal fade" id="riskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="riskModalTitle">
+                    <i class="fas fa-plus-circle text-primary me-2"></i>
+                    إضافة خطر جديد
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="riskId">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">عنوان الخطر <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="riskTitle" placeholder="أدخل عنوان الخطر" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">الوصف</label>
+                    <textarea class="form-control" id="riskDescription" rows="2" placeholder="أدخل وصف تفصيلي للخطر"></textarea>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">نسبة الاحتمالية (%)</label>
+                        <input type="range" class="form-range" id="riskProbability" min="0" max="100" value="50" oninput="updateProbabilityValue(this.value)">
+                        <div class="d-flex justify-content-between mt-1">
+                            <span class="small text-muted">منخفض</span>
+                            <span class="fw-bold" id="probabilityValue">50%</span>
+                            <span class="small text-muted">مرتفع</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">مستوى التأثير</label>
+                        <select class="form-select" id="riskImpact">
+                            <option value="very_low">منخفض جداً</option>
+                            <option value="low">منخفض</option>
+                            <option value="medium" selected>متوسط</option>
+                            <option value="high">مرتفع</option>
+                            <option value="very_high">مرتفع جداً</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">خطة التخفيف</label>
+                    <textarea class="form-control" id="riskMitigation" rows="2" placeholder="أدخل خطة التخفيف من هذا الخطر"></textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">خطة الطوارئ</label>
+                    <textarea class="form-control" id="riskContingency" rows="2" placeholder="أدخل خطة الطوارئ"></textarea>
+                </div>
+                
+                <div class="alert alert-info mt-3" id="riskLevelAlert">
+                    <i class="fas fa-chart-line me-2"></i>
+                    مستوى الخطر: <strong id="riskLevelDisplay">متوسط</strong>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> إلغاء
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveRisk()">
+                    <i class="fas fa-save me-1"></i> حفظ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal عرض تفاصيل الخطر -->
+<div class="modal fade" id="viewRiskModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-primary me-2"></i>
+                    تفاصيل الخطر
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="viewRiskContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* تنسيقات المخاطر */
+.risk-item {
+    background: white;
+    border: 1px solid #eef2f7;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.risk-item:hover {
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.risk-item.risk-high {
+    border-right: 4px solid #dc2626;
+}
+
+.risk-item.risk-medium {
+    border-right: 4px solid #f59e0b;
+}
+
+.risk-item.risk-low {
+    border-right: 4px solid #3b82f6;
+}
+
+.risk-indicator {
+    width: 8px;
+    height: 100%;
+}
+
+.risk-level {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.risk-level.high {
+    background: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220,38,38,0.2);
+}
+
+.risk-level.medium {
+    background: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.2);
+}
+
+.risk-level.low {
+    background: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+}
+
+.risk-content {
+    flex: 1;
+}
+
+.risk-title {
+    font-size: 1rem;
+    color: #1e293b;
+}
+
+.risk-description {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.risk-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.risk-actions {
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.risk-item:hover .risk-actions {
+    opacity: 1;
+}
+
+/* تنسيقات ملخص المخاطر */
+.risk-summary {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 1.25rem;
+}
+
+.summary-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    border: 1px solid #eef2f7;
+    transition: all 0.3s;
+}
+
+.summary-card.risk-high .summary-value { color: #dc2626; }
+.summary-card.risk-medium .summary-value { color: #f59e0b; }
+.summary-card.risk-low .summary-value { color: #3b82f6; }
+
+.summary-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.summary-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+.info-box {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid #eef2f7;
+}
+
+.info-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-top: 0.25rem;
+}
+
+/* تنسيقات الشريط المنزلق */
+.form-range {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    background: #e2e8f0;
+    border-radius: 3px;
+}
+
+.form-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--primary);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+#riskLevelAlert {
+    background: linear-gradient(135deg, #f8fafc, #ffffff);
+    border: 1px solid #eef2f7;
+}
+</style>
+
+<script>
+(function() {
+    'use strict';
+    
+    const activityId = {{ activity.id }};
+    const csrfToken = '{{ csrf_token() }}';
+    let currentRiskId = null;
+    
+    // ============================================
+    // حساب مستوى الخطر
+    // ============================================
+    
+    function calculateRiskLevel(probability, impact) {
+        const impactValues = {
+            'very_low': 1,
+            'low': 2,
+            'medium': 3,
+            'high': 4,
+            'very_high': 5
+        };
+        
+        const impactValue = impactValues[impact] || 3;
+        const score = (probability / 100) * impactValue;
+        
+        if (score >= 3.5) return 'high';
+        if (score >= 2) return 'medium';
+        return 'low';
+    }
+    
+    function updateRiskLevel() {
+        const probability = parseInt(document.getElementById('riskProbability').value);
+        const impact = document.getElementById('riskImpact').value;
+        const level = calculateRiskLevel(probability, impact);
+        
+        const levelDisplay = document.getElementById('riskLevelDisplay');
+        const levelAlert = document.getElementById('riskLevelAlert');
+        
+        let levelText = '', levelColor = '', levelBg = '';
+        
+        if (level === 'high') {
+            levelText = 'مرتفع';
+            levelColor = '#dc2626';
+            levelBg = 'rgba(220,38,38,0.1)';
+        } else if (level === 'medium') {
+            levelText = 'متوسط';
+            levelColor = '#f59e0b';
+            levelBg = 'rgba(245,158,11,0.1)';
+        } else {
+            levelText = 'منخفض';
+            levelColor = '#3b82f6';
+            levelBg = 'rgba(59,130,246,0.1)';
+        }
+        
+        levelDisplay.textContent = levelText;
+        levelDisplay.style.color = levelColor;
+        levelAlert.style.borderRight = `3px solid ${levelColor}`;
+        levelAlert.style.background = levelBg;
+    }
+    
+    function updateProbabilityValue(value) {
+        document.getElementById('probabilityValue').textContent = value + '%';
+        updateRiskLevel();
+    }
+    
+    // ============================================
+    // إدارة المخاطر
+    // ============================================
+    
+    window.showAddRiskModal = function() {
+        currentRiskId = null;
+        document.getElementById('riskModalTitle').innerHTML = '<i class="fas fa-plus-circle text-primary me-2"></i>إضافة خطر جديد';
+        document.getElementById('riskId').value = '';
+        document.getElementById('riskTitle').value = '';
+        document.getElementById('riskDescription').value = '';
+        document.getElementById('riskProbability').value = 50;
+        document.getElementById('probabilityValue').textContent = '50%';
+        document.getElementById('riskImpact').value = 'medium';
+        document.getElementById('riskMitigation').value = '';
+        document.getElementById('riskContingency').value = '';
+        updateRiskLevel();
+        new bootstrap.Modal(document.getElementById('riskModal')).show();
+    };
+    
+    window.editRisk = function(riskId) {
+        fetch(`/primavera/api/risk/${riskId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const risk = data.risk;
+                    currentRiskId = risk.id;
+                    document.getElementById('riskModalTitle').innerHTML = '<i class="fas fa-edit text-primary me-2"></i>تعديل الخطر';
+                    document.getElementById('riskId').value = risk.id;
+                    document.getElementById('riskTitle').value = risk.title;
+                    document.getElementById('riskDescription').value = risk.description || '';
+                    document.getElementById('riskProbability').value = risk.probability;
+                    document.getElementById('probabilityValue').textContent = risk.probability + '%';
+                    document.getElementById('riskImpact').value = risk.impact;
+                    document.getElementById('riskMitigation').value = risk.mitigation_plan || '';
+                    document.getElementById('riskContingency').value = risk.contingency_plan || '';
+                    updateRiskLevel();
+                    new bootstrap.Modal(document.getElementById('riskModal')).show();
+                }
+            });
+    };
+    
+    window.saveRisk = function() {
+        const title = document.getElementById('riskTitle').value.trim();
+        if (!title) {
+            showWarning('الرجاء إدخال عنوان الخطر');
+            return;
+        }
+        
+        const data = {
+            title: title,
+            description: document.getElementById('riskDescription').value,
+            probability: parseInt(document.getElementById('riskProbability').value),
+            impact: document.getElementById('riskImpact').value,
+            mitigation: document.getElementById('riskMitigation').value,
+            contingency: document.getElementById('riskContingency').value
+        };
+        
+        const url = currentRiskId 
+            ? `/primavera/api/risk/${currentRiskId}`
+            : `/primavera/api/activity/${activityId}/risk`;
+        
+        const method = currentRiskId ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('riskModal')).hide();
+                showSuccess(currentRiskId ? 'تم تحديث الخطر بنجاح' : 'تم إضافة الخطر بنجاح');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showError(data.error || 'فشل حفظ الخطر');
+            }
+        });
+    };
+    
+    window.viewRisk = function(riskId) {
+        fetch(`/primavera/api/risk/${riskId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const risk = data.risk;
+                    const levelText = risk.risk_level === 'high' ? 'مرتفع' : (risk.risk_level === 'medium' ? 'متوسط' : 'منخفض');
+                    const levelColor = risk.risk_level === 'high' ? '#dc2626' : (risk.risk_level === 'medium' ? '#f59e0b' : '#3b82f6');
+                    const impactText = {
+                        'very_low': 'منخفض جداً',
+                        'low': 'منخفض',
+                        'medium': 'متوسط',
+                        'high': 'مرتفع',
+                        'very_high': 'مرتفع جداً'
+                    }[risk.impact] || risk.impact;
+                    
+                    const content = `
+                        <div class="mb-4">
+                            <div class="fw-bold text-muted small">عنوان الخطر</div>
+                            <div class="fs-5 fw-bold" style="color: ${levelColor}">${escapeHtml(risk.title)}</div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="fw-bold text-muted small">الوصف</div>
+                            <div>${escapeHtml(risk.description || 'لا يوجد وصف')}</div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="fw-bold text-muted small">مستوى الخطر</div>
+                                <div><span class="badge bg-${risk.risk_level === 'high' ? 'danger' : (risk.risk_level === 'medium' ? 'warning' : 'info')}">${levelText}</span></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="fw-bold text-muted small">نسبة الاحتمالية</div>
+                                <div>${risk.probability}%</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="fw-bold text-muted small">مستوى التأثير</div>
+                                <div>${impactText}</div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="fw-bold text-muted small">خطة التخفيف</div>
+                            <div>${escapeHtml(risk.mitigation_plan || 'لا توجد خطة تخفيف')}</div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="fw-bold text-muted small">خطة الطوارئ</div>
+                            <div>${escapeHtml(risk.contingency_plan || 'لا توجد خطة طوارئ')}</div>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-muted small">الحالة</div>
+                            <div><span class="badge bg-${risk.status === 'identified' ? 'secondary' : (risk.status === 'mitigated' ? 'success' : 'dark')}">${risk.status === 'identified' ? 'محدد' : (risk.status === 'mitigated' ? 'قيد التخفيف' : 'مغلق')}</span></div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('viewRiskContent').innerHTML = content;
+                    new bootstrap.Modal(document.getElementById('viewRiskModal')).show();
+                }
+            });
+    };
+    
+    window.mitigateRisk = function(riskId) {
+        Swal.fire({
+            title: 'بدء التخفيف',
+            text: 'هل أنت متأكد من بدء عملية تخفيف هذا الخطر؟',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'نعم، بدء',
+            cancelButtonText: 'إلغاء'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/primavera/api/risk/${riskId}/mitigate`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess('تم بدء عملية تخفيف الخطر');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showError(data.error || 'فشل بدء التخفيف');
+                    }
+                });
+            }
+        });
+    };
+    
+    window.closeRisk = function(riskId) {
+        Swal.fire({
+            title: 'إغلاق الخطر',
+            text: 'هل أنت متأكد من إغلاق هذا الخطر؟',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'نعم، إغلاق',
+            cancelButtonText: 'إلغاء'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/primavera/api/risk/${riskId}/close`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess('تم إغلاق الخطر بنجاح');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showError(data.error || 'فشل إغلاق الخطر');
+                    }
+                });
+            }
+        });
+    };
+    
+    window.deleteRisk = function(riskId) {
+        Swal.fire({
+            title: 'حذف الخطر',
+            text: 'هل أنت متأكد من حذف هذا الخطر؟',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'نعم، حذف',
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: '#dc2626'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/primavera/api/risk/${riskId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess('تم حذف الخطر بنجاح');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showError(data.error || 'فشل حذف الخطر');
+                    }
+                });
+            }
+        });
+    };
+    
+    // ============================================
+    // دوال مساعدة
+    // ============================================
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function showSuccess(message) {
+        Swal.fire({
+            icon: 'success',
+            title: 'تم',
+            text: message,
+            timer: 1500,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+    }
+    
+    function showError(message) {
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: message,
+            confirmButtonColor: '#f94144'
+        });
+    }
+    
+    function showWarning(message) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: message,
+            confirmButtonColor: '#f8961e'
+        });
+    }
+    
+    // ربط الأحداث
+    document.getElementById('riskProbability')?.addEventListener('input', (e) => updateProbabilityValue(e.target.value));
+    document.getElementById('riskImpact')?.addEventListener('change', updateRiskLevel);
+    
+})();
+</script>

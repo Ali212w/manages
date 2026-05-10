@@ -1,0 +1,476 @@
+{% extends "employee/base.html" %}
+
+{% block title %}طلبات التحقق - المشرف{% endblock %}
+
+{% block page_title %}طلبات التحقق{% endblock %}
+{% block page_subtitle %}إدارة ومراجعة طلبات التحقق من المهام{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.25rem;
+        text-align: center;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08);
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+    
+    .filter-bar {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-chip {
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        background: white;
+        border: 1px solid #eef2f7;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .filter-chip.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    
+    .filter-chip:hover:not(.active) {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .verification-card {
+        background: white;
+        border-radius: 20px;
+        margin-bottom: 1rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+        overflow: hidden;
+    }
+    
+    .verification-card:hover {
+        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1);
+    }
+    
+    .verification-header {
+        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, #f8fafc, #ffffff);
+        border-bottom: 1px solid #eef2f7;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .verification-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .status-pending {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+    
+    .status-verified {
+        background: rgba(76, 175, 80, 0.1);
+        color: #4caf50;
+    }
+    
+    .status-rejected {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+    
+    .verification-body {
+        padding: 1.5rem;
+    }
+    
+    .info-row {
+        display: flex;
+        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+    }
+    
+    .info-label {
+        width: 140px;
+        font-weight: 600;
+        color: #475569;
+    }
+    
+    .info-value {
+        flex: 1;
+        color: #1e293b;
+    }
+    
+    .requirement-box {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+        border-right: 3px solid var(--primary);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        justify-content: flex-end;
+    }
+    
+    .btn-approve {
+        background: linear-gradient(135deg, #4caf50, #388e3c);
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+    
+    .btn-approve:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+    }
+    
+    .btn-reject {
+        background: linear-gradient(135deg, #f44336, #d32f2f);
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+    
+    .btn-reject:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 20px;
+    }
+    
+    .empty-icon {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #cbd5e1;
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+    }
+    
+    @media (max-width: 768px) {
+        .info-row {
+            flex-direction: column;
+        }
+        
+        .info-label {
+            width: 100%;
+            margin-bottom: 0.25rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .btn-approve, .btn-reject {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- إحصائيات سريعة -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value text-warning">{{ verifications|selectattr('status', 'equalto', 'pending')|list|length }}</div>
+            <div class="stat-label">قيد المراجعة</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-success">{{ verifications|selectattr('status', 'equalto', 'verified')|list|length }}</div>
+            <div class="stat-label">تمت الموافقة</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-danger">{{ verifications|selectattr('status', 'equalto', 'rejected')|list|length }}</div>
+            <div class="stat-label">مرفوضة</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ verifications|length }}</div>
+            <div class="stat-label">إجمالي الطلبات</div>
+        </div>
+    </div>
+    
+    <!-- شريط الفلترة -->
+    <div class="filter-bar">
+        <button class="filter-chip active" data-filter="all">الكل</button>
+        <button class="filter-chip" data-filter="pending">قيد المراجعة</button>
+        <button class="filter-chip" data-filter="verified">تمت الموافقة</button>
+        <button class="filter-chip" data-filter="rejected">مرفوضة</button>
+    </div>
+    
+    <!-- قائمة طلبات التحقق -->
+    <div id="verificationsList">
+        {% if verifications %}
+            {% for verification in verifications %}
+            <div class="verification-card" data-status="{{ verification.status }}" data-id="{{ verification.id }}">
+                <div class="verification-header">
+                    <div>
+                        <span class="fw-bold">{{ verification.task.project.name }}</span>
+                        <span class="text-muted mx-2">|</span>
+                        <span>{{ verification.task.task_code }}</span>
+                    </div>
+                    <div>
+                        <span class="verification-status status-{{ verification.status }}">
+                            {% if verification.status == 'pending' %}
+                            <i class="fas fa-clock me-1"></i> قيد المراجعة
+                            {% elif verification.status == 'verified' %}
+                            <i class="fas fa-check-circle me-1"></i> تمت الموافقة
+                            {% elif verification.status == 'rejected' %}
+                            <i class="fas fa-times-circle me-1"></i> مرفوض
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="verification-body">
+                    <div class="info-row">
+                        <div class="info-label">المهمة:</div>
+                        <div class="info-value fw-bold">{{ verification.task.task_name }}</div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label">المندوب:</div>
+                        <div class="info-value">{{ verification.user.full_name }}</div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label">تاريخ التقديم:</div>
+                        <div class="info-value">{{ verification.submitted_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                    </div>
+                    
+                    <div class="requirement-box">
+                        <div class="fw-bold mb-2">
+                            <i class="fas fa-clipboard-list text-primary me-1"></i>
+                            متطلب التحقق
+                        </div>
+                        <div class="mb-1">{{ verification.requirement.description }}</div>
+                        <div class="small text-muted">
+                            النوع: 
+                            {% if verification.requirement.requirement_type == 'document' %}
+                            <i class="fas fa-file-alt me-1"></i> مستند
+                            {% elif verification.requirement.requirement_type == 'photo' %}
+                            <i class="fas fa-camera me-1"></i> صورة
+                            {% elif verification.requirement.requirement_type == 'approval' %}
+                            <i class="fas fa-user-check me-1"></i> موافقة
+                            {% elif verification.requirement.requirement_type == 'checklist' %}
+                            <i class="fas fa-check-square me-1"></i> قائمة مراجعة
+                            {% else %}
+                            {{ verification.requirement.requirement_type }}
+                            {% endif %}
+                            {% if verification.requirement.is_mandatory %}
+                            <span class="badge bg-danger ms-1">إلزامي</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if verification.verified_value %}
+                    <div class="info-row">
+                        <div class="info-label">القيمة المقدمة:</div>
+                        <div class="info-value">{{ verification.verified_value }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if verification.notes %}
+                    <div class="info-row">
+                        <div class="info-label">ملاحظات المندوب:</div>
+                        <div class="info-value">{{ verification.notes }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if verification.file_url %}
+                    <div class="info-row">
+                        <div class="info-label">المرفق:</div>
+                        <div class="info-value">
+                            <a href="{{ verification.file_url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                <i class="fas fa-download me-1"></i> عرض المرفق
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if verification.status == 'pending' %}
+                    <div class="action-buttons">
+                        <textarea id="notes_{{ verification.id }}" class="form-control me-2" rows="2" placeholder="أضف ملاحظات (اختياري للرفض)..."></textarea>
+                        <button class="btn-approve" onclick="processVerification({{ verification.id }}, true)">
+                            <i class="fas fa-check me-2"></i> موافقة
+                        </button>
+                        <button class="btn-reject" onclick="processVerification({{ verification.id }}, false)">
+                            <i class="fas fa-times me-2"></i> رفض
+                        </button>
+                    </div>
+                    {% elif verification.status == 'verified' %}
+                    <div class="action-buttons">
+                        <div class="alert alert-success w-100 mb-0">
+                            <i class="fas fa-check-circle me-2"></i>
+                            تمت الموافقة على هذا الطلب بواسطة {{ verification.verified_by_user.full_name if verification.verified_by_user else 'المشرف' }}
+                            {% if verification.verified_at %}
+                            في {{ verification.verified_at.strftime('%Y-%m-%d %H:%M') }}
+                            {% endif %}
+                            {% if verification.notes %}
+                            <div class="mt-1 small">ملاحظات: {{ verification.notes }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% elif verification.status == 'rejected' %}
+                    <div class="action-buttons">
+                        <div class="alert alert-danger w-100 mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            تم رفض هذا الطلب
+                            {% if verification.verified_at %}
+                            في {{ verification.verified_at.strftime('%Y-%m-%d %H:%M') }}
+                            {% endif %}
+                            {% if verification.notes %}
+                            <div class="mt-1 small">سبب الرفض: {{ verification.notes }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <h4 class="mb-2">لا توجد طلبات تحقق</h4>
+                <p class="text-muted mb-4">لا توجد طلبات تحقق معلقة أو سابقة</p>
+                <a href="{{ url_for('employee.supervisor_dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right me-2"></i> العودة للوحة التحكم
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+let currentFilter = 'all';
+
+// الفلترة
+document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        currentFilter = this.dataset.filter;
+        filterVerifications();
+    });
+});
+
+function filterVerifications() {
+    const verifications = document.querySelectorAll('.verification-card');
+    verifications.forEach(verification => {
+        if (currentFilter === 'all' || verification.dataset.status === currentFilter) {
+            verification.style.display = 'block';
+        } else {
+            verification.style.display = 'none';
+        }
+    });
+}
+
+function processVerification(verificationId, approved) {
+    const notes = document.getElementById(`notes_${verificationId}`)?.value || '';
+    
+    if (!approved && !notes) {
+        Swal.fire('تنبيه', 'الرجاء إدخال سبب الرفض', 'warning');
+        return;
+    }
+    
+    Swal.fire({
+        title: approved ? 'تأكيد الموافقة' : 'تأكيد الرفض',
+        text: approved ? 'هل أنت متأكد من الموافقة على هذا الطلب؟' : 'هل أنت متأكد من رفض هذا الطلب؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: approved ? 'نعم، موافقة' : 'نعم، رفض',
+        cancelButtonText: 'إلغاء',
+        confirmButtonColor: approved ? '#4caf50' : '#f44336'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch(`/employee/supervisor/verifications/${verificationId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    approved: approved,
+                    notes: notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('تم', 'تم معالجة الطلب بنجاح', 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('خطأ', data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('خطأ', 'حدث خطأ في الاتصال بالخادم', 'error');
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

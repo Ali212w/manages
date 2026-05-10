@@ -1,0 +1,488 @@
+{% extends "company/base.html" %}
+
+{% block title %}إنشاء عنصر فرعي - OBS{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-sitemap text-success me-2"></i>
+    إنشاء عنصر فرعي
+{% endblock %}
+
+{% block page_subtitle %}
+    تحت: <span class="fw-bold text-success">{{ parent_obs.name }}</span> ({{ parent_obs.obs_code }})
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* تنسيق الحاوية الرئيسية */
+    .create-container {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    /* تنسيق رأس الصفحة */
+    .page-header {
+        background: linear-gradient(135deg, #f8f9fa, #ffffff);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border-right: 5px solid var(--success);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+    
+    .parent-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .parent-badge {
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+        padding: 0.5rem 1.2rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 1rem;
+        border: 1px solid rgba(76, 201, 240, 0.3);
+    }
+    
+    .parent-badge i {
+        margin-left: 0.5rem;
+    }
+    
+    /* تنسيق النموذج */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.8rem;
+        margin-bottom: 2rem;
+        border: 1px solid #eef2f7;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 2px solid #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .section-title i {
+        color: var(--success);
+        font-size: 1.2rem;
+    }
+    
+    /* تنسيق الحقول */
+    .form-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .required-field::after {
+        content: "*";
+        color: var(--danger);
+        margin-right: 0.3rem;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.7rem 1rem;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--success);
+        box-shadow: 0 0 0 4px rgba(76, 201, 240, 0.1);
+        outline: none;
+    }
+    
+    /* تنسيق بطاقة معلومات الأب */
+    .parent-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.2rem;
+        border: 1px solid #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .parent-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+    }
+    
+    .parent-details {
+        flex: 1;
+    }
+    
+    .parent-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+    }
+    
+    .parent-meta {
+        display: flex;
+        gap: 1rem;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .parent-meta i {
+        margin-left: 0.3rem;
+        color: var(--success);
+    }
+    
+    /* تنسيق شريط التقدم */
+    .level-indicator {
+        background: #eef2f7;
+        border-radius: 20px;
+        padding: 0.3rem 1rem;
+        font-size: 0.9rem;
+        color: var(--dark);
+    }
+    
+    .level-indicator i {
+        color: var(--success);
+        margin-left: 0.3rem;
+    }
+    
+    /* تنسيق الأزرار */
+    .btn-create {
+        background: linear-gradient(135deg, var(--success), #45b7af);
+        border: none;
+        color: white;
+        padding: 0.8rem 2.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(76, 201, 240, 0.3);
+    }
+    
+    .btn-cancel {
+        background: white;
+        border: 2px solid #eef2f7;
+        color: #6c757d;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-cancel:hover {
+        background: #eef2f7;
+        color: var(--dark);
+    }
+    
+    /* تنسيق المسارات */
+    .path-preview {
+        background: white;
+        border: 2px dashed #eef2f7;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+        font-family: monospace;
+        direction: ltr;
+        text-align: left;
+    }
+    
+    .path-preview i {
+        color: var(--success);
+        margin-right: 0.5rem;
+    }
+    
+    /* تنسيق التحقق */
+    .code-validation {
+        font-size: 0.8rem;
+        margin-top: 0.3rem;
+    }
+    
+    .valid-code {
+        color: var(--success);
+    }
+    
+    .invalid-code {
+        color: var(--danger);
+    }
+    
+    /* تنسيق متجاوب */
+    @media (max-width: 768px) {
+        .create-container {
+            padding: 1rem;
+        }
+        
+        .parent-info {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .parent-card {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-container">
+    <!-- رأس الصفحة مع معلومات الأب -->
+    <div class="page-header">
+        <div class="parent-info">
+            <div class="parent-badge">
+                <i class="fas fa-sitemap"></i>
+                العنصر الأب
+            </div>
+            <h4 class="mb-0">{{ parent_obs.name }}</h4>
+            <span class="level-indicator">
+                <i class="fas fa-layer-group"></i>
+                المستوى {{ parent_obs.level }}
+            </span>
+        </div>
+    </div>
+    
+    <!-- بطاقة معلومات الأب -->
+    <div class="parent-card">
+        <div class="parent-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="parent-details">
+            <div class="parent-name">{{ parent_obs.name }}</div>
+            <div class="parent-meta">
+                <span><i class="fas fa-code"></i> {{ parent_obs.obs_code }}</span>
+                {% if parent_obs.responsible %}
+                <span><i class="fas fa-user-tie"></i> {{ parent_obs.responsible.full_name }}</span>
+                {% endif %}
+                <span><i class="fas fa-project-diagram"></i> المسار: {{ parent_obs.path }}</span>
+            </div>
+            {% if parent_obs.description %}
+            <small class="text-muted d-block mt-2">{{ parent_obs.description }}</small>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- نموذج إنشاء العنصر الفرعي -->
+    <form method="POST" action="{{ url_for('enterprise.obs_create_child', parent_id=parent_obs.id) }}" id="createChildForm">
+        <div class="form-section">
+            <h6 class="section-title">
+                <i class="fas fa-info-circle"></i>
+                معلومات العنصر الفرعي
+            </h6>
+            
+            <div class="row g-4">
+                <!-- رمز OBS -->
+                <div class="col-md-6">
+                    <label class="form-label required-field">رمز OBS</label>
+                    <input type="text" 
+                           name="obs_code" 
+                           class="form-control" 
+                           required 
+                           maxlength="50"
+                           placeholder="مثال: OBS-CHILD-001"
+                           oninput="validateCode(this)">
+                    <div class="code-validation" id="codeValidation"></div>
+                    <small class="text-muted">رمز فريد يمثل هذا العنصر</small>
+                </div>
+                
+                <!-- الاسم -->
+                <div class="col-md-6">
+                    <label class="form-label required-field">الاسم</label>
+                    <input type="text" 
+                           name="name" 
+                           class="form-control" 
+                           required
+                           placeholder="اسم العنصر">
+                </div>
+                <!-- المسؤول -->
+                <div class="col-md-6">
+                    <label class="form-label">المسؤول</label>
+                    <select name="responsible_id" class="form-select">
+                        <option value="">-- غير معين --</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">اختر المسؤول عن هذا العنصر</small>
+                </div>
+                
+                <!-- الوصف -->
+                <div class="col-12">
+                    <label class="form-label">الوصف</label>
+                    <textarea name="description" 
+                              class="form-control" 
+                              rows="3"
+                              placeholder="وصف العنصر ومسؤولياته"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- معلومات إضافية -->
+        <div class="form-section">
+            <h6 class="section-title">
+                <i class="fas fa-chart-line"></i>
+                معلومات إضافية
+            </h6>
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="form-label">المستوى</label>
+                    <input type="text" 
+                           class="form-control" 
+                           value="{{ parent_obs.level + 1 }}" 
+                           readonly
+                           disabled>
+                    <small class="text-muted">سيتم احتساب المستوى تلقائياً</small>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label">المسار المتوقع</label>
+                    <div class="path-preview" id="pathPreview">
+                        <i class="fas fa-arrows-alt-h"></i>
+                        {{ parent_obs.path }}/[الرمز]
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- أزرار التحكم -->
+        <div class="d-flex justify-content-end gap-3 mt-4">
+            <a href="{{ url_for('enterprise.obs_list') }}" class="btn-cancel">
+                <i class="fas fa-times me-2"></i>
+                إلغاء
+            </a>
+            <button type="submit" class="btn-create" id="submitBtn">
+                <i class="fas fa-plus-circle me-2"></i>
+                إنشاء عنصر فرعي
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// التحقق من رمز OBS
+let codeCheckTimeout;
+
+function validateCode(input) {
+    clearTimeout(codeCheckTimeout);
+    const code = input.value.trim();
+    const validationDiv = document.getElementById('codeValidation');
+    
+    if (code.length < 3) {
+        validationDiv.innerHTML = '<span class="invalid-code"><i class="fas fa-exclamation-circle"></i> الرمز قصير جداً</span>';
+        return;
+    }
+    
+    // التحقق من الصيغة
+    const codePattern = /^[A-Za-z0-9\-_]+$/;
+    if (!codePattern.test(code)) {
+        validationDiv.innerHTML = '<span class="invalid-code"><i class="fas fa-exclamation-circle"></i> الرمز يجب أن يحتوي على أحرف وأرقام فقط</span>';
+        return;
+    }
+    
+    // التحقق من عدم التكرار عبر API
+    codeCheckTimeout = setTimeout(() => {
+        fetch('/enterprise/api/obs/check-code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ obs_code: code })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.exists) {
+                validationDiv.innerHTML = '<span class="invalid-code"><i class="fas fa-times-circle"></i> هذا الرمز موجود مسبقاً</span>';
+                document.getElementById('submitBtn').disabled = true;
+            } else {
+                validationDiv.innerHTML = '<span class="valid-code"><i class="fas fa-check-circle"></i> الرمز متاح</span>';
+                document.getElementById('submitBtn').disabled = false;
+            }
+        });
+    }, 500);
+}
+
+// تحديث معاينة المسار
+document.querySelector('[name="obs_code"]').addEventListener('input', function() {
+    const code = this.value.trim();
+    const pathPreview = document.getElementById('pathPreview');
+    if (code) {
+        pathPreview.innerHTML = `<i class="fas fa-arrows-alt-h"></i> {{ parent_obs.path }}/${code}`;
+    } else {
+        pathPreview.innerHTML = `<i class="fas fa-arrows-alt-h"></i> {{ parent_obs.path }}/[الرمز]`;
+    }
+});
+
+// تأكيد قبل الإرسال
+document.getElementById('createChildForm').addEventListener('submit', function(e) {
+    const obsCode = document.querySelector('[name="obs_code"]').value.trim();
+    const name = document.querySelector('[name="name"]').value.trim();
+    
+    if (!obsCode || !name) {
+        e.preventDefault();
+        showError('يرجى إدخال رمز OBS والاسم');
+        return;
+    }
+    
+    // رسالة تأكيد
+    if (!confirm('هل أنت متأكد من إنشاء هذا العنصر الفرعي؟')) {
+        e.preventDefault();
+    }
+});
+
+// دوال مساعدة
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'خطأ',
+        text: message
+    });
+}
+
+// إظهار رسالة نجاح إذا وجدت flash message
+// {% with messages = get_flashed_messages(with_categories=true) %}
+//     {% if messages %}
+//         {% for category, message in messages %}
+//             {% if category == 'success' %}
+//             Swal.fire({
+//                 icon: 'success',
+//                 title: 'تم بنجاح',
+//                 text: '{{ message }}',
+//                 timer: 2000,
+//                 showConfirmButton: false
+//             });
+//             {% endif %}
+//         {% endfor %}
+//     {% endif %}
+// {% endwith %}
+</script>
+{% endblock %}

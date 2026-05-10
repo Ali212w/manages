@@ -1,0 +1,721 @@
+{% extends "company/base.html" %}
+
+{% block title %}التقويمات - نظام إدارة المشاريع{% endblock %}
+
+{% block page_title %}التقويمات الزمنية{% endblock %}
+{% block page_subtitle %}إدارة أيام العمل والإجازات للمشاريع والموارد{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== المتغيرات الأساسية ===== */
+    :root {
+        --calendar-primary: #4cc9f0;
+        --calendar-primary-dark: #3ab7d9;
+        --calendar-primary-light: #7ad9f5;
+        --calendar-bg: linear-gradient(135deg, #f8f9fa, #ffffff);
+        --calendar-shadow: 0 10px 30px rgba(76, 201, 240, 0.1);
+        --calendar-border: rgba(76, 201, 240, 0.2);
+    }
+
+    /* ===== الحاوية الرئيسية ===== */
+    .calendars-container {
+        padding: 1.5rem;
+        animation: fadeIn 0.5s ease;
+    }
+
+    /* ===== شريط الإحصائيات ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--calendar-shadow);
+        border-color: var(--calendar-border);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--calendar-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--dark);
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ===== رأس الصفحة ===== */
+    .calendars-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .header-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        background: linear-gradient(135deg, var(--calendar-primary), var(--calendar-primary-dark));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+    }
+
+    .header-text h2 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--dark);
+        margin: 0;
+    }
+
+    .header-text p {
+        color: #6c757d;
+        margin: 0.3rem 0 0;
+    }
+
+    .btn-create {
+        background: linear-gradient(135deg, var(--calendar-primary), var(--calendar-primary-dark));
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 15px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-create:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(76, 201, 240, 0.3);
+    }
+
+    /* ===== شبكة التقويمات ===== */
+    .calendars-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* ===== بطاقة التقويم ===== */
+    .calendar-card {
+        background: white;
+        border-radius: 24px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        border: 1px solid #eef2f7;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .calendar-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(76, 201, 240, 0.15);
+        border-color: var(--calendar-border);
+    }
+
+    .calendar-card.default {
+        border-right: 4px solid var(--calendar-primary);
+        background: linear-gradient(135deg, white, rgba(76, 201, 240, 0.02));
+    }
+
+    .default-badge {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        background: linear-gradient(135deg, var(--calendar-primary), var(--calendar-primary-dark));
+        color: white;
+        padding: 0.3rem 1rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        box-shadow: 0 3px 10px rgba(76, 201, 240, 0.3);
+    }
+
+    /* ===== رأس البطاقة ===== */
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .calendar-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--calendar-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .calendar-info {
+        flex: 1;
+    }
+
+    .calendar-name {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: var(--dark);
+        margin-bottom: 0.2rem;
+    }
+
+    .calendar-type {
+        display: inline-block;
+        padding: 0.2rem 0.8rem;
+        background: rgba(76, 201, 240, 0.1);
+        border-radius: 30px;
+        font-size: 0.7rem;
+        color: var(--calendar-primary-dark);
+    }
+
+    /* ===== معلومات التقويم ===== */
+    .calendar-details {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 1px dashed #eef2f7;
+    }
+
+    .detail-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .detail-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .detail-label i {
+        color: var(--calendar-primary);
+        width: 20px;
+    }
+
+    .detail-value {
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    /* ===== أيام العمل ===== */
+    .work-days {
+        display: flex;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .day-badge {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: #eef2f7;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .day-badge.work-day {
+        background: rgba(76, 201, 240, 0.15);
+        color: var(--calendar-primary-dark);
+        border: 1px solid var(--calendar-border);
+    }
+
+    /* ===== شريط التقدم ===== */
+    .usage-bar {
+        background: #eef2f7;
+        height: 6px;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 1rem 0;
+    }
+
+    .usage-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--calendar-primary), var(--calendar-primary-dark));
+        border-radius: 3px;
+        transition: width 0.3s ease;
+    }
+
+    /* ===== أزرار التحكم ===== */
+    .card-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 2px solid #eef2f7;
+        background: white;
+        color: #6c757d;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .action-btn:hover {
+        border-color: var(--calendar-primary);
+        color: var(--calendar-primary);
+        transform: translateY(-2px);
+    }
+
+    .action-btn.delete:hover {
+        border-color: var(--danger);
+        color: var(--danger);
+    }
+
+    .action-btn.default-btn:hover {
+        border-color: var(--success);
+        color: var(--success);
+    }
+
+    /* ===== الحالة الفارغة ===== */
+    .empty-state {
+        text-align: center;
+        padding: 4rem;
+        background: white;
+        border-radius: 30px;
+        border: 2px dashed #eef2f7;
+        grid-column: 1 / -1;
+    }
+
+    .empty-state-icon {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--calendar-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        margin: 0 auto 1.5rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+
+    /* ===== الرسوم المتحركة ===== */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .calendar-card {
+        animation: fadeIn 0.5s ease forwards;
+        animation-delay: calc(var(--animation-order) * 0.1s);
+    }
+
+    /* ===== تنسيق متجاوب ===== */
+    @media (max-width: 768px) {
+        .calendars-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .calendars-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .work-days {
+            justify-content: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="calendars-container">
+    <!-- إحصائيات سريعة -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ calendars_count if calendars_count else 0 }}</div>
+                <div class="stat-label">إجمالي التقويمات</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ default_count if default_count else 0 }}</div>
+                <div class="stat-label">تقويمات افتراضية</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <div class="stat-content">
+                {% set projects_using = 0 %}
+                {% for calendar in calendars %}
+                    {% set projects_using = projects_using + projects_count %}
+                {% endfor %}
+                <div class="stat-value">{{ projects_using }}</div>
+                <div class="stat-label">مشاريع تستخدم</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                {% set resources_using = 0 %}
+                {% for calendar in calendars %}
+                    {% set resources_using = resources_using + calendar.resources.count() %}
+                {% endfor %}
+                <div class="stat-value">{{ resources_using }}</div>
+                <div class="stat-label">موارد تستخدم</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- رأس الصفحة -->
+    <div class="calendars-header">
+        <div class="header-title">
+            <div class="header-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="header-text">
+                <h2>التقويمات الزمنية</h2>
+                <p>إدارة أيام العمل والإجازات للمشاريع والموارد</p>
+            </div>
+        </div>
+        <a href="{{ url_for('primavera.calendar_create') }}" class="btn-create">
+            <i class="fas fa-plus"></i>
+            إنشاء تقويم جديد
+        </a>
+    </div>
+
+    <!-- شبكة التقويمات -->
+    <div class="calendars-grid">
+        {% if calendars and calendars|length > 0 %}
+            {% for calendar in calendars %}
+            <div class="calendar-card {% if calendar.is_default %}default{% endif %}" style="--animation-order: {{ loop.index }}">
+                {% if calendar.is_default %}
+                <span class="default-badge">
+                    <i class="fas fa-star"></i>
+                    افتراضي
+                </span>
+                {% endif %}
+                
+                <!-- رأس البطاقة -->
+                <div class="card-header">
+                    <div class="calendar-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="calendar-info">
+                        <div class="calendar-name">{{ calendar.name }}</div>
+                        <span class="calendar-type">{{ calendar.calendar_type }}</span>
+                    </div>
+                </div>
+                
+                <!-- تفاصيل التقويم -->
+                <div class="calendar-details">
+                    <div class="detail-item">
+                        <span class="detail-label">
+                            <i class="fas fa-clock"></i>
+                            ساعات العمل
+                        </span>
+                        <span class="detail-value">{{ calendar.work_hours_per_day }} ساعة/يوم</span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">
+                            <i class="fas fa-sun"></i>
+                            وقت البدء
+                        </span>
+                        <span class="detail-value">{{ calendar.work_start }}</span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">
+                            <i class="fas fa-moon"></i>
+                            وقت الانتهاء
+                        </span>
+                        <span class="detail-value">{{ calendar.work_end }}</span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">
+                            <i class="fas fa-calendar-week"></i>
+                            أيام العمل
+                        </span>
+                        <div class="work-days">
+                            {% set work_days = calendar.work_days if calendar.work_days is iterable and calendar.work_days is not string else [] %}
+                            {% for day in range(1, 8) %}
+                            <span class="day-badge {% if day in work_days %}work-day{% endif %}">
+                                {% if day == 1 %}س
+                                {% elif day == 2 %}ح
+                                {% elif day == 3 %}ن
+                                {% elif day == 4 %}ث
+                                {% elif day == 5 %}ر
+                                {% elif day == 6 %}خ
+                                {% elif day == 7 %}ج
+                                {% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    {% set holidays_count = calendar.holidays|length if calendar.holidays is iterable else 0 %}
+                    {% if holidays_count > 0 %}
+                    <div class="detail-item">
+                        <span class="detail-label">
+                            <i class="fas fa-plane"></i>
+                            الإجازات
+                        </span>
+                        <span class="detail-value">{{ holidays_count }} يوم</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- إحصائيات الاستخدام -->
+                {% set projects_count =projects_count  %}
+                {% set resources_count = resources_count %}
+                <div style="margin-bottom: 1rem;">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-muted">
+                            <i class="fas fa-project-diagram"></i>
+                            مشاريع: {{ projects_count }}
+                        </span>
+                        <span class="text-muted">
+                            <i class="fas fa-users"></i>
+                            موارد: {{ resources_count }}
+                        </span>
+                    </div>
+                    {% if projects_count > 0 or resources_count > 0 %}
+                    <div class="usage-bar">
+                        {% set total_usage = projects_count + resources_count %}
+                        {% set max_usage = 20 %}
+                        {% set usage_percent = (total_usage / max_usage * 100) if total_usage <= max_usage else 100 %}
+                        <div class="usage-fill" style="width: {{ usage_percent }}%"></div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- أزرار التحكم -->
+                <div class="card-actions">
+                    {% if not calendar.is_default %}
+                    <button class="action-btn default-btn" onclick="setDefault({{ calendar.id }})" title="تعيين كافتراضي">
+                        <i class="fas fa-star"></i>
+                    </button>
+                    {% endif %}
+                    <a href="{{ url_for('primavera.calendar_edit', calendar_id=calendar.id) }}" class="action-btn" title="تعديل">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button class="action-btn delete" onclick="deleteCalendar({{ calendar.id }})" title="حذف">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-calendar-times"></i>
+            </div>
+            <h3>لا توجد تقويمات</h3>
+            <p>لم يتم إنشاء أي تقويمات بعد. ابدأ بإنشاء تقويم جديد.</p>
+            <a href="{{ url_for('primavera.calendar_create') }}" class="btn-create">
+                <i class="fas fa-plus"></i>
+                إنشاء تقويم جديد
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// تعيين تقويم كافتراضي
+function setDefault(calendarId) {
+    Swal.fire({
+        title: 'تأكيد',
+        text: 'هل أنت متأكد من تعيين هذا التقويم كافتراضي؟',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4cc9f0',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، تعيين',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/primavera/calendars/${calendarId}/set-default`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم',
+                        text: 'تم تعيين التقويم كافتراضي',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error || 'حدث خطأ'
+                    });
+                }
+            });
+        }
+    });
+}
+
+// حذف تقويم
+function deleteCalendar(calendarId) {
+    Swal.fire({
+        title: 'تأكيد الحذف',
+        text: 'هل أنت متأكد من حذف هذا التقويم؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/primavera/calendars/${calendarId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم',
+                        text: 'تم حذف التقويم بنجاح',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: data.error || 'حدث خطأ أثناء الحذف'
+                    });
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

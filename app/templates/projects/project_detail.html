@@ -1,0 +1,953 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ project.name }} - تفاصيل المشروع{% endblock %}
+
+{% block page_title %}{{ project.name }}{% endblock %}
+{% block page_subtitle %}تفاصيل المشروع ومعلومات التنفيذ{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Project Header */
+    .project-header-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+    }
+    
+    .project-badge {
+        display: inline-block;
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .project-badge.bg-success { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .project-badge.bg-warning { background: rgba(248, 150, 30, 0.1); color: var(--warning); }
+    .project-badge.bg-danger { background: rgba(249, 65, 68, 0.1); color: var(--danger); }
+    .project-badge.bg-info { background: rgba(72, 149, 239, 0.1); color: var(--info); }
+    .project-badge.bg-secondary { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+    
+    /* Metric Cards */
+    .metric-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.2rem;
+        height: 100%;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .metric-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .metric-title i {
+        font-size: 1rem;
+    }
+    
+    /* Timeline */
+    .timeline-mini {
+        position: relative;
+        padding-right: 1.5rem;
+    }
+    
+    .timeline-mini::before {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #eef2f7;
+    }
+    
+    .timeline-item-mini {
+        position: relative;
+        margin-bottom: 1.2rem;
+    }
+    
+    .timeline-item-mini:last-child {
+        margin-bottom: 0;
+    }
+    
+    .timeline-dot-mini {
+        position: absolute;
+        right: -1.9rem;
+        top: 0.3rem;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: white;
+        border: 2px solid var(--primary);
+    }
+    
+    .timeline-item-mini.completed .timeline-dot-mini {
+        background: var(--success);
+        border-color: var(--success);
+    }
+    
+    .timeline-item-mini.active .timeline-dot-mini {
+        background: var(--primary);
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+    
+    /* Team Avatars */
+    .team-avatar {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .team-avatar img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .team-avatar .avatar-placeholder {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1rem;
+        border: 2px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .online-indicator {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--success);
+        border: 2px solid white;
+    }
+    
+    /* Quick Action Buttons */
+    .quick-action-btn {
+        background: #f8f9fa;
+        border: 2px solid transparent;
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        color: var(--dark);
+        font-weight: 500;
+        transition: all 0.3s;
+        display: block;
+        width: 100%;
+        text-align: right;
+        margin-bottom: 0.5rem;
+    }
+    
+    .quick-action-btn:hover {
+        background: white;
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateX(-5px);
+    }
+    
+    .quick-action-btn i {
+        margin-left: 0.5rem;
+        width: 20px;
+    }
+    
+    /* Tabs */
+    .nav-tabs-custom {
+        border-bottom: 2px solid #eef2f7;
+        padding: 0 1rem;
+    }
+    
+    .nav-tabs-custom .nav-link {
+        border: none;
+        color: #6c757d;
+        font-weight: 600;
+        padding: 0.8rem 1.2rem;
+        margin-left: 0.5rem;
+        border-radius: 0;
+        transition: all 0.3s;
+        background: transparent;
+    }
+    
+    .nav-tabs-custom .nav-link:hover {
+        color: var(--primary);
+        background: transparent;
+    }
+    
+    .nav-tabs-custom .nav-link.active {
+        color: var(--primary);
+        background: transparent;
+        border-bottom: 3px solid var(--primary);
+    }
+    
+    .nav-tabs-custom .nav-link i {
+        margin-left: 0.5rem;
+    }
+    
+    /* Tab Content */
+    .project-tab-content {
+        padding: 1.5rem;
+    }
+    
+    /* Activity List */
+    .activity-item {
+        padding: 1rem;
+        border-bottom: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .activity-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+    }
+    
+    .activity-icon.bg-primary-subtle { background: rgba(67, 97, 238, 0.1); }
+    .activity-icon.bg-success-subtle { background: rgba(76, 201, 240, 0.1); }
+    .activity-icon.bg-warning-subtle { background: rgba(248, 150, 30, 0.1); }
+    .activity-icon.bg-info-subtle { background: rgba(72, 149, 239, 0.1); }
+    .activity-icon.bg-danger-subtle { background: rgba(249, 65, 68, 0.1); }
+    
+    /* Details Table */
+    .details-table {
+        width: 100%;
+    }
+    
+    .details-table td {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .details-table td:first-child {
+        color: #6c757d;
+        font-weight: 500;
+        width: 40%;
+    }
+    
+    .details-table td:last-child {
+        font-weight: 500;
+        color: var(--dark);
+    }
+    
+    /* Modal */
+    .modal-content {
+        border: none;
+        border-radius: 20px;
+    }
+    
+    .modal-header {
+        border-bottom: 2px solid #eef2f7;
+        padding: 1.5rem;
+    }
+    
+    .modal-title {
+        font-weight: 700;
+        color: var(--dark);
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modal-footer {
+        border-top: 2px solid #eef2f7;
+        padding: 1.5rem;
+    }
+    
+    .modal .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border: none;
+        border-radius: 12px;
+        padding: 0.6rem 1.5rem;
+    }
+    
+    .modal .btn-secondary {
+        background: #eef2f7;
+        border: none;
+        color: #6c757d;
+        border-radius: 12px;
+        padding: 0.6rem 1.5rem;
+    }
+    
+    .modal .btn-secondary:hover {
+        background: #e2e6ea;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .metric-card {
+            margin-bottom: 1rem;
+        }
+        
+        .nav-tabs-custom .nav-link {
+            padding: 0.6rem 0.8rem;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Project Header -->
+<div class="project-header-card">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <!-- Project Status & Priority -->
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="project-badge bg-{{ project.status_color }}">
+                    {{ project.status_label }}
+                </span>
+                {% if project.priority == 'high' %}
+                <span class="project-badge bg-danger">عالية الأولوية</span>
+                {% elif project.priority == 'critical' %}
+                <span class="project-badge bg-danger">
+                    <i class="fas fa-exclamation-triangle me-1"></i> حرجة
+                </span>
+                {% endif %}
+                {% if project.is_overdue %}
+                <span class="project-badge bg-danger">
+                    <i class="fas fa-clock me-1"></i> متأخر
+                </span>
+                {% endif %}
+            </div>
+            
+            <!-- Project Title & Code -->
+            <h1 class="h2 mb-2">{{ project.name }}</h1>
+            {% if project.name_ar %}
+            <h2 class="h4 text-muted mb-3">{{ project.name_ar }}</h2>
+            {% endif %}
+            <p class="text-muted mb-0">
+                <i class="fas fa-hashtag me-1"></i> {{ project.project_code }}
+                {% if project.project_number %}
+                | <i class="fas fa-barcode me-1"></i> {{ project.project_number }}
+                {% endif %}
+            </p>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary rounded-3 px-3 py-2" type="button" 
+                    data-bs-toggle="dropdown">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('projects.edit', project_id=project.id) }}">
+                        <i class="fas fa-edit ms-2"></i> تعديل المشروع
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('projects.clone', project_id=project.id) }}">
+                        <i class="fas fa-copy ms-2"></i> نسخ المشروع
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('projects.reports', project_id=project.id) }}">
+                        <i class="fas fa-chart-bar ms-2"></i> التقارير
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('projects.documents', project_id=project.id) }}">
+                        <i class="fas fa-file-alt ms-2"></i> المستندات
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item text-danger" href="#" 
+                       onclick="confirmDelete('{{ project.id }}', '{{ project.name }}')">
+                        <i class="fas fa-trash ms-2"></i> حذف المشروع
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Progress Bar -->
+    <div class="mt-4">
+        <div class="d-flex justify-content-between mb-2">
+            <span class="fw-bold">التقدم الشامل</span>
+            <span class="fw-bold text-primary">{{ project.progress_percentage }}%</span>
+        </div>
+        <div class="progress" style="height: 10px; background: #eef2f7; border-radius: 5px;">
+            <div class="progress-bar bg-{{ project.progress_color }}" 
+                 style="width: {{ project.progress_percentage }}%; border-radius: 5px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Metrics -->
+<div class="row g-4 mb-4">
+    <!-- Timeline -->
+    <div class="col-xl-3 col-lg-6">
+        <div class="metric-card">
+            <div class="metric-title">
+                <i class="fas fa-calendar-alt text-primary"></i>
+                الجدول الزمني
+                <span class="badge bg-primary me-auto">
+                    {% if project.days_behind > 0 %}+{{ project.days_behind }} يوم{% else %}ضمن الجدول{% endif %}
+                </span>
+            </div>
+            
+            <div class="timeline-mini">
+                <div class="timeline-item-mini {% if project.actual_start_date %}completed{% endif %}">
+                    <div class="timeline-dot-mini"></div>
+                    <small class="text-muted">تاريخ البدء</small>
+                    <div class="fw-bold">
+                        {% if project.actual_start_date %}
+                        {{ project.actual_start_date.strftime('%Y-%m-%d') }}
+                        {% else %}
+                        {{ project.planned_start_date.strftime('%Y-%m-%d') }}
+                        {% endif %}
+                    </div>
+                    {% if project.actual_start_date %}
+                    <small class="text-success">تم البدء</small>
+                    {% endif %}
+                </div>
+                
+                <div class="timeline-item-mini {% if project.actual_end_date %}completed{% endif %}">
+                    <div class="timeline-dot-mini"></div>
+                    <small class="text-muted">تاريخ الانتهاء</small>
+                    <div class="fw-bold">
+                        {% if project.actual_end_date %}
+                        {{ project.actual_end_date.strftime('%Y-%m-%d') }}
+                        {% else %}
+                        {{ project.planned_end_date.strftime('%Y-%m-%d') }}
+                        {% endif %}
+                    </div>
+                    {% if project.actual_end_date %}
+                    <small class="text-success">تم الانتهاء</small>
+                    {% else %}
+                    <small class="text-muted">مخطط</small>
+                    {% endif %}
+                </div>
+                
+                <div class="timeline-item-mini active">
+                    <div class="timeline-dot-mini"></div>
+                    <small class="text-muted">الأيام المتبقية</small>
+                    <div class="fw-bold">{{ project.remaining_days }} يوم</div>
+                    <small class="text-{{ 'danger' if project.is_overdue else 'success' }}">
+                        {% if project.is_overdue %}
+                        <i class="fas fa-exclamation-circle me-1"></i> متأخر
+                        {% else %}
+                        <i class="fas fa-check-circle me-1"></i> ضمن الجدول
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Financial -->
+    <div class="col-xl-3 col-lg-6">
+        <div class="metric-card">
+            <div class="metric-title">
+                <i class="fas fa-money-bill-wave text-success"></i>
+                المالية
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">قيمة العقد</small>
+                <h4 class="fw-bold">{{ "{:,.0f}".format(project.contract_value) }} ر.س</h4>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">المصروفات</small>
+                <h5 class="fw-bold">{{ "{:,.0f}".format(project.actual_cost) }} ر.س</h5>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">الميزانية المستخدمة</small>
+                <div class="d-flex align-items-center">
+                    <div class="progress flex-grow-1 ms-2" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: {{ project.budget_percentage }}%"></div>
+                    </div>
+                    <small class="fw-bold">{{ project.budget_percentage }}%</small>
+                </div>
+            </div>
+            
+            <div>
+                <small class="text-muted d-block">الربحية المتوقعة</small>
+                <h5 class="fw-bold text-success">{{ "{:,.0f}".format(project.expected_profit) }} ر.س</h5>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Team -->
+    <div class="col-xl-3 col-lg-6">
+        <div class="metric-card">
+            <div class="metric-title">
+                <i class="fas fa-users text-info"></i>
+                الفريق
+                <span class="badge bg-info me-auto">{{ project.team_count }} عضو</span>
+            </div>
+            
+            <!-- Team Members -->
+            <div class="mb-3">
+                <small class="text-muted d-block mb-2">أعضاء الفريق</small>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for member in project.team_members %}
+                    <div class="team-avatar">
+                        {% if member.avatar_url %}
+                        <img src="{{ member.avatar_url }}" alt="{{ member.full_name }}"
+                             data-bs-toggle="tooltip" title="{{ member.full_name }} ({{ member.role }})">
+                        {% else %}
+                        <div class="avatar-placeholder"
+                             data-bs-toggle="tooltip" title="{{ member.full_name }} ({{ member.role }})">
+                            {{ member.full_name[0] }}
+                        </div>
+                        {% endif %}
+                        {% if member.is_online %}
+                        <span class="online-indicator"></span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Key Roles -->
+            <div class="mt-4">
+                <small class="text-muted d-block mb-2">الأدوار الرئيسية</small>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <small class="text-muted d-block">مدير المشروع</small>
+                        <div class="d-flex align-items-center mt-1">
+                            {% if project.manager_avatar %}
+                            <img src="{{ project.manager_avatar }}" class="rounded-circle ms-2" width="20" height="20" alt="">
+                            {% endif %}
+                            <small>{{ project.manager_name }}</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">مشرف الموقع</small>
+                        <div class="d-flex align-items-center mt-1">
+                            {% if project.supervisor_avatar %}
+                            <img src="{{ project.supervisor_avatar }}" class="rounded-circle ms-2" width="20" height="20" alt="">
+                            {% endif %}
+                            <small>{{ project.supervisor_name or 'غير معين' }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="col-xl-3 col-lg-6">
+        <div class="metric-card">
+            <div class="metric-title">
+                <i class="fas fa-bolt text-warning"></i>
+                إجراءات سريعة
+            </div>
+            
+            <div class="d-grid gap-1">
+                <a href="{{ url_for('tasks.create' ,project_id=project.id)}}" class="quick-action-btn">
+                    <i class="fas fa-plus-circle text-primary"></i> إضافة مهمة جديدة
+                </a>
+                <a href="{{ url_for('reports.daily_create', project_id=project.id)}}" class="quick-action-btn">
+                    <i class="fas fa-file-alt text-success"></i> إنشاء تقرير يومي
+                </a>
+                <a href="{{ url_for('documents.upload', project_id=project.id)}}" class="quick-action-btn">
+                    <i class="fas fa-upload text-info"></i> رفع مستند
+                </a>
+                <a href="{{ url_for('meetings.create', project_id=project.id) }}" class="quick-action-btn">
+                    <i class="fas fa-calendar-plus text-warning"></i> جدولة اجتماع
+                </a>
+                <button class="quick-action-btn" data-bs-toggle="modal" data-bs-target="#shareProjectModal">
+                    <i class="fas fa-share-alt text-secondary"></i> مشاركة المشروع
+                </button>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="mt-4 pt-3 border-top">
+                <div class="row text-center">
+                    <div class="col-6 border-end">
+                        <small class="text-muted d-block">المهام</small>
+                        <h5 class="fw-bold">{{ project.task_count }}</h5>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">المستندات</small>
+                        <h5 class="fw-bold">{{ project.document_count }}</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Project Tabs -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 pt-3">
+        <ul class="nav nav-tabs nav-tabs-custom" id="projectTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" 
+                        data-bs-target="#overview" type="button">
+                    <i class="fas fa-eye me-2"></i> نظرة عامة
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" 
+                        data-bs-target="#tasks" type="button">
+                    <i class="fas fa-tasks me-2"></i> المهام
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="wbs-tab" data-bs-toggle="tab" 
+                        data-bs-target="#wbs" type="button">
+                    <i class="fas fa-sitemap me-2"></i> هيكل المشروع
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="documents-tab" data-bs-toggle="tab" 
+                        data-bs-target="#documents" type="button">
+                    <i class="fas fa-file-alt me-2"></i> المستندات
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="timeline-tab" data-bs-toggle="tab" 
+                        data-bs-target="#timeline" type="button">
+                    <i class="fas fa-chart-line me-2"></i> الخط الزمني
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="risks-tab" data-bs-toggle="tab" 
+                        data-bs-target="#risks" type="button">
+                    <i class="fas fa-exclamation-triangle me-2"></i> المخاطر
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reports-tab" data-bs-toggle="tab" 
+                        data-bs-target="#reports" type="button">
+                    <i class="fas fa-chart-bar me-2"></i> التقارير
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" 
+                        data-bs-target="#settings" type="button">
+                    <i class="fas fa-cog me-2"></i> الإعدادات
+                </button>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="card-body p-4">
+        <div class="tab-content project-tab-content" id="projectTabsContent">
+            <!-- Overview Tab -->
+            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                <div class="row">
+                    <!-- Project Description -->
+                    <div class="col-lg-8">
+                        <div class="card border-0 bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold mb-3">
+                                    <i class="fas fa-align-left ms-2 text-primary"></i>
+                                    وصف المشروع
+                                </h6>
+                                {% if project.description %}
+                                <p class="card-text">{{ project.description }}</p>
+                                {% else %}
+                                <p class="card-text text-muted">لا يوجد وصف للمشروع</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Activities -->
+                        <div class="card border-0">
+                            <div class="card-header bg-white border-0 px-0">
+                                <h6 class="fw-bold mb-0">
+                                    <i class="fas fa-history ms-2 text-primary"></i>
+                                    النشاطات الأخيرة
+                                </h6>
+                            </div>
+                            <div class="card-body px-0">
+                                <div class="list-group list-group-flush">
+                                    {% for activity in project.recent_activities %}
+                                    <div class="activity-item px-0">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0 ms-3">
+                                                <div class="activity-icon bg-{{ activity.type }}-subtle">
+                                                    <i class="fas fa-{{ activity.icon }} text-{{ activity.type }}"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between">
+                                                    <h6 class="mb-1">{{ activity.title }}</h6>
+                                                    <small class="text-muted">{{ activity.time }}</small>
+                                                </div>
+                                                <p class="mb-1 small">{{ activity.description }}</p>
+                                                <small class="text-muted">بواسطة {{ activity.user }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Project Details -->
+                    <div class="col-lg-4">
+                        <div class="card border-0 mb-4">
+                            <div class="card-header bg-white border-0 px-0">
+                                <h6 class="fw-bold mb-0">
+                                    <i class="fas fa-info-circle ms-2 text-primary"></i>
+                                    تفاصيل المشروع
+                                </h6>
+                            </div>
+                            <div class="card-body px-0">
+                                <table class="details-table">
+                                    <tr>
+                                        <td>الموقع</td>
+                                        <td>{{ project.site_name or 'غير محدد' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>العنوان</td>
+                                        <td>{{ project.location_address or 'غير محدد' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>رقم العقد</td>
+                                        <td>{{ project.contract_number or 'غير محدد' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>تاريخ العقد</td>
+                                        <td>{{ project.contract_date.strftime('%Y-%m-%d') if project.contract_date else 'غير محدد' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>العميل</td>
+                                        <td>{{ project.client_name or 'غير محدد' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>المستشار</td>
+                                        <td>{{ project.consultant_name or 'غير محدد' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>نوع المشروع</td>
+                                        <td>{{ project.project_type or 'غير محدد' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>فئة المشروع</td>
+                                        <td>{{ project.project_category or 'غير محدد' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>حجم المشروع</td>
+                                        <td>{{ project.project_scale or 'غير محدد' }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tasks Tab -->
+            <div class="tab-pane fade" id="tasks" role="tabpanel">
+                {% include 'company/projects/partials/tasks_tab.html' %}
+            </div>
+            
+            <!-- WBS Tab -->
+            <div class="tab-pane fade" id="wbs" role="tabpanel">
+                {% include 'projects/partials/wbs_tab.html' %}
+            </div>
+            
+            <!-- Documents Tab -->
+            <div class="tab-pane fade" id="documents" role="tabpanel">
+                {% include 'projects/partials/documents_tab.html' %}
+            </div>
+            
+            <!-- Timeline Tab -->
+            <div class="tab-pane fade" id="timeline" role="tabpanel">
+                {% include 'projects/partials/timeline_tab.html' %}
+            </div>
+            
+            <!-- Risks Tab -->
+            <div class="tab-pane fade" id="risks" role="tabpanel">
+                {% include 'projects/partials/risks_tab.html' %}
+            </div>
+            
+            <!-- Reports Tab -->
+            <div class="tab-pane fade" id="reports" role="tabpanel">
+                {% include 'projects/partials/reports_tab.html' %}
+            </div>
+            
+            <!-- Settings Tab -->
+            <div class="tab-pane fade" id="settings" role="tabpanel">
+                {% include 'projects/partials/settings_tab.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Project Modal -->
+<div class="modal fade" id="shareProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-share-alt ms-2 text-primary"></i>مشاركة المشروع</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">رابط المشاركة</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="shareLink" 
+                               value="{{ url_for('company.share_project', project_id=project.id, _external=True) }}" readonly>
+                        <button class="btn btn-outline-primary" type="button" onclick="copyShareLink()">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">صلاحية الوصول</label>
+                    <select class="form-select" id="accessLevel">
+                        <option value="view">عرض فقط</option>
+                        <option value="comment">عرض وتعليق</option>
+                        <option value="edit">عرض وتعديل</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">مدة الصلاحية</label>
+                    <select class="form-select" id="expiryDays">
+                        <option value="1">يوم واحد</option>
+                        <option value="7" selected>أسبوع</option>
+                        <option value="30">شهر</option>
+                        <option value="0">غير محدود</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn-primary-gradient" onclick="generateShareLink()">إنشاء رابط</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Copy share link function
+    window.copyShareLink = function() {
+        const shareLink = document.getElementById('shareLink');
+        shareLink.select();
+        shareLink.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+        
+        // Show success message
+        const button = event.target.closest('button');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i> تم النسخ';
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+    };
+    
+    // Generate share link function
+    window.generateShareLink = function() {
+        const accessLevel = document.getElementById('accessLevel').value;
+        const expiryDays = document.getElementById('expiryDays').value;
+        
+        // In a real application, you would make an API call here
+        Swal.fire({
+            icon: 'success',
+            title: 'تم إنشاء الرابط',
+            text: 'سيتم إنشاء رابط مشاركة جديد بالإعدادات المحددة',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    };
+    
+    // Confirm delete function
+    window.confirmDelete = function(projectId, projectName) {
+        Swal.fire({
+            title: 'تأكيد الحذف',
+            text: `هل أنت متأكد من حذف المشروع "${projectName}"؟`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--danger)',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'نعم، احذف',
+            cancelButtonText: 'إلغاء'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/api/projects/${projectId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'تم الحذف',
+                            text: 'تم حذف المشروع بنجاح',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.href = '{{ url_for("projects.list") }}';
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ',
+                            text: 'حدث خطأ أثناء حذف المشروع: ' + data.message
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: 'حدث خطأ أثناء حذف المشروع'
+                    });
+                });
+            }
+        });
+    };
+});
+</script>
+{% endblock %}

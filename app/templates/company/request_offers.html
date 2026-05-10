@@ -1,0 +1,143 @@
+<!-- templates/company/request_offers.html -->
+
+{% extends "company/base.html" %}
+
+{% block title %}عروض أسعار الطلب #{{ requests.id }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tags text-primary me-2"></i>
+                        عروض أسعار الطلب #{{ requests.id }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>المادة</th>
+                                    <th>الكمية المطلوبة</th>
+                                    <th>سعر الوحدة</th>
+                                    <th>العملة</th>
+                                    <th>ملاحظات المورد</th>
+                                    <th>الحالة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in offers %}
+                                <tr id="offer-{{ item.id }}">
+                                    <td class="fw-bold">{{ item.resource_name }}</td>
+                                    <td>{{ item.required_quantity }} {{ item.unit }}</td>
+                                    <td>
+                                        {% if item.offer_price %}
+                                        <span class="fw-bold">{{ item.offer_price }}</span>
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.offer_currency or '—' }}</td>
+                                    <td>
+                                        {% if item.offer_notes %}
+                                        <i class="fas fa-sticky-note text-muted" title="{{ item.offer_notes }}"></i>
+                                        <span class="small text-muted">{{ item.offer_notes|truncate(50) }}</span>
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.offer_status == 'pending' %}
+                                        <span class="badge bg-warning">قيد المراجعة</span>
+                                        {% elif item.offer_status == 'approved' %}
+                                        <span class="badge bg-success">معتمد</span>
+                                        {% elif item.offer_status == 'rejected' %}
+                                        <span class="badge bg-danger">مرفوض</span>
+                                        {% endif %}
+                                     </td>
+                                    <td>
+                                        {% if item.offer_status == 'pending' %}
+                                        <button class="btn btn-sm btn-success me-1" onclick="approveOffer({{ item.id }}, true)">
+                                            <i class="fas fa-check"></i> اعتماد
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="approveOffer({{ item.id }}, false)">
+                                            <i class="fas fa-times"></i> رفض
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if item.history %}
+                                <tr class="table-light">
+                                    <td colspan="7">
+                                        <div class="ps-4 py-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-history me-1"></i>
+                                                سجل العروض:
+                                                {% for h in item.history %}
+                                                <span class="ms-3">
+                                                    {{ h.price }} {{ h.currency }}
+                                                    ({{ h.status }})
+                                                    - {{ h.submitted_at|format_date }}
+                                                </span>
+                                                {% endfor %}
+                                            </small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function approveOffer(itemId, approve) {
+    const action = approve ? 'approve' : 'reject';
+    const title = approve ? 'اعتماد العرض' : 'رفض العرض';
+    const text = approve ? 'هل أنت متأكد من اعتماد هذا العرض؟' : 'الرجاء إدخال سبب الرفض';
+    
+    Swal.fire({
+        title: title,
+        text: text,
+        icon: 'question',
+        input: !approve ? 'textarea' : null,
+        inputPlaceholder: 'أدخل سبب الرفض...',
+        showCancelButton: true,
+        confirmButtonText: approve ? 'نعم، اعتماد' : 'نعم، رفض',
+        cancelButtonText: 'إلغاء'
+    }).then(result => {
+        if (result.isConfirmed) {
+            const notes = result.value || '';
+            
+            fetch(`/company/api/offer/${itemId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ action: action, notes: notes })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('تم', data.message, 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('خطأ', data.error, 'error');
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

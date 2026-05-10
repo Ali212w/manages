@@ -1,0 +1,311 @@
+{% extends "company/base.html" %}
+
+{% block title %}{{ _('edit_meeting') }} - {{ meeting.title }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+<style>
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .form-section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .agenda-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .attendee-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #e9ecef;
+        padding: 5px 12px;
+        border-radius: 20px;
+        margin: 0 5px 10px 0;
+    }
+    
+    .remove-attendee {
+        cursor: pointer;
+        color: #dc3545;
+        margin-left: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-edit me-2"></i> {{ _('edit_meeting') }}</h4>
+            <a href="{{ url_for('company.view_meeting', meeting_id=meeting.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right me-2"></i> {{ _('back_to_meeting') }}
+            </a>
+        </div>
+    </div>
+</div>
+
+<form method="POST">
+    <!-- Basic Information -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-info-circle"></i> {{ _('basic_information') }}</h5>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('meeting_title') }} <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" value="{{ meeting.title }}" required>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('project') }}</label>
+                <select name="project_id" class="form-select" disabled>
+                    <option value="{{ meeting.project.id }}">{{ meeting.project.name }}</option>
+                </select>
+                <input type="hidden" name="project_id" value="{{ meeting.project.id }}">
+            </div>
+            
+            <div class="col-md-12 mb-3">
+                <label class="form-label">{{ _('purpose') }}</label>
+                <textarea name="purpose" class="form-control" rows="3">{{ meeting.purpose or '' }}</textarea>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('meeting_type') }}</label>
+                <select name="meeting_type" class="form-select">
+                    <option value="progress" {% if meeting.meeting_type == 'progress' %}selected{% endif %}>{{ _('progress_meeting') }}</option>
+                    <option value="coordination" {% if meeting.meeting_type == 'coordination' %}selected{% endif %}>{{ _('coordination_meeting') }}</option>
+                    <option value="technical" {% if meeting.meeting_type == 'technical' %}selected{% endif %}>{{ _('technical_meeting') }}</option>
+                    <option value="management" {% if meeting.meeting_type == 'management' %}selected{% endif %}>{{ _('management_meeting') }}</option>
+                </select>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ _('secretary') }}</label>
+                <select name="secretary_id" class="form-select">
+                    <option value="">{{ _('select_secretary') }}</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}" {% if meeting.secretary_id == user.id %}selected{% endif %}>
+                        {{ user.full_name }} ({{ user.job_title or user.role }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Date & Time -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-calendar-alt"></i> {{ _('date_and_time') }}</h5>
+        
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ _('date') }} <span class="text-danger">*</span></label>
+                <input type="date" name="scheduled_date" class="form-control" value="{{ meeting.scheduled_date.strftime('%Y-%m-%d') }}" required>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ _('start_time') }} <span class="text-danger">*</span></label>
+                <input type="time" name="start_time" class="form-control" value="{{ meeting.start_time.strftime('%H:%M') if meeting.start_time else '' }}" required>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ _('end_time') }} <span class="text-danger">*</span></label>
+                <input type="time" name="end_time" class="form-control" value="{{ meeting.end_time.strftime('%H:%M') if meeting.end_time else '' }}" required>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Location -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-map-marker-alt"></i> {{ _('location') }}</h5>
+        
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <div class="btn-group w-100 mb-3">
+                    <button type="button" class="btn {% if not meeting.is_virtual %}btn-primary active{% else %}btn-outline-primary{% endif %} virtual-toggle" data-type="physical">
+                        <i class="fas fa-building me-2"></i> {{ _('physical_meeting') }}
+                    </button>
+                    <button type="button" class="btn {% if meeting.is_virtual %}btn-primary active{% else %}btn-outline-primary{% endif %} virtual-toggle" data-type="virtual">
+                        <i class="fas fa-video me-2"></i> {{ _('virtual_meeting') }}
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-md-12 mb-3" id="physicalLocation" {% if meeting.is_virtual %}style="display: none;"{% endif %}>
+                <label class="form-label">{{ _('location_address') }}</label>
+                <input type="text" name="location" class="form-control" value="{{ meeting.location or '' }}">
+            </div>
+            
+            <div class="col-md-12 mb-3" id="virtualLink" {% if not meeting.is_virtual %}style="display: none;"{% endif %}>
+                <label class="form-label">{{ _('virtual_meeting_link') }}</label>
+                <input type="url" name="virtual_link" class="form-control" value="{{ meeting.virtual_link or '' }}">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Agenda -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-list-ul"></i> {{ _('agenda') }}</h5>
+        
+        <div id="agendaContainer">
+            {% for item in meeting.agenda or [] %}
+            <div class="agenda-item">
+                <input type="text" name="agenda_items" class="form-control" value="{{ item }}">
+                <button type="button" class="btn btn-danger remove-agenda">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            {% endfor %}
+            {% if not meeting.agenda %}
+            <div class="agenda-item">
+                <input type="text" name="agenda_items" class="form-control" placeholder="{{ _('agenda_item_1') }}">
+                <button type="button" class="btn btn-danger remove-agenda" style="display: none;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        
+        <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="addAgendaItem">
+            <i class="fas fa-plus me-1"></i> {{ _('add_agenda_item') }}
+        </button>
+    </div>
+    
+    <!-- Attendees -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="fas fa-users"></i> {{ _('attendees') }}</h5>
+        
+        <div class="row">
+            <div class="col-md-8 mb-3">
+                <div class="input-group">
+                    <select id="attendeeSelect" class="form-select">
+                        <option value="">{{ _('select_attendee') }}</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.full_name }} ({{ user.job_title or user.role }})</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-primary" id="addAttendee">
+                        <i class="fas fa-plus"></i> {{ _('add') }}
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div id="attendeesContainer" class="d-flex flex-wrap">
+                    {% for attendee in meeting.attendees %}
+                    <span class="attendee-badge">
+                        <i class="fas fa-user me-1"></i>
+                        {{ attendee.name if attendee is mapping else attendee }}
+                        <i class="fas fa-times-circle remove-attendee ms-2" data-name="{{ attendee.name if attendee is mapping else attendee }}"></i>
+                    </span>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="attendees" id="attendeesInput" value="{{ meeting.attendees|tojson }}">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Submit Buttons -->
+    <div class="d-flex gap-3">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i> {{ _('save_changes') }}
+        </button>
+        <a href="{{ url_for('company.view_meeting', meeting_id=meeting.id) }}" class="btn btn-secondary">
+            <i class="fas fa-times me-2"></i> {{ _('cancel') }}
+        </a>
+    </div>
+</form>
+
+<script>
+    // Virtual/Physical toggle
+    $('.virtual-toggle').click(function() {
+        $('.virtual-toggle').removeClass('active btn-primary').addClass('btn-outline-primary');
+        $(this).addClass('active btn-primary').removeClass('btn-outline-primary');
+        
+        if ($(this).data('type') === 'virtual') {
+            $('#physicalLocation').hide();
+            $('#virtualLink').show();
+        } else {
+            $('#physicalLocation').show();
+            $('#virtualLink').hide();
+        }
+    });
+    
+    // Agenda items
+    let agendaCount = {{ meeting.agenda|length or 1 }};
+    
+    $('#addAgendaItem').click(function() {
+        agendaCount++;
+        const newItem = `
+            <div class="agenda-item">
+                <input type="text" name="agenda_items" class="form-control" 
+                       placeholder="{{ _('agenda_item') }} ${agendaCount}">
+                <button type="button" class="btn btn-danger remove-agenda">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        $('#agendaContainer').append(newItem);
+    });
+    
+    $(document).on('click', '.remove-agenda', function() {
+        $(this).closest('.agenda-item').remove();
+    });
+    
+    // Attendees
+    let attendees = [];
+    
+    {% for attendee in meeting.attendees %}
+    attendees.push({name: '{{ attendee.name if attendee is mapping else attendee }}'});
+    {% endfor %}
+    
+    $('#addAttendee').click(function() {
+        const userName = $('#attendeeSelect option:selected').text();
+        const userId = $('#attendeeSelect').val();
+        
+        if (userId && !attendees.find(a => a.name === userName)) {
+            attendees.push({id: userId, name: userName});
+            updateAttendeesDisplay();
+            $('#attendeeSelect').val('');
+        }
+    });
+    
+    function updateAttendeesDisplay() {
+        const container = $('#attendeesContainer');
+        container.empty();
+        
+        attendees.forEach(attendee => {
+            const badge = $(`
+                <span class="attendee-badge">
+                    <i class="fas fa-user me-1"></i>
+                    ${attendee.name}
+                    <i class="fas fa-times-circle remove-attendee ms-2"></i>
+                </span>
+            `);
+            container.append(badge);
+        });
+        
+        $('#attendeesInput').val(JSON.stringify(attendees.map(a => a.name)));
+    }
+    
+    $(document).on('click', '.remove-attendee', function() {
+        const name = $(this).closest('.attendee-badge').find('.fa-user').next().text().trim();
+        attendees = attendees.filter(a => a.name !== name);
+        updateAttendeesDisplay();
+    });
+</script>
+{% endblock %}

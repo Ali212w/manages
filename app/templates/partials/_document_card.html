@@ -1,0 +1,79 @@
+<!-- قالب بطاقة المستند -->
+<div class="document-card" data-id="{{ document.id }}" data-type="{{ document.document_type }}">
+    <div class="document-card-header">
+        <div class="document-icon {{ document.file_extension }}">
+            {% if document.file_extension == 'pdf' %}
+            <i class="fas fa-file-pdf"></i>
+            {% elif document.file_extension in ['doc', 'docx'] %}
+            <i class="fas fa-file-word"></i>
+            {% elif document.file_extension in ['xls', 'xlsx', 'csv'] %}
+            <i class="fas fa-file-excel"></i>
+            {% elif document.file_extension in ['jpg', 'jpeg', 'png'] %}
+            <i class="fas fa-file-image"></i>
+            {% else %}
+            <i class="fas fa-file"></i>
+            {% endif %}
+        </div>
+        
+        <div class="document-badges">
+            {% if document.requires_approval %}
+                {% if document.approval_status == 'approved' %}
+                <span class="badge bg-success">موافق عليه</span>
+                {% elif document.approval_status == 'rejected' %}
+                <span class="badge bg-danger">مرفوض</span>
+                {% else %}
+                <span class="badge bg-warning">بانتظار الموافقة</span>
+                {% endif %}
+            {% endif %}
+            
+            <span class="badge bg-primary">
+                {{ get_document_type_label(document.document_type) }}
+            </span>
+        </div>
+    </div>
+    
+    <div class="document-card-body">
+        <h5 class="document-title">{{ document.title }}</h5>
+        
+        {% if document.description %}
+        <p class="document-description">{{ document.description|truncate(100) }}</p>
+        {% endif %}
+        
+        <div class="document-meta">
+            <div class="meta-item">
+                <i class="fas fa-folder"></i>
+                <span>{{ document.project.name }}</span>
+            </div>
+            <div class="meta-item">
+                <i class="fas fa-hdd"></i>
+                <span>{{ format_file_size(document.file_size) }}</span>
+            </div>
+            <div class="meta-item">
+                <i class="fas fa-calendar"></i>
+                <span>{{ document.uploaded_at.strftime('%Y-%m-%d') }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="document-card-footer">
+        <a href="{{ url_for('document.view', document_id=document.id) }}" 
+           class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-eye"></i>
+        </a>
+        <a href="{{ url_for('document.download', document_id=document.id) }}" 
+           class="btn btn-sm btn-outline-success">
+            <i class="fas fa-download"></i>
+        </a>
+        
+        {% if can_delete_document(document, current_user) %}
+        <form method="POST" 
+              action="{{ url_for('document.delete_document', document_id=document.id) }}"
+              class="d-inline"
+              onsubmit="return confirm('هل تريد حذف هذا المستند؟')">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="fas fa-trash"></i>
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>

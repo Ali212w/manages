@@ -1,0 +1,78 @@
+{% extends "communication/base_chat.html" %}
+
+{% block title %}الإشارات{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">الإشارات</h2>
+        <p class="text-muted">جميع الإشارات التي تلقيتها في المحادثات والتعليقات</p>
+    </div>
+</div>
+
+<!-- قائمة الإشارات -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+            {% for mention in mentions %}
+            <div class="list-group-item list-group-item-action {% if not mention.is_read %}bg-light{% endif %}">
+                <div class="d-flex">
+                    <!-- أيقونة الإشارة -->
+                    <div class="mention-icon me-3">
+                        <div class="stat-icon primary" style="width: 40px; height: 40px;">
+                            <i class="fas fa-at"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- محتوى الإشارة -->
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1 {% if not mention.is_read %}fw-bold{% endif %}">
+                                    {{ mention.message.sender.full_name if mention.message else mention.comment.user.full_name }}
+                                    ذكرك في 
+                                    {% if mention.message %}
+                                        محادثة
+                                    {% else %}
+                                        تعليق
+                                    {% endif %}
+                                </h6>
+                                <p class="mb-1 text-muted">
+                                    {{ mention.message.content if mention.message else mention.comment.content|truncate(100) }}
+                                </p>
+                                <small class="text-muted">
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ mention.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- رابط المحتوى -->
+                        <div class="mt-2">
+                            {% if mention.message %}
+                                <a href="{{ url_for('communication.project_chat', project_id=mention.message.chat.project_id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>عرض المحادثة
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('communication.task_chat', task_id=mention.comment.task_id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>عرض التعليق
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="far fa-at fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">لا توجد إشارات</h5>
+                <p class="small text-muted">عندما يذكرك أحدهم بـ @username، ستظهر الإشارات هنا</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

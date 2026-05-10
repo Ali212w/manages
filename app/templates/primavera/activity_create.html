@@ -1,0 +1,821 @@
+{% extends "company/base.html" %}
+
+{% block title %}إنشاء نشاط جديد - {{ project.name }}{% endblock %}
+
+{% block page_title %}إنشاء نشاط جديد{% endblock %}
+{% block page_subtitle %}{{ project.name }} - {{ project.project_code }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .create-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+    }
+    
+    .create-card {
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+        overflow: hidden;
+        border: 1px solid #eef2f7;
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05), rgba(67, 97, 238, 0.1));
+        padding: 2rem;
+        border-bottom: 3px solid var(--primary);
+        position: relative;
+    }
+    
+    .header-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+    }
+    
+    .card-body {
+        padding: 2rem;
+    }
+    
+    .form-section {
+        background: #f8fafc;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #eef2f7;
+        transition: all 0.3s;
+    }
+    
+    .form-section:hover {
+        border-color: var(--primary);
+        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.1);
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px dashed #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .section-title i {
+        color: var(--primary);
+        font-size: 1.2rem;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .form-label i {
+        color: var(--primary);
+        margin-left: 0.5rem;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        padding: 0.7rem 1rem;
+        transition: all 0.3s;
+        width: 100%;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        outline: none;
+    }
+    
+    textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
+    
+    .row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .row-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .row-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .priority-options {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+    
+    .priority-option {
+        flex: 1;
+    }
+    
+    .priority-option input[type="radio"] {
+        display: none;
+    }
+    
+    .priority-option label {
+        display: block;
+        padding: 1rem;
+        background: white;
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 600;
+    }
+    
+    .priority-option input[type="radio"]:checked + label {
+        border-color: var(--primary);
+        background: rgba(67, 97, 238, 0.05);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
+    }
+    
+    .priority-high label { color: var(--danger); }
+    .priority-medium label { color: var(--warning); }
+    .priority-low label { color: var(--success); }
+    
+    .activity-type-selector {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+    
+    .activity-type-option {
+        position: relative;
+    }
+    
+    .activity-type-option input[type="radio"] {
+        display: none;
+    }
+    
+    .activity-type-option label {
+        display: block;
+        padding: 1rem;
+        background: white;
+        border: 2px solid #eef2f7;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+    }
+    
+    .activity-type-option input[type="radio"]:checked + label {
+        border-color: var(--primary);
+        background: rgba(67, 97, 238, 0.05);
+    }
+    
+    .type-icon {
+        font-size: 1.5rem;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .type-title {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+    
+    .type-desc {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .code-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        background: #eef2f7;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        margin-left: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .code-badge:hover {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .code-badge.selected {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-start;
+        margin-top: 2rem;
+    }
+    
+    .btn {
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #eef2f7;
+        color: #6c757d;
+    }
+    
+    .btn-secondary:hover {
+        background: #e2e8f0;
+        color: var(--dark);
+    }
+    
+    .info-tooltip {
+        cursor: help;
+        margin-right: 0.3rem;
+        color: #6c757d;
+    }
+    
+    .info-tooltip:hover {
+        color: var(--primary);
+    }
+    
+    @media (max-width: 768px) {
+        .row, .row-3, .row-4 {
+            grid-template-columns: 1fr;
+        }
+        
+        .activity-type-selector {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-container">
+    <form method="POST" class="create-card" id="activityForm">
+        <!-- رأس الصفحة -->
+        <div class="card-header">
+            <div class="d-flex align-items-center">
+                <div class="header-icon ms-4">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1">إنشاء نشاط جديد</h2>
+                    <p class="mb-0 text-muted">
+                        <i class="fas fa-project-diagram me-2"></i>
+                        {{ project.name }} - {{ project.project_code }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- محتوى النموذج -->
+        <div class="card-body">
+            <!-- القسم 1: المعلومات الأساسية -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    المعلومات الأساسية
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i>
+                            كود النشاط <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="activity_id" class="form-control" 
+                               placeholder="مثال: A1000" 
+                               value="{{ now.strftime('A%y%m') }}{{ range(100, 999) | random }}">
+                        <small class="text-muted">سيتم إنشاؤه تلقائياً إذا ترك فارغاً</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-barcode"></i>
+                            الكود الإضافي
+                        </label>
+                        <input type="text" name="activity_code" class="form-control" 
+                               placeholder="كود إضافي (اختياري)">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-heading"></i>
+                        اسم النشاط <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" name="activity_name" class="form-control" 
+                           placeholder="أدخل اسم النشاط" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-align-left"></i>
+                        الوصف
+                    </label>
+                    <textarea name="description" class="form-control" 
+                              placeholder="وصف النشاط بالتفصيل"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-list-ol"></i>
+                        تعليمات التنفيذ
+                    </label>
+                    <textarea name="instructions" class="form-control" 
+                              placeholder="تعليمات وإرشادات للتنفيذ"></textarea>
+                </div>
+            </div>
+            
+            <!-- القسم 2: التصنيف والهيكل -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-sitemap"></i>
+                    التصنيف والهيكل
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-diagram-project"></i>
+                            WBS
+                        </label>
+                        <select name="wbs_id" class="form-select">
+                            <option value="">-- اختر WBS --</option>
+                            {% for wbs in wbs_list %}
+                            <option value="{{ wbs.id }}">
+                                {{ wbs.wbs_code }} - {{ wbs.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-calendar"></i>
+                            التقويم
+                        </label>
+                        <select name="calendar_id" class="form-select">
+                            <option value="">-- التقويم الافتراضي --</option>
+                            {% for cal in calendars %}
+                            <option value="{{ cal.id }}" {% if cal.is_default %}selected{% endif %}>
+                                {{ cal.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-tag"></i>
+                        نوع النشاط
+                    </label>
+                    <div class="activity-type-selector">
+                        <div class="activity-type-option">
+                            <input type="radio" name="activity_type" id="type_task" value="task_dependent" checked>
+                            <label for="type_task">
+                                <div class="type-icon"><i class="fas fa-tasks"></i></div>
+                                <div class="type-title">مهمة تنفيذية</div>
+                                <div class="type-desc">نشاط عادي بمدة وجهد</div>
+                            </label>
+                        </div>
+                        
+                        <div class="activity-type-option">
+                            <input type="radio" name="activity_type" id="type_resource" value="resource_dependent">
+                            <label for="type_resource">
+                                <div class="type-icon"><i class="fas fa-users"></i></div>
+                                <div class="type-title">يعتمد على موارد</div>
+                                <div class="type-desc">يتطلب موارد محددة</div>
+                            </label>
+                        </div>
+                        
+                        <div class="activity-type-option">
+                            <input type="radio" name="activity_type" id="type_effort" value="level_of_effort">
+                            <label for="type_effort">
+                                <div class="type-icon"><i class="fas fa-chart-line"></i></div>
+                                <div class="type-title">جهد متواصل</div>
+                                <div class="type-desc">مستمر طوال المشروع</div>
+                            </label>
+                        </div>
+                        
+                        <div class="activity-type-option">
+                            <input type="radio" name="activity_type" id="type_milestone" value="start_milestone">
+                            <label for="type_milestone">
+                                <div class="type-icon"><i class="fas fa-flag"></i></div>
+                                <div class="type-title">معلم رئيسي</div>
+                                <div class="type-desc">بداية أو نهاية مهمة</div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- القسم 3: التوقيت والمدة -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-clock"></i>
+                    التوقيت والمدة
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-play"></i>
+                            تاريخ البدء المخطط
+                        </label>
+                        <input type="date" name="planned_start" class="form-control" 
+                               value="{{ now.strftime('%Y-%m-%d') }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-stop"></i>
+                            تاريخ الانتهاء المخطط
+                        </label>
+                        <input type="date" name="planned_finish" class="form-control"
+                               value="{{ (now + timedelta(days=7)).strftime('%Y-%m-%d') }}">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-hourglass-half"></i>
+                            المدة الأصلية (أيام)
+                        </label>
+                        <input type="number" name="original_duration" class="form-control" 
+                               value="7" step="0.5" min="0.5">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-weight-hanging"></i>
+                            الوزن (%)
+                        </label>
+                        <input type="number" name="weight" class="form-control" 
+                               value="1" step="0.1" min="0">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- القسم 4: الأولوية والمسؤولية -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-flag"></i>
+                    الأولوية والمسؤولية
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">مستوى الأولوية</label>
+                    <div class="priority-options">
+                        <div class="priority-option priority-high">
+                            <input type="radio" name="priority" id="priority_high" value="5">
+                            <label for="priority_high">عالية جداً</label>
+                        </div>
+                        <div class="priority-option priority-high">
+                            <input type="radio" name="priority" id="priority_high4" value="4">
+                            <label for="priority_high4">عالية</label>
+                        </div>
+                        <div class="priority-option priority-medium">
+                            <input type="radio" name="priority" id="priority_medium" value="3" checked>
+                            <label for="priority_medium">متوسطة</label>
+                        </div>
+                        <div class="priority-option priority-low">
+                            <input type="radio" name="priority" id="priority_low2" value="2">
+                            <label for="priority_low2">منخفضة</label>
+                        </div>
+                        <div class="priority-option priority-low">
+                            <input type="radio" name="priority" id="priority_low" value="1">
+                            <label for="priority_low">منخفضة جداً</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-user-tie"></i>
+                            المسؤول
+                        </label>
+                        <select name="responsible_id" class="form-select">
+                            <option value="">-- اختر المسؤول --</option>
+                            {% for user in supervisors %}
+                            <option value="{{ user.id }}">
+                                {{ user.full_name }} ({{ user.role }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-user-check"></i>
+                            المشرف
+                        </label>
+                        <select name="supervisor_id" class="form-select">
+                            <option value="">-- اختر المشرف --</option>
+                            {% for user in supervisors %}
+                            <option value="{{ user.id }}">
+                                {{ user.full_name }} ({{ user.role }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-user-clock"></i>
+                            المنفذ
+                        </label>
+                        <select name="delegate_id" class="form-select">
+                            <option value="">-- اختر المنفذ --</option>
+                            {% for user in delegates %}
+                            <option value="{{ user.id }}">
+                                {{ user.full_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-briefcase"></i>
+                        الدور الوظيفي
+                    </label>
+                    <select name="role_id" class="form-select">
+                        <option value="">-- اختر الدور --</option>
+                        {% for role in roles %}
+                        <option value="{{ role.id }}">{{ role.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <!-- القسم 5: القيود -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-ban"></i>
+                    القيود
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">القيد الأساسي</label>
+                        <select name="primary_constraint" class="form-select" id="primaryConstraint">
+                            <option value="">بدون قيد</option>
+                            {% for constraint in constraint_types %}
+                            <option value="{{ constraint.value }}">{{ constraint.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">تاريخ القيد الأساسي</label>
+                        <input type="date" name="primary_constraint_date" class="form-control" 
+                               id="primaryConstraintDate" disabled>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">القيد الثانوي</label>
+                        <select name="secondary_constraint" class="form-select" id="secondaryConstraint">
+                            <option value="">بدون قيد</option>
+                            {% for constraint in constraint_types %}
+                            <option value="{{ constraint.value }}">{{ constraint.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">تاريخ القيد الثانوي</label>
+                        <input type="date" name="secondary_constraint_date" class="form-control" 
+                               id="secondaryConstraintDate" disabled>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- القسم 6: أكواد النشاط -->
+            {% if activity_code_types %}
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-code"></i>
+                    أكواد النشاط
+                </div>
+                
+                <div id="activityCodesContainer">
+                    {% for code_type in activity_code_types %}
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">{{ code_type.type }}</label>
+                            <input type="hidden" name="activity_code_types[]" value="{{ code_type.type }}">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for code in code_type.codes %}
+                                <span class="code-badge" onclick="selectCode(this, '{{ code_type.type }}', '{{ code.code_value }}')">
+                                    {{ code.code_value }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" name="activity_code_values[]" id="code_{{ code_type.type }}" value="">
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- القسم 7: الحقول المخصصة -->
+            {% if udf_fields %}
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-puzzle-piece"></i>
+                    حقول مخصصة
+                </div>
+                
+                <div id="udfContainer">
+                    {% for udf in udf_fields %}
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                {{ udf.udf_label }}
+                                {% if udf.is_required %}<span class="text-danger">*</span>{% endif %}
+                                <i class="fas fa-info-circle info-tooltip" title="{{ udf.udf_name }}"></i>
+                            </label>
+                            <input type="hidden" name="udf_names[]" value="{{ udf.udf_name }}">
+                        </div>
+                        <div class="col-md-8">
+                            {% if udf.data_type == 'text' %}
+                            <input type="text" name="udf_values[]" class="form-control" 
+                                   placeholder="{{ udf.default_value }}">
+                            
+                            {% elif udf.data_type == 'number' %}
+                            <input type="number" name="udf_values[]" class="form-control" 
+                                   value="{{ udf.default_value }}" step="any">
+                            
+                            {% elif udf.data_type == 'date' %}
+                            <input type="date" name="udf_values[]" class="form-control" 
+                                   value="{{ udf.default_value }}">
+                            
+                            {% elif udf.data_type == 'boolean' %}
+                            <select name="udf_values[]" class="form-select">
+                                <option value="true">نعم</option>
+                                <option value="false">لا</option>
+                            </select>
+                            
+                            {% elif udf.data_type == 'list' and udf.list_values %}
+                            <select name="udf_values[]" class="form-select">
+                                <option value="">-- اختر --</option>
+                                {% for option in udf.list_values %}
+                                <option value="{{ option }}">{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- القسم 8: الموقع -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-map-marker-alt"></i>
+                    الموقع
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label">الموقع</label>
+                        <input type="text" name="location" class="form-control" 
+                               placeholder="أدخل موقع النشاط">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">الإحداثيات</label>
+                        <input type="text" name="coordinates" class="form-control" 
+                               placeholder="مثال: 24.7136, 46.6753">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- أزرار الإجراءات -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>
+                    إنشاء النشاط
+                </button>
+                <a href="{{ url_for('primavera.project_activities', project_id=project.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>
+                    إلغاء
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+// تفعيل/تعطيل حقول تاريخ القيد
+document.getElementById('primaryConstraint').addEventListener('change', function() {
+    const dateField = document.getElementById('primaryConstraintDate');
+    dateField.disabled = this.value === '';
+});
+
+document.getElementById('secondaryConstraint').addEventListener('change', function() {
+    const dateField = document.getElementById('secondaryConstraintDate');
+    dateField.disabled = this.value === '';
+});
+
+// اختيار أكواد النشاط
+function selectCode(element, codeType, codeValue) {
+    // إزالة التحديد من جميع الأكواد من نفس النوع
+    const container = element.parentNode;
+    container.querySelectorAll('.code-badge').forEach(badge => {
+        badge.classList.remove('selected');
+    });
+    
+    // تحديد الكود الحالي
+    element.classList.add('selected');
+    
+    // تعيين القيمة في الحقل المخفي
+    document.getElementById(`code_${codeType}`).value = codeValue;
+}
+
+// التحقق من صحة النموذج قبل الإرسال
+document.getElementById('activityForm').addEventListener('submit', function(e) {
+    const activityName = document.querySelector('input[name="activity_name"]').value;
+    if (!activityName.trim()) {
+        e.preventDefault();
+        alert('يرجى إدخال اسم النشاط');
+        return;
+    }
+    
+    // تأكيد الإنشاء
+    if (!confirm('هل أنت متأكد من إنشاء هذا النشاط؟')) {
+        e.preventDefault();
+    }
+});
+
+// حساب تاريخ الانتهاء تلقائياً عند تغيير تاريخ البدء والمدة
+document.querySelector('input[name="planned_start"]').addEventListener('change', calculateFinishDate);
+document.querySelector('input[name="original_duration"]').addEventListener('input', calculateFinishDate);
+
+function calculateFinishDate() {
+    const startDate = document.querySelector('input[name="planned_start"]').value;
+    const duration = parseFloat(document.querySelector('input[name="original_duration"]').value) || 7;
+    
+    if (startDate && duration) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + duration);
+        
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        
+        document.querySelector('input[name="planned_finish"]').value = `${year}-${month}-${day}`;
+    }
+}
+</script>
+{% endblock %}
