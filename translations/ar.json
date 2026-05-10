@@ -1411,11 +1411,6 @@
   "other": "أخرى",
   "overall_completion": "نسبة الإكمال الإجمالية",
   "overdue": "متأخر",
-  "password": {
-    "medium": "متوسطة",
-    "strong": "قوية",
-    "weak": "ضعيفة"
-  },
   "password_changed_success": "تم تغيير كلمة المرور بنجاح",
   "password_mismatch": "كلمات المرور غير متطابقة",
   "password_requirements": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
@@ -2018,5 +2013,15 @@
   "yes_delete": "نعم، احذف",
   "yes_force_complete": "نعم، إكمال قسري",
   "yesterday": "أمس",
-  "zoom_changed_to": "تم تغيير مستوى التكبير إلى"
+  "zoom_changed_to": "تم تغيير مستوى التكبير إلى",
+  "password_levels": {
+    "medium": "متوسطة",
+    "strong": "قوية",
+    "weak": "ضعيفة"
+  },
+  "password": "كلمة المرور",
+  "enterprise": "المؤسسات",
+  "contact_us_for_pricing": "تواصل معنا للسعر",
+  "language_changed_successfully": "تم تغيير اللغة بنجاح",
+  "toggle_sidebar": "تبديل الشريط الجانبي"
 }

@@ -376,14 +376,14 @@ $(document).ready(function() {
         const strength = checkPasswordStrength(password);
         const percent = (strength / 5) * 100;
         let color = '#dc3545'; // red
-        let text = '{{ _("password.weak") }}';
+        let text = '{{ _("password_levels.weak") }}';
         
         if (strength >= 4) {
             color = '#28a745'; // green
-            text = '{{ _("password.strong") }}';
+            text = '{{ _("password_levels.strong") }}';
         } else if (strength >= 2) {
             color = '#ffc107'; // yellow
-            text = '{{ _("password.medium") }}';
+            text = '{{ _("password_levels.medium") }}';
         }
         
         $('#passwordProgress').show();

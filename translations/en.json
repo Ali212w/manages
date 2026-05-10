@@ -1412,11 +1412,6 @@
   "other": "Other",
   "overall_completion": "Overall Completion",
   "overdue": "Overdue",
-  "password": {
-    "medium": "Medium",
-    "strong": "Strong",
-    "weak": "Weak"
-  },
   "password_changed_success": "Password changed successfully",
   "password_mismatch": "Passwords do not match",
   "password_requirements": "Password must be at least 8 characters",
@@ -2018,5 +2013,16 @@
   "yes_delete": "Yes, delete",
   "yes_force_complete": "Yes, Force Complete",
   "yesterday": "Yesterday",
-  "zoom_changed_to": "Zoom changed to"
+  "zoom_changed_to": "Zoom changed to",
+  "password_levels": {
+    "medium": "Medium",
+    "strong": "Strong",
+    "weak": "Weak"
+  },
+  "password": "Password",
+  "smart_notifications": "Smart Notifications",
+  "enterprise": "Enterprise",
+  "contact_us_for_pricing": "Contact us for pricing",
+  "language_changed_successfully": "Language changed successfully",
+  "toggle_sidebar": "Toggle sidebar"
 }

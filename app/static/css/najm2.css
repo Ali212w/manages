@@ -73,7 +73,8 @@
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* Bumped from 65.1% → 80% lightness for readable description text on dark cards */
+    --muted-foreground: 215 25% 80%;
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
@@ -2247,10 +2248,60 @@ html[dir="rtl"] .breadcrumb-item + .breadcrumb-item::before { content: '\\'; }
 }
 .hero-subtitle{
   font-size: clamp(1rem, 2vw, 1.25rem);
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--foreground) / 0.85);
   margin: 0 auto 2rem;
   max-width: 700px;
   line-height: 1.6;
+  font-weight: 500;
+}
+
+/* Override .btn-outline-light when used on the light hero background
+   (the global rule keeps white-on-white which is unreadable here).      */
+.hero-section .btn-outline-light{
+  color: hsl(var(--primary));
+  background: hsl(var(--background) / 0.6);
+  border-color: hsl(var(--primary));
+}
+.hero-section .btn-outline-light:hover{
+  color: hsl(var(--primary-foreground));
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+}
+
+/* Account for sticky header when jumping to in-page anchors */
+section[id],
+.section-anchor{
+  scroll-margin-top: 90px;
+}
+
+/* Small-text helper used under hero CTA -> keep readable on light bg */
+.hero-section .small{
+  color: hsl(var(--foreground) / 0.7);
+}
+
+/* ===== Dark-mode readability for description / muted text =====
+   The 65% → 80% bump above helps, but Bootstrap's .text-muted and our
+   .feature-desc need an explicit floor so descriptions under headings
+   stay readable on dark card backgrounds. */
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] .feature-desc,
+[data-theme="dark"] .pricing-features li.text-muted,
+[data-theme="dark"] .pricing-price .fs-6{
+  color: hsl(210 30% 86%) !important;
+  -webkit-text-fill-color: hsl(210 30% 86%);
+}
+[data-theme="dark"] .feature-title,
+[data-theme="dark"] .feature-card h4,
+[data-theme="dark"] .step-title,
+[data-theme="dark"] section h5{
+  color: hsl(var(--foreground));
+}
+
+/* Body description text in light + dark: nudge weight up so it isn't anemic */
+.feature-desc,
+.feature-card p,
+.pricing-features li{
+  font-weight: 500;
 }
 .hero-cta{
   display: inline-flex;

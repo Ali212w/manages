@@ -55,8 +55,10 @@
                 <i class="fas fa-moon" data-theme-icon></i>
             </button>
             <div class="dropdown">
-                <button class="icon-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
-                    <i class="fas fa-language"></i>
+                <button class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('language') }}">
+                    <i class="fas fa-globe"></i>
+                    <span class="lang-label">{% if current_lang == 'ar' %}العربية{% else %}English{% endif %}</span>
+                    <i class="fas fa-chevron-down small"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item {% if current_lang == 'ar' %}active{% endif %}" href="{{ url_for('change_language', lang='ar') }}"><i class="fas fa-flag"></i> العربية</a></li>
