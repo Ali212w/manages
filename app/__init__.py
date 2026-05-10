@@ -101,7 +101,7 @@ def create_app(config_name='default'):
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     # تهيئة WebSocket
-    socketio.init_app(app, cors_allowed_origins="*", async_mode='eventlet')
+    socketio.init_app(app, cors_allowed_origins="*", async_mode='threading')
 
     # إعداد التسجيل
     setup_logging(app)
