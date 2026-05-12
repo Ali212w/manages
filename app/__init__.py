@@ -121,6 +121,26 @@ def create_app(config_name='default'):
                 return ''
 
         return dict(csrf_token=get_csrf_token)
+
+    @app.context_processor
+    def inject_safe_url_for():
+        """url_for آمن لا يكسر الصفحة إذا كان endpoint غير موجود.
+
+        يحل مشكلة قوالب مشتركة (مثل sidebar/header) تشير إلى endpoints
+        قد لا تكون مسجلة في كل مسار.
+        """
+        from flask import url_for as _flask_url_for
+        from werkzeug.routing.exceptions import BuildError
+
+        def safe_url_for(endpoint, **values):
+            try:
+                return _flask_url_for(endpoint, **values)
+            except BuildError:
+                return '#'
+            except Exception:
+                return '#'
+
+        return dict(url_for=safe_url_for, safe_url_for=safe_url_for)
     # في app/__init__.py - أضف هذه الدالة
     @app.context_processor
     def inject_trial_info():

@@ -2,17 +2,51 @@
 dashboard_routes.py - لوحة التحكم المتقدمة مع دعم جميع الفلاتر
 """
 
-from flask import render_template, request, jsonify
+from flask import render_template, request, jsonify, redirect, url_for
 from flask_login import login_required, current_user
 from app.routes import dashboard_bp
 from app.models import db, Project, Activity, Task, TaskResource, Resource, User,ProjectBudget
 from app.models import ProjectDocument, Notification, Organization, Department,TaskAssignment
-from app.models import Issue, QualityCheck, Milestone, Invoice, Payment
+from app.models import Issue, QualityCheck, Milestone, Invoice, Payment, PlatformAdmin
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================
+# Route: لوحة التحكم - إعادة توجيه حسب الدور
+# ============================================
+@dashboard_bp.route('/')
+@dashboard_bp.route('/index')
+@login_required
+def index():
+    """نقطة دخول موحدة - تعيد التوجيه للوحة المخصصة حسب الدور."""
+    if isinstance(current_user, PlatformAdmin):
+        return redirect(url_for('platform.dashboard'))
+    if hasattr(current_user, 'role'):
+        role = current_user.role
+        if role == 'platform_admin':
+            return redirect(url_for('platform.dashboard'))
+        if role == 'org_admin':
+            return redirect(url_for('company.dashboard'))
+        if role == 'supplier':
+            return redirect(url_for('supplier.dashboard'))
+        if role == 'client':
+            return redirect(url_for('client.dashboard'))
+        if role == 'consultant':
+            return redirect(url_for('consultant.dashboard'))
+        if role in ['project_manager', 'supervisor', 'delegate', 'employee']:
+            return redirect(url_for('role_dashboard.my_dashboard'))
+    return redirect(url_for('auth.login'))
+
+
+@dashboard_bp.route('/analytics')
+@login_required
+def analytics():
+    """مدخل تحليلات اختصاري للوحة المتقدمة."""
+    return redirect(url_for('dashboard.advanced_dashboard'))
 
 
 # ============================================
