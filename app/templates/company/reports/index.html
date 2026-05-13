@@ -1,148 +1,399 @@
 {% extends "company/base.html" %}
-
 {% block title %}التقارير - {{ g.company.name }}{% endblock %}
-
 {% block page_title %}التقارير والتحليلات{% endblock %}
-{% block page_subtitle %}نظرة شاملة على أداء الشركة{% endblock %}
+{% block page_subtitle %}راقب أداء العمليات والإنتاجية في الوقت الفعلي{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-family:'Material Symbols Outlined';display:inline-block;line-height:1;white-space:nowrap;direction:ltr;}
+body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif;}
+.zebra tr:nth-child(even){background:#f8fafc;}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row g-4">
-    <!-- بطاقات التقارير -->
-    <div class="col-md-4">
-        <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body text-center p-4">
-                <div class="stat-icon primary mx-auto mb-3" style="width: 80px; height: 80px;">
-                    <i class="fas fa-project-diagram fa-3x"></i>
-                </div>
-                <h4 class="fw-bold">تقرير المشاريع</h4>
-                <p class="text-muted mb-4">عرض تحليلات المشاريع والتقدم ونسب الإنجاز</p>
-                <div class="d-grid">
-                    <a href="{{ url_for('company.projects_report') }}" class="btn-primary-gradient">
-                        <i class="fas fa-chart-bar me-2"></i>عرض التقرير
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body text-center p-4">
-                <div class="stat-icon success mx-auto mb-3" style="width: 80px; height: 80px;">
-                    <i class="fas fa-tasks fa-3x"></i>
-                </div>
-                <h4 class="fw-bold">تقرير المهام</h4>
-                <p class="text-muted mb-4">إحصائيات المهام وإنجازات الفريق</p>
-                <div class="d-grid">
-                    <a href="{{ url_for('company.tasks_report') }}" class="btn-primary-gradient">
-                        <i class="fas fa-chart-bar me-2"></i>عرض التقرير
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body text-center p-4">
-                <div class="stat-icon warning mx-auto mb-3" style="width: 80px; height: 80px;">
-                    <i class="fas fa-users fa-3x"></i>
-                </div>
-                <h4 class="fw-bold">تقرير المستخدمين</h4>
-                <p class="text-muted mb-4">تحليلات المستخدمين والأداء</p>
-                <div class="d-grid">
-                    <a href="{{ url_for('company.users_report') }}" class="btn-primary-gradient">
-                        <i class="fas fa-chart-bar me-2"></i>عرض التقرير
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="space-y-6">
 
-<!-- التقارير السريعة -->
-<div class="table-card mt-4">
-    <div class="table-header">
-        <h5 class="table-title"><i class="fas fa-bolt me-2 text-primary"></i>تقارير سريعة</h5>
+  <!-- Header Actions -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div>
+      <div class="flex items-center gap-2 text-blue-900 text-xs font-bold mb-1">
+        <span class="material-symbols-outlined text-base">monitoring</span> لوحة البيانات المتقدمة
+      </div>
+      <h2 class="text-2xl font-bold text-slate-900">التقارير والتحليلات</h2>
+      <p class="text-sm text-slate-400 mt-0.5">نظرة شاملة على أداء المشاريع والفريق</p>
     </div>
-    
-    <div class="row g-3">
-        <div class="col-md-3">
-            <a href="#" class="text-decoration-none">
-                <div class="p-3 bg-light rounded text-center">
-                    <i class="fas fa-file-pdf text-danger fa-2x mb-2"></i>
-                    <h6 class="mb-0">تصدير PDF</h6>
-                </div>
-            </a>
+    <div class="flex gap-2">
+      <div class="flex bg-slate-100 rounded-xl p-1">
+        <button class="px-4 py-2 bg-white text-blue-900 rounded-lg shadow-sm text-xs font-bold flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">calendar_month</span> آخر 30 يوم
+        </button>
+      </div>
+      <div class="relative group">
+        <button class="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-xl text-xs font-bold hover:bg-blue-800 shadow-sm">
+          <span class="material-symbols-outlined text-base">download</span> تصدير التقرير
+        </button>
+        <div class="absolute left-0 top-full mt-2 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl hidden group-hover:block z-20 overflow-hidden">
+          <a href="{{ url_for('company.projects_report') }}" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 text-sm text-slate-700 transition-colors">
+            <span class="material-symbols-outlined text-red-500 text-lg" style="font-variation-settings:'FILL' 1;">picture_as_pdf</span> ملف PDF
+          </a>
+          <a href="{{ url_for('company.tasks_report') }}" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 text-sm text-slate-700 transition-colors">
+            <span class="material-symbols-outlined text-emerald-600 text-lg" style="font-variation-settings:'FILL' 1;">table_view</span> ملف Excel
+          </a>
         </div>
-        <div class="col-md-3">
-            <a href="#" class="text-decoration-none">
-                <div class="p-3 bg-light rounded text-center">
-                    <i class="fas fa-file-excel text-success fa-2x mb-2"></i>
-                    <h6 class="mb-0">تصدير Excel</h6>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a href="#" class="text-decoration-none">
-                <div class="p-3 bg-light rounded text-center">
-                    <i class="fas fa-print text-primary fa-2x mb-2"></i>
-                    <h6 class="mb-0">طباعة</h6>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a href="#" class="text-decoration-none">
-                <div class="p-3 bg-light rounded text-center">
-                    <i class="fas fa-envelope text-info fa-2x mb-2"></i>
-                    <h6 class="mb-0">إرسال بالبريد</h6>
-                </div>
-            </a>
-        </div>
+      </div>
     </div>
-</div>
-<!-- في قسم التقارير، أضف هذه الكروت -->
-<div class="row g-4 mt-2">
-    <div class="col-md-4">
-        <div class="card h-100 border-0 shadow-sm" onclick="window.location.href='{{ url_for('primavera.reports', project_id=project.id) }}'">
-            <div class="card-body text-center p-4">
-                <div class="stat-icon primary mx-auto mb-3" style="width: 80px; height: 80px;">
-                    <i class="fas fa-chart-line fa-3x"></i>
-                </div>
-                <h5 class="fw-bold">تقارير Primavera</h5>
-                <p class="text-muted small">تقارير متقدمة للمسار الحرج والموارد والتكاليف</p>
-                <span class="badge bg-primary">جديد</span>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+      <div class="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-bl-full -mr-8 -mt-8 group-hover:scale-110 transition-transform"></div>
+      <div class="flex justify-between items-start mb-3">
+        <div>
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">تقدم المشروع الكلي</p>
+          <div class="flex items-baseline gap-2 mt-1">
+            <h3 class="text-3xl font-black text-blue-900">84.2%</h3>
+            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">+12.5%</span>
+          </div>
+        </div>
+        <div class="p-2.5 bg-blue-50 rounded-xl flex-shrink-0">
+          <span class="material-symbols-outlined text-blue-900" style="font-variation-settings:'FILL' 1;">trending_up</span>
+        </div>
+      </div>
+      <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div class="h-2 bg-gradient-to-l from-blue-900 to-blue-500 rounded-full" style="width:84.2%"></div>
+      </div>
+      <p class="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> أداء مستقر خلال الأسبوع
+      </p>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">المهام المنجزة</p>
+          <h3 class="text-3xl font-black text-blue-900 mt-1">1,284</h3>
+        </div>
+        <div class="p-2.5 bg-emerald-50 rounded-xl">
+          <span class="material-symbols-outlined text-emerald-600" style="font-variation-settings:'FILL' 1;">task_alt</span>
+        </div>
+      </div>
+      <p class="text-xs text-slate-400 mb-3">تم إغلاق 42 مهمة اليوم</p>
+      <div class="flex justify-between text-xs text-slate-400">
+        <span>الهدف: 1,500</span><span class="font-bold text-blue-900">85%</span>
+      </div>
+      <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden mt-1.5">
+        <div class="h-1.5 bg-emerald-500 rounded-full" style="width:85%"></div>
+      </div>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">كفاءة التشغيل</p>
+          <h3 class="text-3xl font-black text-blue-900 mt-1">92%</h3>
+        </div>
+        <div class="p-2.5 bg-amber-50 rounded-xl">
+          <span class="material-symbols-outlined text-amber-600" style="font-variation-settings:'FILL' 1;">bolt</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mt-2">
+        <div class="bg-slate-50 rounded-xl p-3">
+          <p class="text-xs text-slate-400 font-bold uppercase mb-1">وقت الإنجاز</p>
+          <p class="text-sm font-bold text-blue-900">4.5 ساعة</p>
+        </div>
+        <div class="bg-slate-50 rounded-xl p-3">
+          <p class="text-xs text-slate-400 font-bold uppercase mb-1">معدل الخطأ</p>
+          <p class="text-sm font-bold text-red-500">1.2%</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+    <!-- Productivity Chart -->
+    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+        <div>
+          <h4 class="text-base font-bold text-slate-900">مخطط الإنتاجية الزمني</h4>
+          <p class="text-xs text-slate-400">المهام المنجزة مقابل الوقت المخطط</p>
+        </div>
+        <div class="flex gap-1 bg-slate-100 rounded-xl p-1">
+          <button id="weekBtn" onclick="setChartPeriod('week')" class="px-3 py-1.5 bg-white text-blue-900 rounded-lg shadow-sm text-xs font-bold transition-all">أسبوعي</button>
+          <button id="monthBtn" onclick="setChartPeriod('month')" class="px-3 py-1.5 text-slate-500 rounded-lg text-xs font-medium transition-all">شهري</button>
+          <button id="yearBtn" onclick="setChartPeriod('year')" class="px-3 py-1.5 text-slate-500 rounded-lg text-xs font-medium transition-all">سنوي</button>
+        </div>
+      </div>
+      <div class="p-5">
+        <div class="flex gap-4 mb-4 text-xs">
+          <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-blue-900 inline-block rounded"></span>الفعلي</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-slate-300 inline-block rounded"></span>المستهدف</span>
+        </div>
+        <div class="h-56"><canvas id="productivityChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Task Distribution Donut -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+      <h4 class="text-base font-bold text-slate-900 mb-4">توزيع المهام</h4>
+      <div class="flex flex-col items-center">
+        <div class="relative w-44 h-44 mb-4">
+          <canvas id="taskDonut"></canvas>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="text-2xl font-black text-blue-900">150</span>
+            <span class="text-xs text-slate-400">مهمة كلية</span>
+          </div>
+        </div>
+        <div class="w-full space-y-2">
+          {% set dist = [
+            ('bg-blue-900','قيد التنفيذ','45%','text-blue-900'),
+            ('bg-blue-500','مكتملة','30%','text-blue-500'),
+            ('bg-slate-300','متأخرة','25%','text-slate-500'),
+          ] %}
+          {% for dot, label, pct, tcls in dist %}
+          <div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full {{ dot }}"></span>
+              <span class="text-sm text-slate-700">{{ label }}</span>
             </div>
+            <span class="text-xs font-bold {{ tcls }}">{{ pct }}</span>
+          </div>
+          {% endfor %}
         </div>
+      </div>
     </div>
-</div>
-<!-- إحصائيات سريعة -->
-<div class="row g-4 mt-2">
-    <div class="col-12">
-        <div class="table-card">
-            <div class="table-header">
-                <h5 class="table-title"><i class="fas fa-chart-line me-2 text-primary"></i>ملخص سريع</h5>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-3 text-center">
-                    <h3 class="text-primary">78%</h3>
-                    <p class="text-muted">نسبة إنجاز المشاريع</p>
-                </div>
-                <div class="col-md-3 text-center">
-                    <h3 class="text-success">156</h3>
-                    <p class="text-muted">مهام مكتملة هذا الشهر</p>
-                </div>
-                <div class="col-md-3 text-center">
-                    <h3 class="text-warning">23</h3>
-                    <p class="text-muted">مهام قيد التنفيذ</p>
-                </div>
-                <div class="col-md-3 text-center">
-                    <h3 class="text-info">45</h3>
-                    <p class="text-muted">مستخدم نشط</p>
-                </div>
-            </div>
+  </div>
+
+  <!-- Report Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    {% set report_cards = [
+      ('folder_special','bg-blue-50 text-blue-900','تقرير المشاريع','عرض تحليلات المشاريع والتقدم ونسب الإنجاز', url_for('company.projects_report'),'hover:border-blue-200'),
+      ('task_alt','bg-emerald-50 text-emerald-700','تقرير المهام','إحصائيات المهام وإنجازات الفريق', url_for('company.tasks_report'),'hover:border-emerald-200'),
+      ('group','bg-amber-50 text-amber-700','تقرير المستخدمين','تحليلات المستخدمين والأداء', url_for('company.users_report'),'hover:border-amber-200'),
+    ] %}
+    {% for icon, cls, title, desc, link, hcls in report_cards %}
+    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm {{ hcls }} hover:shadow-md transition-all group">
+      <div class="w-12 h-12 {{ cls }} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+        <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1;">{{ icon }}</span>
+      </div>
+      <h3 class="text-base font-bold text-slate-900 mb-1">{{ title }}</h3>
+      <p class="text-xs text-slate-400 mb-4 leading-relaxed">{{ desc }}</p>
+      <a href="{{ link }}" class="flex items-center gap-2 text-sm font-bold text-blue-900 hover:underline">
+        عرض التقرير <span class="material-symbols-outlined text-base">arrow_back</span>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Export Quick Actions -->
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+    <h3 class="text-base font-bold text-slate-900 mb-4">تصدير سريع</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {% set exports = [
+        ('picture_as_pdf','text-red-500','bg-red-50','تصدير PDF'),
+        ('table_view','text-emerald-600','bg-emerald-50','تصدير Excel'),
+        ('print','text-blue-900','bg-blue-50','طباعة'),
+        ('email','text-sky-600','bg-sky-50','إرسال بالبريد'),
+      ] %}
+      {% for icon, tcls, bg, label in exports %}
+      <button class="{{ bg }} rounded-2xl p-4 flex flex-col items-center gap-2 hover:shadow-md transition-all group">
+        <span class="material-symbols-outlined {{ tcls }} text-2xl group-hover:scale-110 transition-transform" style="font-variation-settings:'FILL' 1;">{{ icon }}</span>
+        <span class="text-xs font-bold text-slate-700">{{ label }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Team Performance Table -->
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+      <div>
+        <h4 class="text-base font-bold text-slate-900">أداء أعضاء الفريق</h4>
+        <p class="text-xs text-slate-400">متابعة مؤشرات الأداء الرئيسية لكل فرد</p>
+      </div>
+      <div class="flex gap-2 w-full md:w-auto">
+        <div class="relative flex-1 md:w-64">
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-base">search</span>
+          <input id="teamSearch" type="text" placeholder="بحث عن عضو..."
+            class="w-full text-sm border border-slate-200 rounded-xl pr-9 pl-3 py-2 outline-none focus:ring-2 focus:ring-blue-900"/>
         </div>
+        <a href="{{ url_for('company.users_report') }}" class="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-500 hover:bg-slate-50">
+          <span class="material-symbols-outlined text-base">filter_list</span> تصفية
+        </a>
+      </div>
     </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-right text-sm zebra">
+        <thead class="bg-slate-50 text-slate-400 text-xs uppercase">
+          <tr>
+            <th class="px-5 py-3 font-bold">العضو</th>
+            <th class="px-5 py-3 font-bold">الدور الوظيفي</th>
+            <th class="px-5 py-3 font-bold text-center">المهام المنجزة</th>
+            <th class="px-5 py-3 font-bold text-center">معدل الدقة</th>
+            <th class="px-5 py-3 font-bold">الحالة</th>
+            <th class="px-5 py-3 font-bold">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% if users %}
+          {% for user in users[:10] %}
+          <tr class="hover:bg-blue-50/20 transition-colors group">
+            <td class="px-5 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-900 to-blue-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  {{ user.full_name[:2] if user.full_name else '??' }}
+                </div>
+                <div>
+                  <p class="font-bold text-slate-900">{{ user.full_name }}</p>
+                  <p class="text-xs text-slate-400">{{ user.username }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-5 py-4 text-slate-500">{{ user.job_title or user.role }}</td>
+            <td class="px-5 py-4 text-center">
+              <span class="bg-slate-100 text-slate-700 font-bold px-3 py-1 rounded-full text-xs">{{ user.tasks|length if user.tasks is defined else 0 }}</span>
+            </td>
+            <td class="px-5 py-4 text-center">
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-sm font-bold text-blue-900">—</span>
+                <div class="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-1.5 bg-blue-900 rounded-full" style="width:80%"></div></div>
+              </div>
+            </td>
+            <td class="px-5 py-4">
+              {% if user.is_active %}
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-100">
+                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> نشط
+              </span>
+              {% else %}
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-bold">
+                <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> غير نشط
+              </span>
+              {% endif %}
+            </td>
+            <td class="px-5 py-4">
+              <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <a href="{{ url_for('company.view_user', user_id=user.id) }}" class="p-1.5 rounded-lg hover:bg-blue-50 transition-colors">
+                  <span class="material-symbols-outlined text-sm text-slate-400 hover:text-blue-900">visibility</span>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+          {% else %}
+          <!-- Placeholder rows -->
+          {% set placeholders = [
+            ('أ م','أحمد محمد','مطور واجهات كبار','24','98%',true),
+            ('س ع','سارة علي','مصممة تجربة مستخدم','18','95%',true),
+            ('ي خ','ياسين خالد','مدير مشروع تقني','31','92%',false),
+          ] %}
+          {% for init, name, role, tasks, acc, active in placeholders %}
+          <tr class="hover:bg-blue-50/20 transition-colors group">
+            <td class="px-5 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-900 to-blue-500 text-white flex items-center justify-center text-xs font-bold">{{ init }}</div>
+                <p class="font-bold text-slate-900">{{ name }}</p>
+              </div>
+            </td>
+            <td class="px-5 py-4 text-slate-500">{{ role }}</td>
+            <td class="px-5 py-4 text-center"><span class="bg-slate-100 text-slate-700 font-bold px-3 py-1 rounded-full text-xs">{{ tasks }}</span></td>
+            <td class="px-5 py-4 text-center">
+              <div class="flex flex-col items-center gap-1">
+                <span class="text-sm font-bold text-blue-900">{{ acc }}</span>
+                <div class="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-1.5 bg-blue-900 rounded-full" style="width:{{ acc }}"></div></div>
+              </div>
+            </td>
+            <td class="px-5 py-4">
+              {% if active %}
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-100">
+                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> نشط الآن
+              </span>
+              {% else %}
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-bold">
+                <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> منذ ساعتين
+              </span>
+              {% endif %}
+            </td>
+            <td class="px-5 py-4">
+              <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button class="p-1.5 rounded-lg hover:bg-blue-50">
+                  <span class="material-symbols-outlined text-sm text-slate-400 hover:text-blue-900">visibility</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    <div class="px-5 py-3 border-t border-slate-100 flex justify-between items-center bg-slate-50/50">
+      <span class="text-xs text-slate-400">
+        عرض {% if users %}{{ users[:10]|length }} من أصل {{ users|length }}{% else %}3 من أصل 24{% endif %} عضو
+      </span>
+      <div class="flex gap-1">
+        <button class="px-3 py-1.5 rounded-lg bg-blue-900 text-white text-xs font-bold">1</button>
+        <button class="px-3 py-1.5 rounded-lg hover:bg-slate-100 text-slate-600 text-xs font-bold">2</button>
+        <button class="px-3 py-1.5 rounded-lg hover:bg-slate-100 text-slate-600 text-xs font-bold">3</button>
+      </div>
+    </div>
+  </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Productivity Chart
+const prodCtx = document.getElementById('productivityChart');
+let prodChart;
+const chartData = {
+  week: { labels:['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'], actual:[18,25,20,32,28,35,30], target:[22,22,22,22,22,22,22] },
+  month: { labels:['أسبوع 1','أسبوع 2','أسبوع 3','أسبوع 4'], actual:[80,95,110,120], target:[90,90,90,90] },
+  year: { labels:['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'], actual:[60,75,80,95,110,100,115,120,130,125,140,150], target:[100,100,100,100,100,100,100,100,100,100,100,100] },
+};
+function buildChart(period) {
+  if (prodChart) prodChart.destroy();
+  const d = chartData[period];
+  prodChart = new Chart(prodCtx, {
+    type:'line',
+    data:{
+      labels:d.labels,
+      datasets:[
+        {label:'الفعلي',data:d.actual,borderColor:'#00236f',backgroundColor:'rgba(0,35,111,0.06)',fill:true,tension:0.4,borderWidth:2,pointRadius:4,pointBackgroundColor:'#00236f',pointBorderColor:'#fff',pointBorderWidth:2},
+        {label:'المستهدف',data:d.target,borderColor:'#c5c5d3',borderDash:[6,3],fill:false,tension:0.4,borderWidth:2,pointRadius:0},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f1f5f9'}}}}
+  });
+}
+buildChart('week');
+
+function setChartPeriod(p) {
+  ['week','month','year'].forEach(x => {
+    const b = document.getElementById(x+'Btn');
+    if(x===p){b.classList.add('bg-white','text-blue-900','shadow-sm');b.classList.remove('text-slate-500');}
+    else{b.classList.remove('bg-white','text-blue-900','shadow-sm');b.classList.add('text-slate-500');}
+  });
+  buildChart(p);
+}
+
+// Task Donut
+const donutCtx = document.getElementById('taskDonut');
+new Chart(donutCtx,{type:'doughnut',data:{datasets:[{data:[45,30,25],backgroundColor:['#00236f','#3b82f6','#cbd5e1'],borderWidth:2,borderColor:'#fff'}]},options:{cutout:'75%',plugins:{legend:{display:false},tooltip:{enabled:false}},maintainAspectRatio:true}});
+
+// Team search
+document.getElementById('teamSearch')?.addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('tbody tr').forEach(r=>{
+    r.style.display=(!q||r.textContent.toLowerCase().includes(q))?'':'none';
+  });
+});
+</script>
 {% endblock %}

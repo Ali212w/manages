@@ -1,346 +1,292 @@
 {% extends "layouts/dashboard_layout.html" %}
-
 {% block title %}لوحة تحكم مدير المشروع{% endblock %}
 
+{% block styles %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; font-family:'Material Symbols Outlined'; display:inline-block; line-height:1; white-space:nowrap; direction:ltr; }
+  body { font-family:'IBM Plex Sans Arabic','Inter',sans-serif; background:#f8f9ff; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid py-4">
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="min-h-screen bg-slate-50 p-6 space-y-6">
+
+  <!-- Page Header -->
+  <div class="flex justify-between items-end">
+    <div>
+      <nav class="flex gap-2 text-xs text-slate-400 mb-1">
+        <span>الرئيسية</span><span>/</span>
+        <span class="text-blue-900 font-bold">لوحة تحكم مدير المشروع</span>
+      </nav>
+      <h2 class="text-2xl font-bold text-slate-900">مرحباً، {{ current_user.full_name }} 👋</h2>
+      <p class="text-sm text-slate-500">إدارة مشاريعك ومهامك من مكان واحد</p>
+    </div>
+    <div class="flex gap-2">
+      <button class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold hover:bg-slate-50 shadow-sm" data-bs-toggle="modal" data-bs-target="#quickTaskModal">
+        <span class="material-symbols-outlined text-lg text-blue-900">add_task</span> مهمة سريعة
+      </button>
+      <button class="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-xl text-sm font-bold hover:bg-blue-800 shadow-sm" data-bs-toggle="modal" data-bs-target="#quickReportModal">
+        <span class="material-symbols-outlined text-lg">description</span> تقرير سريع
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    <!-- My Projects -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between hover:shadow-lg transition-shadow">
+      <div class="flex justify-between items-start">
+        <div class="p-2 bg-blue-50 rounded-xl"><span class="material-symbols-outlined text-blue-900" style="font-variation-settings:'FILL' 1;">folder_open</span></div>
+        <span class="text-xs font-bold text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full">
+          <span class="material-symbols-outlined text-sm">north</span>نشطة
+        </span>
+      </div>
+      <div class="mt-4">
+        <p class="text-xs text-slate-400 uppercase tracking-wider">مشاريعي</p>
+        <h3 class="text-4xl font-bold text-slate-900 mt-1">{{ stats.my_projects_count }}</h3>
+        <p class="text-xs text-slate-500 mt-1"><span class="text-emerald-600 font-bold">{{ stats.active_projects_count }}</span> نشطة</p>
+      </div>
+      <div class="mt-4 h-1 bg-slate-100 rounded-full overflow-hidden">
+        <div class="bg-blue-900 h-full" style="width: {{ [((stats.active_projects_count or 0) / (stats.my_projects_count or 1) * 100)|int, 100]|min }}%"></div>
+      </div>
+      <a href="{{ url_for('project.index') }}" class="mt-4 text-center text-xs font-bold text-blue-900 hover:underline">عرض المشاريع</a>
+    </div>
+
+    <!-- Pending Tasks -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between hover:shadow-lg transition-shadow">
+      <div class="flex justify-between items-start">
+        <div class="p-2 bg-amber-50 rounded-xl"><span class="material-symbols-outlined text-amber-600" style="font-variation-settings:'FILL' 1;">assignment_late</span></div>
+        <span class="text-xs font-bold text-red-600 flex items-center gap-1 bg-red-50 px-2 py-0.5 rounded-full">
+          <span class="material-symbols-outlined text-sm">schedule</span>{{ stats.overdue_tasks }} متأخرة
+        </span>
+      </div>
+      <div class="mt-4">
+        <p class="text-xs text-slate-400 uppercase tracking-wider">المهام المعلقة</p>
+        <h3 class="text-4xl font-bold text-slate-900 mt-1">{{ stats.pending_tasks }}</h3>
+        <p class="text-xs text-red-500 mt-1 font-semibold">{{ stats.overdue_tasks }} تتطلب تدخل فوري</p>
+      </div>
+      <div class="mt-4 h-1 bg-slate-100 rounded-full overflow-hidden">
+        <div class="bg-amber-500 h-full w-3/5"></div>
+      </div>
+      <a href="{{ url_for('task.index') }}" class="mt-4 text-center text-xs font-bold text-blue-900 hover:underline">عرض المهام</a>
+    </div>
+
+    <!-- Budget -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between hover:shadow-lg transition-shadow">
+      <div class="flex justify-between items-start">
+        <div class="p-2 bg-emerald-50 rounded-xl"><span class="material-symbols-outlined text-emerald-600" style="font-variation-settings:'FILL' 1;">payments</span></div>
+        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{{ stats.budget_percentage }}%</span>
+      </div>
+      <div class="mt-4">
+        <p class="text-xs text-slate-400 uppercase tracking-wider">الميزانية المستخدمة</p>
+        <h3 class="text-2xl font-bold text-slate-900 mt-1">{{ stats.used_budget|format_currency }}</h3>
+        <p class="text-xs text-slate-500 mt-1">من أصل {{ stats.total_budget|format_currency }}</p>
+      </div>
+      <div class="mt-4 h-1 bg-slate-100 rounded-full overflow-hidden">
+        <div class="bg-emerald-500 h-full" style="width: {{ stats.budget_percentage }}%"></div>
+      </div>
+    </div>
+
+    <!-- Team -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between hover:shadow-lg transition-shadow">
+      <div class="flex justify-between items-start">
+        <div class="p-2 bg-slate-100 rounded-xl"><span class="material-symbols-outlined text-slate-700" style="font-variation-settings:'FILL' 1;">groups</span></div>
+        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{{ stats.active_members }} نشطون</span>
+      </div>
+      <div class="mt-4">
+        <p class="text-xs text-slate-400 uppercase tracking-wider">أعضاء الفريق</p>
+        <h3 class="text-4xl font-bold text-slate-900 mt-1">{{ stats.team_members }}</h3>
+        <p class="text-xs text-slate-500 mt-1"><span class="text-emerald-600 font-bold">{{ stats.active_members }}</span> نشطون الآن</p>
+      </div>
+      <div class="mt-4 h-1 bg-slate-100 rounded-full overflow-hidden">
+        <div class="bg-slate-600 h-full" style="width: {{ [((stats.active_members or 0) / (stats.team_members or 1) * 100)|int, 100]|min }}%"></div>
+      </div>
+      <a href="{{ url_for('employee.index') }}" class="mt-4 text-center text-xs font-bold text-blue-900 hover:underline">إدارة الفريق</a>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Active Projects Table -->
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+      <div class="px-6 py-4 flex justify-between items-center border-b border-slate-100">
         <div>
-            <h1 class="h3 mb-2">مرحباً، {{ current_user.full_name }}</h1>
-            <p class="text-muted mb-0">إدارة مشاريعك ومهامك من مكان واحد</p>
+          <h3 class="text-lg font-bold text-slate-900">المشاريع النشطة</h3>
+          <p class="text-xs text-slate-400">آخر التحديثات والحالة</p>
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#quickTaskModal">
-                <i class="fas fa-plus me-1"></i> مهمة سريعة
-            </button>
-            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#quickReportModal">
-                <i class="fas fa-file-alt me-1"></i> تقرير سريع
-            </button>
-        </div>
+        <a href="{{ url_for('project.index') }}" class="text-blue-900 font-bold text-sm px-4 py-2 hover:bg-blue-50 rounded-lg">عرض الكل</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-right">
+          <thead>
+            <tr class="bg-slate-50 text-slate-400 text-xs uppercase">
+              <th class="px-6 py-3 font-bold">المشروع</th>
+              <th class="px-6 py-3 font-bold">التقدم</th>
+              <th class="px-6 py-3 font-bold">الحالة</th>
+              <th class="px-6 py-3 font-bold">الموعد</th>
+              <th class="px-6 py-3 font-bold">الميزانية</th>
+              <th class="px-6 py-3"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for project in active_projects %}
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-900">
+                    <span class="material-symbols-outlined text-lg">inventory_2</span>
+                  </div>
+                  <div>
+                    <p class="font-bold text-sm text-slate-900">{{ project.name }}</p>
+                    <p class="text-xs text-slate-400">{{ project.project_code }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4 w-36">
+                <div class="flex items-center gap-2">
+                  <div class="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <div class="h-1.5 rounded-full bg-blue-900" style="width: {{ project.progress_percentage }}%"></div>
+                  </div>
+                  <span class="text-xs font-bold text-blue-900">{{ project.progress_percentage }}%</span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full font-bold
+                  {% if project.status == 'active' %}bg-blue-50 text-blue-900
+                  {% elif project.status == 'completed' %}bg-emerald-50 text-emerald-700
+                  {% elif project.status == 'delayed' %}bg-red-50 text-red-600
+                  {% else %}bg-slate-100 text-slate-600{% endif %}">
+                  {{ project.status_label if project.status_label else project.status }}
+                </span>
+                {% if project.is_overdue %}
+                <span class="text-xs text-red-500 font-bold block mt-1">متأخر</span>
+                {% endif %}
+              </td>
+              <td class="px-6 py-4 text-xs text-slate-500">
+                {{ project.planned_end_date|format_date if project.planned_end_date else '-' }}
+              </td>
+              <td class="px-6 py-4">
+                <p class="text-xs font-bold text-slate-900">{{ project.used_budget|format_currency }}</p>
+                <p class="text-xs text-slate-400">من {{ project.total_budget|format_currency }}</p>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex gap-1">
+                  <a href="{{ url_for('project.detail', project_id=project.id) }}" class="p-1.5 rounded-lg border border-slate-200 hover:bg-blue-50 hover:border-blue-200 transition-colors">
+                    <span class="material-symbols-outlined text-sm text-slate-500">visibility</span>
+                  </a>
+                  <a href="{{ url_for('project.edit', project_id=project.id) }}" class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                    <span class="material-symbols-outlined text-sm text-slate-500">edit</span>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="px-6 py-10 text-center text-slate-400 text-sm">لا توجد مشاريع نشطة</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
-    
-    <!-- Overview Cards -->
-    <div class="row g-4 mb-4">
-        <!-- My Projects -->
-        <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="card border-0 shadow-sm border-start border-primary border-4 h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="text-muted mb-2">مشاريعي</h6>
-                            <h3 class="mb-0">{{ stats.my_projects_count }}</h3>
-                            <small class="text-muted">
-                                <span class="text-success">{{ stats.active_projects_count }}</span> نشطة
-                            </small>
-                        </div>
-                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
-                            <i class="fas fa-project-diagram fa-2x text-primary"></i>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <a href="{{ url_for('projects.my_projects') }}" class="btn btn-sm btn-outline-primary w-100">
-                            <i class="fas fa-eye me-1"></i> عرض المشاريع
-                        </a>
-                    </div>
-                </div>
+
+    <!-- Upcoming Tasks -->
+    <div class="bg-white rounded-2xl border border-slate-200 flex flex-col shadow-sm">
+      <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+        <h3 class="text-lg font-bold text-slate-900">المهام القادمة</h3>
+        <a href="{{ url_for('task.index') }}" class="text-xs text-blue-900 font-bold hover:underline">عرض الكل</a>
+      </div>
+      <div class="flex-1 divide-y divide-slate-100 overflow-y-auto" style="max-height:420px">
+        {% for task in upcoming_tasks %}
+        <div class="p-4 hover:bg-slate-50 transition-colors">
+          <div class="flex items-start gap-3">
+            <div class="p-2 rounded-lg mt-0.5
+              {% if task.priority == 'high' or task.priority == 5 %}bg-red-50
+              {% elif task.priority == 'medium' or task.priority == 3 %}bg-amber-50
+              {% else %}bg-emerald-50{% endif %}">
+              <span class="material-symbols-outlined text-lg
+                {% if task.priority == 'high' or task.priority == 5 %}text-red-500
+                {% elif task.priority == 'medium' or task.priority == 3 %}text-amber-500
+                {% else %}text-emerald-500{% endif %}">task_alt</span>
             </div>
-        </div>
-        
-        <!-- Pending Tasks -->
-        <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="card border-0 shadow-sm border-start border-warning border-4 h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="text-muted mb-2">المهام المعلقة</h6>
-                            <h3 class="mb-0">{{ stats.pending_tasks }}</h3>
-                            <small class="text-warning">
-                                <i class="fas fa-clock me-1"></i> {{ stats.overdue_tasks }} متأخرة
-                            </small>
-                        </div>
-                        <div class="bg-warning bg-opacity-10 rounded-circle p-3">
-                            <i class="fas fa-tasks fa-2x text-warning"></i>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <a href="{{ url_for('tasks.list', status='pending') }}" class="btn btn-sm btn-outline-warning w-100">
-                            <i class="fas fa-list me-1"></i> عرض المهام
-                        </a>
-                    </div>
-                </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-start">
+                <p class="text-sm font-bold text-slate-900 truncate">{{ task.task_name }}</p>
+                <span class="text-xs text-slate-400 whitespace-nowrap mr-2">{{ task.due_date.strftime('%d %b') if task.due_date else '-' }}</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">{{ task.project.name if task.project else task.project_name if task.project_name else 'بدون مشروع' }}</p>
+              <div class="flex items-center justify-between mt-2">
+                <span class="text-xs px-2 py-0.5 rounded-full font-bold
+                  {% if task.status == 'completed' %}bg-emerald-50 text-emerald-700
+                  {% elif task.status == 'in_progress' %}bg-blue-50 text-blue-700
+                  {% else %}bg-slate-100 text-slate-600{% endif %}">
+                  {{ task.status_label if task.status_label else task.status }}
+                </span>
+                {% if task.is_overdue %}<span class="text-xs text-red-500 font-bold">متأخر</span>{% endif %}
+              </div>
             </div>
+          </div>
         </div>
-        
-        <!-- Budget Overview -->
-        <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="card border-0 shadow-sm border-start border-success border-4 h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="text-muted mb-2">الميزانية المستخدمة</h6>
-                            <h3 class="mb-0">{{ stats.used_budget|format_currency }}</h3>
-                            <small class="text-muted">
-                                من أصل {{ stats.total_budget|format_currency }}
-                            </small>
-                        </div>
-                        <div class="bg-success bg-opacity-10 rounded-circle p-3">
-                            <i class="fas fa-money-bill-wave fa-2x text-success"></i>
-                        </div>
-                    </div>
-                    <div class="progress mt-2" style="height: 6px;">
-                        <div class="progress-bar bg-success" style="width: {{ stats.budget_percentage }}%"></div>
-                    </div>
-                </div>
-            </div>
+        {% else %}
+        <div class="p-8 text-center">
+          <span class="material-symbols-outlined text-4xl text-slate-200">task_alt</span>
+          <p class="text-sm text-slate-400 mt-2">لا توجد مهام قادمة</p>
         </div>
-        
-        <!-- Team Members -->
-        <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="card border-0 shadow-sm border-start border-info border-4 h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="text-muted mb-2">أعضاء الفريق</h6>
-                            <h3 class="mb-0">{{ stats.team_members }}</h3>
-                            <small class="text-muted">
-                                <span class="text-success">{{ stats.active_members }}</span> نشطون الآن
-                            </small>
-                        </div>
-                        <div class="bg-info bg-opacity-10 rounded-circle p-3">
-                            <i class="fas fa-users fa-2x text-info"></i>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <a href="{{ url_for('team.list') }}" class="btn btn-sm btn-outline-info w-100">
-                            <i class="fas fa-user-friends me-1"></i> إدارة الفريق
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% endfor %}
+      </div>
     </div>
-    
-    <!-- Projects Timeline & Tasks -->
-    <div class="row g-4 mb-4">
-        <!-- Active Projects -->
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">المشاريع النشطة</h6>
-                    <a href="{{ url_for('projects.list') }}" class="btn btn-sm btn-outline-primary">
-                        عرض الكل
-                    </a>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>اسم المشروع</th>
-                                    <th>التقدم</th>
-                                    <th>الحالة</th>
-                                    <th>الموعد النهائي</th>
-                                    <th>الميزانية</th>
-                                    <th>الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for project in active_projects %}
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="rounded-circle p-2 me-2 bg-light">
-                                                <i class="fas fa-project-diagram text-primary"></i>
-                                            </div>
-                                            <div>
-                                                <div class="fw-bold">{{ project.name }}</div>
-                                                <small class="text-muted">{{ project.project_code }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="progress flex-grow-1 me-2" style="height: 6px;">
-                                                <div class="progress-bar bg-{{ project.progress_color }}" style="width: {{ project.progress_percentage }}%"></div>
-                                            </div>
-                                            <small class="text-muted">{{ project.progress_percentage }}%</small>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-{{ project.status_color }}">{{ project.status_label }}</span>
-                                    </td>
-                                    <td>
-                                        <small>{{ project.planned_end_date|format_date }}</small>
-                                        {% if project.is_overdue %}
-                                        <br>
-                                        <small class="text-danger">
-                                            <i class="fas fa-exclamation-circle me-1"></i> متأخر
-                                        </small>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <small>{{ project.used_budget|format_currency }}</small>
-                                        <br>
-                                        <small class="text-muted">من {{ project.total_budget|format_currency }}</small>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ url_for('projects.detail', project_id=project.id) }}" class="btn btn-outline-primary">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{{ url_for('projects.edit', project_id=project.id) }}" class="btn btn-outline-secondary">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Upcoming Tasks -->
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0">
-                    <h6 class="mb-0">المهام القادمة</h6>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        {% for task in upcoming_tasks %}
-                        <div class="list-group-item border-0 py-3">
-                            <div class="d-flex align-items-start">
-                                <div class="flex-shrink-0">
-                                    <div class="rounded-circle p-2 bg-{{ task.priority_color }}-subtle">
-                                        <i class="fas fa-tasks text-{{ task.priority_color }}"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <h6 class="mb-1">{{ task.task_name }}</h6>
-                                        <small class="text-muted">{{ task.due_date|timeago }}</small>
-                                    </div>
-                                    <p class="text-muted small mb-1">{{ task.project_name }}</p>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <span class="badge bg-{{ task.status_color }}">{{ task.status_label }}</span>
-                                            {% if task.is_overdue %}
-                                            <span class="badge bg-danger ms-1">متأخر</span>
-                                            {% endif %}
-                                        </div>
-                                        <a href="{{ url_for('tasks.detail', task_id=task.id) }}" class="btn btn-sm btn-outline-primary">
-                                            عرض
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <h3 class="text-lg font-bold text-slate-900 mb-4">تقدم المشاريع</h3>
+      <div class="relative h-64">
+        <canvas id="myProjectsProgressChart"></canvas>
+      </div>
     </div>
-    
-    <!-- Charts -->
-    <div class="row g-4">
-        <!-- Project Progress Chart -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0">
-                    <h6 class="mb-0">تقدم المشاريع</h6>
-                </div>
-                <div class="card-body">
-                    <canvas id="myProjectsProgressChart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Task Distribution -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0">
-                    <h6 class="mb-0">توزيع المهام</h6>
-                </div>
-                <div class="card-body">
-                    <canvas id="taskDistributionChart"></canvas>
-                </div>
-            </div>
-        </div>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <h3 class="text-lg font-bold text-slate-900 mb-4">توزيع المهام</h3>
+      <div class="relative h-64">
+        <canvas id="taskDistributionChart"></canvas>
+      </div>
     </div>
+  </div>
+
 </div>
+
+<!-- FAB -->
+<a href="{{ url_for('project.create') }}" class="fixed bottom-8 left-8 bg-blue-900 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-50">
+  <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1;">add</span>
+</a>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // My Projects Progress Chart
-    const projectsCtx = document.getElementById('myProjectsProgressChart').getContext('2d');
-    new Chart(projectsCtx, {
-        type: 'bar',
-        data: {
-            labels: {{ project_names|safe }},
-            datasets: [{
-                label: 'التقدم %',
-                data: {{ project_progress|safe }},
-                backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: 'النسبة المئوية %'
-                    }
-                }
-            }
-        }
-    });
-    
-    // Task Distribution Chart
-    const tasksCtx = document.getElementById('taskDistributionChart').getContext('2d');
-    new Chart(tasksCtx, {
-        type: 'pie',
-        data: {
-            labels: ['مكتملة', 'قيد التنفيذ', 'معلقة', 'متأخرة'],
-            datasets: [{
-                data: {{ task_distribution|safe }},
-                backgroundColor: [
-                    'rgba(75, 192, 192, 0.7)',
-                    'rgba(54, 162, 235, 0.7)',
-                    'rgba(255, 206, 86, 0.7)',
-                    'rgba(255, 99, 132, 0.7)'
-                ],
-                borderColor: [
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(255, 206, 86, 1)',
-                    'rgba(255, 99, 132, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
+  const projectsCtx = document.getElementById('myProjectsProgressChart').getContext('2d');
+  new Chart(projectsCtx, {
+    type: 'bar',
+    data: {
+      labels: {{ project_names|safe }},
+      datasets: [{ label: 'التقدم %', data: {{ project_progress|safe }}, backgroundColor: 'rgba(0,35,111,0.7)', borderColor: '#00236f', borderWidth: 1, borderRadius: 6 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+  });
+
+  const tasksCtx = document.getElementById('taskDistributionChart').getContext('2d');
+  new Chart(tasksCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['مكتملة','قيد التنفيذ','معلقة','متأخرة'],
+      datasets: [{ data: {{ task_distribution|safe }}, backgroundColor: ['#10b981','#00236f','#f59e0b','#ef4444'], borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
 });
 </script>
 {% endblock %}

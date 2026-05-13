@@ -1,600 +1,288 @@
 {% extends "layouts/base.html" %}
-
 {% block title %}الرئيسية - {{ super() }}{% endblock %}
 
 {% block styles %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
-    .dashboard-container {
-        padding: 2rem;
-        background-color: #f8f9fa;
-        min-height: calc(100vh - 56px);
-    }
-    
-    .welcome-card {
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-        color: white;
-        border-radius: 15px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    }
-    
-    .quick-stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    
-    .stat-box {
-        background-color: white;
-        border-radius: 10px;
-        padding: 1.5rem;
-        display: flex;
-        align-items: center;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s;
-        border-left: 5px solid var(--primary-color);
-    }
-    
-    .stat-box:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    }
-    
-    .stat-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 10px;
-        background-color: #e3f2fd;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: 1rem;
-        font-size: 1.5rem;
-    }
-    
-    .stat-content {
-        flex: 1;
-    }
-    
-    .stat-value {
-        font-size: 1.8rem;
-        font-weight: bold;
-        color: var(--primary-color);
-        margin-bottom: 0.25rem;
-    }
-    
-    .stat-label {
-        color: #666;
-        font-size: 0.9rem;
-    }
-    
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    
-    .dashboard-card {
-        background-color: white;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    .dashboard-card-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .dashboard-card-body {
-        padding: 1.5rem;
-    }
-    
-    .task-list, .project-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .task-item, .project-item {
-        padding: 1rem;
-        border-bottom: 1px solid #f5f5f5;
-        display: flex;
-        align-items: center;
-        transition: background-color 0.3s;
-    }
-    
-    .task-item:hover, .project-item:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .task-item:last-child, .project-item:last-child {
-        border-bottom: none;
-    }
-    
-    .task-priority {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        margin-left: 10px;
-    }
-    
-    .task-priority.high { background-color: #e74c3c; }
-    .task-priority.medium { background-color: #f39c12; }
-    .task-priority.low { background-color: #27ae60; }
-    
-    .task-due-date {
-        font-size: 0.8rem;
-        color: #666;
-        margin-right: auto;
-    }
-    
-    .project-progress {
-        width: 80px;
-        margin-left: 1rem;
-    }
-    
-    .activity-timeline {
-        position: relative;
-        padding-left: 30px;
-    }
-    
-    .activity-timeline::before {
-        content: '';
-        position: absolute;
-        left: 15px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background-color: #e0e0e0;
-    }
-    
-    .activity-item {
-        position: relative;
-        margin-bottom: 1.5rem;
-    }
-    
-    .activity-item::before {
-        content: '';
-        position: absolute;
-        left: -25px;
-        top: 5px;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background-color: var(--secondary-color);
-        border: 2px solid white;
-        box-shadow: 0 0 0 3px var(--secondary-color);
-    }
-    
-    .activity-time {
-        font-size: 0.8rem;
-        color: #666;
-        margin-bottom: 0.25rem;
-    }
-    
-    .activity-content {
-        font-size: 0.9rem;
-    }
-    
-    .calendar-container {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 5px;
-    }
-    
-    .calendar-day {
-        aspect-ratio: 1;
-        background-color: #f8f9fa;
-        border-radius: 5px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        transition: all 0.3s;
-    }
-    
-    .calendar-day:hover {
-        background-color: #e9ecef;
-        transform: scale(1.05);
-    }
-    
-    .calendar-day.today {
-        background-color: var(--secondary-color);
-        color: white;
-    }
-    
-    .calendar-day-header {
-        background-color: var(--primary-color);
-        color: white;
-        font-weight: bold;
-        text-align: center;
-        padding: 10px 0;
-        border-radius: 5px;
-    }
-    
-    .calendar-event {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background-color: var(--success-color);
-        position: absolute;
-        bottom: 5px;
-    }
-    
-    @media (max-width: 768px) {
-        .dashboard-container {
-            padding: 1rem;
-        }
-        
-        .dashboard-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .quick-stats {
-            grid-template-columns: 1fr;
-        }
-    }
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20; font-family:'Material Symbols Outlined'; display:inline-block; line-height:1; white-space:nowrap; direction:ltr; }
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background:#c5c5d3; border-radius:10px; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
-    <!-- Welcome Section -->
-    <div class="welcome-card">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <h2>مرحباً {{ current_user.full_name }} 👋</h2>
-                <p class="mb-0">
-                    {% if current_user.role == 'admin' %}
-                        مرحباً بك في لوحة تحكم مدير النظام. لديك {{ stats.pending_approvals }} طلبات في انتظار الموافقة.
-                    {% elif current_user.role == 'project_manager' %}
-                        مرحباً بك في لوحة تحكم مدير المشاريع. لديك {{ stats.active_projects }} مشاريع نشطة.
-                    {% elif current_user.role == 'supervisor' %}
-                        مرحباً بك في لوحة تحكم المشرف. لديك {{ stats.assigned_tasks }} مهمة معينة.
-                    {% elif current_user.role == 'delegate' %}
-                        مرحباً بك في لوحة تحكم المندوب. لديك {{ stats.in_progress_tasks }} مهمة قيد التنفيذ.
-                    {% else %}
-                        مرحباً بك في لوحة تحكم الموظف. نحن سعداء بخدمتك.
-                    {% endif %}
-                </p>
-            </div>
-            <div class="col-md-4 text-md-end">
-                <div class="current-time">
-                    <h4>{{ now.strftime('%Y-%m-%d') }}</h4>
-                    <p class="mb-0">{{ now.strftime('%H:%M') }}</p>
-                </div>
-            </div>
+<div class="min-h-screen bg-slate-50 font-sans" style="font-family:'IBM Plex Sans Arabic','Inter',sans-serif;">
+
+  <!-- Header -->
+  <header class="w-full sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200">
+    <div class="flex justify-between items-center px-8 py-3 max-w-7xl mx-auto">
+      <div class="flex items-center gap-8">
+        <h1 class="text-xl font-bold text-blue-900">Manages<span class="font-normal opacity-50">Pro</span></h1>
+        <div class="hidden lg:flex items-center gap-1 bg-slate-100 rounded-full px-4 py-1.5">
+          <a href="{{ url_for('dashboard.index') }}" class="text-blue-900 font-bold text-sm px-3 py-1 bg-white rounded-full shadow-sm">الرئيسية</a>
+          <a href="{{ url_for('project.index') }}" class="text-slate-500 hover:text-blue-900 text-sm px-3 py-1 transition-colors">المشاريع</a>
+          <a href="{{ url_for('task.index') }}" class="text-slate-500 hover:text-blue-900 text-sm px-3 py-1 transition-colors">المهام</a>
+          <a href="{{ url_for('dashboard.analytics') if 'dashboard.analytics' in url_for.__module__ else '#' }}" class="text-slate-500 hover:text-blue-900 text-sm px-3 py-1 transition-colors">التقارير</a>
         </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="relative hidden sm:block">
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+          <input class="bg-slate-100 border-none rounded-full pr-10 pl-4 py-2 text-sm w-48 focus:ring-2 focus:ring-blue-900 focus:w-64 transition-all outline-none" placeholder="بحث سريع..." type="text"/>
+        </div>
+        <a href="{{ url_for('dashboard.notifications') }}" class="p-2 rounded-full hover:bg-slate-100 relative">
+          <span class="material-symbols-outlined text-slate-500">notifications</span>
+          {% if notifications_count > 0 %}
+          <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          {% endif %}
+        </a>
+        <div class="flex items-center gap-2 pr-2 border-r border-slate-200">
+          <div class="text-right hidden md:block">
+            <p class="text-xs font-bold text-blue-900 leading-none">{{ current_user.full_name }}</p>
+            <p class="text-xs text-slate-400">{{ current_user.role }}</p>
+          </div>
+          <div class="w-9 h-9 rounded-full bg-blue-900 flex items-center justify-center text-white font-bold text-sm border-2 border-slate-200">
+            {{ current_user.full_name[0] if current_user.full_name else 'U' }}
+          </div>
+        </div>
+      </div>
     </div>
-    
-    <!-- Quick Stats -->
-    <div class="quick-stats">
-        <div class="stat-box">
-            <div class="stat-icon text-primary">
-                <i class="fas fa-project-diagram"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ stats.total_projects }}</div>
-                <div class="stat-label">المشاريع</div>
-            </div>
-        </div>
-        
-        <div class="stat-box">
-            <div class="stat-icon text-success">
-                <i class="fas fa-tasks"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ stats.total_tasks }}</div>
-                <div class="stat-label">المهام</div>
-            </div>
-        </div>
-        
-        <div class="stat-box">
-            <div class="stat-icon text-warning">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ stats.pending_tasks }}</div>
-                <div class="stat-label">المهام المعلقة</div>
-            </div>
-        </div>
-        
-        <div class="stat-box">
-            <div class="stat-icon text-danger">
-                <i class="fas fa-exclamation-circle"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ stats.overdue_tasks or 0 }}</div>
-                <div class="stat-label">المهام المتأخرة</div>
-            </div>
-        </div>
+  </header>
+
+  <!-- Body -->
+  <div class="max-w-7xl mx-auto px-8 py-6 space-y-6">
+
+    <!-- Page Title -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900">مرحباً {{ current_user.full_name }} 👋</h2>
+        <p class="text-sm text-slate-500">آخر تحديث: {{ now.strftime('%Y-%m-%d %H:%M') }}</p>
+      </div>
+      <div class="flex gap-2">
+        <a href="{{ url_for('project.index') }}" class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors shadow-sm">
+          <span class="material-symbols-outlined text-lg">folder_open</span> المشاريع
+        </a>
+        <a href="{{ url_for('project.create') }}" class="bg-blue-900 text-white px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:shadow-lg transition-all">
+          <span class="material-symbols-outlined text-lg">add</span> مشروع جديد
+        </a>
+      </div>
     </div>
-    
-    <!-- Dashboard Grid -->
-    <div class="dashboard-grid">
-        <!-- Recent Projects -->
-        <div class="dashboard-card">
-            <div class="dashboard-card-header">
-                <h5 class="mb-0">المشاريع الحديثة</h5>
-                <a href="{{ url_for('project.index') }}" class="btn btn-sm btn-outline-primary">
-                    عرض الكل
-                </a>
-            </div>
-            <div class="dashboard-card-body">
-                <ul class="project-list">
-                    {% for project in recent_projects|slice(5) %}
-                    <li class="project-item">
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-items-center mb-1">
-                                <span class="badge bg-{{ 'success' if project.status == 'active' else 'warning' }} me-2">
-                                    {{ project.status }}
-                                </span>
-                                <strong>{{ project.name }}</strong>
-                            </div>
-                            <small class="text-muted">{{ project.project_code }}</small>
-                        </div>
-                        <div class="project-progress">
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar" style="width: {{ project.progress_percentage or 0 }}%"></div>
-                            </div>
-                            <small class="text-muted">{{ project.progress_percentage or 0 }}%</small>
-                        </div>
-                    </li>
-                    {% else %}
-                    <li class="text-center py-3 text-muted">
-                        لا توجد مشاريع
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+        <div class="flex justify-between items-center">
+          <div class="p-2 bg-blue-50 text-blue-900 rounded-xl"><span class="material-symbols-outlined">folder_open</span></div>
+          <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1"><span class="material-symbols-outlined text-sm">trending_up</span>12.5%</span>
         </div>
-        
-        <!-- Upcoming Tasks -->
-        <div class="dashboard-card">
-            <div class="dashboard-card-header">
-                <h5 class="mb-0">المهام القادمة</h5>
-                <a href="{{ url_for('task.index') }}" class="btn btn-sm btn-outline-primary">
-                    عرض الكل
-                </a>
-            </div>
-            <div class="dashboard-card-body">
-                <ul class="task-list">
-                    {% for task in upcoming_tasks|slice(5) %}
-                    <li class="task-item">
-                        <div class="task-priority {{ task.priority or 'medium' }}"></div>
-                        <div class="flex-grow-1 me-2">
-                            <strong>{{ task.task_name }}</strong>
-                            <div class="small text-muted">
-                                {{ task.project.name if task.project else 'بدون مشروع' }}
-                            </div>
-                        </div>
-                        <div class="task-due-date">
-                            {{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '-' }}
-                        </div>
-                        <span class="badge bg-{{ 'success' if task.status == 'completed' else 'warning' if task.status == 'in_progress' else 'secondary' }}">
-                            {{ task.status }}
-                        </span>
-                    </li>
-                    {% else %}
-                    <li class="text-center py-3 text-muted">
-                        لا توجد مهام قادمة
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
+        <div>
+          <p class="text-slate-500 text-xs">إجمالي المشاريع</p>
+          <h3 class="text-3xl font-bold text-slate-900">{{ stats.total_projects }}</h3>
         </div>
-        
-        <!-- Activity Timeline -->
-        <div class="dashboard-card">
-            <div class="dashboard-card-header">
-                <h5 class="mb-0">النشاط الحديث</h5>
-            </div>
-            <div class="dashboard-card-body">
-                <div class="activity-timeline">
-                    {% for activity in recent_activities|slice(5) %}
-                    <div class="activity-item">
-                        <div class="activity-time">
-                            {{ activity.time.strftime('%H:%M') if activity.time else 'الآن' }}
-                        </div>
-                        <div class="activity-content">
-                            {{ activity.description }}
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-3 text-muted">
-                        لا يوجد نشاط حديث
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
+        <p class="text-xs text-slate-400 border-t border-slate-100 pt-2">المشاريع النشطة: {{ stats.active_projects or 0 }}</p>
+      </div>
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+        <div class="flex justify-between items-center">
+          <div class="p-2 bg-blue-50 text-blue-600 rounded-xl"><span class="material-symbols-outlined">task_alt</span></div>
+          <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">نشط الآن</span>
         </div>
-        
-        <!-- Calendar -->
-        <div class="dashboard-card">
-            <div class="dashboard-card-header">
-                <h5 class="mb-0">التقويم</h5>
-                <a href="{{ url_for('dashboard.calendar') }}" class="btn btn-sm btn-outline-primary">
-                    عرض كامل
-                </a>
-            </div>
-            <div class="dashboard-card-body">
-                <div class="calendar-container mb-3">
-                    <div class="calendar-day-header">الأحد</div>
-                    <div class="calendar-day-header">الاثنين</div>
-                    <div class="calendar-day-header">الثلاثاء</div>
-                    <div class="calendar-day-header">الأربعاء</div>
-                    <div class="calendar-day-header">الخميس</div>
-                    <div class="calendar-day-header">الجمعة</div>
-                    <div class="calendar-day-header">السبت</div>
-                    
-                    {% for day in range(1, 32) %}
-                    <div class="calendar-day {{ 'today' if day == now.day }}">
-                        {{ day }}
-                        {% if day in [5, 12, 19, 26] %}
-                        <div class="calendar-event"></div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                </div>
-                <div class="text-center">
-                    <small class="text-muted">{{ now.strftime('%B %Y') }}</small>
-                </div>
-            </div>
+        <div>
+          <p class="text-slate-500 text-xs">المهام الجارية</p>
+          <h3 class="text-3xl font-bold text-slate-900">{{ stats.total_tasks }}</h3>
         </div>
+        <div class="mt-1">
+          <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div class="bg-blue-600 h-1.5 rounded-full" style="width: {{ [((stats.in_progress_tasks or 0) / (stats.total_tasks or 1) * 100)|int, 100]|min }}%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+        <div class="flex justify-between items-center">
+          <div class="p-2 bg-red-50 text-red-600 rounded-xl"><span class="material-symbols-outlined">schedule</span></div>
+          <span class="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full flex items-center gap-1"><span class="material-symbols-outlined text-sm">trending_down</span>تأخر</span>
+        </div>
+        <div>
+          <p class="text-slate-500 text-xs">المشاريع المتأخرة</p>
+          <h3 class="text-3xl font-bold text-slate-900">{{ stats.overdue_tasks or 0 }}</h3>
+        </div>
+        <p class="text-xs text-red-500 border-t border-red-50 pt-2 font-semibold">تتطلب تدخل فوري</p>
+      </div>
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+        <div class="flex justify-between items-center">
+          <div class="p-2 bg-slate-100 text-slate-700 rounded-xl"><span class="material-symbols-outlined">groups</span></div>
+        </div>
+        <div>
+          <p class="text-slate-500 text-xs">المهام المعلقة</p>
+          <h3 class="text-3xl font-bold text-slate-900">{{ stats.pending_tasks }}</h3>
+        </div>
+        <p class="text-xs text-slate-400 border-t border-slate-100 pt-2">في انتظار المتابعة</p>
+      </div>
     </div>
-    
-    <!-- Notifications -->
-    <div class="dashboard-card">
-        <div class="dashboard-card-header">
-            <h5 class="mb-0">الإشعارات</h5>
-            <form method="POST" action="{{ url_for('dashboard.mark_all_notifications_read') }}" class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-secondary">
-                    تحديد الكل كمقروء
-                </button>
-            </form>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Projects Table -->
+      <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div class="px-6 py-4 flex justify-between items-center border-b border-slate-100">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">المشاريع الجارية</h3>
+            <p class="text-xs text-slate-400">آخر التحديثات وحالة التنفيذ</p>
+          </div>
+          <a href="{{ url_for('project.index') }}" class="text-blue-900 font-bold text-sm px-4 py-2 hover:bg-blue-50 rounded-lg transition-colors">مشاهدة الجميع</a>
         </div>
-        <div class="dashboard-card-body">
-            <div class="list-group">
-                {% for notification in notifications|slice(3) %}
-                <a href="{{ url_for('dashboard.notifications') }}" 
-                   class="list-group-item list-group-item-action {% if not notification.is_read %}active{% endif %}">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1">{{ notification.title }}</h6>
+        <div class="overflow-x-auto">
+          <table class="w-full text-right">
+            <thead>
+              <tr class="bg-slate-50 text-slate-500 text-xs uppercase">
+                <th class="px-6 py-3 font-bold">المشروع</th>
+                <th class="px-6 py-3 font-bold">الحالة</th>
+                <th class="px-6 py-3 font-bold">التقدم</th>
+                <th class="px-6 py-3 font-bold text-left">الموعد</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {% for project in recent_projects[:5] %}
+              <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-900">
+                      <span class="material-symbols-outlined text-lg">inventory_2</span>
                     </div>
-                    <p class="mb-1">{{ notification.message|truncate(100) }}</p>
-                    <small class="{{ 'text-white' if not notification.is_read else 'text-muted' }}">
-                        {{ notification.notification_type }}
-                    </small>
-                </a>
-                {% else %}
-                <div class="text-center py-3 text-muted">
-                    لا توجد إشعارات جديدة
-                </div>
-                {% endfor %}
-            </div>
-            <div class="text-center mt-3">
-                <a href="{{ url_for('dashboard.notifications') }}" class="btn btn-outline-primary">
-                    عرض جميع الإشعارات
-                </a>
-            </div>
+                    <div>
+                      <p class="font-bold text-slate-900 text-sm">{{ project.name }}</p>
+                      <p class="text-xs text-slate-400">{{ project.project_code }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <span class="inline-flex items-center gap-1 px-3 py-1 text-xs rounded-full font-bold
+                    {% if project.status == 'active' %}bg-blue-50 text-blue-900 border border-blue-100
+                    {% elif project.status == 'completed' %}bg-emerald-50 text-emerald-700 border border-emerald-100
+                    {% elif project.status == 'delayed' %}bg-red-50 text-red-600 border border-red-100
+                    {% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
+                    <span class="w-1.5 h-1.5 rounded-full
+                      {% if project.status == 'active' %}bg-blue-900
+                      {% elif project.status == 'completed' %}bg-emerald-500
+                      {% elif project.status == 'delayed' %}bg-red-500
+                      {% else %}bg-slate-400{% endif %}"></span>
+                    {{ project.status }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 w-48">
+                  <div class="flex items-center gap-2">
+                    <div class="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                      <div class="bg-blue-900 h-2 rounded-full" style="width: {{ project.progress_percentage or 0 }}%"></div>
+                    </div>
+                    <span class="text-xs font-bold text-blue-900">{{ project.progress_percentage or 0 }}%</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-xs text-slate-400 text-left">
+                  {{ project.end_date.strftime('%d %b') if project.end_date else '-' }}
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="4" class="px-6 py-8 text-center text-slate-400 text-sm">لا توجد مشاريع حالياً</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
+      </div>
+
+      <!-- Alerts Feed -->
+      <div class="bg-white rounded-2xl border border-slate-200 flex flex-col shadow-sm">
+        <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+          <h3 class="text-lg font-bold text-slate-900">التنبيهات</h3>
+          {% set unread = notifications|selectattr('is_read','equalto',false)|list|length %}
+          {% if unread > 0 %}
+          <span class="bg-red-50 text-red-600 px-2 py-1 rounded text-xs font-bold">{{ unread }} جديد</span>
+          {% endif %}
+        </div>
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-3">
+          {% for notification in notifications[:5] %}
+          <a href="{{ url_for('dashboard.notifications') }}" class="flex gap-3 p-3 hover:bg-slate-50 rounded-xl transition-colors group cursor-pointer border-r-4
+            {% if notification.notification_type in ['delivery_rejected','task_overdue'] %}border-red-500
+            {% elif notification.notification_type in ['task_assigned','task_started'] %}border-blue-600
+            {% else %}border-blue-900{% endif %} block">
+            <div class="p-2 rounded-lg h-fit
+              {% if notification.notification_type in ['delivery_rejected','task_overdue'] %}bg-red-50
+              {% elif notification.notification_type in ['task_assigned'] %}bg-blue-50
+              {% else %}bg-blue-50{% endif %}">
+              <span class="material-symbols-outlined text-lg
+                {% if notification.notification_type in ['delivery_rejected','task_overdue'] %}text-red-500
+                {% elif notification.notification_type in ['task_assigned'] %}text-blue-600
+                {% else %}text-blue-900{% endif %}">
+                {% if 'delivery' in notification.notification_type %}local_shipping
+                {% elif 'task' in notification.notification_type %}task_alt
+                {% else %}notifications{% endif %}
+              </span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-slate-900 leading-tight truncate">{{ notification.title }}</p>
+              <p class="text-xs text-slate-500 mt-0.5 truncate">{{ notification.message|truncate(50) }}</p>
+              <span class="text-xs text-slate-400 mt-1 block">{{ time_ago(notification.created_at) }}</span>
+            </div>
+          </a>
+          {% else %}
+          <div class="text-center py-8">
+            <span class="material-symbols-outlined text-4xl text-slate-200">notifications_none</span>
+            <p class="text-sm text-slate-400 mt-2">لا توجد إشعارات جديدة</p>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="p-4 border-t border-slate-100">
+          <a href="{{ url_for('dashboard.notifications') }}" class="block text-center text-sm text-blue-900 font-bold hover:underline">عرض جميع الإشعارات</a>
+        </div>
+      </div>
     </div>
+
+    <!-- Upcoming Tasks -->
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+      <div class="px-6 py-4 flex justify-between items-center border-b border-slate-100">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">المهام القادمة</h3>
+          <p class="text-xs text-slate-400">المهام المرتبة حسب الأولوية والموعد</p>
+        </div>
+        <a href="{{ url_for('task.index') }}" class="text-blue-900 font-bold text-sm px-4 py-2 hover:bg-blue-50 rounded-lg transition-colors">مشاهدة الجميع</a>
+      </div>
+      <div class="divide-y divide-slate-100">
+        {% for task in upcoming_tasks[:6] %}
+        <div class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors">
+          <div class="w-2 h-2 rounded-full flex-shrink-0
+            {% if task.priority == 'high' or task.priority == 5 %}bg-red-500
+            {% elif task.priority == 'medium' or task.priority == 3 %}bg-amber-400
+            {% else %}bg-emerald-500{% endif %}"></div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold text-slate-900 truncate">{{ task.task_name }}</p>
+            <p class="text-xs text-slate-400 truncate">{{ task.project.name if task.project else 'بدون مشروع' }}</p>
+          </div>
+          <div class="text-xs text-slate-400 whitespace-nowrap">{{ task.due_date.strftime('%d %b') if task.due_date else '-' }}</div>
+          <span class="text-xs px-2 py-1 rounded-full font-bold whitespace-nowrap
+            {% if task.status == 'completed' %}bg-emerald-50 text-emerald-700
+            {% elif task.status == 'in_progress' %}bg-blue-50 text-blue-700
+            {% else %}bg-slate-100 text-slate-600{% endif %}">
+            {{ task.status }}
+          </span>
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-slate-400 text-sm">لا توجد مهام قادمة</div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    $(document).ready(function() {
-        // تحديث الوقت الحي
-        function updateTime() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('ar-SA');
-            const timeStr = now.toLocaleTimeString('ar-SA');
-            
-            $('.current-time h4').text(dateStr);
-            $('.current-time p').text(timeStr);
-        }
-        
-        setInterval(updateTime, 60000); // تحديث كل دقيقة
-        
-        // تحميل الإحصائيات بشكل غير متزامن
-        function loadStats() {
-            $.ajax({
-                url: "{{ url_for('dashboard.api_stats') }}",
-                method: 'GET',
-                success: function(data) {
-                    if (data.success) {
-                        // تحديث الإحصائيات
-                        Object.keys(data.stats).forEach(stat => {
-                            const element = $(`.stat-value:contains("${stat}")`);
-                            if (element.length) {
-                                element.text(data.stats[stat]);
-                            }
-                        });
-                    }
-                }
-            });
-        }
-        
-        // تحديث الإحصائيات كل 30 ثانية
-        setInterval(loadStats, 30000);
-        
-        // إدارة النقر على المهام
-        $('.task-item').click(function() {
-            const taskId = $(this).data('task-id');
-            if (taskId) {
-                window.location.href = `/tasks/${taskId}`;
-            }
-        });
-        
-        // إدارة النقر على المشاريع
-        $('.project-item').click(function() {
-            const projectId = $(this).data('project-id');
-            if (projectId) {
-                window.location.href = `/projects/${projectId}`;
-            }
-        });
-        
-        // إدارة التقويم
-        $('.calendar-day').click(function() {
-            const day = $(this).text();
-            const month = "{{ now.strftime('%Y-%m') }}";
-            const date = `${month}-${day.padStart(2, '0')}`;
-            
-            // عرض المهام لهذا اليوم
-            $.ajax({
-                url: `/api/tasks?date=${date}`,
-                method: 'GET',
-                success: function(data) {
-                    if (data.success && data.tasks.length > 0) {
-                        let tasksHtml = '<h6>المهام لهذا اليوم:</h6><ul>';
-                        data.tasks.forEach(task => {
-                            tasksHtml += `<li>${task.task_name} - ${task.status}</li>`;
-                        });
-                        tasksHtml += '</ul>';
-                        
-                        // عرض النافذة المنبثقة
-                        showModal('مهام اليوم', tasksHtml);
-                    }
-                }
-            });
-        });
-        
-        // عرض نافذة منبثقة
-        function showModal(title, content) {
-            const modalHtml = `
-                <div class="modal fade" id="dayTasksModal" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">${title}</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                ${content}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            $('body').append(modalHtml);
-            const modal = new bootstrap.Modal(document.getElementById('dayTasksModal'));
-            modal.show();
-            
-            // إزالة النافذة بعد الإغلاق
-            $('#dayTasksModal').on('hidden.bs.modal', function() {
-                $(this).remove();
-            });
-        }
+  // Live time update
+  setInterval(() => {
+    document.querySelectorAll('.live-time').forEach(el => {
+      el.textContent = new Date().toLocaleTimeString('ar-SA');
     });
+  }, 60000);
 </script>
 {% endblock %}

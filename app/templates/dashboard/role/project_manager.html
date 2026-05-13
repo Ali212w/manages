@@ -1,108 +1,222 @@
 {% extends "layouts/base.html" %}
 {% block title %}{{ _('dashboard') }} — {{ _('project_manager') }}{% endblock %}
 
+{% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-family:'Material Symbols Outlined';display:inline-block;line-height:1;white-space:nowrap;direction:ltr;}
+body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif; background-color: #f8f9ff;}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="role-dash" id="role-dashboard-pm">
+<div class="space-y-6" id="role-dashboard-pm">
 
-  <div class="rd-header d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+  <!-- Header -->
+  <header class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
     <div>
-      <h1 class="rd-title">
-        <span class="rd-badge badge-pm"><i class="fas fa-user-tie me-1"></i></span>
-        {{ _('welcome_back') }}, {{ current_user.full_name or current_user.username }}
+      <h1 class="text-3xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+        <span class="material-symbols-outlined text-blue-900 text-3xl">corporate_fare</span>
+        أهلاً بك، {{ current_user.full_name or current_user.username }}
       </h1>
-      <p class="rd-subtitle text-muted mb-0">
-        {{ _('project_manager') }} &nbsp;|&nbsp;
-        <span class="text-primary fw-semibold">{{ kpis.total_projects }} {{ _('total_projects') }}</span>
-      </p>
+      <p class="text-base text-slate-500">{{ current_user.job_title or _('project_manager') }} | {{ current_user.department.name if current_user.department else _('system') }}</p>
     </div>
-    <a href="{{ url_for('projects.list_projects') }}" class="btn rd-btn-primary">
-      <i class="fas fa-folder-open me-1"></i> {{ _('all_projects') }}
-    </a>
+    <div class="flex gap-3">
+      <a href="{{ url_for('tasks.index') }}" class="bg-blue-900 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 text-sm font-bold hover:bg-blue-800 transition-colors shadow-sm">
+        <span class="material-symbols-outlined text-base">add</span> مهمة جديدة
+      </a>
+      <a href="{{ url_for('company.projects_report') }}" class="border-2 border-blue-900 text-blue-900 px-5 py-2.5 rounded-xl flex items-center gap-2 text-sm font-bold hover:bg-blue-50 transition-colors">
+        <span class="material-symbols-outlined text-base">download</span> تصدير التقرير
+      </a>
+    </div>
+  </header>
+
+  <!-- Top Stats -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start mb-3">
+        <span class="material-symbols-outlined text-blue-900 bg-blue-50 p-2.5 rounded-xl">folder_special</span>
+        <span class="text-xs font-bold text-slate-400">إجمالي المشاريع</span>
+      </div>
+      <div class="text-3xl font-black text-slate-900">{{ kpis.total_projects }}</div>
+      <div class="mt-2 flex items-center gap-1 text-xs text-blue-900 font-bold">
+        <span>نشط: {{ kpis.active_projects }}</span>
+      </div>
+    </div>
+    
+    <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start mb-3">
+        <span class="material-symbols-outlined text-red-600 bg-red-50 p-2.5 rounded-xl">warning</span>
+        <span class="text-xs font-bold text-slate-400">تنبيهات عاجلة</span>
+      </div>
+      <div class="text-3xl font-black text-red-600">{{ kpis.overdue_projects + kpis.overdue_tasks }}</div>
+      <div class="mt-2 flex items-center gap-1 text-xs text-red-500 font-bold">
+        <span>مشاريع متأخرة: {{ kpis.overdue_projects }}</span>
+      </div>
+    </div>
+
+    <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start mb-3">
+        <span class="material-symbols-outlined text-emerald-600 bg-emerald-50 p-2.5 rounded-xl">rocket_launch</span>
+        <span class="text-xs font-bold text-slate-400">متوسط الإنجاز</span>
+      </div>
+      <div class="text-3xl font-black text-slate-900">{{ kpis.avg_progress }}%</div>
+      <div class="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
+        <div class="bg-emerald-500 h-full rounded-full" style="width: {{ kpis.avg_progress }}%"></div>
+      </div>
+    </div>
+
+    <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start mb-3">
+        <span class="material-symbols-outlined text-amber-600 bg-amber-50 p-2.5 rounded-xl">group</span>
+        <span class="text-xs font-bold text-slate-400">أعضاء الفريق</span>
+      </div>
+      <div class="text-3xl font-black text-slate-900">{{ kpis.team_size }}</div>
+      <div class="mt-2 flex items-center gap-1 text-xs text-slate-500">
+        <span>إجمالي المهام المكتملة: {{ kpis.completed_tasks }} / {{ kpis.total_tasks }}</span>
+      </div>
+    </div>
   </div>
 
-  <!-- KPIs -->
-  <div class="row g-3 mb-4">
-    {% for icon, cls, val, label in [
-      ('fa-diagram-project','kpi-indigo', kpis.total_projects,  _('total_projects')),
-      ('fa-play-circle',    'kpi-emerald',kpis.active_projects, _('active_projects')),
-      ('fa-triangle-exclamation','kpi-red',kpis.overdue_projects,_('overdue')),
-      ('fa-chart-line',    'kpi-blue',   kpis.avg_progress,    _('avg_progress')),
-    ] %}
-    <div class="col-6 col-md-3">
-      <div class="rd-kpi {{ cls }}">
-        <div class="rd-kpi-icon"><i class="fas {{ icon }}"></i></div>
-        <div class="rd-kpi-body">
-          <div class="rd-kpi-value">{{ val }}{% if label == _('avg_progress') %}%{% endif %}</div>
-          <div class="rd-kpi-label">{{ label }}</div>
+  <!-- Dashboard Main Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    
+    <!-- Project List -->
+    <div class="lg:col-span-8 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      <div class="px-5 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+        <h3 class="text-base font-bold text-slate-900">مشاريعي</h3>
+        <a href="{{ url_for('projects.list_projects') }}" class="text-xs font-bold text-blue-900 hover:underline">عرض الكل</a>
+      </div>
+      <div class="p-5">
+        <div class="space-y-4">
+          {% for p in my_projects[:4] %}
+          {% set pg = p.get_progress() %}
+          <div class="group">
+            <div class="flex justify-between items-center mb-1.5">
+              <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" class="text-sm font-bold text-slate-900 hover:text-blue-900 transition-colors">{{ p.name }}</a>
+              <span class="text-xs font-bold {% if pg == 100 %}text-emerald-600{% elif p.status == 'delayed' %}text-red-500{% else %}text-slate-500{% endif %}">
+                {% if pg == 100 %}مكتمل{% elif p.status == 'delayed' %}متأخر{% else %}قيد التنفيذ {{ pg }}%{% endif %}
+              </span>
+            </div>
+            <div class="h-2.5 bg-slate-100 rounded-full relative overflow-hidden">
+              <div class="absolute inset-y-0 right-0 {% if pg == 100 %}bg-emerald-500{% elif p.status == 'delayed' %}bg-red-500{% else %}bg-blue-900{% endif %} rounded-full transition-all" style="width: {{ pg }}%"></div>
+            </div>
+          </div>
+          {% else %}
+          <div class="text-center text-sm text-slate-400 py-4">{{ _('no_data') }}</div>
+          {% endfor %}
         </div>
       </div>
     </div>
-    {% endfor %}
-  </div>
 
-  <div class="row g-3 mb-4">
-    {% for icon, cls, val, label in [
-      ('fa-list-check',  'kpi-slate',  kpis.total_tasks,      _('total_tasks')),
-      ('fa-circle-check','kpi-emerald',kpis.completed_tasks,  _('completed_tasks')),
-      ('fa-clock',       'kpi-amber',  kpis.overdue_tasks,    _('delayed_tasks')),
-      ('fa-users',       'kpi-indigo', kpis.team_size,        _('team_members')),
-    ] %}
-    <div class="col-6 col-md-3">
-      <div class="rd-kpi {{ cls }}">
-        <div class="rd-kpi-icon"><i class="fas {{ icon }}"></i></div>
-        <div class="rd-kpi-body">
-          <div class="rd-kpi-value">{{ val }}</div>
-          <div class="rd-kpi-label">{{ label }}</div>
+    <!-- Task Distribution Chart -->
+    <div class="lg:col-span-4 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
+      <div class="px-5 py-4 border-b border-slate-100 bg-slate-50">
+        <h3 class="text-base font-bold text-slate-900">توزيع حالة المهام</h3>
+      </div>
+      <div class="p-5 flex-1 flex flex-col items-center justify-center">
+        <div class="relative w-40 h-40 mb-4">
+          <canvas id="pmTaskChart"></canvas>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="text-2xl font-black text-slate-900">{{ kpis.total_tasks }}</span>
+            <span class="text-xs font-bold text-slate-400">مهمة</span>
+          </div>
+        </div>
+        <div class="w-full space-y-2 mt-2">
+          <div class="flex justify-between text-xs font-bold"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> مكتملة</span> <span>{{ kpis.completed_tasks }}</span></div>
+          <div class="flex justify-between text-xs font-bold"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> قيد التنفيذ</span> <span>{{ kpis.in_progress_tasks if kpis.in_progress_tasks is defined else (kpis.total_tasks - kpis.completed_tasks - kpis.overdue_tasks) }}</span></div>
+          <div class="flex justify-between text-xs font-bold"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> متأخرة</span> <span>{{ kpis.overdue_tasks }}</span></div>
         </div>
       </div>
     </div>
-    {% endfor %}
-  </div>
 
-  <!-- Projects + Chart -->
-  <div class="row g-3">
-    <div class="col-lg-4">
-      <div class="rd-card">
-        <div class="rd-card-header"><span><i class="fas fa-pie-chart me-2 text-primary"></i>{{ _('task_status_distribution') }}</span></div>
-        <div class="rd-card-body text-center">
-          <canvas id="pmTaskChart" height="220"></canvas>
+    <!-- Urgent Alerts / Tasks -->
+    <div class="lg:col-span-12 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      <div class="px-5 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-red-500 text-lg">alarm</span>
+          <h3 class="text-base font-bold text-slate-900">أحدث المشاريع والمهام</h3>
         </div>
+        <a href="{{ url_for('tasks.index') }}" class="text-xs font-bold text-blue-900 hover:underline">عرض المهام</a>
       </div>
-    </div>
-    <div class="col-lg-8">
-      <div class="rd-card">
-        <div class="rd-card-header">
-          <span><i class="fas fa-folder-open me-2 text-emerald"></i>{{ _('project') }}</span>
-        </div>
-        <div class="table-responsive">
-          <table class="rd-table">
-            <thead><tr><th>{{ _('name') }}</th><th>{{ _('status') }}</th><th>{{ _('progress_percentage') }}</th><th>{{ _('budget') }}</th></tr></thead>
-            <tbody>
-              {% for p in my_projects %}
-              <tr>
-                <td><a href="{{ url_for('projects.project_detail',project_id=p.id) }}" class="rd-link">{{ p.name }}</a></td>
-                <td>{% set sc = {'active':'emerald','planning':'amber','completed':'blue','delayed':'red'} %}<span class="rd-status-badge {{ sc.get(p.status,'slate') }}">{{ _(p.status) }}</span></td>
-                <td>
-                  {% set pg = p.get_progress() %}
-                  <div class="d-flex align-items-center gap-2">
-                    <div class="rd-mini-bar flex-grow-1"><div style="width:{{ pg }}%;background:var(--accent);height:100%;border-radius:4px"></div></div>
-                    <small>{{ pg }}%</small>
+      <div class="overflow-x-auto">
+        <table class="w-full text-right text-sm">
+          <thead class="bg-slate-50 text-slate-500 border-b border-slate-100">
+            <tr>
+              <th class="px-5 py-3 font-bold text-xs uppercase">المشروع</th>
+              <th class="px-5 py-3 font-bold text-xs uppercase">الحالة</th>
+              <th class="px-5 py-3 font-bold text-xs uppercase">الميزانية</th>
+              <th class="px-5 py-3 font-bold text-xs uppercase">نسبة الإنجاز</th>
+              <th class="px-5 py-3 font-bold text-xs uppercase">إجراء</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for p in my_projects %}
+            <tr class="hover:bg-slate-50 transition-colors group">
+              <td class="px-5 py-4 font-bold text-slate-900">{{ p.name }}</td>
+              <td class="px-5 py-4">
+                {% set sc = {'active':'bg-emerald-50 text-emerald-700','planning':'bg-amber-50 text-amber-700','completed':'bg-blue-50 text-blue-900','delayed':'bg-red-50 text-red-700'} %}
+                <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ sc.get(p.status,'bg-slate-100 text-slate-500') }}">{{ _(p.status) }}</span>
+              </td>
+              <td class="px-5 py-4 font-medium text-slate-500">{% if p.budget %}{{ "{:,.0f}".format(p.budget.current_budget) }} {{ _('sar') }}{% else %}—{% endif %}</td>
+              <td class="px-5 py-4">
+                {% set pg = p.get_progress() %}
+                <div class="flex items-center gap-2">
+                  <div class="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-1.5 bg-blue-900 rounded-full" style="width: {{ pg }}%"></div>
                   </div>
-                </td>
-                <td class="small text-muted">{% if p.budget %}{{ "{:,.0f}".format(p.budget.current_budget) }} {{ _('sar') }}{% else %}—{% endif %}</td>
-              </tr>
-              {% else %}<tr><td colspan="4" class="text-center py-3 text-muted">{{ _('no_data') }}</td></tr>{% endfor %}
-            </tbody>
-          </table>
-        </div>
+                  <span class="text-xs font-bold">{{ pg }}%</span>
+                </div>
+              </td>
+              <td class="px-5 py-4">
+                <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" class="p-1.5 rounded-lg hover:bg-slate-200 transition-colors text-slate-400 hover:text-blue-900 inline-block">
+                  <span class="material-symbols-outlined text-sm">visibility</span>
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center py-6 text-slate-400">{{ _('no_data') }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded',function(){
-  const c=document.getElementById('pmTaskChart');
-  if(c) new Chart(c,{type:'doughnut',data:{labels:['{{ _("completed") }}','{{ _("in_progress") }}','{{ _("overdue") }}'],datasets:[{data:[{{ kpis.completed_tasks }},{{ kpis.in_progress_tasks }},{{ kpis.overdue_tasks }}],backgroundColor:['#10b981','#6366f1','#ef4444'],borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'bottom'}},cutout:'65%'}});
+document.addEventListener('DOMContentLoaded', function() {
+  const ctx = document.getElementById('pmTaskChart');
+  if (ctx) {
+    const comp = {{ kpis.completed_tasks }};
+    const overdue = {{ kpis.overdue_tasks }};
+    const total = {{ kpis.total_tasks }};
+    const in_prog = {{ kpis.in_progress_tasks if kpis.in_progress_tasks is defined else (kpis.total_tasks - kpis.completed_tasks - kpis.overdue_tasks) }};
+    
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['مكتملة', 'قيد التنفيذ', 'متأخرة'],
+        datasets: [{
+          data: [comp, Math.max(0, in_prog), overdue],
+          backgroundColor: ['#10b981', '#3b82f6', '#ef4444'],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        cutout: '75%',
+        plugins: { legend: { display: false } },
+        maintainAspectRatio: true
+      }
+    });
+  }
 });
 </script>
 {% endblock %}

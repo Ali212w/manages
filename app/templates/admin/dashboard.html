@@ -1,499 +1,260 @@
 {% extends "layouts/base.html" %}
+{% block title %}{{ _('dashboard') }} — لوحة تحكم مدير المنصة{% endblock %}
 
-{% block title %}لوحة التحكم - {{ super() }}{% endblock %}
-
-{% block styles %}
+{% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
-    .admin-dashboard {
-        background-color: #f8f9fa;
-        min-height: calc(100vh - 56px);
-    }
-    
-    .sidebar {
-        background: linear-gradient(180deg, var(--primary-color), #1a252f);
-        color: white;
-        position: fixed;
-        right: 0;
-        top: 56px;
-        bottom: 0;
-        width: 250px;
-        overflow-y: auto;
-        z-index: 100;
-    }
-    
-    .main-content {
-        margin-right: 250px;
-        padding: 2rem;
-        transition: all 0.3s;
-    }
-    
-    .sidebar-toggle {
-        display: none;
-        position: fixed;
-        top: 70px;
-        right: 10px;
-        z-index: 101;
-    }
-    
-    .quick-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-bottom: 2rem;
-    }
-    
-    .quick-action-btn {
-        flex: 1;
-        min-width: 150px;
-        padding: 1rem;
-        border-radius: 10px;
-        text-align: center;
-        background: white;
-        border: none;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s;
-    }
-    
-    .quick-action-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    }
-    
-    .quick-action-btn i {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-        display: block;
-    }
-    
-    .chart-container {
-        height: 300px;
-        position: relative;
-    }
-    
-    .metric-card {
-        background: white;
-        border-radius: 10px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        border-left: 4px solid var(--primary-color);
-    }
-    
-    .metric-card .metric-value {
-        font-size: 2rem;
-        font-weight: bold;
-        color: var(--primary-color);
-    }
-    
-    .metric-card .metric-label {
-        font-size: 0.9rem;
-        color: #666;
-        margin-bottom: 0.5rem;
-    }
-    
-    .metric-card .metric-change {
-        font-size: 0.8rem;
-        margin-top: 0.5rem;
-    }
-    
-    .metric-card .metric-change.positive {
-        color: var(--success-color);
-    }
-    
-    .metric-card .metric-change.negative {
-        color: var(--danger-color);
-    }
-    
-    .activity-feed {
-        max-height: 400px;
-        overflow-y: auto;
-    }
-    
-    .activity-item {
-        padding: 1rem;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        align-items: flex-start;
-    }
-    
-    .activity-item:last-child {
-        border-bottom: none;
-    }
-    
-    .activity-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: #e9ecef;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: 1rem;
-        flex-shrink: 0;
-    }
-    
-    .activity-content {
-        flex: 1;
-    }
-    
-    .activity-time {
-        font-size: 0.8rem;
-        color: #666;
-    }
-    
-    @media (max-width: 768px) {
-        .sidebar {
-            transform: translateX(100%);
-        }
-        
-        .sidebar.active {
-            transform: translateX(0);
-        }
-        
-        .main-content {
-            margin-right: 0;
-        }
-        
-        .sidebar-toggle {
-            display: block;
-        }
-        
-        .quick-actions {
-            flex-direction: column;
-        }
-        
-        .quick-action-btn {
-            width: 100%;
-        }
-    }
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-family:'Material Symbols Outlined';display:inline-block;line-height:1;white-space:nowrap;direction:ltr;vertical-align:middle;}
+body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif; background-color: #f8f9ff;}
 </style>
 {% endblock %}
 
 {% block content %}
-<button class="btn btn-primary sidebar-toggle" id="sidebarToggle">
-    <i class="fas fa-bars"></i>
-</button>
+<div class="space-y-6 min-h-screen" id="role-dashboard-master">
 
-<div class="admin-dashboard">
-    <div class="sidebar" id="adminSidebar">
-        <div class="sidebar-brand p-3">
-            <h5 class="mb-0">
-                <i class="fas fa-cogs me-2"></i>
-                لوحة التحكم
-            </h5>
-        </div>
-        
-        <div class="sidebar-menu p-3">
-            <h6 class="text-white-50 mb-3">الإدارة</h6>
-            <ul class="list-unstyled">
-                <li><a href="{{ url_for('admin.dashboard') }}" class="active">
-                    <i class="fas fa-tachometer-alt me-2"></i>لوحة التحكم
-                </a></li>
-                <li><a href="{{ url_for('admin.users') }}">
-                    <i class="fas fa-users me-2"></i>المستخدمين
-                </a></li>
-                <li><a href="{{ url_for('admin.departments') }}">
-                    <i class="fas fa-sitemap me-2"></i>الأقسام
-                </a></li>
-                <li><a href="{{ url_for('admin.settings') }}">
-                    <i class="fas fa-cog me-2"></i>الإعدادات
-                </a></li>
-            </ul>
-            
-            <h6 class="text-white-50 mt-4 mb-3">التقارير</h6>
-            <ul class="list-unstyled">
-                <li><a href="{{ url_for('admin.system_logs') }}">
-                    <i class="fas fa-clipboard-list me-2"></i>سجلات النظام
-                </a></li>
-                <li><a href="{{ url_for('admin.backup') }}">
-                    <i class="fas fa-database me-2"></i>النسخ الاحتياطي
-                </a></li>
-               
-            </ul>
-            
-            <div class="mt-5">
-                <div class="card bg-dark text-white">
-                    <div class="card-body">
-                        <h6>معلومات النظام</h6>
-                        <small class="d-block">
-                            <i class="fas fa-server me-2"></i>
-                            المستخدمون: {{ stats.total_users }}
-                        </small>
-                        <small class="d-block mt-2">
-                            <i class="fas fa-project-diagram me-2"></i>
-                            المشاريع: {{ stats.total_projects }}
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- Header -->
+  <header class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+        <span class="material-symbols-outlined text-blue-900 text-3xl">corporate_fare</span>
+        لوحة التحكم المركزية (مدير المنصة)
+      </h1>
+      <p class="text-base text-slate-500">أهلاً بك، {{ current_user.full_name }} | إدارة على مستوى النظام</p>
+    </div>
+    <div class="flex gap-3">
+      <a href="{{ url_for('admin.settings') if 'admin.settings' in request.endpoint else '#' }}" class="border border-slate-200 text-slate-600 px-5 py-2.5 rounded-xl flex items-center gap-2 text-sm font-bold hover:bg-slate-50 transition-colors bg-white shadow-sm">
+        <span class="material-symbols-outlined text-base">settings</span> إعدادات المنصة
+      </a>
+      <button onclick="location.reload()" class="bg-blue-900 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 text-sm font-bold hover:bg-blue-800 transition-colors shadow-sm">
+        <span class="material-symbols-outlined text-base">refresh</span> تحديث
+      </button>
+    </div>
+  </header>
+
+  <!-- Global Statistics Section -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+    
+    <!-- Org Stats -->
+    <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start">
+        <span class="material-symbols-outlined p-2.5 bg-blue-50 text-blue-900 rounded-xl">corporate_fare</span>
+        <span class="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">+12% <span class="material-symbols-outlined text-[10px]">trending_up</span></span>
+      </div>
+      <div class="mt-2">
+        <p class="text-slate-400 font-bold text-xs uppercase tracking-wider">إجمالي الأقسام/المؤسسات</p>
+        <h3 class="text-4xl font-black text-slate-900 mt-1">{{ stats.total_departments|default('24') }}</h3>
+      </div>
     </div>
     
-    <div class="main-content" id="adminContent">
-        <div class="row mb-4">
-            <div class="col-12">
-                <h2 class="mb-0">لوحة تحكم المدير</h2>
-                <p class="text-muted">مرحبا بك، {{ current_user.full_name }}</p>
-            </div>
-        </div>
-        
-        <!-- Quick Actions -->
-        <div class="quick-actions">
-            <button class="quick-action-btn" onclick="location.href='{{ url_for('admin.create_user') }}'">
-                <i class="fas fa-user-plus text-primary"></i>
-                <span>إضافة مستخدم</span>
-            </button>
-            
-            <button class="quick-action-btn" onclick="location.href='{{ url_for('project.create') }}'">
-                <i class="fas fa-plus-circle text-success"></i>
-                <span>مشروع جديد</span>
-            </button>
-            
-            <button class="quick-action-btn" onclick="location.href='{{ url_for('admin.create_department') }}'">
-                <i class="fas fa-sitemap text-info"></i>
-                <span>إضافة قسم</span>
-            </button>
-            
-            
-            
-            <button class="quick-action-btn" onclick="location.href='{{ url_for('admin.system_logs') }}'">
-                <i class="fas fa-history text-danger"></i>
-                <span>سجلات النظام</span>
-            </button>
-        </div>
-        
-        <!-- Stats Overview -->
-        <div class="row mb-4">
-            <div class="col-md-3 col-sm-6">
-                <div class="metric-card">
-                    <div class="metric-label">المستخدمون النشطون</div>
-                    <div class="metric-value">{{ stats.active_users }}</div>
-                    <div class="metric-change positive">
-                        <i class="fas fa-arrow-up me-1"></i>
-                        12% عن الشهر الماضي
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-3 col-sm-6">
-                <div class="metric-card">
-                    <div class="metric-label">المشاريع النشطة</div>
-                    <div class="metric-value">{{ stats.active_projects }}</div>
-                    <div class="metric-change positive">
-                        <i class="fas fa-arrow-up me-1"></i>
-                        8% عن الشهر الماضي
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-3 col-sm-6">
-                <div class="metric-card">
-                    <div class="metric-label">الأقسام</div>
-                    <div class="metric-value">{{ stats.total_departments }}</div>
-                    <div class="metric-change">
-                        <i class="fas fa-minus me-1"></i>
-                        بدون تغيير
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-3 col-sm-6">
-                <div class="metric-card">
-                    <div class="metric-label">في انتظار الموافقة</div>
-                    <div class="metric-value">{{ stats.pending_approvals }}</div>
-                    <div class="metric-change negative">
-                        <i class="fas fa-arrow-down me-1"></i>
-                        3 جديد
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Charts and Recent Activity -->
-        <div class="row">
-            <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">نشاط النظام</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container">
-                            <canvas id="systemActivityChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">النشاط الأخير</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="activity-feed">
-                            {% for activity in recent_activities %}
-                            <div class="activity-item">
-                                <div class="activity-icon">
-                                    <i class="fas fa-user text-primary"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <div class="fw-bold">{{ activity.user }}</div>
-                                    <div class="text-muted">{{ activity.action }}</div>
-                                    <div class="activity-time">
-                                        <i class="fas fa-clock me-1"></i>
-                                        {{ activity.time }}
-                                    </div>
-                                </div>
-                            </div>
-                            {% else %}
-                            <div class="text-center py-4">
-                                <i class="fas fa-info-circle fa-2x text-muted"></i>
-                                <p class="mt-2">لا توجد أنشطة حديثة</p>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Recent Users and Projects -->
-        <div class="row mt-4">
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">المستخدمون الجدد</h5>
-                        <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-outline-primary">
-                            عرض الكل
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>الاسم</th>
-                                        <th>الدور</th>
-                                        <th>تاريخ التسجيل</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for user in new_users %}
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" 
-                                                     style="width: 30px; height: 30px;">
-                                                    {{ user.full_name[0] }}
-                                                </div>
-                                                <span>{{ user.full_name }}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-info">{{ user.role }}</span>
-                                        </td>
-                                        <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">المشاريع الجديدة</h5>
-                        <a href="{{ url_for('project.index') }}" class="btn btn-sm btn-outline-primary">
-                            عرض الكل
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>اسم المشروع</th>
-                                        <th>الحالة</th>
-                                        <th>التقدم</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for project in new_projects %}
-                                    <tr>
-                                        <td>{{ project.name }}</td>
-                                        <td>
-                                            <span class="badge bg-{{ 'success' if project.status == 'active' else 'warning' }}">
-                                                {{ project.status }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress flex-grow-1 me-2" style="height: 6px;">
-                                                    <div class="progress-bar" style="width: {{ project.progress_percentage }}%"></div>
-                                                </div>
-                                                <span class="text-muted">{{ project.progress_percentage }}%</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- System Metrics -->
-        {% if system_metrics %}
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">مقاييس النظام</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            {% for metric in system_metrics %}
-                            <div class="col-md-3 col-sm-6 mb-3">
-                                <div class="card bg-light">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-0">{{ metric.metric_name }}</h6>
-                                                <p class="mb-0 text-muted">{{ metric.value }}</p>
-                                            </div>
-                                            <div class="icon text-{{ 'success' if metric.metric_type == 'success' else 'warning' }}">
-                                                <i class="fas fa-chart-line fa-2x"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
+    <!-- User Stats -->
+    <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start">
+        <span class="material-symbols-outlined p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">groups</span>
+        <span class="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">+5.4% <span class="material-symbols-outlined text-[10px]">trending_up</span></span>
+      </div>
+      <div class="mt-2">
+        <p class="text-slate-400 font-bold text-xs uppercase tracking-wider">المستخدمون النشطون</p>
+        <h3 class="text-4xl font-black text-slate-900 mt-1">{{ stats.active_users|default('0') }}</h3>
+      </div>
     </div>
+    
+    <!-- Uptime Stats -->
+    <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start">
+        <span class="material-symbols-outlined p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">speed</span>
+        <span class="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full">مستقر</span>
+      </div>
+      <div class="mt-2">
+        <p class="text-slate-400 font-bold text-xs uppercase tracking-wider">جاهزية النظام</p>
+        <h3 class="text-4xl font-black text-slate-900 mt-1">99.99%</h3>
+      </div>
+    </div>
+    
+    <!-- Usage Stats -->
+    <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start">
+        <span class="material-symbols-outlined p-2.5 bg-slate-100 text-slate-700 rounded-xl">database</span>
+        <span class="text-slate-600 font-bold text-xs bg-slate-100 px-2 py-0.5 rounded-full">4.2 TB / يوم</span>
+      </div>
+      <div class="mt-2">
+        <p class="text-slate-400 font-bold text-xs uppercase tracking-wider">حجم تدفق البيانات</p>
+        <h3 class="text-4xl font-black text-slate-900 mt-1">128.5 <span class="text-lg">PB</span></h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics & Activity Bento Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    
+    <!-- Growth Chart -->
+    <div class="col-span-12 lg:col-span-8 bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col shadow-sm">
+      <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+        <div>
+          <h4 class="text-base font-bold text-slate-900">تحليلات نمو المنصة</h4>
+          <p class="text-xs text-slate-500">معدل تسجيل المستخدمين والمشاريع (آخر 6 أشهر)</p>
+        </div>
+      </div>
+      <div class="p-5 flex-grow relative h-[300px]">
+        <canvas id="systemActivityChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Recent Activity Feed -->
+    <div class="col-span-12 lg:col-span-4 bg-white border border-slate-200 rounded-2xl flex flex-col shadow-sm">
+      <div class="p-5 border-b border-slate-100 bg-slate-50">
+        <h4 class="text-base font-bold text-slate-900">أحدث الأنشطة والأحداث</h4>
+      </div>
+      <div class="p-5 space-y-5 overflow-y-auto max-h-[300px]">
+        {% for activity in recent_activities[:4] %}
+        <div class="flex gap-4">
+          <div class="w-10 h-10 flex-shrink-0 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+            <span class="material-symbols-outlined text-base">notifications</span>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-slate-900">{{ activity.user if activity.user else 'النظام' }}</p>
+            <p class="text-xs text-slate-500 mt-0.5">{{ activity.action }}</p>
+            <p class="text-[10px] text-slate-400 mt-1 uppercase">{{ activity.time }}</p>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-center py-6">
+          <span class="material-symbols-outlined text-4xl text-slate-200">history</span>
+          <p class="text-sm text-slate-400 mt-2">لا توجد أحداث مسجلة</p>
+        </div>
+        {% endfor %}
+      </div>
+      <a href="{{ url_for('admin.system_logs') if 'admin.system_logs' in request.endpoint else '#' }}" class="mt-auto p-4 text-center text-xs font-bold text-blue-900 bg-slate-50 border-t border-slate-100 hover:bg-slate-100 transition-colors block">
+        عرض جميع السجلات
+      </a>
+    </div>
+  </div>
+
+  <!-- Management & Insights Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    
+    <!-- New Projects / Orgs Table -->
+    <div class="col-span-12 lg:col-span-9 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+        <h4 class="text-base font-bold text-slate-900">أحدث المشاريع المسجلة (المشاريع الجديدة)</h4>
+        <a href="{{ url_for('project.index') if 'project.index' in request.endpoint else '#' }}" class="flex items-center gap-1 text-xs text-blue-900 font-bold hover:underline">
+          عرض الكل <span class="material-symbols-outlined text-[14px]">arrow_back</span>
+        </a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-right">
+          <thead class="bg-slate-50 text-slate-400 border-b border-slate-100 text-xs uppercase tracking-wider">
+            <tr>
+              <th class="p-4 font-bold">اسم المشروع</th>
+              <th class="p-4 font-bold">التقدم</th>
+              <th class="p-4 font-bold">الحالة</th>
+              <th class="p-4 font-bold text-center">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm divide-y divide-slate-100">
+            {% for project in new_projects[:5] %}
+            <tr class="hover:bg-slate-50 transition-colors group">
+              <td class="p-4 flex items-center gap-3">
+                <div class="w-9 h-9 rounded bg-blue-50 flex items-center justify-center font-bold text-blue-900 text-lg">
+                  {{ project.name[0] }}
+                </div>
+                <div>
+                  <p class="font-bold text-slate-900">{{ project.name }}</p>
+                </div>
+              </td>
+              <td class="p-4 w-48">
+                <div class="flex items-center gap-2">
+                  <div class="flex-grow h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="bg-blue-900 h-full" style="width: {{ project.progress_percentage|default(0) }}%"></div>
+                  </div>
+                  <span class="text-xs font-bold text-slate-600">{{ project.progress_percentage|default(0) }}%</span>
+                </div>
+              </td>
+              <td class="p-4">
+                {% if project.status == 'active' %}
+                <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold">نشط</span>
+                {% elif project.status == 'completed' %}
+                <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold">مكتمل</span>
+                {% else %}
+                <span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold">{{ project.status }}</span>
+                {% endif %}
+              </td>
+              <td class="p-4 text-center">
+                <a href="#" class="material-symbols-outlined text-slate-400 hover:text-blue-900 transition-colors text-[20px]">more_vert</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="p-8 text-center text-slate-400 text-sm">لا توجد بيانات مسجلة حديثاً</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- AI Driven Insights & Health -->
+    <div class="col-span-12 lg:col-span-3 space-y-5">
+      
+      <!-- AI Insight -->
+      <div class="bg-blue-900 text-white p-5 rounded-2xl flex flex-col gap-3 relative overflow-hidden shadow-sm">
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="material-symbols-outlined text-amber-400">auto_awesome</span>
+            <h4 class="text-sm font-bold text-blue-50">رؤى الذكاء الاصطناعي</h4>
+          </div>
+          <p class="text-xs leading-relaxed text-blue-100">
+             يتوقع النظام زيادة بنسبة 15% في حركة المرور الأسبوع القادم بسبب بدء الفعاليات الموسمية.
+          </p>
+          <button class="mt-4 w-full bg-white text-blue-900 py-2 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors shadow-sm">
+             توسيع البنية التحتية
+          </button>
+        </div>
+        <div class="absolute -bottom-4 -left-4 opacity-10">
+          <span class="material-symbols-outlined text-9xl">bolt</span>
+        </div>
+      </div>
+      
+      <!-- System Health -->
+      <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+        <h4 class="text-base font-bold text-slate-900 mb-4">صحة النظام والخدمات</h4>
+        <div class="space-y-4">
+          <div class="flex justify-between items-center p-3 border border-slate-100 rounded-xl hover:bg-slate-50">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+              <span class="text-xs font-bold text-slate-700">بوابة API</span>
+            </div>
+            <span class="text-xs font-black text-slate-900">12ms</span>
+          </div>
+          
+          <div class="flex justify-between items-center p-3 border border-slate-100 rounded-xl hover:bg-slate-50">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span class="text-xs font-bold text-slate-700">قواعد البيانات</span>
+            </div>
+            <span class="text-xs font-black text-slate-900">99.98%</span>
+          </div>
+          
+          <div class="flex justify-between items-center p-3 border border-slate-100 rounded-xl hover:bg-red-50 transition-colors border-r-2 border-r-red-500">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+              <span class="text-xs font-bold text-slate-700">شبكة CDN</span>
+            </div>
+            <span class="text-[10px] font-bold text-red-600 uppercase">ضغط عالي</span>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    $(document).ready(function() {
-        // تبديل الشريط الجانبي
-        $('#sidebarToggle').click(function() {
-            $('#adminSidebar').toggleClass('active');
-        });
-        
-        // تهيئة الرسم البياني
-        const ctx = document.getElementById('systemActivityChart').getContext('2d');
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('systemActivityChart');
         if (ctx) {
             new Chart(ctx, {
                 type: 'line',
@@ -502,56 +263,34 @@
                     datasets: [{
                         label: 'المستخدمون الجدد',
                         data: [12, 19, 15, 25, 22, 30],
-                        borderColor: '#3498db',
-                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                        tension: 0.4
+                        borderColor: '#1e3a8a',
+                        backgroundColor: 'rgba(30, 58, 138, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
                     }, {
                         label: 'المشاريع الجديدة',
                         data: [5, 8, 7, 12, 10, 15],
-                        borderColor: '#2ecc71',
-                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
-                        tension: 0.4
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            position: 'top',
-                            rtl: true
-                        }
+                        legend: { position: 'top', rtl: true, labels: { font: { family: "'IBM Plex Sans Arabic', sans-serif" } } }
                     },
                     scales: {
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                borderDash: [5, 5]
-                            }
-                        }
+                        x: { grid: { display: false } },
+                        y: { beginAtZero: true, grid: { borderDash: [5, 5] } }
                     }
                 }
             });
         }
-        
-        // تحديث الإحصائيات في الوقت الحقيقي
-        setInterval(function() {
-            $.ajax({
-                url: "{{ url_for('admin.api_system_metrics') }}",
-                method: 'GET',
-                success: function(data) {
-                    if (data.success) {
-                        // تحديث واجهة المستخدم بالمقاييس الجديدة
-                        console.log('تم تحديث مقاييس النظام');
-                    }
-                }
-            });
-        }, 30000); // كل 30 ثانية
     });
 </script>
 {% endblock %}

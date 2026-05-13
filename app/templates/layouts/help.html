@@ -1,0 +1,215 @@
+{% extends "company/base.html" %}
+{% block title %}مركز المساعدة - {{ app_name }}{% endblock %}
+{% block page_title %}مركز المساعدة{% endblock %}
+{% block page_subtitle %}ابحث في قاعدة المعرفة أو تواصل مع فريق الدعم{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-family:'Material Symbols Outlined';display:inline-block;line-height:1;white-space:nowrap;direction:ltr;}
+body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif;}
+details summary::-webkit-details-marker{display:none;}
+details[open] .faq-icon{transform:rotate(180deg);}
+.faq-icon{transition:transform 0.3s;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+  <!-- Hero Search -->
+  <div class="bg-gradient-to-l from-blue-900 to-blue-700 rounded-3xl p-8 text-center text-white relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 20% 50%,#fff 1px,transparent 1px),radial-gradient(circle at 80% 20%,#fff 1px,transparent 1px);background-size:40px 40px;"></div>
+    <span class="inline-block px-4 py-1.5 bg-white/20 rounded-full text-xs font-bold mb-3">مركز المساعدة</span>
+    <h1 class="text-2xl md:text-3xl font-bold mb-2">كيف يمكننا مساعدتك اليوم؟</h1>
+    <p class="text-blue-200 text-sm mb-6 max-w-lg mx-auto">ابحث في قاعدة المعرفة أو تواصل مع فريق الدعم للحصول على المساعدة.</p>
+    <div class="relative max-w-xl mx-auto">
+      <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+      <input id="helpSearch" type="text" placeholder="ابحث عن مقالات، أسئلة شائعة..."
+        class="w-full pr-12 pl-24 py-3.5 rounded-2xl text-slate-900 text-sm outline-none focus:ring-4 focus:ring-blue-300 shadow-lg"/>
+      <button class="absolute left-2 top-1/2 -translate-y-1/2 bg-blue-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-800 transition-colors">بحث</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Left: Topics + FAQ -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- Knowledge Base Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {% set topics = [
+          ('rocket_launch','البدء السريع','إعداد حسابك وأول مشروع في دقائق معدودة مع دليلنا التفاعلي.','bg-blue-50 text-blue-900','hover:border-blue-200'),
+          ('account_balance_wallet','الفواتير والاشتراكات','إدارة طرق الدفع، تغيير الباقات، وتحميل الفواتير السابقة.','bg-emerald-50 text-emerald-700','hover:border-emerald-200'),
+          ('security','الأمن والخصوصية','إرشادات تأمين حسابك والمصادقة الثنائية وحماية البيانات.','bg-amber-50 text-amber-700','hover:border-amber-200'),
+          ('api','المطورين و API','وثائق الربط البرمجي لدمج خدماتنا مع تطبيقاتك.','bg-purple-50 text-purple-700','hover:border-purple-200'),
+        ] %}
+        {% for icon, title, desc, cls, hcls in topics %}
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm {{ hcls }} hover:shadow-md transition-all cursor-pointer group">
+          <div class="w-12 h-12 {{ cls }} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1;">{{ icon }}</span>
+          </div>
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="text-base font-bold text-slate-900 group-hover:text-blue-900 transition-colors">{{ title }}</h3>
+            <span class="material-symbols-outlined text-slate-300 group-hover:text-blue-900 text-lg transition-colors">arrow_back</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">{{ desc }}</p>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- FAQ -->
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <h2 class="text-base font-bold text-slate-900">الأسئلة الشائعة</h2>
+          <span class="text-xs bg-blue-50 text-blue-900 font-bold px-2.5 py-1 rounded-full">3 أسئلة</span>
+        </div>
+        <div class="divide-y divide-slate-100">
+          {% set faqs = [
+            ('كيف يمكنني تغيير كلمة المرور الخاصة بي؟','يمكنك تغيير كلمة المرور من خلال الانتقال إلى الإعدادات > الملف الشخصي > الأمان. ستحتاج إلى إدخال كلمة المرور الحالية قبل تعيين كلمة المرور الجديدة لضمان أمان حسابك.'),
+            ('هل يمكنني استخدام النظام باللغة الإنجليزية؟','نعم، يدعم النظام اللغتين العربية والإنجليزية. يمكنك تبديل اللغة من أيقونة الإعدادات في الشريط العلوي واختيار "اللغة والمنطقة".'),
+            ('ما هي حدود تخزين البيانات في الباقة المؤسسية؟','الباقة المؤسسية توفر سعة مرنة تبدأ من 5 تيرابايت مع دعم كامل للنسخ الاحتياطي اليومي المشفر في مراكز بيانات متعددة.'),
+          ] %}
+          {% for q, a in faqs %}
+          <details class="group">
+            <summary class="flex justify-between items-center cursor-pointer list-none px-5 py-4 hover:bg-slate-50 transition-colors">
+              <span class="text-sm font-semibold text-slate-900 group-open:text-blue-900 transition-colors">{{ q }}</span>
+              <span class="material-symbols-outlined text-slate-400 group-open:text-blue-900 faq-icon text-xl flex-shrink-0">expand_more</span>
+            </summary>
+            <div class="px-5 pb-4">
+              <p class="text-sm text-slate-500 leading-relaxed">{{ a }}</p>
+            </div>
+          </details>
+          {% endfor %}
+        </div>
+        <div class="px-5 py-3 border-t border-slate-100 text-center">
+          <a href="#" class="text-sm text-blue-900 font-bold hover:underline">عرض جميع الأسئلة الشائعة</a>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="grid grid-cols-3 gap-3">
+        {% set quick = [
+          ('article','المقالات','bg-slate-50'),
+          ('video_library','الفيديوهات','bg-slate-50'),
+          ('forum','المجتمع','bg-slate-50'),
+        ] %}
+        {% for icon, label, cls in quick %}
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 text-center hover:shadow-md hover:border-blue-200 transition-all cursor-pointer group">
+          <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:bg-blue-900 transition-colors">
+            <span class="material-symbols-outlined text-blue-900 group-hover:text-white transition-colors" style="font-variation-settings:'FILL' 1;">{{ icon }}</span>
+          </div>
+          <p class="text-xs font-bold text-slate-700">{{ label }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <aside class="space-y-5">
+
+      <!-- Contact Form -->
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+        <h3 class="text-base font-bold text-slate-900 mb-1">تواصل معنا</h3>
+        <p class="text-xs text-slate-400 mb-4">أرسل استفسارك وسيرد فريقنا خلال 24 ساعة.</p>
+        <form class="space-y-3" id="supportForm">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">الموضوع</label>
+            <select class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-900 bg-white">
+              <option>مشكلة تقنية</option>
+              <option>استفسار عن الفواتير</option>
+              <option>طلب ميزة جديدة</option>
+              <option>أخرى</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">الرسالة</label>
+            <textarea rows="4" placeholder="اكتب تفاصيل طلبك هنا..."
+              class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-900 resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">المرفقات (اختياري)</label>
+            <div class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:bg-slate-50 hover:border-blue-300 transition-all cursor-pointer group">
+              <span class="material-symbols-outlined text-slate-300 group-hover:text-blue-900 text-3xl block mb-1" style="font-variation-settings:'FILL' 1;">upload_file</span>
+              <p class="text-xs text-slate-400">اسحب الملف أو انقر للتحميل</p>
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-blue-900 text-white py-3 rounded-xl text-sm font-bold hover:bg-blue-800 active:scale-95 transition-all shadow-sm">إرسال الطلب</button>
+        </form>
+      </div>
+
+      <!-- Support Status -->
+      <div class="bg-blue-900 text-white rounded-2xl p-5 shadow-md">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="relative flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
+          </div>
+          <span class="text-sm font-bold">حالة النظام: يعمل بشكل طبيعي</span>
+        </div>
+        <div class="space-y-3 border-t border-white/10 pt-4 mb-4 text-sm">
+          <div class="flex justify-between">
+            <span class="text-blue-200">زمن الرد المعتاد</span>
+            <span class="font-bold bg-white/10 px-2 py-0.5 rounded-lg">15 دقيقة</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-blue-200">الدعم المباشر</span>
+            <span class="font-bold text-emerald-300">متاح الآن</span>
+          </div>
+        </div>
+        <button class="w-full bg-white text-blue-900 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">forum</span>
+          ابدأ محادثة فورية
+        </button>
+      </div>
+
+      <!-- Contact Methods -->
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-3">
+        <h3 class="text-sm font-bold text-slate-900 mb-3">طرق التواصل الأخرى</h3>
+        {% set contacts = [
+          ('email','البريد الإلكتروني','support@cms-pro.com','bg-blue-50 text-blue-900'),
+          ('phone','الهاتف','+966 11 000 0000','bg-emerald-50 text-emerald-700'),
+          ('schedule','ساعات العمل','الأحد - الخميس 9ص - 6م','bg-amber-50 text-amber-700'),
+        ] %}
+        {% for icon, label, val, cls in contacts %}
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 {{ cls }} rounded-xl flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1;">{{ icon }}</span>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">{{ label }}</p>
+            <p class="text-sm font-semibold text-slate-900">{{ val }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+    </aside>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Live search filter on FAQ
+document.getElementById('helpSearch')?.addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('details').forEach(d => {
+    const text = d.textContent.toLowerCase();
+    d.style.display = (!q || text.includes(q)) ? '' : 'none';
+  });
+});
+
+// Support form submit
+document.getElementById('supportForm')?.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const btn = this.querySelector('button[type=submit]');
+  btn.textContent = '✓ تم الإرسال بنجاح';
+  btn.classList.add('bg-emerald-600');
+  btn.classList.remove('bg-blue-900','hover:bg-blue-800');
+  setTimeout(() => { btn.textContent = 'إرسال الطلب'; btn.classList.remove('bg-emerald-600'); btn.classList.add('bg-blue-900','hover:bg-blue-800'); this.reset(); }, 3000);
+});
+</script>
+{% endblock %}

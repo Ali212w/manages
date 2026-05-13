@@ -1,831 +1,342 @@
-<!-- profile.html -->
 {% extends "company/base.html" %}
+{% block title %}الملف الشخصي - {{ app_name }}{% endblock %}
 
-{% block title %}{{ app_name }} - الملف الشخصي{% endblock %}
-
-{% block styles %}
+{% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
-    .profile-page .card {
-        border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border: none;
-        overflow: hidden;
-    }
-    
-    .profile-page .profile-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 40px 20px;
-        color: white;
-        position: relative;
-        border-radius: 15px 15px 0 0;
-    }
-    
-    .profile-page .profile-avatar {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        border: 4px solid white;
-        overflow: hidden;
-        margin: 0 auto 20px;
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .profile-page .profile-avatar i {
-        font-size: 3.5rem;
-        color: white;
-    }
-    
-    .profile-page .user-name {
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-    
-    .profile-page .user-title {
-        font-size: 1.1rem;
-        opacity: 0.9;
-        margin-bottom: 15px;
-    }
-    
-    .profile-page .user-badge {
-        display: inline-block;
-        background: rgba(255, 255, 255, 0.2);
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        margin: 0 5px;
-    }
-    
-    .profile-page .nav-tabs {
-        border-bottom: 2px solid #e9ecef;
-        margin: 0;
-        padding: 0 20px;
-        background: white;
-    }
-    
-    .profile-page .nav-tabs .nav-link {
-        border: none;
-        color: #7f8c8d;
-        font-weight: 600;
-        padding: 15px 25px;
-        border-radius: 10px 10px 0 0;
-        transition: all 0.3s;
-    }
-    
-    .profile-page .nav-tabs .nav-link.active {
-        color: #3498db;
-        background-color: #f8f9fa;
-        border-bottom: 3px solid #3498db;
-    }
-    
-    .profile-page .nav-tabs .nav-link:hover {
-        color: #3498db;
-        background-color: #f8f9fa;
-    }
-    
-    .profile-page .tab-content {
-        padding: 30px;
-        background-color: #f8f9fa;
-    }
-    
-    .profile-page .info-card {
-        background: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        border-right: 3px solid #3498db;
-    }
-    
-    .profile-page .info-card .card-title {
-        color: #2c3e50;
-        font-weight: 600;
-        margin-bottom: 20px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        align-items: center;
-    }
-    
-    .profile-page .info-card .card-title i {
-        margin-left: 10px;
-        color: #3498db;
-    }
-    
-    .profile-page .info-item {
-        display: flex;
-        align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px solid #f8f9fa;
-    }
-    
-    .profile-page .info-item:last-child {
-        border-bottom: none;
-    }
-    
-    .profile-page .info-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: #f8f9fa;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: 15px;
-    }
-    
-    .profile-page .info-icon i {
-        color: #3498db;
-    }
-    
-    .profile-page .info-label {
-        color: #7f8c8d;
-        font-size: 0.9rem;
-        margin-bottom: 3px;
-    }
-    
-    .profile-page .info-value {
-        color: #2c3e50;
-        font-weight: 600;
-    }
-    
-    .profile-page .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-    
-    .profile-page .stat-item {
-        background: white;
-        border-radius: 10px;
-        padding: 15px;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    
-    .profile-page .stat-number {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #3498db;
-        margin-bottom: 5px;
-    }
-    
-    .profile-page .stat-label {
-        color: #7f8c8d;
-        font-size: 0.85rem;
-    }
-    
-    .profile-page .form-label {
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 8px;
-    }
-    
-    .profile-page .form-control {
-        border-radius: 10px;
-        border: 1px solid #ddd;
-        padding: 12px 15px;
-        transition: all 0.3s;
-    }
-    
-    .profile-page .form-control:focus {
-        border-color: #3498db;
-        box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
-    }
-    
-    .profile-page .btn-primary {
-        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-        border: none;
-        padding: 12px 30px;
-        border-radius: 10px;
-        font-weight: 600;
-        transition: all 0.3s;
-    }
-    
-    .profile-page .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
-    }
-    
-    .profile-page .activity-item {
-        display: flex;
-        align-items: center;
-        padding: 15px;
-        border-bottom: 1px solid #f8f9fa;
-        transition: background-color 0.3s;
-    }
-    
-    .profile-page .activity-item:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .profile-page .activity-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: 15px;
-    }
-    
-    .profile-page .activity-icon i {
-        color: white;
-    }
-    
-    .profile-page .activity-content {
-        flex-grow: 1;
-    }
-    
-    .profile-page .activity-time {
-        color: #7f8c8d;
-        font-size: 0.85rem;
-    }
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-family:'Material Symbols Outlined';display:inline-block;line-height:1;white-space:nowrap;direction:ltr;}
+body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif;}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container profile-page">
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="card">
-                <!-- رأس الملف الشخصي -->
-                <div class="profile-header">
-                    <div class="text-center">
-                        <div class="profile-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <h1 class="user-name">{{ current_user.full_name }}</h1>
-                        <p class="user-title">{{ current_user.job_title or 'موظف' }}</p>
-                        <div>
-                            <span class="user-badge">
-                                <i class="fas fa-building me-1"></i>
-                                {{ current_user.department.name if current_user.department else 'بدون قسم' }}
-                            </span>
-                            <span class="user-badge">
-                                <i class="fas fa-user-tag me-1"></i>
-                                {{ current_user.role }}
-                            </span>
-                            <span class="user-badge">
-                                <i class="fas fa-calendar-alt me-1"></i>
-                                عضو منذ {{ current_user.created_at.strftime('%Y-%m-%d') }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- علامات التبويب -->
-                <ul class="nav nav-tabs" id="profileTab" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview">
-                            <i class="fas fa-chart-line me-2"></i>نظرة عامة
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="info-tab" data-bs-toggle="tab" data-bs-target="#info">
-                            <i class="fas fa-user-circle me-2"></i>المعلومات الشخصية
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security">
-                            <i class="fas fa-lock me-2"></i>الأمان
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity">
-                            <i class="fas fa-history me-2"></i>النشاط
-                        </button>
-                    </li>
-                </ul>
-                
-                <!-- محتويات التبويب -->
-                <div class="tab-content" id="profileTabContent">
-                    <!-- نظرة عامة -->
-                    <div class="tab-pane fade show active" id="overview" role="tabpanel">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <!-- الإحصائيات -->
-                                <div class="stats-grid mb-4">
-                                    <div class="stat-item">
-                                        <div class="stat-number">0</div>
-                                        <div class="stat-label">المشاريع</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-number">0</div>
-                                        <div class="stat-label">المهام النشطة</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-number">{{ current_user.login_count or 0 }}</div>
-                                        <div class="stat-label">مرات الدخول</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-number">
-                                            {% if current_user.last_login %}
-                                            {{ current_user.last_login.strftime('%d/%m') }}
-                                            {% else %}
-                                            -
-                                            {% endif %}
-                                        </div>
-                                        <div class="stat-label">آخر دخول</div>
-                                    </div>
-                                </div>
-                                
-                                <!-- معلومات سريعة -->
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="info-card">
-                                            <h5 class="card-title">
-                                                <i class="fas fa-info-circle"></i>المعلومات الأساسية
-                                            </h5>
-                                            <div class="info-item">
-                                                <div class="info-icon">
-                                                    <i class="fas fa-envelope"></i>
-                                                </div>
-                                                <div>
-                                                    <div class="info-label">البريد الإلكتروني</div>
-                                                    <div class="info-value">{{ current_user.email }}</div>
-                                                </div>
-                                            </div>
-                                            <div class="info-item">
-                                                <div class="info-icon">
-                                                    <i class="fas fa-phone"></i>
-                                                </div>
-                                                <div>
-                                                    <div class="info-label">رقم الهاتف</div>
-                                                    <div class="info-value">{{ current_user.phone or 'غير محدد' }}</div>
-                                                </div>
-                                            </div>
-                                            <div class="info-item">
-                                                <div class="info-icon">
-                                                    <i class="fas fa-id-card"></i>
-                                                </div>
-                                                <div>
-                                                    <div class="info-label">رقم الموظف</div>
-                                                    <div class="info-value">{{ current_user.employee_id or 'غير محدد' }}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-6">
-                                        <div class="info-card">
-                                            <h5 class="card-title">
-                                                <i class="fas fa-briefcase"></i>المعلومات الوظيفية
-                                            </h5>
-                                            <div class="info-item">
-                                                <div class="info-icon">
-                                                    <i class="fas fa-building"></i>
-                                                </div>
-                                                <div>
-                                                    <div class="info-label">القسم</div>
-                                                    <div class="info-value">{{ current_user.department.name if current_user.department else 'غير محدد' }}</div>
-                                                </div>
-                                            </div>
-                                            <div class="info-item">
-                                                <div class="info-icon">
-                                                    <i class="fas fa-user-tag"></i>
-                                                </div>
-                                                <div>
-                                                    <div class="info-label">الدور</div>
-                                                    <div class="info-value">{{ current_user.role }}</div>
-                                                </div>
-                                            </div>
-                                            <div class="info-item">
-                                                <div class="info-icon">
-                                                    <i class="fas fa-calendar-day"></i>
-                                                </div>
-                                                <div>
-                                                    <div class="info-label">تاريخ التعيين</div>
-                                                    <div class="info-value">
-                                                        {% if current_user.hire_date %}
-                                                        {{ current_user.hire_date.strftime('%Y-%m-%d') }}
-                                                        {% else %}
-                                                        غير محدد
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-4">
-                                <!-- الحالة -->
-                                <div class="info-card">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-user-check"></i>حالة الحساب
-                                    </h5>
-                                    <div class="info-item">
-                                        <div class="info-icon">
-                                            <i class="fas fa-circle text-{{ 'success' if current_user.is_active else 'danger' }}"></i>
-                                        </div>
-                                        <div>
-                                            <div class="info-label">الحالة</div>
-                                            <div class="info-value">
-                                                {{ 'نشط' if current_user.is_active else 'غير نشط' }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-icon">
-                                            <i class="fas fa-shield-alt text-{{ 'success' if current_user.is_verified else 'warning' }}"></i>
-                                        </div>
-                                        <div>
-                                            <div class="info-label">التحقق</div>
-                                            <div class="info-value">
-                                                {{ 'موثق' if current_user.is_verified else 'قيد المراجعة' }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-icon">
-                                            <i class="fas fa-calendar-plus"></i>
-                                        </div>
-                                        <div>
-                                            <div class="info-label">تاريخ الإنشاء</div>
-                                            <div class="info-value">
-                                                {{ current_user.created_at.strftime('%Y-%m-%d') }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- الإجراءات السريعة -->
-                                <div class="info-card">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-bolt"></i>إجراءات سريعة
-                                    </h5>
-                                    <div class="d-grid gap-2">
-                                        <a href="#info" class="btn btn-outline-primary" data-bs-toggle="tab">
-                                            <i class="fas fa-edit me-2"></i>تعديل الملف الشخصي
-                                        </a>
-                                        <a href="#security" class="btn btn-outline-warning" data-bs-toggle="tab">
-                                            <i class="fas fa-key me-2"></i>تغيير كلمة المرور
-                                        </a>
-                                        <a href="{{ url_for('company.dashboard') }}" class="btn btn-outline-success">
-                                            <i class="fas fa-home me-2"></i>الرئيسية
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- المعلومات الشخصية -->
-                    <div class="tab-pane fade" id="info" role="tabpanel">
-                        <form method="POST" action="{{ url_for('auth.profile') }}" novalidate>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="full_name" class="form-label">
-                                        <i class="fas fa-user me-1"></i>الاسم الكامل (الإنجليزية)
-                                    </label>
-                                    <input type="text" class="form-control" id="full_name" name="full_name" 
-                                           value="{{ current_user.full_name }}" required>
-                                </div>
-                                
-                                <div class="col-md-6 mb-3">
-                                    <label for="full_name_ar" class="form-label">
-                                        <i class="fas fa-user me-1"></i>الاسم الكامل (العربية)
-                                    </label>
-                                    <input type="text" class="form-control" id="full_name_ar" name="full_name_ar" 
-                                           value="{{ current_user.full_name_ar or '' }}">
-                                </div>
-                                
-                                <div class="col-md-6 mb-3">
-                                    <label for="email" class="form-label">
-                                        <i class="fas fa-envelope me-1"></i>البريد الإلكتروني
-                                    </label>
-                                    <input type="email" class="form-control" id="email" 
-                                           value="{{ current_user.email }}" disabled>
-                                    <div class="form-text">لا يمكن تعديل البريد الإلكتروني</div>
-                                </div>
-                                
-                                <div class="col-md-6 mb-3">
-                                    <label for="phone" class="form-label">
-                                        <i class="fas fa-phone me-1"></i>رقم الهاتف
-                                    </label>
-                                    <input type="tel" class="form-control" id="phone" name="phone" 
-                                           value="{{ current_user.phone or '' }}">
-                                </div>
-                                
-                                <div class="col-md-6 mb-3">
-                                    <label for="mobile" class="form-label">
-                                        <i class="fas fa-mobile-alt me-1"></i>رقم الجوال
-                                    </label>
-                                    <input type="tel" class="form-control" id="mobile" name="mobile" 
-                                           value="{{ current_user.mobile or '' }}">
-                                </div>
-                                
-                                <div class="col-md-6 mb-3">
-                                    <label for="job_title" class="form-label">
-                                        <i class="fas fa-briefcase me-1"></i>المسمى الوظيفي (الإنجليزية)
-                                    </label>
-                                    <input type="text" class="form-control" id="job_title" name="job_title" 
-                                           value="{{ current_user.job_title or '' }}">
-                                </div>
-                                
-                                <div class="col-md-6 mb-3">
-                                    <label for="job_title_ar" class="form-label">
-                                        <i class="fas fa-briefcase me-1"></i>المسمى الوظيفي (العربية)
-                                    </label>
-                                    <input type="text" class="form-control" id="job_title_ar" name="job_title_ar" 
-                                           value="{{ current_user.job_title_ar or '' }}">
-                                </div>
-                            </div>
-                            
-                            <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-secondary" onclick="resetForm()">
-                                    <i class="fas fa-undo me-2"></i>إعادة تعيين
-                                </button>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-2"></i>حفظ التغييرات
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                    
-                    <!-- الأمان -->
-                    <div class="tab-pane fade" id="security" role="tabpanel">
-                        <form method="POST" action="{{ url_for('auth.profile') }}" novalidate>
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>نصائح الأمان:</strong>
-                                <ul class="mb-0 mt-2">
-                                    <li>استخدم كلمة مرور قوية تحتوي على أحرف كبيرة وصغيرة وأرقام ورموز</li>
-                                    <li>لا تستخدم كلمة المرور نفسها في مواقع أخرى</li>
-                                    <li>تغيير كلمة المرور بشكل دوري كل 3 أشهر</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="current_password" class="form-label">
-                                        <i class="fas fa-key me-1"></i>كلمة المرور الحالية
-                                    </label>
-                                    <input type="password" class="form-control" id="current_password" 
-                                           name="current_password" placeholder="أدخل كلمة المرور الحالية">
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="new_password" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>كلمة المرور الجديدة
-                                    </label>
-                                    <input type="password" class="form-control" id="new_password" 
-                                           name="new_password" placeholder="أدخل كلمة المرور الجديدة">
-                                    <div class="form-text">يجب أن تتكون من 8 أحرف على الأقل</div>
-                                </div>
-                                
-                                <div class="col-md-6 mb-3">
-                                    <label for="confirm_password" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>تأكيد كلمة المرور الجديدة
-                                    </label>
-                                    <input type="password" class="form-control" id="confirm_password" 
-                                           name="confirm_password" placeholder="أعد إدخال كلمة المرور الجديدة">
-                                </div>
-                            </div>
-                            
-                            <div class="d-flex justify-content-between mt-4">
-                                <a href="#overview" class="btn btn-secondary" data-bs-toggle="tab">
-                                    <i class="fas fa-arrow-right me-2"></i>رجوع
-                                </a>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-2"></i>تغيير كلمة المرور
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                    
-                    <!-- النشاط -->
-                    <div class="tab-pane fade" id="activity" role="tabpanel">
-                        <div class="info-card">
-                            <h5 class="card-title">
-                                <i class="fas fa-history"></i>سجل النشاط
-                            </h5>
-                            
-                            {% if current_user.login_count > 0 %}
-                            <div class="activity-item">
-                                <div class="activity-icon">
-                                    <i class="fas fa-sign-in-alt"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <div class="info-label">آخر دخول إلى النظام</div>
-                                    <div class="info-value">
-                                        {% if current_user.last_login %}
-                                        {{ current_user.last_login.strftime('%Y-%m-%d %H:%M') }}
-                                        {% else %}
-                                        لا يوجد سجلات
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="activity-time">
-                                    {% if current_user.last_login %}
-                                    منذ {{ ((now - current_user.last_login).seconds // 3600) }} ساعة
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="activity-item">
-                                <div class="activity-icon">
-                                    <i class="fas fa-chart-bar"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <div class="info-label">إجمالي مرات الدخول</div>
-                                    <div class="info-value">{{ current_user.login_count or 0 }} مرة</div>
-                                </div>
-                            </div>
-                            
-                            <div class="activity-item">
-                                <div class="activity-icon">
-                                    <i class="fas fa-calendar-plus"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <div class="info-label">تاريخ إنشاء الحساب</div>
-                                    <div class="info-value">{{ current_user.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
-                                </div>
-                                <div class="activity-time">
-                                    منذ {{ ((now - current_user.created_at).days) }} يوم
-                                </div>
-                            </div>
-                            
-                            <div class="activity-item">
-                                <div class="activity-icon">
-                                    <i class="fas fa-sync-alt"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <div class="info-label">آخر تحديث للملف</div>
-                                    <div class="info-value">
-                                        {% if current_user.updated_at %}
-                                        {{ current_user.updated_at.strftime('%Y-%m-%d %H:%M') }}
-                                        {% else %}
-                                        لا يوجد تحديثات
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            {% else %}
-                            <div class="text-center py-4">
-                                <i class="fas fa-history fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">لا يوجد سجلات نشاط حتى الآن</p>
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="text-center mt-3">
-                            <a href="{{ url_for('company.dashboard') }}" class="btn btn-outline-primary">
-                                <i class="fas fa-arrow-right me-2"></i>العودة إلى الرئيسية
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="flex flex-col lg:flex-row gap-6">
+
+  <!-- Sidebar -->
+  <aside class="w-full lg:w-56 flex-shrink-0">
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sticky top-20">
+      <div class="mb-4 px-1">
+        <h2 class="text-base font-bold text-blue-900">الإعدادات</h2>
+        <p class="text-xs text-slate-400 mt-0.5">تحكم في تفضيلات حسابك</p>
+      </div>
+      <nav class="flex flex-col gap-1">
+        {% set tabs = [
+          ('overview','overview','person','نظرة عامة'),
+          ('info','info','edit','المعلومات الشخصية'),
+          ('security','security','lock','الأمان'),
+          ('activity','activity','history','سجل النشاط'),
+        ] %}
+        {% for tab_id, target, icon, label in tabs %}
+        <button onclick="switchTab('{{ target }}')"
+          id="tab-btn-{{ tab_id }}"
+          class="tab-btn flex items-center gap-3 p-3 rounded-xl text-sm font-medium transition-all text-right w-full
+            {% if tab_id == 'overview' %}bg-blue-50 text-blue-900{% else %}text-slate-500 hover:bg-slate-50{% endif %}">
+          <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">{{ icon }}</span>
+          {{ label }}
+        </button>
+        {% endfor %}
+      </nav>
+      <div class="mt-4 pt-4 border-t border-slate-100">
+        <a href="{{ url_for('company.dashboard') }}" class="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-900 text-white rounded-xl text-sm font-bold hover:bg-blue-800 transition-colors">
+          الرئيسية <span class="material-symbols-outlined text-sm">home</span>
+        </a>
+      </div>
     </div>
+  </aside>
+
+  <!-- Main Content -->
+  <section class="flex-1 flex flex-col gap-5">
+
+    <!-- Profile Header -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="h-28 bg-gradient-to-l from-blue-900 to-blue-700 relative">
+        <div class="absolute -bottom-12 right-6 w-24 h-24 rounded-full border-4 border-white bg-blue-50 flex items-center justify-center shadow-md overflow-hidden">
+          <span class="material-symbols-outlined text-5xl text-blue-900" style="font-variation-settings:'FILL' 1;">person</span>
+        </div>
+      </div>
+      <div class="pt-14 pb-5 px-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-3">
+        <div>
+          <h1 class="text-xl font-bold text-slate-900">{{ current_user.full_name }}</h1>
+          <p class="text-sm text-slate-400">{{ current_user.job_title or 'موظف' }} • {{ current_user.department.name if current_user.department else '' }}</p>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <span class="text-xs bg-blue-50 text-blue-900 font-bold px-2.5 py-1 rounded-full border border-blue-100">{{ current_user.role }}</span>
+            <span class="text-xs {% if current_user.is_active %}bg-emerald-50 text-emerald-700 border-emerald-100{% else %}bg-red-50 text-red-600 border-red-100{% endif %} font-bold px-2.5 py-1 rounded-full border">
+              {{ 'نشط' if current_user.is_active else 'غير نشط' }}
+            </span>
+            <span class="text-xs bg-slate-50 text-slate-500 px-2.5 py-1 rounded-full border border-slate-200">عضو منذ {{ current_user.created_at.strftime('%Y-%m-%d') }}</span>
+          </div>
+        </div>
+        <button onclick="switchTab('info')" class="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
+          <span class="material-symbols-outlined text-base">edit</span> تعديل الملف
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB: Overview -->
+    <div id="tab-overview" class="tab-pane space-y-5">
+      <!-- Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {% set stat_items = [
+          ('folder','bg-blue-50 text-blue-900','0','المشاريع'),
+          ('task_alt','bg-emerald-50 text-emerald-600','0','المهام النشطة'),
+          ('login','bg-amber-50 text-amber-600',current_user.login_count or 0,'مرات الدخول'),
+          ('schedule','bg-slate-50 text-slate-600',current_user.last_login.strftime('%d/%m') if current_user.last_login else '—','آخر دخول'),
+        ] %}
+        {% for icon, cls, val, label in stat_items %}
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-2.5 {{ cls }} rounded-xl flex-shrink-0">
+            <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' 1;">{{ icon }}</span>
+          </div>
+          <div>
+            <p class="text-xl font-bold text-slate-900">{{ val }}</p>
+            <p class="text-xs text-slate-400">{{ label }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Info Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Basic Info -->
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-100 bg-slate-50">
+            <h3 class="text-sm font-bold text-slate-900">المعلومات الأساسية</h3>
+          </div>
+          <div class="divide-y divide-slate-100">
+            {% set basic_info = [
+              ('email','البريد الإلكتروني', current_user.email),
+              ('phone','الهاتف', current_user.phone or 'غير محدد'),
+              ('badge','رقم الموظف', current_user.employee_id or 'غير محدد'),
+            ] %}
+            {% for icon, label, val in basic_info %}
+            <div class="flex items-center gap-3 px-5 py-3">
+              <div class="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-sm text-blue-900">{{ icon }}</span>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400">{{ label }}</p>
+                <p class="text-sm font-semibold text-slate-900">{{ val }}</p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <!-- Work Info -->
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-100 bg-slate-50">
+            <h3 class="text-sm font-bold text-slate-900">المعلومات الوظيفية</h3>
+          </div>
+          <div class="divide-y divide-slate-100">
+            {% set work_info = [
+              ('business','القسم', current_user.department.name if current_user.department else 'غير محدد'),
+              ('manage_accounts','الدور', current_user.role),
+              ('event','تاريخ التعيين', current_user.hire_date.strftime('%Y-%m-%d') if current_user.hire_date else 'غير محدد'),
+            ] %}
+            {% for icon, label, val in work_info %}
+            <div class="flex items-center gap-3 px-5 py-3">
+              <div class="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-sm text-blue-900">{{ icon }}</span>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400">{{ label }}</p>
+                <p class="text-sm font-semibold text-slate-900">{{ val }}</p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Status -->
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+        <h3 class="text-sm font-bold text-slate-900 mb-3">حالة الحساب</h3>
+        <div class="flex flex-wrap gap-3">
+          <div class="flex items-center gap-2 bg-{% if current_user.is_active %}emerald{% else %}red{% endif %}-50 border border-{% if current_user.is_active %}emerald{% else %}red{% endif %}-100 px-4 py-2 rounded-xl">
+            <span class="material-symbols-outlined text-{% if current_user.is_active %}emerald-500{% else %}red-500{% endif %} text-base" style="font-variation-settings:'FILL' 1;">{% if current_user.is_active %}check_circle{% else %}cancel{% endif %}</span>
+            <span class="text-sm font-semibold text-{% if current_user.is_active %}emerald-700{% else %}red-600{% endif %}">{{ 'الحساب نشط' if current_user.is_active else 'الحساب معطل' }}</span>
+          </div>
+          <div class="flex items-center gap-2 bg-{% if current_user.is_verified %}blue{% else %}amber{% endif %}-50 border border-{% if current_user.is_verified %}blue{% else %}amber{% endif %}-100 px-4 py-2 rounded-xl">
+            <span class="material-symbols-outlined text-{% if current_user.is_verified %}blue-500{% else %}amber-500{% endif %} text-base" style="font-variation-settings:'FILL' 1;">{% if current_user.is_verified %}verified_user{% else %}shield{% endif %}</span>
+            <span class="text-sm font-semibold text-{% if current_user.is_verified %}blue-700{% else %}amber-700{% endif %}">{{ 'موثق' if current_user.is_verified else 'قيد التحقق' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Personal Info Form -->
+    <div id="tab-info" class="tab-pane hidden">
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 bg-slate-50">
+          <h3 class="text-base font-bold text-slate-900">تعديل المعلومات الشخصية</h3>
+        </div>
+        <div class="p-5">
+          <form method="POST" action="{{ url_for('auth.profile') }}" novalidate class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {{ form.hidden_tag() if form is defined }}
+            {% set fields = [
+              ('full_name','الاسم الكامل (إنجليزي)','text', current_user.full_name),
+              ('full_name_ar','الاسم الكامل (عربي)','text', current_user.full_name_ar or ''),
+              ('phone','رقم الهاتف','tel', current_user.phone or ''),
+              ('mobile','رقم الجوال','tel', current_user.mobile or ''),
+              ('job_title','المسمى الوظيفي (إنجليزي)','text', current_user.job_title or ''),
+              ('job_title_ar','المسمى الوظيفي (عربي)','text', current_user.job_title_ar or ''),
+            ] %}
+            {% for name, label, type, val in fields %}
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">{{ label }}</label>
+              <input type="{{ type }}" name="{{ name }}" value="{{ val }}"
+                class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all"/>
+            </div>
+            {% endfor %}
+            <div class="md:col-span-2">
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">البريد الإلكتروني</label>
+              <input type="email" value="{{ current_user.email }}" disabled
+                class="w-full text-sm border border-slate-100 bg-slate-50 rounded-xl px-3 py-2.5 text-slate-400 cursor-not-allowed"/>
+              <p class="text-xs text-slate-400 mt-1">لا يمكن تعديل البريد الإلكتروني</p>
+            </div>
+            <div class="md:col-span-2 flex justify-end gap-3 pt-3 border-t border-slate-100">
+              <button type="button" onclick="switchTab('overview')" class="px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">إلغاء</button>
+              <button type="submit" name="action" value="update_profile" class="px-6 py-2.5 bg-blue-900 text-white text-sm font-bold rounded-xl hover:bg-blue-800 shadow-sm transition-all">حفظ التغييرات</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Security -->
+    <div id="tab-security" class="tab-pane hidden space-y-5">
+      <!-- Status -->
+      <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-center gap-3">
+        <span class="material-symbols-outlined text-emerald-600 text-xl" style="font-variation-settings:'FILL' 1;">verified_user</span>
+        <div>
+          <p class="text-sm font-bold text-emerald-800">الحساب محمي</p>
+          <p class="text-xs text-emerald-600">آخر دخول: {{ current_user.last_login.strftime('%Y-%m-%d %H:%M') if current_user.last_login else '—' }}</p>
+        </div>
+      </div>
+      <!-- Change Password -->
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 bg-slate-50">
+          <h3 class="text-base font-bold text-slate-900">تغيير كلمة المرور</h3>
+        </div>
+        <div class="p-5">
+          <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-5 text-xs text-blue-700 space-y-1">
+            <p class="font-bold mb-1">نصائح الأمان:</p>
+            <p>• استخدم 8 أحرف على الأقل تشمل أرقاماً ورموزاً</p>
+            <p>• لا تستخدم نفس كلمة المرور في مواقع أخرى</p>
+            <p>• غيّر كلمة مرورك كل 3 أشهر</p>
+          </div>
+          <form method="POST" action="{{ url_for('auth.profile') }}" class="space-y-4" novalidate>
+            {{ form.hidden_tag() if form is defined }}
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">كلمة المرور الحالية</label>
+              <input type="password" name="current_password" placeholder="أدخل كلمة المرور الحالية"
+                class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-900"/>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1.5">كلمة المرور الجديدة</label>
+                <input type="password" id="new_password" name="new_password" placeholder="أدخل كلمة مرور جديدة"
+                  class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-900"/>
+                <div id="strengthBar" class="mt-2 hidden">
+                  <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div id="strengthFill" class="h-1.5 rounded-full transition-all"></div></div>
+                  <p id="strengthText" class="text-xs mt-1"></p>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1.5">تأكيد كلمة المرور</label>
+                <input type="password" id="confirm_password" name="confirm_password" placeholder="أعد إدخال كلمة المرور"
+                  class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-900"/>
+                <p id="matchMsg" class="text-xs mt-1 hidden"></p>
+              </div>
+            </div>
+            <div class="flex justify-end pt-3 border-t border-slate-100">
+              <button type="submit" name="action" value="change_password" class="px-6 py-2.5 bg-blue-900 text-white text-sm font-bold rounded-xl hover:bg-blue-800 shadow-sm">تغيير كلمة المرور</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Activity -->
+    <div id="tab-activity" class="tab-pane hidden">
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 bg-slate-50">
+          <h3 class="text-base font-bold text-slate-900">سجل النشاط</h3>
+        </div>
+        <div class="divide-y divide-slate-100">
+          {% set acts = [
+            ('login','آخر دخول إلى النظام', current_user.last_login.strftime('%Y-%m-%d %H:%M') if current_user.last_login else 'لا يوجد', 'bg-blue-50 text-blue-900'),
+            ('bar_chart','إجمالي مرات الدخول', (current_user.login_count or 0)|string + ' مرة', 'bg-emerald-50 text-emerald-700'),
+            ('calendar_add_on','تاريخ إنشاء الحساب', current_user.created_at.strftime('%Y-%m-%d %H:%M'), 'bg-slate-50 text-slate-600'),
+            ('sync','آخر تحديث للملف', current_user.updated_at.strftime('%Y-%m-%d %H:%M') if current_user.updated_at else 'لا يوجد تحديثات', 'bg-amber-50 text-amber-700'),
+          ] %}
+          {% for icon, label, val, cls in acts %}
+          <div class="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors">
+            <div class="w-10 h-10 rounded-xl {{ cls }} flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">{{ icon }}</span>
+            </div>
+            <div class="flex-1">
+              <p class="text-xs text-slate-400">{{ label }}</p>
+              <p class="text-sm font-semibold text-slate-900">{{ val }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </section>
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
-    $(document).ready(function() {
-        // تفعيل علامات التبويب
-        const triggerTabList = [].slice.call(document.querySelectorAll('#profileTab button'))
-        triggerTabList.forEach(function (triggerEl) {
-            const tabTrigger = new bootstrap.Tab(triggerEl)
-            
-            triggerEl.addEventListener('click', function (event) {
-                event.preventDefault()
-                tabTrigger.show()
-            })
-        });
-        
-        // التحقق من صحة كلمة المرور
-        $('#new_password, #confirm_password').on('keyup', function() {
-            const newPassword = $('#new_password').val();
-            const confirmPassword = $('#confirm_password').val();
-            
-            if (newPassword && confirmPassword) {
-                if (newPassword !== confirmPassword) {
-                    $('#confirm_password').addClass('is-invalid');
-                    $('.password-match-feedback').remove();
-                    $('#confirm_password').after(
-                        '<div class="invalid-feedback password-match-feedback">كلمة المرور غير متطابقة</div>'
-                    );
-                } else {
-                    $('#confirm_password').removeClass('is-invalid');
-                    $('.password-match-feedback').remove();
-                    
-                    if (newPassword.length >= 8) {
-                        $('#confirm_password').addClass('is-valid');
-                    }
-                }
-            }
-        });
-        
-        // التحقق من قوة كلمة المرور
-        $('#new_password').on('keyup', function() {
-            const password = $(this).val();
-            const strength = checkPasswordStrength(password);
-            
-            $('.password-strength').remove();
-            
-            let strengthText = '';
-            let strengthClass = '';
-            
-            switch(strength) {
-                case 0:
-                    strengthText = 'ضعيفة جداً';
-                    strengthClass = 'danger';
-                    break;
-                case 1:
-                    strengthText = 'ضعيفة';
-                    strengthClass = 'warning';
-                    break;
-                case 2:
-                    strengthText = 'متوسطة';
-                    strengthClass = 'info';
-                    break;
-                case 3:
-                    strengthText = 'قوية';
-                    strengthClass = 'success';
-                    break;
-                case 4:
-                    strengthText = 'قوية جداً';
-                    strengthClass = 'success';
-                    break;
-            }
-            
-            if (password) {
-                $(this).after(`
-                    <div class="mt-2">
-                        <small class="text-muted">قوة كلمة المرور:</small>
-                        <div class="progress" style="height: 5px;">
-                            <div class="progress-bar bg-${strengthClass}" style="width: ${(strength + 1) * 25}%"></div>
-                        </div>
-                        <small class="text-${strengthClass}">${strengthText}</small>
-                    </div>
-                `);
-            }
-        });
-        
-        function checkPasswordStrength(password) {
-            let strength = 0;
-            
-            if (password.length >= 8) strength++;
-            if (password.match(/[a-z]+/)) strength++;
-            if (password.match(/[A-Z]+/)) strength++;
-            if (password.match(/[0-9]+/)) strength++;
-            if (password.match(/[$@#&!]+/)) strength++;
-            
-            return Math.min(strength - 1, 4);
-        }
-        
-        // إعادة تعيين النموذج
-        window.resetForm = function() {
-            const form = document.querySelector('form');
-            if (form) {
-                form.reset();
-                $('.is-invalid, .is-valid').removeClass('is-invalid is-valid');
-                $('.invalid-feedback, .valid-feedback').remove();
-                showAlert('تم إعادة تعيين النموذج', 'info');
-            }
-        };
-        
-        // عرض تنبيه
-        function showAlert(message, type) {
-            const alertDiv = $('<div>', {
-                'class': `alert alert-${type} alert-dismissible fade show`,
-                'role': 'alert',
-                'html': `
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `
-            });
-            
-            $('.container-fluid').prepend(alertDiv);
-            
-            setTimeout(() => {
-                alertDiv.alert('close');
-            }, 5000);
-        }
-        
-        // حفظ حالة علامات التبويب
-        const hash = window.location.hash;
-        if (hash) {
-            const tab = document.querySelector(`[data-bs-target="${hash}"]`);
-            if (tab) {
-                new bootstrap.Tab(tab).show();
-            }
-        }
-        
-        // تحديث تاريخ الآن
-        window.now = new Date();
-    });
+function switchTab(target) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('bg-blue-50','text-blue-900');
+    b.classList.add('text-slate-500');
+  });
+  const pane = document.getElementById('tab-' + target);
+  if (pane) pane.classList.remove('hidden');
+  const btn = document.getElementById('tab-btn-' + target);
+  if (btn) { btn.classList.add('bg-blue-50','text-blue-900'); btn.classList.remove('text-slate-500'); }
+}
+
+// Password strength
+const newPw = document.getElementById('new_password');
+const confirmPw = document.getElementById('confirm_password');
+if (newPw) {
+  newPw.addEventListener('input', function() {
+    const pw = this.value;
+    const bar = document.getElementById('strengthBar');
+    const fill = document.getElementById('strengthFill');
+    const txt = document.getElementById('strengthText');
+    if (!pw) { bar.classList.add('hidden'); return; }
+    bar.classList.remove('hidden');
+    let s = 0;
+    if (pw.length >= 8) s++;
+    if (/[a-z]/.test(pw)) s++;
+    if (/[A-Z]/.test(pw)) s++;
+    if (/[0-9]/.test(pw)) s++;
+    if (/[$@#&!]/.test(pw)) s++;
+    const levels = [['bg-red-500','ضعيفة جداً','text-red-500'],['bg-red-400','ضعيفة','text-red-400'],['bg-amber-400','متوسطة','text-amber-600'],['bg-emerald-500','قوية','text-emerald-600'],['bg-emerald-600','قوية جداً','text-emerald-700']];
+    const [cls, label, tcls] = levels[Math.max(0, s-1)];
+    fill.className = 'h-1.5 rounded-full transition-all ' + cls;
+    fill.style.width = (s * 20) + '%';
+    txt.textContent = 'قوة كلمة المرور: ' + label;
+    txt.className = 'text-xs mt-1 ' + tcls;
+  });
+}
+if (confirmPw) {
+  confirmPw.addEventListener('input', function() {
+    const msg = document.getElementById('matchMsg');
+    const match = this.value === newPw.value;
+    msg.classList.remove('hidden');
+    msg.textContent = match ? '✓ كلمتا المرور متطابقتان' : '✗ كلمتا المرور غير متطابقتين';
+    msg.className = 'text-xs mt-1 ' + (match ? 'text-emerald-600' : 'text-red-500');
+  });
+}
 </script>
 {% endblock %}

@@ -1,88 +1,286 @@
 {% extends "layouts/base.html" %}
 {% block title %}{{ _('dashboard') }} — {{ _('employee') }}{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-family:'Material Symbols Outlined';display:inline-block;line-height:1;white-space:nowrap;direction:ltr;}
+body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif;}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="role-dash" id="role-dashboard-employee">
-  <div class="rd-header mb-4">
-    <h1 class="rd-title"><span class="rd-badge badge-emp"><i class="fas fa-user me-1"></i></span> {{ _('welcome_back') }}, {{ current_user.full_name or current_user.username }}</h1>
-    <p class="rd-subtitle text-muted">{{ _('employee') }}</p>
+<div class="space-y-6" id="role-dashboard-employee">
+
+  <!-- Welcome Header -->
+  <div class="bg-gradient-to-l from-blue-900 to-blue-700 rounded-3xl p-6 text-white relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 80% 50%,#fff 1px,transparent 1px);background-size:32px 32px;"></div>
+    <div class="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined text-blue-300" style="font-variation-settings:'FILL' 1;">person</span>
+          <span class="text-blue-300 text-xs font-bold uppercase tracking-wider">{{ _('employee') }}</span>
+        </div>
+        <h1 class="text-2xl font-bold text-white mb-1">{{ _('welcome_back') }}, {{ current_user.full_name or current_user.username }}</h1>
+        <p class="text-blue-200 text-sm">{{ current_user.job_title or _('employee') }} • {{ current_user.department.name if current_user.department else '' }}</p>
+      </div>
+      <div class="flex gap-2">
+        <a href="{{ url_for('tasks.index') }}" class="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-sm font-bold transition-colors backdrop-blur-sm">
+          <span class="material-symbols-outlined text-base">add_task</span> {{ _('total_tasks') }}
+        </a>
+        <a href="{{ url_for('auth.profile') }}" class="p-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl transition-colors">
+          <span class="material-symbols-outlined text-base">settings</span>
+        </a>
+      </div>
+    </div>
   </div>
 
-  <div class="row g-3 mb-4">
-    {% set mt = kpis.my_tasks %}
-    {% for icon, cls, val, label in [
-      ('fa-list-check',  'kpi-indigo', mt.total,            _('total_tasks')),
-      ('fa-circle-check','kpi-emerald',mt.completed,        _('completed_tasks')),
-      ('fa-spinner',     'kpi-blue',   mt.in_progress,      _('in_progress_tasks')),
-      ('fa-clock',       'kpi-red',    mt.overdue,          _('delayed_tasks')),
+  <!-- KPI Cards -->
+  {% set mt = kpis.my_tasks %}
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    {% set kpi_items = [
+      ('pending_actions','bg-blue-50 text-blue-900', mt.total,       _('total_tasks')),
+      ('task_alt',       'bg-emerald-50 text-emerald-600', mt.completed,  _('completed_tasks')),
+      ('autorenew',      'bg-amber-50 text-amber-600', mt.in_progress, _('in_progress_tasks')),
+      ('priority_high',  'bg-red-50 text-red-500', mt.overdue,    _('delayed_tasks')),
     ] %}
-    <div class="col-6 col-md-3">
-      <div class="rd-kpi {{ cls }}">
-        <div class="rd-kpi-icon"><i class="fas {{ icon }}"></i></div>
-        <div class="rd-kpi-body">
-          <div class="rd-kpi-value">{{ val }}</div>
-          <div class="rd-kpi-label">{{ label }}</div>
-        </div>
+    {% for icon, cls, val, label in kpi_items %}
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-shadow">
+      <div class="p-2.5 {{ cls }} rounded-xl flex-shrink-0">
+        <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' 1;">{{ icon }}</span>
+      </div>
+      <div>
+        <p class="text-2xl font-black text-slate-900">{{ val }}</p>
+        <p class="text-xs text-slate-400">{{ label }}</p>
       </div>
     </div>
     {% endfor %}
   </div>
 
-  <div class="row g-3 mb-4">
-    <div class="col-md-6">
-      <div class="rd-card">
-        <div class="rd-card-header"><span><i class="fas fa-chart-pie me-2 text-primary"></i>{{ _('completion_rate') }}</span></div>
-        <div class="rd-card-body text-center py-3">
-          <canvas id="empChart" height="200"></canvas>
+  <!-- Main Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+    <!-- Tasks Table (2/3) -->
+    <div class="lg:col-span-2 space-y-5">
+
+      <!-- Assigned Tasks -->
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <h3 class="text-base font-bold text-slate-900">{{ _('total_tasks') }}</h3>
+          <a href="{{ url_for('tasks.index') }}" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900 text-white rounded-xl text-xs font-bold hover:bg-blue-800 transition-colors">
+            <span class="material-symbols-outlined text-sm">add</span> {{ _('add') if _('add') else 'إضافة' }}
+          </a>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-right text-sm">
+            <thead class="bg-slate-50 text-slate-400 text-xs uppercase">
+              <tr>
+                <th class="px-4 py-3 font-bold">{{ _('name') }}</th>
+                <th class="px-4 py-3 font-bold">{{ _('project') }}</th>
+                <th class="px-4 py-3 font-bold">{{ _('due_date') }}</th>
+                <th class="px-4 py-3 font-bold">{{ _('status') }}</th>
+                <th class="px-4 py-3 font-bold">إجراء</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {% set st_cls = {'completed':'bg-emerald-50 text-emerald-700','in_progress':'bg-blue-50 text-blue-900','pending':'bg-amber-50 text-amber-700','delayed':'bg-red-50 text-red-500'} %}
+              {% for t in tasks %}
+              <tr class="hover:bg-slate-50 transition-colors group">
+                <td class="px-4 py-3">
+                  <a href="{{ url_for('tasks.task_detail', task_id=t.id) }}" class="font-bold text-slate-900 hover:text-blue-900 transition-colors">{{ t.task_name }}</a>
+                </td>
+                <td class="px-4 py-3 text-slate-400">{{ t.project.name if t.project else '—' }}</td>
+                <td class="px-4 py-3 {% if t.end_date and t.end_date.date() < now.date() and t.status != 'completed' %}text-red-500 font-bold{% else %}text-slate-400{% endif %}">
+                  {{ t.end_date.strftime('%Y-%m-%d') if t.end_date else '—' }}
+                </td>
+                <td class="px-4 py-3">
+                  <span class="px-2 py-1 rounded-full text-xs font-bold {{ st_cls.get(t.status,'bg-slate-100 text-slate-500') }}">{{ _(t.status) }}</span>
+                </td>
+                <td class="px-4 py-3">
+                  <a href="{{ url_for('tasks.task_detail', task_id=t.id) }}" class="p-1.5 rounded-lg hover:bg-blue-50 inline-flex opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="material-symbols-outlined text-sm text-slate-400 hover:text-blue-900">visibility</span>
+                  </a>
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="5" class="px-4 py-8 text-center text-slate-400 text-sm">{{ _('no_data') }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- My Projects -->
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <h3 class="text-base font-bold text-slate-900">{{ _('project') }}</h3>
+          <span class="text-xs bg-blue-50 text-blue-900 font-bold px-2.5 py-1 rounded-full">{{ kpis.projects_count }}</span>
+        </div>
+        <div class="divide-y divide-slate-100">
+          {% for p in my_projects %}
+          {% set pg = p.get_progress() %}
+          <div class="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors">
+            <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" class="text-sm font-semibold text-slate-900 hover:text-blue-900 transition-colors">{{ p.name }}</a>
+            <div class="flex items-center gap-3">
+              <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-1.5 bg-blue-900 rounded-full" style="width:{{ pg }}%"></div>
+              </div>
+              <span class="text-xs font-bold text-slate-600 w-8">{{ pg }}%</span>
+            </div>
+          </div>
+          {% else %}
+          <div class="px-5 py-6 text-center text-sm text-slate-400">{{ _('no_data') }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Quick Action Banner -->
+      <div class="bg-blue-900 rounded-2xl p-5 text-white relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="absolute opacity-10 -left-6 -bottom-6 rotate-12">
+          <span class="material-symbols-outlined text-8xl" style="font-variation-settings:'FILL' 1;">rocket_launch</span>
+        </div>
+        <div class="relative">
+          <h4 class="text-base font-bold mb-1">تحديث سريع للحالة</h4>
+          <p class="text-blue-200 text-xs">قم بتحديث حالة مهامك بضغطة واحدة لمشاركة التقدم مع مديرك.</p>
+        </div>
+        <div class="flex gap-2 relative flex-shrink-0">
+          <button class="px-4 py-2 bg-white text-blue-900 rounded-xl text-xs font-bold hover:bg-blue-50 transition-colors">تحديث الكل كمنجز</button>
+          <button class="px-4 py-2 border border-white/30 text-white rounded-xl text-xs font-bold hover:bg-white/10 transition-colors">طلب مساعدة</button>
         </div>
       </div>
     </div>
-    <div class="col-md-6">
-      <div class="rd-card">
-        <div class="rd-card-header"><span><i class="fas fa-folder me-2 text-emerald"></i>{{ _('project') }}</span><span class="badge bg-emerald-soft text-emerald">{{ kpis.projects_count }}</span></div>
-        <div class="rd-card-body p-0">
-          {% for p in my_projects %}
-          <div class="rd-user-row">
-            <a href="{{ url_for('projects.project_detail',project_id=p.id) }}" class="rd-link">{{ p.name }}</a>
-            {% set pg = p.get_progress() %}
-            <div class="d-flex align-items-center gap-2">
-              <div class="rd-mini-bar" style="width:80px"><div style="width:{{ pg }}%;background:var(--accent);height:100%;border-radius:4px"></div></div>
-              <small>{{ pg }}%</small>
-            </div>
+
+    <!-- Sidebar (1/3) -->
+    <div class="space-y-5">
+
+      <!-- Completion Chart -->
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+        <h3 class="text-base font-bold text-slate-900 mb-4">{{ _('completion_rate') }}</h3>
+        <div class="relative w-40 h-40 mx-auto mb-4">
+          <canvas id="empChart"></canvas>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            {% if mt.total and mt.total > 0 %}
+            <span class="text-2xl font-black text-blue-900">{{ ((mt.completed / mt.total) * 100)|int }}%</span>
+            {% else %}
+            <span class="text-2xl font-black text-blue-900">0%</span>
+            {% endif %}
+            <span class="text-xs text-slate-400">مكتمل</span>
           </div>
-          {% else %}<div class="text-center text-muted py-3 small">{{ _('no_data') }}</div>{% endfor %}
+        </div>
+        <div class="space-y-2">
+          {% set chart_lbl = [
+            ('bg-emerald-500', _('completed_tasks'), mt.completed),
+            ('bg-blue-900', _('in_progress_tasks'), mt.in_progress),
+            ('bg-slate-300', _('pending_tasks') if _('pending_tasks') else 'معلق', mt.total - mt.completed - mt.in_progress),
+          ] %}
+          {% for dot, label, val in chart_lbl %}
+          <div class="flex items-center justify-between px-2 py-1.5 rounded-xl hover:bg-slate-50 transition-colors">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full {{ dot }}"></span>
+              <span class="text-xs text-slate-600">{{ label }}</span>
+            </div>
+            <span class="text-xs font-bold text-slate-900">{{ val }}</span>
+          </div>
+          {% endfor %}
         </div>
       </div>
+
+      <!-- Notifications -->
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <h3 class="text-base font-bold text-slate-900">الإشعارات</h3>
+          <span class="material-symbols-outlined text-slate-400 text-base">notifications</span>
+        </div>
+        <div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">
+          {% if notifications is defined and notifications %}
+          {% for notif in notifications[:5] %}
+          <div class="flex gap-3 px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer">
+            <div class="w-9 h-9 rounded-full bg-blue-50 text-blue-900 flex items-center justify-center text-sm font-bold flex-shrink-0">
+              {{ notif.sender[:1] if notif.sender else 'ن' }}
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-900">{{ notif.sender or 'نظام الإشعارات' }}</p>
+              <p class="text-xs text-slate-400 mt-0.5 leading-relaxed">{{ notif.message[:80] }}...</p>
+              <span class="text-xs text-slate-300 mt-1 block">{{ notif.time if notif.time else '' }}</span>
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <!-- Sample notifications -->
+          {% set sample_notifs = [
+            ('س','سارة محمود (مديرة المشروع)','تم تحديث متطلبات مشروع البنية التحتية، يرجى المراجعة.','منذ ١٠ دقائق','bg-blue-50 text-blue-900','border-r-2 border-blue-900 bg-slate-50'),
+            ('ن','نظام الإشعارات','مهمة جديدة أسندت إليك: "تطوير واجهة تسجيل الدخول".','منذ ساعة','bg-amber-50 text-amber-700',''),
+            ('خ','خالد حسن','هل يمكنك إرسال ملفات التصميم الخاصة ببرج التجارة؟','أمس','bg-slate-100 text-slate-600',''),
+          ] %}
+          {% for init, name, msg, time, cls, row_cls in sample_notifs %}
+          <div class="flex gap-3 px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer {{ row_cls }}">
+            <div class="w-9 h-9 rounded-full {{ cls }} flex items-center justify-center text-sm font-bold flex-shrink-0">{{ init }}</div>
+            <div>
+              <p class="text-xs font-bold text-slate-900">{{ name }}</p>
+              <p class="text-xs text-slate-400 mt-0.5 leading-relaxed">{{ msg }}</p>
+              <span class="text-xs text-slate-300 mt-1 block">{{ time }}</span>
+            </div>
+          </div>
+          {% endfor %}
+          {% endif %}
+        </div>
+        <div class="px-4 py-2 border-t border-slate-100 text-center">
+          <a href="{{ url_for('notifications.index') if 'notifications' in url_for.__module__ else '#' }}" class="text-xs text-blue-900 font-bold hover:underline">عرض الكل</a>
+        </div>
+      </div>
+
+      <!-- Daily Schedule -->
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+        <h3 class="text-base font-bold text-slate-900 mb-4 pb-3 border-b border-slate-100">الجدول اليومي</h3>
+        <div class="space-y-4 relative before:absolute before:right-[5px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+          {% set sched = [
+            ('09:00 ص','اجتماع الفريق الصباحي','قاعة الاجتماعات الكبرى','bg-blue-900'),
+            ('11:30 ص','مراجعة التصاميم','مع مدير المشروع','bg-slate-300'),
+            ('01:00 م','استراحة غداء','','bg-slate-200'),
+            ('03:00 م','ورشة عمل: تحسين الأداء','عبر الإنترنت','bg-blue-500'),
+          ] %}
+          {% for time, title, loc, dot in sched %}
+          <div class="relative pr-5">
+            <div class="absolute right-0 top-1.5 w-2.5 h-2.5 rounded-full {{ dot }} border-2 border-white shadow-sm"></div>
+            <p class="text-xs font-bold text-blue-900 mb-0.5">{{ time }}</p>
+            <p class="text-sm font-semibold text-slate-900">{{ title }}</p>
+            {% if loc %}<p class="text-xs text-slate-400">{{ loc }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <div class="rd-card">
-    <div class="rd-card-header"><span><i class="fas fa-tasks me-2 text-primary"></i>{{ _('total_tasks') }}</span></div>
-    <div class="table-responsive">
-      <table class="rd-table">
-        <thead><tr><th>{{ _('name') }}</th><th>{{ _('status') }}</th><th>{{ _('project') }}</th><th>{{ _('due_date') }}</th></tr></thead>
-        <tbody>
-          {% for t in tasks %}
-          <tr>
-            <td><a href="{{ url_for('tasks.task_detail',task_id=t.id) }}" class="rd-link">{{ t.task_name }}</a></td>
-            <td>{% set sc={'completed':'emerald','in_progress':'indigo','pending':'amber'} %}<span class="rd-status-badge {{ sc.get(t.status,'slate') }}">{{ _(t.status) }}</span></td>
-            <td class="small text-muted">{{ t.project.name if t.project else '—' }}</td>
-            <td class="small {% if t.end_date and t.end_date.date() < now.date() and t.status != 'completed' %}text-danger fw-bold{% else %}text-muted{% endif %}">
-              {{ t.end_date.strftime('%Y-%m-%d') if t.end_date else '—' }}
-            </td>
-          </tr>
-          {% else %}<tr><td colspan="4" class="text-center py-3 text-muted">{{ _('no_data') }}</td></tr>{% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
 </div>
+
+<!-- FAB -->
+<div class="fixed bottom-6 left-6 z-50">
+  <a href="{{ url_for('tasks.index') }}" class="w-14 h-14 bg-blue-900 text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all hover:shadow-blue-900/30">
+    <span class="material-symbols-outlined text-2xl">add</span>
+  </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded',function(){
-  const c=document.getElementById('empChart');
-  if(c){
-    const mt={{ kpis.my_tasks | tojson }};
-    new Chart(c,{type:'doughnut',data:{labels:['{{ _("completed") }}','{{ _("in_progress") }}','{{ _("pending") }}'],datasets:[{data:[mt.completed,mt.in_progress,mt.pending],backgroundColor:['#10b981','#6366f1','#94a3b8'],borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'bottom'}},cutout:'65%'}});
-  }
+document.addEventListener('DOMContentLoaded', function() {
+  const ctx = document.getElementById('empChart');
+  if (!ctx) return;
+  const mt = {{ kpis.my_tasks | tojson }};
+  const pending = Math.max(0, mt.total - mt.completed - mt.in_progress);
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['مكتملة', 'قيد التنفيذ', 'معلقة'],
+      datasets: [{ data: [mt.completed, mt.in_progress, pending], backgroundColor: ['#10b981','#00236f','#cbd5e1'], borderWidth: 3, borderColor: '#fff' }]
+    },
+    options: { cutout: '72%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.label + ': ' + c.parsed } } }, maintainAspectRatio: true }
+  });
 });
 </script>
 {% endblock %}

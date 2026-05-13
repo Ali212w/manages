@@ -1,141 +1,203 @@
-{% extends "auth_base.html" %}
+<!DOCTYPE html>
+<html dir="{{ current_dir|default('rtl') }}" lang="{{ current_lang|default('ar') }}">
+<head>
+<meta charset="UTF-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{{ _('login') }} | {{ _('app_name') }}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
+<style>
+  body { font-family: 'IBM Plex Sans Arabic', 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; font-family:'Material Symbols Outlined'; display:inline-block; line-height:1; white-space:nowrap; direction:ltr; }
+</style>
+</head>
+<body class="min-h-screen flex overflow-hidden bg-slate-50">
 
-{% block title %}{{ _('login') }}{% endblock %}
+<!-- Left Panel -->
+<aside class="hidden lg:flex flex-1 relative items-center justify-center overflow-hidden bg-blue-900">
+  <div class="absolute inset-0 z-0">
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-900/95 to-blue-950"></div>
+    <div class="absolute -top-24 -right-24 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-800/20 rounded-full blur-3xl"></div>
+  </div>
+  <div class="relative z-10 w-full max-w-xl px-8">
+    <div class="backdrop-blur-2xl bg-white/5 p-12 rounded-3xl border border-white/10 shadow-2xl">
+      <div class="flex items-center gap-2 mb-8">
+        <span class="inline-flex px-4 py-1.5 rounded-full bg-blue-600 text-white text-xs font-bold">إصدار المؤسسات 2024</span>
+      </div>
+      <h2 class="text-4xl font-bold leading-tight mb-6 text-white">إدارة مشاريعك بذكاء واحترافية</h2>
+      <p class="text-blue-200/90 mb-12 leading-relaxed">انضم إلى آلاف الشركات التي تعتمد على Manages في تنظيم سير العمل، تتبع المهام، واستخراج التقارير الذكية.</p>
+      <div class="relative pr-6 border-r-2 border-blue-500/50">
+        <p class="italic text-white/80 mb-4 leading-relaxed">"لقد ساهمت هذه المنصة في تحسين كفاءة فريقنا بنسبة 40% خلال الربع الأول فقط."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold text-sm border-2 border-white/20">أ</div>
+          <div>
+            <div class="font-bold text-white text-sm">أحمد المنصور</div>
+            <div class="text-white/60 text-xs">مدير العمليات، شركة التقنية الحديثة</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-6 mt-8 text-white">
+      <div class="text-right"><p class="text-2xl font-bold text-blue-200 mb-1">+500</p><p class="text-xs opacity-60">عميل نشط</p></div>
+      <div class="text-right"><p class="text-2xl font-bold text-blue-200 mb-1">99.9%</p><p class="text-xs opacity-60">وقت التشغيل</p></div>
+      <div class="text-right"><p class="text-2xl font-bold text-blue-200 mb-1">24/7</p><p class="text-xs opacity-60">دعم فني</p></div>
+    </div>
+  </div>
+</aside>
 
-{% block content %}
-<div class="auth-container" x-data="{ tab: 'user', showPwd: false }">
-    <div class="auth-brand">
-        <div class="auth-brand-icon"><i class="fas fa-chart-line"></i></div>
-        <div class="auth-brand-text">{{ _('app_name_short') }}</div>
-        <div class="auth-brand-subtitle">{{ _('smart_platform') }}</div>
+<!-- Right Panel - Form -->
+<main class="flex-1 flex flex-col justify-center items-center px-6 lg:px-12 py-8 bg-white overflow-y-auto" x-data="{ tab: 'user', showPwd: false }">
+  <div class="w-full max-w-md">
+
+    <!-- Logo -->
+    <div class="flex flex-col items-center gap-2 mb-8">
+      <div class="w-12 h-12 bg-blue-900 rounded-xl flex items-center justify-center text-white shadow-lg mb-2">
+        <span class="material-symbols-outlined text-2xl">data_usage</span>
+      </div>
+      <h1 class="text-xl font-bold text-slate-900">Manages</h1>
     </div>
 
-    <div class="auth-card">
-        <div class="auth-card-header">
-            <h1 class="auth-title">{{ _('welcome_back') }}</h1>
-            <p class="auth-subtitle">{{ _('login_to_continue') }}</p>
-        </div>
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h2 class="text-3xl font-bold text-slate-900 mb-2">{{ _('welcome_back') }}</h2>
+      <p class="text-slate-500">{{ _('login_to_continue') }}</p>
+    </div>
 
-        <div class="auth-tabs">
-            <button type="button" class="auth-tab" :class="{ active: tab === 'user' }" @click="tab = 'user'">
-                <i class="fas fa-user"></i> {{ _('user_login') }}
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+        <div class="mb-4 p-4 rounded-xl text-sm {% if category == 'success' %}bg-green-50 text-green-800 border border-green-200{% elif category in ['danger','error'] %}bg-red-50 text-red-800 border border-red-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+          {{ message }}
+        </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Tabs -->
+    <div class="flex rounded-xl border border-slate-200 p-1 mb-6 bg-slate-50">
+      <button type="button" @click="tab='user'"
+        :class="tab==='user' ? 'bg-white shadow text-blue-900 font-bold' : 'text-slate-500'"
+        class="flex-1 py-2.5 px-4 rounded-lg text-sm transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-lg">person</span> {{ _('user_login') }}
+      </button>
+      <button type="button" @click="tab='org'"
+        :class="tab==='org' ? 'bg-white shadow text-blue-900 font-bold' : 'text-slate-500'"
+        class="flex-1 py-2.5 px-4 rounded-lg text-sm transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-lg">business</span> {{ _('organization_login') }}
+      </button>
+    </div>
+
+    <!-- User Login Form -->
+    <form method="POST" action="{{ url_for('auth.login') }}" x-show="tab==='user'" x-transition>
+      {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+      <input type="hidden" name="login_type" value="user">
+      <div class="flex flex-col gap-5">
+        <div>
+          <label class="text-xs font-bold text-slate-700 mb-1.5 block" for="userEmail">{{ _('email_address') }}</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">mail</span>
+            <input class="w-full pr-12 pl-4 py-3.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-white transition-all outline-none text-sm" id="userEmail" name="email" placeholder="name@company.com" type="email" required autofocus/>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="text-xs font-bold text-slate-700" for="userPassword">{{ _('password') }}</label>
+            <a class="text-xs text-blue-600 hover:text-blue-900 font-medium" href="{{ url_for('auth.forgot_password') }}">{{ _('forgot_password') }}</a>
+          </div>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">lock</span>
+            <input :type="showPwd ? 'text' : 'password'" class="w-full pr-12 pl-12 py-3.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-white transition-all outline-none text-sm" id="userPassword" name="password" placeholder="••••••••" required/>
+            <button class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors" type="button" @click="showPwd=!showPwd">
+              <span class="material-symbols-outlined text-xl" x-text="showPwd ? 'visibility_off' : 'visibility'"></span>
             </button>
-            <button type="button" class="auth-tab" :class="{ active: tab === 'org' }" @click="tab = 'org'">
-                <i class="fas fa-building"></i> {{ _('organization_login') }}
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <input class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer" id="remember" name="remember" type="checkbox"/>
+          <label class="text-sm text-slate-500 cursor-pointer select-none" for="remember">{{ _('remember_me') }}</label>
+        </div>
+        <button class="w-full py-4 bg-blue-900 text-white font-bold text-base rounded-xl hover:bg-blue-800 transition-all shadow-md hover:shadow-xl active:scale-[0.99]" type="submit">
+          {{ _('login') }}
+        </button>
+      </div>
+    </form>
+
+    <!-- Org Login Form -->
+    <form method="POST" action="{{ url_for('auth.login') }}" x-show="tab==='org'" x-transition x-cloak>
+      {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+      <input type="hidden" name="login_type" value="org">
+      <div class="flex flex-col gap-5">
+        <div>
+          <label class="text-xs font-bold text-slate-700 mb-1.5 block" for="orgEmail">{{ _('company_email') }}</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">business</span>
+            <input class="w-full pr-12 pl-4 py-3.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-white transition-all outline-none text-sm" id="orgEmail" name="email" placeholder="info@company.com" type="email" required/>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-700 mb-1.5 block" for="orgPassword">{{ _('company_password') }}</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">lock</span>
+            <input :type="showPwd ? 'text' : 'password'" class="w-full pr-12 pl-12 py-3.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-white transition-all outline-none text-sm" id="orgPassword" name="password" placeholder="••••••••" required/>
+            <button class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors" type="button" @click="showPwd=!showPwd">
+              <span class="material-symbols-outlined text-xl" x-text="showPwd ? 'visibility_off' : 'visibility'"></span>
             </button>
+          </div>
         </div>
-
-        <div class="auth-card-body">
-            {# User login form #}
-            <form method="POST" action="{{ url_for('auth.login') }}" id="userLoginForm" x-show="tab === 'user'" x-transition>
-                {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
-                <input type="hidden" name="login_type" value="user">
-
-                <div class="form-group">
-                    <label class="form-label" for="userEmail">{{ _('email_address') }}</label>
-                    <div class="input-group-modern">
-                        <i class="fas fa-envelope input-icon"></i>
-                        <input type="email" class="form-control" id="userEmail" name="email"
-                               placeholder="admin@company.com" required autofocus>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="userPassword">{{ _('password') }}</label>
-                    <div class="input-group-modern">
-                        <i class="fas fa-lock input-icon"></i>
-                        <input :type="showPwd ? 'text' : 'password'" class="form-control" id="userPassword"
-                               name="password" placeholder="••••••••" required>
-                        <button class="input-action" type="button" @click="showPwd = !showPwd" tabindex="-1">
-                            <i :class="showPwd ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="auth-row">
-                    <label class="checkbox-row">
-                        <input type="checkbox" name="remember">
-                        <span>{{ _('remember_me') }}</span>
-                    </label>
-                    <a href="{{ url_for('auth.forgot_password') }}" class="text-sm text-primary">
-                        <i class="fas fa-key"></i> {{ _('forgot_password') }}
-                    </a>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-block btn-lg">
-                    <i class="fas fa-sign-in-alt"></i> {{ _('login') }}
-                </button>
-            </form>
-
-            {# Organization login form #}
-            <form method="POST" action="{{ url_for('auth.login') }}" id="orgLoginForm" x-show="tab === 'org'" x-transition x-cloak>
-                {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
-                <input type="hidden" name="login_type" value="org">
-
-                <div class="form-group">
-                    <label class="form-label" for="orgEmail">{{ _('company_email') }}</label>
-                    <div class="input-group-modern">
-                        <i class="fas fa-building input-icon"></i>
-                        <input type="email" class="form-control" id="orgEmail" name="email"
-                               placeholder="info@company.com" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="orgPassword">{{ _('company_password') }}</label>
-                    <div class="input-group-modern">
-                        <i class="fas fa-lock input-icon"></i>
-                        <input :type="showPwd ? 'text' : 'password'" class="form-control" id="orgPassword"
-                               name="password" placeholder="••••••••" required>
-                        <button class="input-action" type="button" @click="showPwd = !showPwd" tabindex="-1">
-                            <i :class="showPwd ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    <div>{{ _('org_login_info') }}</div>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-block btn-lg">
-                    <i class="fas fa-sign-in-alt"></i> {{ _('organization_login') }}
-                </button>
-            </form>
+        <div class="p-4 bg-blue-50 rounded-xl border border-blue-100 text-sm text-blue-800 flex gap-2">
+          <span class="material-symbols-outlined text-blue-600 text-lg">info</span>
+          {{ _('org_login_info') }}
         </div>
+        <button class="w-full py-4 bg-blue-900 text-white font-bold text-base rounded-xl hover:bg-blue-800 transition-all shadow-md hover:shadow-xl active:scale-[0.99]" type="submit">
+          {{ _('organization_login') }}
+        </button>
+      </div>
+    </form>
 
-        <div class="auth-card-footer">
-            <span class="text-muted-foreground">{{ _('dont_have_account') }}</span>
-            <a href="{{ url_for('auth.register_company') }}" class="text-primary font-semibold">{{ _('register_company_now') }}</a>
-        </div>
+    <!-- Footer Link -->
+    <div class="mt-8 text-center">
+      <p class="text-sm text-slate-500">
+        {{ _('dont_have_account') }}
+        <a class="text-blue-600 font-bold hover:underline" href="{{ url_for('auth.register_company') }}">{{ _('register_company_now') }}</a>
+      </p>
     </div>
 
-    <div class="auth-card" style="margin-top: 1rem; background: hsl(var(--accent) / 0.5);">
-        <div class="auth-card-body">
-            <h6 class="text-sm font-semibold mb-3"><i class="fas fa-flask text-primary"></i> {{ _('demo_credentials') }}</h6>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="demo-cred" x-data>
-                    <div class="demo-cred-role"><i class="fas fa-user-tie"></i> {{ _('company_admin') }}</div>
-                    <div class="demo-cred-email">admin@company.com</div>
-                    <div class="demo-cred-pw">
-                        <span>Admin123!</span>
-                        <button class="icon-button-sm" @click="navigator.clipboard.writeText('Admin123!'); $el.querySelector('i').className='fas fa-check'; setTimeout(()=>{$el.querySelector('i').className='fas fa-copy'}, 1500)">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="demo-cred" x-data>
-                    <div class="demo-cred-role"><i class="fas fa-user"></i> {{ _('employee') }}</div>
-                    <div class="demo-cred-email">employee@company.com</div>
-                    <div class="demo-cred-pw">
-                        <span>Employee123!</span>
-                        <button class="icon-button-sm" @click="navigator.clipboard.writeText('Employee123!'); $el.querySelector('i').className='fas fa-check'; setTimeout(()=>{$el.querySelector('i').className='fas fa-copy'}, 1500)">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
+    <!-- Demo Credentials -->
+    <div class="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200" x-data>
+      <h6 class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm text-blue-600">science</span>
+        {{ _('demo_credentials') }}
+      </h6>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white rounded-lg p-3 border border-slate-200">
+          <div class="text-xs font-bold text-slate-700 mb-1">{{ _('company_admin') }}</div>
+          <div class="text-xs text-slate-500 mb-1">admin@company.com</div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono text-blue-900">Admin123!</span>
+            <button class="text-slate-400 hover:text-blue-600 transition-colors" @click="navigator.clipboard.writeText('Admin123!')">
+              <span class="material-symbols-outlined text-sm">content_copy</span>
+            </button>
+          </div>
         </div>
+        <div class="bg-white rounded-lg p-3 border border-slate-200">
+          <div class="text-xs font-bold text-slate-700 mb-1">{{ _('employee') }}</div>
+          <div class="text-xs text-slate-500 mb-1">employee@company.com</div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono text-blue-900">Employee123!</span>
+            <button class="text-slate-400 hover:text-blue-600 transition-colors" @click="navigator.clipboard.writeText('Employee123!')">
+              <span class="material-symbols-outlined text-sm">content_copy</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
-{% endblock %}
+
+  </div>
+</main>
+
+</body>
+</html>

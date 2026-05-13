@@ -1,655 +1,356 @@
 {% extends "company/base.html" %}
-
-{% block title %}المشاريع - نظام إدارة المشاريع{% endblock %}
-
-{% block page_title %}المشاريع{% endblock %}
-{% block page_subtitle %}عرض وإدارة جميع المشاريع{% endblock %}
+{% block title %}المشاريع - {{ g.company.name }}{% endblock %}
+{% block page_title %}إدارة المشاريع{% endblock %}
+{% block page_subtitle %}نظرة عامة شاملة على أداء فريقك ومسار العمل{% endblock %}
 
 {% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
-    /* ===== المتغيرات الأساسية ===== */
-    :root {
-        --project-primary: #4361ee;
-        --project-success: #4caf50;
-        --project-warning: #ff9800;
-        --project-danger: #f44336;
-        --project-info: #00bcd4;
-    }
-
-    /* ===== الحاوية الرئيسية ===== */
-    .projects-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.5s ease;
-    }
-
-    /* ===== إحصائيات سريعة ===== */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .stat-card {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
-        border: 1px solid #eef2f7;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 30px rgba(67, 97, 238, 0.1);
-    }
-
-    .stat-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-    }
-
-    .stat-icon.total { background: rgba(67, 97, 238, 0.1); color: var(--project-primary); }
-    .stat-icon.active { background: rgba(76, 175, 80, 0.1); color: var(--project-success); }
-    .stat-icon.planning { background: rgba(255, 152, 0, 0.1); color: var(--project-warning); }
-    .stat-icon.completed { background: rgba(0, 188, 212, 0.1); color: var(--project-info); }
-    .stat-icon.overdue { background: rgba(244, 67, 54, 0.1); color: var(--project-danger); }
-
-    .stat-content {
-        flex: 1;
-    }
-
-    .stat-value {
-        font-size: 2rem;
-        font-weight: 800;
-        color: var(--dark);
-        line-height: 1.2;
-    }
-
-    .stat-label {
-        color: #6c757d;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* ===== رأس الصفحة ===== */
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .header-title {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .header-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 15px;
-        background: linear-gradient(135deg, var(--project-primary), #3f37c9);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        box-shadow: 0 10px 20px rgba(67, 97, 238, 0.3);
-    }
-
-    .header-text h2 {
-        font-size: 2rem;
-        font-weight: 800;
-        color: var(--dark);
-        margin: 0;
-    }
-
-    .header-text p {
-        color: #6c757d;
-        margin: 0.3rem 0 0;
-    }
-
-    .btn-create {
-        background: linear-gradient(135deg, var(--project-primary), #3f37c9);
-        border: none;
-        padding: 0.8rem 2rem;
-        border-radius: 12px;
-        color: white;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.3s ease;
-        text-decoration: none;
-    }
-
-    .btn-create:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
-    }
-
-    /* ===== شريط البحث ===== */
-    .search-section {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
-    }
-
-    .filter-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-    }
-
-    .filter-label {
-        font-weight: 600;
-        color: var(--dark);
-        margin-bottom: 0.3rem;
-        font-size: 0.9rem;
-    }
-
-    .filter-input, .filter-select {
-        width: 100%;
-        padding: 0.6rem 1rem;
-        border: 2px solid #eef2f7;
-        border-radius: 10px;
-        transition: all 0.3s;
-    }
-
-    .filter-input:focus, .filter-select:focus {
-        border-color: var(--project-primary);
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-    }
-
-    /* ===== جدول المشاريع ===== */
-    .table-container {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
-    }
-
-    .table-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
-
-    .table-title {
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: var(--dark);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .table-title i {
-        color: var(--project-primary);
-    }
-
-    .projects-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0 0.5rem;
-    }
-
-    .projects-table thead th {
-        background: #f8fafc;
-        padding: 1rem;
-        font-weight: 600;
-        color: #475569;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        white-space: nowrap;
-    }
-
-    .projects-table tbody tr {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        transition: all 0.3s;
-        cursor: pointer;
-    }
-
-    .projects-table tbody tr:hover {
-        box-shadow: 0 8px 20px rgba(67, 97, 238, 0.15);
-        transform: translateY(-2px);
-    }
-
-    .projects-table td {
-        padding: 1rem;
-        vertical-align: middle;
-    }
-
-    .project-code {
-        font-weight: 700;
-        color: var(--project-primary);
-        font-family: monospace;
-    }
-
-    .project-name {
-        font-weight: 600;
-        color: var(--dark);
-    }
-
-    .status-badge {
-        padding: 0.3rem 0.8rem;
-        border-radius: 30px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .status-planning { background: #fff3cd; color: #856404; }
-    .status-active { background: #cce5ff; color: #004085; }
-    .status-completed { background: #d4edda; color: #155724; }
-
-    .progress-container {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        min-width: 100px;
-    }
-
-    .progress-bar {
-        flex: 1;
-        height: 6px;
-        background: #eef2f7;
-        border-radius: 3px;
-        overflow: hidden;
-    }
-
-    .progress-fill {
-        height: 100%;
-        background: var(--project-success);
-        border-radius: 3px;
-        transition: width 0.3s;
-    }
-
-    .progress-text {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--dark);
-    }
-
-    .overdue-badge {
-        background: #f8d7da;
-        color: #721c24;
-        padding: 0.2rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.7rem;
-        font-weight: 600;
-    }
-
-    .action-btn {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        border: 2px solid #eef2f7;
-        background: white;
-        color: #6c757d;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        margin: 0 0.2rem;
-    }
-
-    .action-btn:hover {
-        border-color: var(--project-primary);
-        color: var(--project-primary);
-        transform: translateY(-2px);
-    }
-
-    .action-btn.delete:hover {
-        border-color: var(--project-danger);
-        color: var(--project-danger);
-    }
-
-    /* ===== حالة فارغة ===== */
-    .empty-state {
-        text-align: center;
-        padding: 3rem;
-        background: #f8fafc;
-        border-radius: 20px;
-    }
-
-    .empty-state-icon {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        background: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 1.5rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    }
-
-    .empty-state-icon i {
-        font-size: 3rem;
-        color: var(--project-primary);
-    }
-
-    .empty-state h3 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--dark);
-        margin-bottom: 0.5rem;
-    }
-
-    .empty-state p {
-        color: #6c757d;
-        margin-bottom: 2rem;
-    }
-
-    /* ===== رسوم متحركة ===== */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-family:'Material Symbols Outlined';display:inline-block;line-height:1;white-space:nowrap;direction:ltr;}
+body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif;}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="projects-container">
-    <!-- إحصائيات سريعة -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon total">
-                <i class="fas fa-project-diagram"></i>
+<div class="space-y-6">
+
+  <!-- Stats Row -->
+  <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+    {% set stat_items = [
+      ('folder_special','bg-blue-50 text-blue-900', stats.total,     'إجمالي المشاريع'),
+      ('play_circle',   'bg-emerald-50 text-emerald-600', stats.active,    'نشطة'),
+      ('schedule',      'bg-amber-50 text-amber-600', stats.planning,  'مخطط لها'),
+      ('task_alt',      'bg-sky-50 text-sky-600', stats.completed, 'مكتملة'),
+      ('warning',       'bg-red-50 text-red-500', stats.overdue,   'متأخرة'),
+    ] %}
+    {% for icon, cls, val, label in stat_items %}
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
+      <div class="p-2.5 {{ cls }} rounded-xl flex-shrink-0">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">{{ icon }}</span>
+      </div>
+      <div>
+        <p class="text-xl font-bold text-slate-900">{{ val }}</p>
+        <p class="text-xs text-slate-400">{{ label }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Header & Actions -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900">المشاريع</h2>
+      <p class="text-sm text-slate-400 mt-0.5">إدارة جميع المشاريع ومتابعة التقدم</p>
+    </div>
+    <div class="flex gap-2">
+      <!-- View toggle -->
+      <div class="flex bg-slate-100 rounded-xl p-1 gap-1">
+        <button id="gridViewBtn" onclick="switchView('grid')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white text-blue-900 shadow-sm">
+          <span class="material-symbols-outlined text-base">grid_view</span>
+        </button>
+        <button id="tableViewBtn" onclick="switchView('table')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-500">
+          <span class="material-symbols-outlined text-base">table_rows</span>
+        </button>
+      </div>
+      <a href="{{ url_for('upload.upload_page') }}" class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold hover:bg-slate-50 shadow-sm">
+        <span class="material-symbols-outlined text-base text-slate-500">upload_file</span> رفع ملف
+      </a>
+      <a href="{{ url_for('projects.create_project') }}" class="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-xl text-sm font-bold hover:bg-blue-800 shadow-sm">
+        <span class="material-symbols-outlined text-base">add</span> مشروع جديد
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters Bar -->
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+      <div class="md:col-span-2 relative">
+        <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-base">search</span>
+        <input id="searchInput" type="text" placeholder="ابحث باسم أو كود المشروع..."
+          class="w-full text-sm border border-slate-200 rounded-xl pr-9 pl-3 py-2 outline-none focus:ring-2 focus:ring-blue-900"/>
+      </div>
+      <select id="statusFilter" class="text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-900">
+        <option value="">جميع الحالات</option>
+        <option value="planning">مخطط</option>
+        <option value="active">نشط</option>
+        <option value="completed">مكتمل</option>
+        <option value="delayed">متأخر</option>
+      </select>
+      <select id="categoryFilter" class="text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-900">
+        <option value="">جميع التصنيفات</option>
+        <option value="حكومي">حكومي</option>
+        <option value="خاص">خاص</option>
+        <option value="خيري">خيري</option>
+      </select>
+      <select id="priorityFilter" class="text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-900">
+        <option value="">جميع الأولويات</option>
+        <option value="high">عالية</option>
+        <option value="medium">متوسطة</option>
+        <option value="low">منخفضة</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- GRID VIEW -->
+  <div id="gridView">
+    {% if projects %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {% set st_cls = {
+        'active':    'bg-emerald-50 text-emerald-700 border-emerald-100',
+        'planning':  'bg-amber-50 text-amber-700 border-amber-100',
+        'completed': 'bg-blue-50 text-blue-700 border-blue-100',
+        'delayed':   'bg-red-50 text-red-600 border-red-100',
+        'cancelled': 'bg-slate-100 text-slate-500 border-slate-200',
+      } %}
+      {% set st_lbl = {'active':'نشط','planning':'مخطط','completed':'مكتمل','delayed':'متأخر','cancelled':'ملغي'} %}
+      {% set st_icons = {'active':'play_circle','planning':'schedule','completed':'task_alt','delayed':'warning','cancelled':'cancel'} %}
+
+      {% for project in projects %}
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col group project-row"
+           data-code="{{ project.project_code }}" data-name="{{ project.name }}"
+           data-status="{{ project.status }}" data-category="{{ project.category or '' }}"
+           {% if project.is_overdue %}data-overdue="1"{% endif %}>
+
+        <!-- Card Top Bar -->
+        <div class="h-1.5 rounded-t-2xl
+          {% if project.status == 'active' %}bg-emerald-500
+          {% elif project.status == 'completed' %}bg-blue-500
+          {% elif project.is_overdue or project.status == 'delayed' %}bg-red-500
+          {% else %}bg-amber-400{% endif %}"></div>
+
+        <div class="p-5 flex flex-col flex-1">
+          <!-- Header -->
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <span class="text-xs font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded font-mono">{{ project.project_code }}</span>
+              {% if project.is_overdue %}
+              <span class="text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded mr-1">متأخر</span>
+              {% endif %}
             </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ stats.total }}</div>
-                <div class="stat-label">إجمالي المشاريع</div>
+            <div class="flex items-center gap-1">
+              <span class="text-xs font-bold px-2 py-1 rounded-full border {{ st_cls.get(project.status,'bg-slate-100 text-slate-500 border-slate-200') }}">
+                <span class="material-symbols-outlined text-xs" style="font-variation-settings:'FILL' 1;">{{ st_icons.get(project.status,'info') }}</span>
+                {{ st_lbl.get(project.status, project.status) }}
+              </span>
+              <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="p-1.5 rounded-lg hover:bg-slate-100 transition-colors" onclick="event.stopPropagation()">
+                <span class="material-symbols-outlined text-sm text-slate-400">open_in_new</span>
+              </a>
             </div>
+          </div>
+
+          <!-- Title & Desc -->
+          <h3 class="text-base font-bold text-slate-900 mb-1 group-hover:text-blue-900 transition-colors leading-snug">{{ project.name }}</h3>
+          {% if project.category %}
+          <p class="text-xs text-slate-400 mb-3">{{ project.category }}</p>
+          {% endif %}
+
+          <!-- Progress -->
+          <div class="mb-4">
+            <div class="flex justify-between text-xs text-slate-400 mb-1.5">
+              <span>التقدم</span>
+              <span class="font-bold text-slate-700">{{ project.progress.progress_percentage if project.progress else 0 }}%</span>
+            </div>
+            <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-2 rounded-full transition-all duration-700
+                {% if project.is_overdue %}bg-red-500
+                {% elif project.status == 'completed' %}bg-emerald-500
+                {% else %}bg-blue-900{% endif %}"
+                style="width:{{ project.progress.progress_percentage if project.progress else 0 }}%"></div>
+            </div>
+          </div>
+
+          <!-- Stats Row -->
+          <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+            <div class="bg-slate-50 rounded-xl p-2">
+              <p class="text-base font-bold text-slate-900">{{ project.statistics.total_tasks if project.statistics else 0 }}</p>
+              <p class="text-xs text-slate-400">المهام</p>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-2">
+              <p class="text-base font-bold text-slate-900">{{ project.statistics.total_activities if project.statistics else 0 }}</p>
+              <p class="text-xs text-slate-400">النشاطات</p>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-2">
+              <p class="text-sm font-bold text-slate-900 truncate">{{ "{:,.0f}".format(project.budget.current_budget) if project.budget else '—' }}</p>
+              <p class="text-xs text-slate-400">ر.س</p>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex justify-between items-center pt-3 border-t border-slate-100 mt-auto">
+            <div class="flex items-center gap-1 text-xs text-slate-400">
+              <span class="material-symbols-outlined text-sm">calendar_today</span>
+              {% if project.dates and project.dates.planned_start %}
+              {{ project.dates.planned_start.strftime('%d/%m/%Y') }}
+              {% else %}—{% endif %}
+            </div>
+            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="p-1.5 rounded-lg hover:bg-blue-50 transition-colors">
+                <span class="material-symbols-outlined text-sm text-slate-400 hover:text-blue-900">visibility</span>
+              </a>
+              <a href="{{ url_for('projects.edit_project', project_id=project.id) }}" class="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                <span class="material-symbols-outlined text-sm text-slate-400 hover:text-blue-900">edit</span>
+              </a>
+              <button onclick="deleteProject({{ project.id }})" class="p-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                <span class="material-symbols-outlined text-sm text-slate-400 hover:text-red-500">delete</span>
+              </button>
+            </div>
+          </div>
         </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon active">
-                <i class="fas fa-play-circle"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ stats.active }}</div>
-                <div class="stat-label">مشاريع نشطة</div>
-            </div>
+      </div>
+      {% endfor %}
+
+      <!-- Add New Card -->
+      <a href="{{ url_for('projects.create_project') }}"
+         class="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-blue-50/50 hover:border-blue-300 transition-all group min-h-[280px]">
+        <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-blue-100 transition-all">
+          <span class="material-symbols-outlined text-2xl text-blue-900">add</span>
         </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon planning">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ stats.planning }}</div>
-                <div class="stat-label">مخطط لها</div>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon completed">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ stats.completed }}</div>
-                <div class="stat-label">مكتملة</div>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon overdue">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ stats.overdue }}</div>
-                <div class="stat-label">متأخرة</div>
-            </div>
-        </div>
+        <h3 class="text-base font-bold text-slate-900 mb-1">إضافة مشروع</h3>
+        <p class="text-sm text-slate-400 max-w-[180px]">ابدأ مشروعاً جديداً وخصص فريق العمل</p>
+      </a>
     </div>
 
-    <!-- رأس الصفحة -->
-    <div class="page-header">
-        <div class="header-title">
-            <div class="header-icon">
-                <i class="fas fa-project-diagram"></i>
-            </div>
-            <div class="header-text">
-                <h2>المشاريع</h2>
-                <p>إدارة جميع المشاريع ومتابعة التقدم</p>
-            </div>
-        </div>
-        <a href="{{ url_for('projects.create_project') }}" class="btn-create">
-            <i class="fas fa-plus"></i>
-            مشروع جديد
-        </a>
-        <a href="{{ url_for('upload.upload_page') }}" class="btn-primary-gradient">
-            <i class="fas fa-plus me-2"></i> رفع ملف
-        </a>
+    {% else %}
+    <!-- Empty State -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-16 text-center">
+      <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <span class="material-symbols-outlined text-4xl text-blue-900">folder_open</span>
+      </div>
+      <h3 class="text-xl font-bold text-slate-900 mb-2">لا توجد مشاريع</h3>
+      <p class="text-slate-400 mb-6">لم يتم إنشاء أي مشاريع بعد. ابدأ بإنشاء مشروع جديد.</p>
+      <a href="{{ url_for('projects.create_project') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-900 text-white rounded-xl font-bold hover:bg-blue-800 shadow-sm">
+        <span class="material-symbols-outlined">add</span> إنشاء مشروع جديد
+      </a>
     </div>
+    {% endif %}
+  </div>
 
-    <!-- شريط البحث -->
-    <div class="search-section">
-        <div class="filter-grid">
-            <div>
-                <div class="filter-label">
-                    <i class="fas fa-search me-1"></i>
-                    بحث
-                </div>
-                <input type="text" class="filter-input" id="searchInput" placeholder="ابحث باسم أو كود المشروع...">
-            </div>
-            <div>
-                <div class="filter-label">
-                    <i class="fas fa-tag me-1"></i>
-                    الحالة
-                </div>
-                <select class="filter-select" id="statusFilter">
-                    <option value="">الكل</option>
-                    <option value="planning">مخطط</option>
-                    <option value="active">نشط</option>
-                    <option value="completed">مكتمل</option>
-                </select>
-            </div>
-            <div>
-                <div class="filter-label">
-                    <i class="fas fa-layer-group me-1"></i>
-                    التصنيف
-                </div>
-                <select class="filter-select" id="categoryFilter">
-                    <option value="">الكل</option>
-                    <option value="حكومي">حكومي</option>
-                    <option value="خاص">خاص</option>
-                    <option value="خيري">خيري</option>
-                </select>
-            </div>
-            <div>
-                <div class="filter-label">
-                    <i class="fas fa-flag me-1"></i>
-                    الأولوية
-                </div>
-                <select class="filter-select" id="priorityFilter">
-                    <option value="">الكل</option>
-                    <option value="50">عالية</option>
-                    <option value="50">متوسطة</option>
-                    <option value="50">منخفضة</option>
-                </select>
-            </div>
-        </div>
+  <!-- TABLE VIEW -->
+  <div id="tableView" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+      <h3 class="text-base font-bold text-slate-900">قائمة المشاريع</h3>
+      <span class="text-xs bg-blue-50 text-blue-900 font-bold px-2.5 py-1 rounded-full">{{ projects|length }} مشروع</span>
     </div>
-
-    <!-- جدول المشاريع -->
-    <div class="table-container">
-        <div class="table-header">
-            <div class="table-title">
-                <i class="fas fa-list"></i>
-                قائمة المشاريع
-            </div>
-            <span class="badge bg-primary">{{ projects|length }} مشروع</span>
-        </div>
-
-        <div class="table-responsive">
-            <table class="projects-table">
-                <thead>
-                    <tr>
-                        <th>كود المشروع</th>
-                        <th>اسم المشروع</th>
-                        <th>الحالة</th>
-                        <th>التقدم</th>
-                        <th>تاريخ البداية</th>
-                        <th>تاريخ النهاية</th>
-                        <th>الميزانية</th>
-                        <th>التصنيف</th>
-                        <th>النشاطات</th>
-                        <th>المهام</th>
-                        <th>الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for project in projects %}
-                    <tr onclick="window.location.href='{{ url_for('projects.project_detail', project_id=project.id) }}'">
-                        <td>
-                            <span class="project-code">{{ project.project_code }}</span>
-                        </td>
-                        <td>
-                            <span class="project-name">{{ project.name }}</span>
-                        </td>
-                        <td>
-                            <span class="status-badge status-{{ project.status }}">
-                                {% if project.status == 'planning' %}
-                                <i class="fas fa-clock me-1"></i>مخطط
-                                {% elif project.status == 'active' %}
-                                <i class="fas fa-play-circle me-1"></i>نشط
-                                {% elif project.status == 'completed' %}
-                                <i class="fas fa-check-circle me-1"></i>مكتمل
-                                {% endif %}
-                            </span>
-                            {% if project.is_overdue %}
-                            <span class="overdue-badge">
-                                <i class="fas fa-exclamation-circle me-1"></i>متأخر
-                            </span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="progress-container">
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width: {{ project.progress.progress_percentage }}%"></div>
-                                </div>
-                                <span class="progress-text">{{ project.progress.progress_percentage }}%</span>
-                            </div>
-                        </td>
-                        <td>{{ project.dates.planned_start.strftime('%Y-%m-%d') if project.dates and project.dates.planned_start else '-' }}</td>
-                        <td>{{ project.dates.planned_finish.strftime('%Y-%m-%d') if project.dates and project.dates.planned_finish else '-' }}</td>
-                        <td>{{ "{:,.0f}".format(project.budget.current_budget) if project.budget else '0' }} ر.س</td>
-                        <td>{{ project.category or '-' }}</td>
-                        <td><span class="badge bg-primary">{{ project.statistics.total_activities if project.statistics else 0 }}</span></td>
-                        <td><span class="badge bg-info">{{ project.statistics.total_tasks if project.statistics else 0 }}</span></td>
-                        <td onclick="event.stopPropagation()">
-                            <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="action-btn" title="عرض">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ url_for('projects.edit_project', project_id=project.id) }}" class="action-btn" title="تعديل">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button class="action-btn delete" onclick="deleteProject({{ project.id }})" title="حذف">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="11">
-                            <div class="empty-state">
-                                <div class="empty-state-icon">
-                                    <i class="fas fa-folder-open"></i>
-                                </div>
-                                <h3>لا توجد مشاريع</h3>
-                                <p>لم يتم إنشاء أي مشاريع بعد. ابدأ بإنشاء مشروع جديد.</p>
-                                <a href="{{ url_for('projects.create_project') }}" class="btn-create">
-                                    <i class="fas fa-plus"></i>
-                                    إنشاء مشروع جديد
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-right text-sm">
+        <thead class="bg-slate-50 text-slate-400 text-xs uppercase">
+          <tr>
+            <th class="px-4 py-3 font-bold">كود المشروع</th>
+            <th class="px-4 py-3 font-bold">اسم المشروع</th>
+            <th class="px-4 py-3 font-bold">الحالة</th>
+            <th class="px-4 py-3 font-bold">التقدم</th>
+            <th class="px-4 py-3 font-bold">تاريخ البداية</th>
+            <th class="px-4 py-3 font-bold">تاريخ النهاية</th>
+            <th class="px-4 py-3 font-bold">الميزانية</th>
+            <th class="px-4 py-3 font-bold">التصنيف</th>
+            <th class="px-4 py-3 font-bold">المهام</th>
+            <th class="px-4 py-3 font-bold">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% set st_badge = {
+            'active':    'bg-emerald-50 text-emerald-700',
+            'planning':  'bg-amber-50 text-amber-700',
+            'completed': 'bg-blue-50 text-blue-700',
+            'delayed':   'bg-red-50 text-red-600',
+            'cancelled': 'bg-slate-100 text-slate-500',
+          } %}
+          {% for project in projects %}
+          <tr class="hover:bg-slate-50 transition-colors cursor-pointer project-row"
+              data-code="{{ project.project_code }}" data-name="{{ project.name }}"
+              data-status="{{ project.status }}" data-category="{{ project.category or '' }}"
+              onclick="window.location.href='{{ url_for('projects.project_detail', project_id=project.id) }}'">
+            <td class="px-4 py-4">
+              <span class="font-mono text-xs font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded">{{ project.project_code }}</span>
+            </td>
+            <td class="px-4 py-4">
+              <p class="font-bold text-slate-900">{{ project.name }}</p>
+              {% if project.is_overdue %}<span class="text-xs text-red-500 font-bold">متأخر</span>{% endif %}
+            </td>
+            <td class="px-4 py-4">
+              <span class="px-2 py-1 rounded-full text-xs font-bold {{ st_badge.get(project.status,'bg-slate-100 text-slate-500') }}">
+                {{ st_lbl.get(project.status, project.status) if st_lbl is defined else project.status }}
+              </span>
+            </td>
+            <td class="px-4 py-4 w-36">
+              <div class="flex items-center gap-2">
+                <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-1.5 bg-blue-900 rounded-full" style="width:{{ project.progress.progress_percentage if project.progress else 0 }}%"></div>
+                </div>
+                <span class="text-xs font-bold text-slate-600">{{ project.progress.progress_percentage if project.progress else 0 }}%</span>
+              </div>
+            </td>
+            <td class="px-4 py-4 text-xs text-slate-500">{{ project.dates.planned_start.strftime('%Y-%m-%d') if project.dates and project.dates.planned_start else '—' }}</td>
+            <td class="px-4 py-4 text-xs text-slate-500">{{ project.dates.planned_finish.strftime('%Y-%m-%d') if project.dates and project.dates.planned_finish else '—' }}</td>
+            <td class="px-4 py-4 text-xs font-semibold text-slate-700">{{ "{:,.0f}".format(project.budget.current_budget) if project.budget else '0' }} ر.س</td>
+            <td class="px-4 py-4 text-xs text-slate-500">{{ project.category or '—' }}</td>
+            <td class="px-4 py-4">
+              <span class="text-xs bg-blue-50 text-blue-900 font-bold px-2 py-0.5 rounded-full">{{ project.statistics.total_tasks if project.statistics else 0 }}</span>
+            </td>
+            <td class="px-4 py-4" onclick="event.stopPropagation()">
+              <div class="flex items-center gap-1">
+                <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="p-1.5 rounded-lg hover:bg-blue-50">
+                  <span class="material-symbols-outlined text-sm text-slate-400 hover:text-blue-900">visibility</span>
+                </a>
+                <a href="{{ url_for('projects.edit_project', project_id=project.id) }}" class="p-1.5 rounded-lg hover:bg-slate-100">
+                  <span class="material-symbols-outlined text-sm text-slate-400 hover:text-blue-900">edit</span>
+                </a>
+                <button onclick="deleteProject({{ project.id }})" class="p-1.5 rounded-lg hover:bg-red-50">
+                  <span class="material-symbols-outlined text-sm text-slate-400 hover:text-red-500">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="10" class="px-4 py-10 text-center text-slate-400">لا توجد مشاريع</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </div>
+
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// فلترة الجدول
-document.getElementById('searchInput').addEventListener('keyup', filterTable);
-document.getElementById('statusFilter').addEventListener('change', filterTable);
-document.getElementById('categoryFilter').addEventListener('change', filterTable);
-
-function filterTable() {
-    const searchText = document.getElementById('searchInput').value.toLowerCase();
-    const statusFilter = document.getElementById('statusFilter').value;
-    const categoryFilter = document.getElementById('categoryFilter').value;
-    
-    const rows = document.querySelectorAll('tbody tr');
-    
-    rows.forEach(row => {
-        if (row.querySelector('td[colspan]')) return;
-        
-        const code = row.cells[0].textContent.toLowerCase();
-        const name = row.cells[1].textContent.toLowerCase();
-        const status = row.cells[2].textContent.trim().toLowerCase();
-        const category = row.cells[7].textContent;
-        
-        const matchesSearch = code.includes(searchText) || name.includes(searchText);
-        const matchesStatus = !statusFilter || status.includes(statusFilter);
-        const matchesCategory = !categoryFilter || category.includes(categoryFilter);
-        
-        row.style.display = matchesSearch && matchesStatus && matchesCategory ? '' : 'none';
-    });
+function switchView(view) {
+  const grid = document.getElementById('gridView'), table = document.getElementById('tableView');
+  const gridBtn = document.getElementById('gridViewBtn'), tableBtn = document.getElementById('tableViewBtn');
+  if (view === 'grid') {
+    grid.classList.remove('hidden'); table.classList.add('hidden');
+    gridBtn.classList.add('bg-white','text-blue-900','shadow-sm'); gridBtn.classList.remove('text-slate-500');
+    tableBtn.classList.remove('bg-white','text-blue-900','shadow-sm'); tableBtn.classList.add('text-slate-500');
+  } else {
+    table.classList.remove('hidden'); grid.classList.add('hidden');
+    tableBtn.classList.add('bg-white','text-blue-900','shadow-sm'); tableBtn.classList.remove('text-slate-500');
+    gridBtn.classList.remove('bg-white','text-blue-900','shadow-sm'); gridBtn.classList.add('text-slate-500');
+  }
 }
 
+function applyFilters() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  const category = document.getElementById('categoryFilter').value;
+  document.querySelectorAll('.project-row').forEach(el => {
+    const matchS = !search || (el.dataset.code||'').toLowerCase().includes(search) || (el.dataset.name||'').toLowerCase().includes(search);
+    const matchSt = !status || el.dataset.status === status;
+    const matchC = !category || (el.dataset.category||'').includes(category);
+    el.style.display = (matchS && matchSt && matchC) ? '' : 'none';
+  });
+}
+['searchInput','statusFilter','categoryFilter','priorityFilter'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', applyFilters), el.addEventListener('change', applyFilters);
+});
+
 function deleteProject(id) {
-    confirmDelete('هل أنت متأكد من حذف هذا المشروع؟', function() {
-        fetch(`/projects/${id}/delete`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token() }}'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showSuccess('تم حذف المشروع بنجاح');
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                showError(data.error || 'حدث خطأ أثناء الحذف');
-            }
-        });
-    });
+  if (!confirm('هل أنت متأكد من حذف هذا المشروع؟')) return;
+  fetch(`/projects/${id}/delete`, { method:'POST', headers:{'X-CSRFToken':'{{ csrf_token() }}'} })
+    .then(r => r.json()).then(d => { if(d.success) location.reload(); else alert(d.error || 'حدث خطأ'); });
 }
 </script>
 {% endblock %}

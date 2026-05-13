@@ -1,293 +1,272 @@
 {% extends "layouts/base.html" %}
 {% block title %}{{ _('dashboard') }} — {{ _('org_admin') }}{% endblock %}
 
+{% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-family:'Material Symbols Outlined';display:inline-block;line-height:1;white-space:nowrap;direction:ltr;}
+body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif; background-color: #f8f9ff;}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="role-dash" id="role-dashboard-org-admin">
+<div class="space-y-6" id="role-dashboard-org-admin">
 
-  <!-- ══ Header ══ -->
-  <div class="rd-header d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+  <!-- Header -->
+  <header class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
     <div>
-      <h1 class="rd-title">
-        <span class="rd-badge badge-admin"><i class="fas fa-crown me-1"></i></span>
-        {{ _('welcome_back') }}, {{ current_user.full_name or current_user.username }}
+      <h1 class="text-3xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+        <span class="material-symbols-outlined text-blue-900 text-3xl">corporate_fare</span>
+        مرحباً بك في {{ g.company.name if g.company else 'مؤسسة نجم' }}
       </h1>
-      <p class="rd-subtitle text-muted mb-0">
-        <i class="far fa-clock me-1"></i> {{ now.strftime('%A, %d %B %Y') }}
-        &nbsp;|&nbsp;
-        <span class="text-success fw-semibold"><i class="fas fa-circle-dot me-1" style="font-size:.65rem"></i>{{ _('real_time_data') }}</span>
-      </p>
+      <p class="text-base text-slate-500">إليك نظرة سريعة على أداء مؤسستك اليوم. ({{ current_user.full_name or current_user.username }})</p>
     </div>
-    <div class="d-flex gap-2">
-      <a href="{{ url_for('dashboard.advanced_dashboard') }}" class="btn rd-btn-primary">
-        <i class="fas fa-chart-bar me-1"></i> {{ _('financial_analysis') }}
+    <div class="flex gap-3">
+      <a href="{{ url_for('projects.list_projects') }}" class="bg-blue-900 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 text-sm font-bold hover:bg-blue-800 transition-colors shadow-sm">
+        <span class="material-symbols-outlined text-base">monitoring</span> تتبع المشاريع
       </a>
-      <a href="{{ url_for('projects.list_projects') }}" class="btn rd-btn-outline">
-        <i class="fas fa-folder-open me-1"></i> {{ _('all_projects') }}
+      <a href="{{ url_for('dashboard.advanced_dashboard') }}" class="border-2 border-blue-900 text-blue-900 px-5 py-2.5 rounded-xl flex items-center gap-2 text-sm font-bold hover:bg-blue-50 transition-colors">
+        <span class="material-symbols-outlined text-base">bar_chart</span> التحليل المالي
       </a>
     </div>
-  </div>
+  </header>
 
-  <!-- ══ KPI Row 1: المشاريع ══ -->
-  <div class="row g-3 mb-4">
-    {% set cards = [
-      ('fa-diagram-project', 'kpi-indigo',  kpis.total_projects,    _('total_projects'),     '', ''),
-      ('fa-play-circle',     'kpi-emerald', kpis.active_projects,   _('active_projects'),    '', ''),
-      ('fa-check-circle',    'kpi-blue',    kpis.completed_projects,_('completed'), '', ''),
-      ('fa-triangle-exclamation','kpi-red', kpis.overdue_projects,  _('overdue'),            '', ''),
-    ] %}
-    {% for icon, cls, val, label, sub, _ in cards %}
-    <div class="col-6 col-md-3">
-      <div class="rd-kpi {{ cls }}">
-        <div class="rd-kpi-icon"><i class="fas {{ icon }}"></i></div>
-        <div class="rd-kpi-body">
-          <div class="rd-kpi-value">{{ val }}</div>
-          <div class="rd-kpi-label">{{ label }}</div>
-        </div>
+  <!-- Bento Grid Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+    
+    <!-- Main KPI -->
+    <div class="bg-blue-900 rounded-2xl p-6 flex flex-col justify-between text-white relative overflow-hidden group hover:shadow-lg transition-shadow">
+      <div class="relative z-10">
+        <p class="text-xs font-bold text-blue-200 uppercase tracking-wider">إجمالي المشاريع</p>
+        <h3 class="text-5xl font-black mt-2">{{ kpis.total_projects }}</h3>
+        <p class="text-xs text-blue-200 mt-4 flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1;">trending_up</span>
+          منها {{ kpis.active_projects }} مشروع نشط
+        </p>
       </div>
+      <span class="material-symbols-outlined absolute -bottom-4 -left-4 text-9xl text-white/10 rotate-12 group-hover:rotate-0 transition-transform duration-500" style="font-variation-settings:'FILL' 1;">rocket_launch</span>
     </div>
-    {% endfor %}
-  </div>
 
-  <!-- ══ KPI Row 2: المهام ══ -->
-  <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-      <div class="rd-kpi kpi-slate">
-        <div class="rd-kpi-icon"><i class="fas fa-list-check"></i></div>
-        <div class="rd-kpi-body">
-          <div class="rd-kpi-value">{{ kpis.total_tasks }}</div>
-          <div class="rd-kpi-label">{{ _('total_tasks') }}</div>
+    <!-- Users Stats -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow">
+      <div>
+        <div class="flex justify-between items-start">
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">المستخدمين النشطين</p>
+          <span class="p-2 bg-blue-50 text-blue-900 rounded-xl material-symbols-outlined" style="font-variation-settings:'FILL' 1;">group</span>
         </div>
+        <h3 class="text-4xl font-black text-slate-900 mt-2">{{ kpis.total_users }}</h3>
+      </div>
+      <div class="mt-4">
+        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+          <div class="bg-blue-900 h-full rounded-full" style="width: 75%"></div>
+        </div>
+        <p class="text-xs text-slate-400 mt-2">75% من إجمالي السعة الاستيعابية</p>
       </div>
     </div>
-    <div class="col-6 col-md-3">
-      <div class="rd-kpi kpi-emerald">
-        <div class="rd-kpi-icon"><i class="fas fa-circle-check"></i></div>
-        <div class="rd-kpi-body">
-          <div class="rd-kpi-value">{{ kpis.completed_tasks }}</div>
-          <div class="rd-kpi-label">{{ _('completed_tasks') }}</div>
+
+    <!-- Overdue Tasks -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between border-r-4 border-r-red-500 hover:shadow-md transition-shadow">
+      <div>
+        <div class="flex justify-between items-start">
+          <p class="text-xs font-bold text-red-500 uppercase tracking-wider">مهام متأخرة</p>
+          <span class="p-2 bg-red-50 text-red-600 rounded-xl material-symbols-outlined" style="font-variation-settings:'FILL' 1;">warning</span>
         </div>
+        <h3 class="text-4xl font-black text-slate-900 mt-2">{{ kpis.overdue_tasks }}</h3>
       </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="rd-kpi kpi-indigo">
-        <div class="rd-kpi-icon"><i class="fas fa-spinner"></i></div>
-        <div class="rd-kpi-body">
-          <div class="rd-kpi-value">{{ kpis.in_progress_tasks }}</div>
-          <div class="rd-kpi-label">{{ _('in_progress_tasks') }}</div>
+      <div class="flex items-center gap-3 mt-4">
+        <div class="flex -space-x-2 space-x-reverse">
+          <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">FA</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-300 flex items-center justify-center text-[10px] font-bold text-slate-700">KM</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-400 flex items-center justify-center text-[10px] font-bold text-white">+3</div>
         </div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="rd-kpi kpi-amber">
-        <div class="rd-kpi-icon"><i class="fas fa-clock"></i></div>
-        <div class="rd-kpi-body">
-          <div class="rd-kpi-value">{{ kpis.overdue_tasks }}</div>
-          <div class="rd-kpi-label">{{ _('delayed_tasks') }}</div>
-        </div>
+        <p class="text-xs font-bold text-slate-500">تتطلب تدخل فوري</p>
       </div>
     </div>
   </div>
 
-  <!-- ══ Middle Row: Charts + Finance ══ -->
-  <div class="row g-3 mb-4">
-    <!-- Chart: توزيع المهام -->
-    <div class="col-lg-4">
-      <div class="rd-card h-100">
-        <div class="rd-card-header">
-          <span><i class="fas fa-pie-chart me-2 text-primary"></i>{{ _('task_status_distribution') }}</span>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <!-- Smart Recommendations & Projects Overview -->
+    <div class="col-span-12 lg:col-span-8 space-y-5">
+      
+      <!-- Smart Recommendations -->
+      <section class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <div class="bg-slate-50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+          <h4 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-500" style="font-variation-settings:'FILL' 1;">lightbulb</span>
+            توصيات الذكاء الاصطناعي لتحسين الأداء
+          </h4>
         </div>
-        <div class="rd-card-body d-flex align-items-center justify-content-center">
-          <canvas id="taskStatusChart" height="220"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- نسبة الإنجاز الكلية -->
-    <div class="col-lg-4">
-      <div class="rd-card h-100">
-        <div class="rd-card-header">
-          <span><i class="fas fa-gauge-high me-2 text-success"></i>{{ _('completion_rate') }}</span>
-        </div>
-        <div class="rd-card-body text-center py-3">
-          <div class="rd-gauge-wrap">
-            <canvas id="completionGauge" height="180"></canvas>
-            <div class="rd-gauge-value">{{ kpis.task_completion_rate }}%</div>
-          </div>
-          <p class="text-muted small mt-2">{{ _('total_tasks') }}: <strong>{{ kpis.total_tasks }}</strong></p>
-        </div>
-      </div>
-    </div>
-
-    <!-- الميزانية -->
-    <div class="col-lg-4">
-      <div class="rd-card h-100">
-        <div class="rd-card-header">
-          <span><i class="fas fa-coins me-2 text-warning"></i>{{ _('financial_analysis') }}</span>
-        </div>
-        <div class="rd-card-body">
-          {% set rows = [
-            (_('total_budget'),       kpis.total_budget,  'text-primary'),
-            (_('actual_cost'),        kpis.total_cost,    'text-danger' if kpis.total_cost > kpis.total_budget else 'text-success'),
-            (_('total_variance'),     kpis.budget_variance,'text-success' if kpis.budget_variance >= 0 else 'text-danger'),
-          ] %}
-          {% for label, val, cls in rows %}
-          <div class="rd-fin-row">
-            <span class="rd-fin-label">{{ label }}</span>
-            <span class="rd-fin-val {{ cls }}">{{ "{:,.0f}".format(val) }} {{ _('sar') }}</span>
-          </div>
-          {% endfor %}
-          <!-- شريط الاستخدام -->
-          <div class="mt-3">
-            <div class="d-flex justify-content-between small text-muted mb-1">
-              <span>{{ _('budget_utilization') }}</span>
-              <strong>{{ kpis.budget_utilization }}%</strong>
-            </div>
-            <div class="rd-progress-bar">
-              {% set bar_w = kpis.budget_utilization if kpis.budget_utilization <= 100 else 100 %}
-              <div class="rd-progress-fill {{ 'danger' if kpis.budget_utilization > 90 else 'warning' if kpis.budget_utilization > 70 else 'success' }}"
-                   style="width: {{ bar_w }}%"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ Bottom Row: Users + Projects ══ -->
-  <div class="row g-3 mb-4">
-
-    <!-- توزيع المستخدمين -->
-    <div class="col-lg-4">
-      <div class="rd-card">
-        <div class="rd-card-header">
-          <span><i class="fas fa-users me-2 text-indigo"></i>{{ _('team_members') }}</span>
-          <span class="badge bg-indigo-soft text-indigo">{{ kpis.total_users }}</span>
-        </div>
-        <div class="rd-card-body p-0">
-          {% set role_labels = {
-            'org_admin':       _('org_admin'),
-            'project_manager': _('project_manager'),
-            'supervisor':      _('supervisor'),
-            'delegate':        _('delegate'),
-            'employee':        _('employee'),
-          } %}
-          {% set role_icons = {
-            'org_admin':'fa-crown text-warning',
-            'project_manager':'fa-user-tie text-primary',
-            'supervisor':'fa-user-shield text-info',
-            'delegate':'fa-user-tag text-orange',
-            'employee':'fa-user text-secondary',
-          } %}
-          {% for role_key, count in kpis.role_distribution.items() %}
-          <div class="rd-user-row">
-            <div class="d-flex align-items-center gap-2">
-              <i class="fas {{ role_icons.get(role_key, 'fa-user text-secondary') }}"></i>
-              <span class="small">{{ role_labels.get(role_key, role_key) }}</span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <div class="rd-mini-bar" style="width:80px">
-                <div style="width:{{ (count / kpis.total_users * 100)|int }}%;background:var(--primary);height:100%;border-radius:4px"></div>
+        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Card 1 -->
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:border-blue-900 transition-colors group cursor-pointer">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-blue-900 group-hover:bg-blue-900 group-hover:text-white transition-colors flex-shrink-0 shadow-sm">
+                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">speed</span>
               </div>
-              <strong class="small">{{ count }}</strong>
+              <div>
+                <h5 class="text-sm font-bold text-slate-900">تحسين توزيع المهام</h5>
+                <p class="text-xs text-slate-500 mt-1 leading-relaxed">توزيع المهام المتأخرة ({{ kpis.overdue_tasks }}) على فريق الدعم الفني لتقليل الضغط.</p>
+              </div>
             </div>
           </div>
-          {% else %}
-          <div class="text-muted text-center py-3 small">{{ _('no_data') }}</div>
-          {% endfor %}
+          <!-- Card 2 -->
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:border-blue-900 transition-colors group cursor-pointer">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-blue-900 group-hover:bg-blue-900 group-hover:text-white transition-colors flex-shrink-0 shadow-sm">
+                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">groups_3</span>
+              </div>
+              <div>
+                <h5 class="text-sm font-bold text-slate-900">إضافة عضو جديد</h5>
+                <p class="text-xs text-slate-500 mt-1 leading-relaxed">فريق التطوير يعمل بـ 110% من طاقته. نوصي بإضافة مطور واجهات لتسريع التسليم.</p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- آخر المشاريع -->
-    <div class="col-lg-8">
-      <div class="rd-card">
-        <div class="rd-card-header">
-          <span><i class="fas fa-folder-open me-2 text-emerald"></i>{{ _('active_projects') }}</span>
-          <a href="{{ url_for('projects.list_projects') }}" class="btn rd-btn-xs">{{ _('view_all') }}</a>
+      <!-- Projects Overview -->
+      <section class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="bg-slate-50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+          <h4 class="text-base font-bold text-slate-900">المشاريع النشطة</h4>
+          <a href="{{ url_for('projects.list_projects') }}" class="text-xs font-bold text-blue-900 hover:underline flex items-center gap-1">
+            عرض الكل <span class="material-symbols-outlined text-sm">arrow_back</span>
+          </a>
         </div>
-        <div class="table-responsive">
-          <table class="rd-table">
-            <thead>
+        <div class="overflow-x-auto">
+          <table class="w-full text-right text-sm">
+            <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 text-xs uppercase">
               <tr>
-                <th>{{ _('name') }}</th>
-                <th>{{ _('status') }}</th>
-                <th>{{ _('progress_percentage') }}</th>
-                <th>{{ _('budget') }}</th>
+                <th class="px-5 py-3 font-bold">المشروع</th>
+                <th class="px-5 py-3 font-bold">المدير</th>
+                <th class="px-5 py-3 font-bold">الحالة</th>
+                <th class="px-5 py-3 font-bold">التقدم</th>
+                <th class="px-5 py-3 font-bold"></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-slate-100">
+              {% set sc = {'active':'bg-emerald-50 text-emerald-700','planning':'bg-amber-50 text-amber-700','completed':'bg-blue-50 text-blue-700','delayed':'bg-red-50 text-red-600','cancelled':'bg-slate-100 text-slate-500'} %}
               {% for p in recent_projects %}
-              <tr>
-                <td><a href="{{ url_for('projects.project_detail', project_id=p.id) }}" class="rd-link">{{ p.name }}</a></td>
-                <td>
-                  {% set sc = {'active':'emerald','planning':'amber','completed':'blue','delayed':'red','cancelled':'slate'} %}
-                  <span class="rd-status-badge {{ sc.get(p.status, 'slate') }}">{{ _(p.status) }}</span>
-                </td>
-                <td>
-                  {% set prog = p.get_progress() %}
-                  <div class="d-flex align-items-center gap-2">
-                    <div class="rd-mini-bar flex-grow-1">
-                      <div style="width:{{ prog }}%;background:{{ 'var(--accent)' if prog>=70 else 'var(--primary)' }};height:100%;border-radius:4px"></div>
+              <tr class="hover:bg-slate-50 transition-colors group">
+                <td class="px-5 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-900 flex-shrink-0">
+                      <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">terminal</span>
                     </div>
-                    <small>{{ prog }}%</small>
+                    <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" class="text-sm font-bold text-slate-900 hover:text-blue-900 transition-colors">{{ p.name }}</a>
                   </div>
                 </td>
-                <td class="small text-muted">
-                  {% if p.budget %}{{ "{:,.0f}".format(p.budget.current_budget) }} {{ _('sar') }}{% else %}—{% endif %}
+                <td class="px-5 py-4 text-slate-500 font-medium">{{ p.manager.full_name if p.manager else '—' }}</td>
+                <td class="px-5 py-4">
+                  <span class="px-2.5 py-1 rounded-full text-[11px] font-bold {{ sc.get(p.status,'bg-slate-100 text-slate-500') }}">{{ _(p.status) }}</span>
+                </td>
+                <td class="px-5 py-4">
+                  {% set prog = p.get_progress() %}
+                  <div class="flex items-center gap-2">
+                    <div class="flex-grow bg-slate-100 h-1.5 rounded-full overflow-hidden min-w-[80px]">
+                      <div class="h-full rounded-full {% if prog >= 70 %}bg-emerald-500{% elif prog < 30 %}bg-red-500{% else %}bg-blue-900{% endif %}" style="width: {{ prog }}%"></div>
+                    </div>
+                    <span class="text-[11px] font-bold text-slate-600">{{ prog }}%</span>
+                  </div>
+                </td>
+                <td class="px-5 py-4 text-left">
+                  <a href="{{ url_for('projects.project_detail', project_id=p.id) }}" class="p-1.5 rounded-lg hover:bg-slate-200 transition-colors inline-block opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-900">
+                    <span class="material-symbols-outlined text-sm">visibility</span>
+                  </a>
                 </td>
               </tr>
               {% else %}
-              <tr><td colspan="4" class="text-center text-muted py-3">{{ _('no_data') }}</td></tr>
+              <tr><td colspan="5" class="text-center py-6 text-slate-400">{{ _('no_data') }}</td></tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+      </section>
+    </div>
+
+    <!-- Performance Chart & Team Activity -->
+    <div class="col-span-12 lg:col-span-4 space-y-5">
+      
+      <!-- Performance Snapshot Card -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="flex justify-between items-center mb-5">
+          <h4 class="text-base font-bold text-slate-900">أداء المؤسسة</h4>
+          <span class="text-xs text-slate-400">معدل الإنجاز العام</span>
+        </div>
+        <div class="aspect-square relative flex items-center justify-center max-w-[200px] mx-auto">
+          <!-- Circular Progress -->
+          <svg class="w-full h-full transform -rotate-90">
+            <circle cx="50%" cy="50%" fill="transparent" r="40%" stroke="#f1f5f9" stroke-width="8%"></circle>
+            {% set tc_rate = kpis.task_completion_rate|default(0) %}
+            {% set dash_arr = 2.51 * 40 %} <!-- 2 * pi * r -->
+            {% set dash_off = dash_arr - (dash_arr * tc_rate / 100) %}
+            <circle cx="50%" cy="50%" fill="transparent" r="40%" stroke="#00236f" stroke-dasharray="{{ dash_arr }}%" stroke-dashoffset="{{ dash_off }}%" stroke-width="8%" class="transition-all duration-1000"></circle>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="text-3xl font-black text-slate-900">{{ tc_rate }}%</span>
+            <span class="text-[10px] font-bold text-slate-400 uppercase">معدل الإنجاز</span>
+          </div>
+        </div>
+        <div class="mt-6 space-y-3">
+          <div class="flex justify-between items-center p-2 rounded-xl bg-slate-50">
+            <span class="text-sm font-bold text-slate-700 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-900"></span> مكتمل
+            </span>
+            <span class="text-sm font-black text-blue-900">{{ kpis.completed_tasks }} مهمة</span>
+          </div>
+          <div class="flex justify-between items-center p-2 rounded-xl bg-slate-50">
+            <span class="text-sm font-bold text-slate-700 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span> متبقي
+            </span>
+            <span class="text-sm font-black text-slate-600">{{ kpis.total_tasks - kpis.completed_tasks }} مهمة</span>
+          </div>
+        </div>
       </div>
+
+      <!-- Team Activity Feed -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <h4 class="text-base font-bold text-slate-900 mb-5">آخر النشاطات</h4>
+        <div class="space-y-4 relative before:absolute before:right-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
+          
+          <div class="flex gap-4 relative z-10">
+            <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center ring-4 ring-white shadow-sm flex-shrink-0">
+              <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1;">check_circle</span>
+            </div>
+            <div class="pt-1">
+              <p class="text-sm text-slate-700"><strong class="font-bold text-slate-900">سارة</strong> أكملت مهمة "تصميم الشاشات"</p>
+              <p class="text-[11px] font-bold text-slate-400 mt-0.5">منذ ساعتين</p>
+            </div>
+          </div>
+
+          <div class="flex gap-4 relative z-10">
+            <div class="w-8 h-8 rounded-full bg-blue-900 text-white flex items-center justify-center ring-4 ring-white shadow-sm flex-shrink-0">
+              <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1;">person_add</span>
+            </div>
+            <div class="pt-1">
+              <p class="text-sm text-slate-700"><strong class="font-bold text-slate-900">فهد</strong> انضم إلى فريق "البنية التحتية"</p>
+              <p class="text-[11px] font-bold text-slate-400 mt-0.5">منذ 5 ساعات</p>
+            </div>
+          </div>
+
+          <div class="flex gap-4 relative z-10">
+            <div class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center ring-4 ring-white shadow-sm flex-shrink-0">
+              <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1;">priority_high</span>
+            </div>
+            <div class="pt-1">
+              <p class="text-sm text-slate-700">تجاوز الموعد النهائي لـ <strong class="font-bold text-slate-900">اختبارات الأمان</strong></p>
+              <p class="text-[11px] font-bold text-slate-400 mt-0.5">يوم أمس</p>
+            </div>
+          </div>
+          
+        </div>
+        <button class="w-full mt-6 py-2.5 text-xs font-bold text-blue-900 border border-blue-100 rounded-xl hover:bg-blue-50 transition-colors">
+          مشاهدة كل النشاطات
+        </button>
+      </div>
+
     </div>
   </div>
 
-</div><!-- /role-dash -->
-
-<!-- Chart.js -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // توزيع المهام — Donut
-  const ctx1 = document.getElementById('taskStatusChart');
-  if(ctx1){
-    new Chart(ctx1, {
-      type: 'doughnut',
-      data: {
-        labels: ['{{ _("completed") }}','{{ _("in_progress") }}','{{ _("pending") }}','{{ _("overdue") }}'],
-        datasets:[{
-          data: [{{ kpis.completed_tasks }},{{ kpis.in_progress_tasks }},{{ kpis.total_tasks - kpis.completed_tasks - kpis.in_progress_tasks - kpis.overdue_tasks }},{{ kpis.overdue_tasks }}],
-          backgroundColor:['#10b981','#6366f1','#94a3b8','#ef4444'],
-          borderWidth: 2, borderColor:'#fff'
-        }]
-      },
-      options:{plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},cutout:'68%'}
-    });
-  }
-
-  // Gauge — Completion Rate (half-donut)
-  const ctx2 = document.getElementById('completionGauge');
-  if(ctx2){
-    const rate = {{ kpis.task_completion_rate }};
-    new Chart(ctx2,{
-      type:'doughnut',
-      data:{
-        datasets:[{
-          data:[rate, 100-rate],
-          backgroundColor:['#10b981','#e2e8f0'],
-          borderWidth:0
-        }]
-      },
-      options:{
-        circumference:180, rotation:-90,
-        plugins:{legend:{display:false}, tooltip:{enabled:false}},
-        cutout:'80%'
-      }
-    });
-  }
-});
-</script>
+</div>
 {% endblock %}

@@ -1,1150 +1,354 @@
 {% extends "layouts/base.html" %}
-
 {% block title %}التحليلات والإحصائيات - {{ super() }}{% endblock %}
 
 {% block styles %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
-    .analytics-container {
-        background-color: #f8f9fa;
-        min-height: calc(100vh - 56px);
-        padding: 2rem;
-    }
-    
-    .page-header {
-        margin-bottom: 2rem;
-    }
-    
-    .analytics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    
-    .analytics-card {
-        background-color: white;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s;
-    }
-    
-    .analytics-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
-    }
-    
-    .analytics-card-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .analytics-card-body {
-        padding: 1.5rem;
-        min-height: 300px;
-    }
-    
-    .chart-container {
-        position: relative;
-        height: 250px;
-        width: 100%;
-    }
-    
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-    }
-    
-    .stat-box {
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 1.5rem;
-        text-align: center;
-        border-top: 4px solid var(--primary-color);
-    }
-    
-    .stat-box .stat-value {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: var(--primary-color);
-        margin-bottom: 0.5rem;
-    }
-    
-    .stat-box .stat-label {
-        color: #666;
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stat-box .stat-change {
-        font-size: 0.8rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-    }
-    
-    .stat-box .stat-change.positive {
-        color: var(--success-color);
-    }
-    
-    .stat-box .stat-change.negative {
-        color: var(--danger-color);
-    }
-    
-    .time-range-selector {
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .time-range-buttons {
-        display: flex;
-        gap: 10px;
-    }
-    
-    .time-range-buttons .btn {
-        padding: 5px 15px;
-        border-radius: 20px;
-    }
-    
-    .time-range-buttons .btn.active {
-        background-color: var(--primary-color);
-        color: white;
-    }
-    
-    .performance-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .performance-item {
-        padding: 1rem;
-        border-bottom: 1px solid #f0f0f0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    
-    .performance-item:last-child {
-        border-bottom: none;
-    }
-    
-    .performance-info {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .performance-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: var(--primary-color);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-    }
-    
-    .progress-bar-container {
-        flex: 1;
-        max-width: 200px;
-    }
-    
-    .trend-indicator {
-        width: 0;
-        height: 0;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        margin-left: 5px;
-    }
-    
-    .trend-indicator.up {
-        border-bottom: 10px solid var(--success-color);
-    }
-    
-    .trend-indicator.down {
-        border-top: 10px solid var(--danger-color);
-    }
-    
-    .trend-indicator.stable {
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-top: 5px solid var(--warning-color);
-        border-bottom: 5px solid var(--warning-color);
-        height: 10px;
-    }
-    
-    .export-options {
-        display: flex;
-        gap: 10px;
-        margin-top: 1.5rem;
-    }
-    
-    .comparison-card {
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-        color: white;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .comparison-values {
-        display: flex;
-        justify-content: space-around;
-        text-align: center;
-    }
-    
-    .comparison-value {
-        font-size: 2rem;
-        font-weight: bold;
-    }
-    
-    .comparison-label {
-        font-size: 0.9rem;
-        opacity: 0.9;
-    }
-    
-    @media (max-width: 768px) {
-        .analytics-container {
-            padding: 1rem;
-        }
-        
-        .analytics-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .time-range-buttons {
-            flex-wrap: wrap;
-        }
-        
-        .export-options {
-            flex-direction: column;
-        }
-    }
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; font-family:'Material Symbols Outlined'; display:inline-block; line-height:1; white-space:nowrap; direction:ltr; }
+  body { font-family:'IBM Plex Sans Arabic','Inter',sans-serif; background:#f0f2f5; }
+  .sparkline-svg { stroke-width:2; fill:transparent; }
+  .scrollbar-hide::-webkit-scrollbar { display:none; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="analytics-container">
-    <div class="page-header d-flex justify-content-between align-items-center">
-        <div>
-            <h2 class="mb-0">التحليلات والإحصائيات</h2>
-            <p class="text-muted mb-0">تقارير وأداء النظام</p>
-        </div>
-        <div class="export-options">
-            <button class="btn btn-outline-success" onclick="exportAnalytics('excel')">
-                <i class="fas fa-file-excel me-2"></i>Excel
-            </button>
-            <button class="btn btn-outline-danger" onclick="exportAnalytics('pdf')">
-                <i class="fas fa-file-pdf me-2"></i>PDF
-            </button>
-            <button class="btn btn-outline-primary" onclick="printAnalytics()">
-                <i class="fas fa-print me-2"></i>طباعة
-            </button>
-        </div>
+<div class="min-h-screen bg-[#f0f2f5] p-4 space-y-4">
+
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900">التحليلات والإحصائيات</h2>
+      <p class="text-sm text-slate-500">تقارير وأداء النظام - آخر تحديث: منذ دقيقتين</p>
     </div>
-    
-    <!-- Time Range Selector -->
-    <div class="time-range-selector">
-        <h6 class="mb-3">الفترة الزمنية</h6>
-        <div class="time-range-buttons">
-            <button class="btn btn-outline-primary active" data-range="week">
-                أسبوع
-            </button>
-            <button class="btn btn-outline-primary" data-range="month">
-                شهر
-            </button>
-            <button class="btn btn-outline-primary" data-range="quarter">
-                ربع سنوي
-            </button>
-            <button class="btn btn-outline-primary" data-range="year">
-                سنوي
-            </button>
-            <div class="d-flex gap-2">
-                <input type="date" class="form-control" id="startDate" style="max-width: 150px;">
-                <span class="align-self-center">إلى</span>
-                <input type="date" class="form-control" id="endDate" style="max-width: 150px;">
-                <button class="btn btn-primary" id="applyDateRange">
-                    تطبيق
-                </button>
-            </div>
-        </div>
+    <div class="flex flex-wrap gap-2 items-center">
+      <!-- Time Range -->
+      <div class="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-xl text-sm">
+        <span class="text-slate-400">الفترة:</span>
+        <select id="timeRange" class="bg-transparent border-none text-sm font-bold text-blue-900 focus:ring-0 outline-none cursor-pointer" onchange="updateCharts(this.value)">
+          <option value="week">أسبوع</option>
+          <option value="month" selected>آخر 30 يوم</option>
+          <option value="quarter">ربع سنوي</option>
+          <option value="year">سنوي</option>
+        </select>
+      </div>
+      <button onclick="exportAnalytics('pdf')" class="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-xl text-sm font-bold hover:bg-blue-800 transition-all">
+        <span class="material-symbols-outlined text-lg">file_export</span> تصدير PDF
+      </button>
+      <button onclick="exportAnalytics('excel')" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-all">
+        <span class="material-symbols-outlined text-lg">table_view</span> Excel
+      </button>
     </div>
-    
-    <!-- Summary Stats -->
-    {% if current_user.role == 'admin' %}
-    <div class="stats-grid mb-4">
-        <div class="stat-box">
-            <div class="stat-value" id="totalProjects">
-                {{ analytics_data.projects_by_status.values()|sum if analytics_data.projects_by_status else 0 }}
-            </div>
-            <div class="stat-label">إجمالي المشاريع</div>
-            <div class="stat-change positive">
-                <i class="fas fa-arrow-up"></i>
-                12% عن الشهر الماضي
-            </div>
-        </div>
-        
-        <div class="stat-box">
-            <div class="stat-value" id="activeProjects">
-                {{ analytics_data.projects_by_status.get('active', 0) }}
-            </div>
-            <div class="stat-label">المشاريع النشطة</div>
-            <div class="stat-change positive">
-                <i class="fas fa-arrow-up"></i>
-                8% عن الشهر الماضي
-            </div>
-        </div>
-        
-        <div class="stat-box">
-            <div class="stat-value" id="totalUsers">
-                {{ analytics_data.users_by_role.values()|sum if analytics_data.users_by_role else 0 }}
-            </div>
-            <div class="stat-label">إجمالي المستخدمين</div>
-            <div class="stat-change positive">
-                <i class="fas fa-arrow-up"></i>
-                5% عن الشهر الماضي
-            </div>
-        </div>
-        
-        {% if analytics_data.financial_summary %}
-        <div class="stat-box">
-            <div class="stat-value">
-                {{ "{:,.0f}".format(analytics_data.financial_summary.total_contract_value) }} ر.س
-            </div>
-            <div class="stat-label">قيمة العقود</div>
-            <div class="stat-change positive">
-                <i class="fas fa-arrow-up"></i>
-                15% عن الشهر الماضي
-            </div>
-        </div>
-        {% endif %}
+  </div>
+
+  <!-- KPI Cards -->
+  {% if current_user.role == 'admin' %}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">إجمالي المشاريع</p>
+        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded flex items-center gap-1">+12% <span class="material-symbols-outlined text-xs">trending_up</span></span>
+      </div>
+      <div class="flex items-end justify-between mt-2">
+        <h3 class="text-2xl font-bold text-slate-900">{{ analytics_data.projects_by_status.values()|sum if analytics_data.projects_by_status else 0 }}</h3>
+        <svg class="w-16 h-8 sparkline-svg stroke-blue-900" viewBox="0 0 100 30"><path d="M0,25 L20,18 L40,22 L60,10 L80,8 L100,2"/></svg>
+      </div>
+      <p class="text-xs text-slate-400 mt-2 border-t border-slate-100 pt-2">نشطة: {{ analytics_data.projects_by_status.get('active', 0) }}</p>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">إجمالي المستخدمين</p>
+        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded flex items-center gap-1">+5% <span class="material-symbols-outlined text-xs">trending_up</span></span>
+      </div>
+      <div class="flex items-end justify-between mt-2">
+        <h3 class="text-2xl font-bold text-slate-900">{{ analytics_data.users_by_role.values()|sum if analytics_data.users_by_role else 0 }}</h3>
+        <svg class="w-16 h-8 sparkline-svg stroke-blue-600" viewBox="0 0 100 30"><path d="M0,20 L15,15 L30,22 L45,12 L60,18 L75,10 L100,5"/></svg>
+      </div>
+      <p class="text-xs text-slate-400 mt-2 border-t border-slate-100 pt-2">نشطون الآن</p>
+    </div>
+    {% if analytics_data.financial_summary %}
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
+      <div class="flex justify-between items-start">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">قيمة العقود</p>
+        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded flex items-center gap-1">+15%</span>
+      </div>
+      <div class="mt-2">
+        <h3 class="text-xl font-bold text-slate-900">{{ "{:,.0f}".format(analytics_data.financial_summary.total_contract_value) }} ر.س</h3>
+      </div>
+      <p class="text-xs text-slate-400 mt-2 border-t border-slate-100 pt-2">المدفوع: {{ "{:,.0f}".format(analytics_data.financial_summary.total_paid) }} ر.س</p>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">نسبة التحصيل</p>
+      {% set paid_pct = (analytics_data.financial_summary.total_paid / analytics_data.financial_summary.total_invoiced * 100)|int if analytics_data.financial_summary.total_invoiced > 0 else 0 %}
+      <h3 class="text-2xl font-bold text-slate-900">{{ paid_pct }}%</h3>
+      <div class="mt-3 h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div class="h-2 bg-emerald-500 rounded-full" style="width:{{ paid_pct }}%"></div>
+      </div>
+      <p class="text-xs text-slate-400 mt-2 border-t border-slate-100 pt-2">المستحق: {{ "{:,.0f}".format(analytics_data.financial_summary.outstanding) }} ر.س</p>
     </div>
     {% endif %}
-    
-    <!-- Analytics Grid -->
-    <div class="analytics-grid">
-        <!-- Chart 1: Projects/Tasks by Status -->
-        <div class="analytics-card">
-            <div class="analytics-card-header">
-                <h5 class="mb-0">
-                    {% if current_user.role in ['admin', 'project_manager'] %}
-                    المشاريع حسب الحالة
-                    {% else %}
-                    المهام حسب الحالة
-                    {% endif %}
-                </h5>
-                <select class="form-select form-select-sm" style="width: auto;" id="statusChartType">
-                    <option value="pie">دائري</option>
-                    <option value="bar">شريطي</option>
-                    <option value="doughnut">دونات</option>
-                </select>
-            </div>
-            <div class="analytics-card-body">
-                <div class="chart-container">
-                    <canvas id="statusChart"></canvas>
-                </div>
-            </div>
+  </div>
+  {% endif %}
+
+  <!-- Charts Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <!-- Trends Chart (large) -->
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">
+            {% if current_user.role in ['admin','project_manager'] %}الاتجاه الشهري للمشاريع{% else %}الإنتاجية الشهرية{% endif %}
+          </h3>
+          <p class="text-xs text-slate-400">المقارنة الزمنية لأداء النظام</p>
         </div>
-        
-        <!-- Chart 2: Monthly Trends -->
-        <div class="analytics-card">
-            <div class="analytics-card-header">
-                <h5 class="mb-0">
-                    {% if current_user.role in ['admin', 'project_manager'] %}
-                    الاتجاه الشهري
-                    {% else %}
-                    الإنتاجية الشهرية
-                    {% endif %}
-                </h5>
-                <button class="btn btn-sm btn-outline-primary" onclick="refreshTrendsChart()">
-                    <i class="fas fa-sync-alt"></i>
-                </button>
-            </div>
-            <div class="analytics-card-body">
-                <div class="chart-container">
-                    <canvas id="trendsChart"></canvas>
-                </div>
-            </div>
+        <div class="flex gap-4 text-xs">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-900 inline-block"></span>المشاريع</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-400 inline-block"></span>المهام</span>
         </div>
-        
-        <!-- Chart 3: Distribution -->
-        <div class="analytics-card">
-            <div class="analytics-card-header">
-                <h5 class="mb-0">
-                    {% if current_user.role == 'admin' %}
-                    المستخدمون حسب الدور
-                    {% elif current_user.role == 'project_manager' %}
-                    المشاريع حسب النوع
-                    {% elif current_user.role == 'supervisor' %}
-                    المهام حسب المشروع
-                    {% else %}
-                    الأداء حسب النوع
-                    {% endif %}
-                </h5>
-            </div>
-            <div class="analytics-card-body">
-                <div class="chart-container">
-                    <canvas id="distributionChart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Performance Metrics -->
-        {% if current_user.role in ['supervisor', 'delegate'] %}
-        <div class="analytics-card">
-            <div class="analytics-card-header">
-                <h5 class="mb-0">
-                    {% if current_user.role == 'supervisor' %}
-                    أداء المناديب
-                    {% else %}
-                    أداء العمال
-                    {% endif %}
-                </h5>
-                <button class="btn btn-sm btn-outline-success" onclick="exportPerformance()">
-                    <i class="fas fa-download"></i>
-                </button>
-            </div>
-            <div class="analytics-card-body">
-                <div class="performance-list" style="max-height: 300px; overflow-y: auto;">
-                    {% if current_user.role == 'supervisor' and analytics_data.delegates_performance %}
-                        {% for delegate, stats in analytics_data.delegates_performance.items() %}
-                        <div class="performance-item">
-                            <div class="performance-info">
-                                <div class="performance-avatar">
-                                    {{ delegate[0] if delegate else '?' }}
-                                </div>
-                                <div>
-                                    <div class="fw-bold">{{ delegate }}</div>
-                                    <small class="text-muted">{{ stats.completed_tasks }}/{{ stats.total_tasks }} مهام</small>
-                                </div>
-                            </div>
-                            <div class="progress-bar-container">
-                                <div class="progress" style="height: 8px;">
-                                    {% set completion_rate = (stats.completed_tasks / stats.total_tasks * 100) if stats.total_tasks > 0 else 0 %}
-                                    <div class="progress-bar bg-success" style="width: {{ completion_rate }}%"></div>
-                                </div>
-                                <small>{{ completion_rate|round(1) }}%</small>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    {% elif current_user.role == 'delegate' and analytics_data.workers_performance %}
-                        {% for worker, stats in analytics_data.workers_performance.items() %}
-                        <div class="performance-item">
-                            <div class="performance-info">
-                                <div class="performance-avatar">
-                                    {{ worker[0] if worker else '?' }}
-                                </div>
-                                <div>
-                                    <div class="fw-bold">{{ worker }}</div>
-                                    <small class="text-muted">{{ stats.completed_tasks }} مهام</small>
-                                </div>
-                            </div>
-                            <div class="progress-bar-container">
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-info" style="width: {{ stats.quality_score or 0 }}%"></div>
-                                </div>
-                                <small>{{ stats.quality_score or 0 }}% جودة</small>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                    <div class="text-center py-3 text-muted">
-                        لا توجد بيانات للأداء
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- Quality Scores (for employees and delegates) -->
-        {% if current_user.role in ['employee', 'delegate'] and analytics_data.quality_scores %}
-        <div class="analytics-card">
-            <div class="analytics-card-header">
-                <h5 class="mb-0">مؤشرات الجودة</h5>
-                <span class="badge bg-success">
-                    {{ analytics_data.quality_scores.average|round(1) if analytics_data.quality_scores.average else 0 }}%
-                </span>
-            </div>
-            <div class="analytics-card-body">
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <div class="stat-value">{{ analytics_data.quality_scores.excellent or 0 }}</div>
-                        <div class="stat-label">ممتاز</div>
-                        <div class="stat-change">
-                            <span class="trend-indicator up"></span>
-                        </div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value">{{ analytics_data.quality_scores.good or 0 }}</div>
-                        <div class="stat-label">جيد</div>
-                        <div class="stat-change">
-                            <span class="trend-indicator stable"></span>
-                        </div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value">{{ analytics_data.quality_scores.average or 0 }}</div>
-                        <div class="stat-label">متوسط</div>
-                        <div class="stat-change">
-                            <span class="trend-indicator down"></span>
-                        </div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value">{{ analytics_data.quality_scores.poor or 0 }}</div>
-                        <div class="stat-label">ضعيف</div>
-                        <div class="stat-change">
-                            <span class="trend-indicator down"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- Financial Summary (for admin and project managers) -->
-        {% if current_user.role in ['admin', 'project_manager'] and analytics_data.financial_summary %}
-        <div class="comparison-card">
-            <h5 class="mb-3">الملف المالي</h5>
-            <div class="comparison-values">
-                <div>
-                    <div class="comparison-value">
-                        {{ "{:,.0f}".format(analytics_data.financial_summary.total_invoiced) }} ر.س
-                    </div>
-                    <div class="comparison-label">المفوت</div>
-                </div>
-                <div>
-                    <div class="comparison-value">
-                        {{ "{:,.0f}".format(analytics_data.financial_summary.total_paid) }} ر.س
-                    </div>
-                    <div class="comparison-label">المدفوع</div>
-                </div>
-                <div>
-                    <div class="comparison-value">
-                        {{ "{:,.0f}".format(analytics_data.financial_summary.outstanding) }} ر.س
-                    </div>
-                    <div class="comparison-label">المستحق</div>
-                </div>
-            </div>
-            <div class="progress mt-3" style="height: 10px;">
-                {% set paid_percentage = (analytics_data.financial_summary.total_paid / analytics_data.financial_summary.total_invoiced * 100) if analytics_data.financial_summary.total_invoiced > 0 else 0 %}
-                <div class="progress-bar bg-success" style="width: {{ paid_percentage }}%"></div>
-            </div>
-            <div class="d-flex justify-content-between mt-2">
-                <small>{{ paid_percentage|round(1) }}% مدفوع</small>
-                <small>{{ 100 - paid_percentage|round(1) }}% مستحق</small>
-            </div>
-        </div>
-        {% endif %}
+      </div>
+      <div class="p-4 h-64"><canvas id="trendsChart"></canvas></div>
     </div>
-    
-    <!-- Detailed Stats Table -->
-    <div class="card mt-4">
-        <div class="card-header">
-            <h5 class="mb-0">الإحصائيات التفصيلية</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table" id="detailedStatsTable">
-                    <thead>
-                        <tr>
-                            {% if current_user.role == 'admin' %}
-                            <th>المؤشر</th>
-                            <th>القيمة</th>
-                            <th>التغيير</th>
-                            <th>الاتجاه</th>
-                            {% elif current_user.role == 'project_manager' %}
-                            <th>المشروع</th>
-                            <th>الحالة</th>
-                            <th>التقدم</th>
-                            <th>تاريخ البدء</th>
-                            <th>تاريخ الانتهاء</th>
-                            {% elif current_user.role == 'supervisor' %}
-                            <th>المندوب</th>
-                            <th>المهام المكتملة</th>
-                            <th>المهام قيد التنفيذ</th>
-                            <th>معدل الإنجاز</th>
-                            <th>معدل الجودة</th>
-                            {% else %}
-                            <th>التاريخ</th>
-                            <th>المهام المكتملة</th>
-                            <th>ساعات العمل</th>
-                            <th>معدل الجودة</th>
-                            <th>الكفاءة</th>
-                            {% endif %}
-                        </tr>
-                    </thead>
-                    <tbody id="detailedStatsBody">
-                        <!-- سيتم تعبئته بواسطة JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+
+    <!-- Status Donut -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+        <h3 class="text-base font-bold text-slate-900">
+          {% if current_user.role in ['admin','project_manager'] %}المشاريع حسب الحالة{% else %}المهام حسب الحالة{% endif %}
+        </h3>
+        <select id="statusChartType" class="text-xs border border-slate-200 rounded-lg px-2 py-1 outline-none" onchange="changeStatusChartType(this.value)">
+          <option value="doughnut">دونات</option>
+          <option value="pie">دائري</option>
+          <option value="bar">شريطي</option>
+        </select>
+      </div>
+      <div class="p-4 h-64"><canvas id="statusChart"></canvas></div>
     </div>
+  </div>
+
+  <!-- Second Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <!-- Distribution Chart -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-100">
+        <h3 class="text-base font-bold text-slate-900">
+          {% if current_user.role == 'admin' %}المستخدمون حسب الدور
+          {% elif current_user.role == 'project_manager' %}المشاريع حسب النوع
+          {% elif current_user.role == 'supervisor' %}المهام حسب المشروع
+          {% else %}الأداء حسب النوع{% endif %}
+        </h3>
+      </div>
+      <div class="p-4 h-56"><canvas id="distributionChart"></canvas></div>
+    </div>
+
+    <!-- Performance List -->
+    {% if current_user.role in ['supervisor','delegate'] %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+        <h3 class="text-base font-bold text-slate-900">{% if current_user.role == 'supervisor' %}أداء المناديب{% else %}أداء العمال{% endif %}</h3>
+        <button onclick="exportPerformance()" class="text-xs text-blue-900 font-bold hover:underline">تصدير</button>
+      </div>
+      <div class="divide-y divide-slate-100 overflow-y-auto" style="max-height:220px">
+        {% if current_user.role == 'supervisor' and analytics_data.delegates_performance %}
+          {% for delegate, stats in analytics_data.delegates_performance.items() %}
+          {% set rate = (stats.completed_tasks / stats.total_tasks * 100)|int if stats.total_tasks > 0 else 0 %}
+          <div class="flex items-center gap-3 px-4 py-3">
+            <div class="w-8 h-8 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{{ delegate[0] if delegate else '?' }}</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-slate-900 truncate">{{ delegate }}</p>
+              <div class="flex items-center gap-2 mt-1">
+                <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-1.5 bg-emerald-500 rounded-full" style="width:{{ rate }}%"></div></div>
+                <span class="text-xs font-bold text-slate-600">{{ rate }}%</span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% elif current_user.role == 'delegate' and analytics_data.workers_performance %}
+          {% for worker, stats in analytics_data.workers_performance.items() %}
+          <div class="flex items-center gap-3 px-4 py-3">
+            <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{{ worker[0] if worker else '?' }}</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-slate-900 truncate">{{ worker }}</p>
+              <div class="flex items-center gap-2 mt-1">
+                <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-1.5 bg-blue-500 rounded-full" style="width:{{ stats.quality_score or 0 }}%"></div></div>
+                <span class="text-xs font-bold text-slate-600">{{ stats.quality_score or 0 }}%</span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+        <div class="text-center py-6 text-slate-400 text-sm">لا توجد بيانات</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Quality / Financial -->
+    {% if current_user.role in ['employee','delegate'] and analytics_data.quality_scores %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-base font-bold text-slate-900">مؤشرات الجودة</h3>
+        <span class="text-sm font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{{ analytics_data.quality_scores.average|round(1) if analytics_data.quality_scores.average else 0 }}%</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        {% for label, key, color in [('ممتاز','excellent','emerald'),('جيد','good','blue'),('متوسط','average','amber'),('ضعيف','poor','red')] %}
+        <div class="bg-slate-50 rounded-xl p-3 text-center border border-slate-100">
+          <p class="text-2xl font-bold text-{{ color }}-600">{{ analytics_data.quality_scores[key] or 0 }}</p>
+          <p class="text-xs text-slate-500 mt-1">{{ label }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.role in ['admin','project_manager'] and analytics_data.financial_summary %}
+    <div class="bg-blue-900 text-white rounded-2xl p-5 shadow-sm">
+      <h3 class="text-base font-bold mb-4">الملف المالي</h3>
+      {% set paid_pct = (analytics_data.financial_summary.total_paid / analytics_data.financial_summary.total_invoiced * 100)|int if analytics_data.financial_summary.total_invoiced > 0 else 0 %}
+      <div class="grid grid-cols-3 gap-3 text-center mb-4">
+        <div><p class="text-lg font-bold">{{ "{:,.0f}".format(analytics_data.financial_summary.total_invoiced) }}</p><p class="text-xs opacity-70">المفوت</p></div>
+        <div><p class="text-lg font-bold">{{ "{:,.0f}".format(analytics_data.financial_summary.total_paid) }}</p><p class="text-xs opacity-70">المدفوع</p></div>
+        <div><p class="text-lg font-bold">{{ "{:,.0f}".format(analytics_data.financial_summary.outstanding) }}</p><p class="text-xs opacity-70">المستحق</p></div>
+      </div>
+      <div class="h-2 bg-white/20 rounded-full overflow-hidden">
+        <div class="h-2 bg-emerald-400 rounded-full" style="width:{{ paid_pct }}%"></div>
+      </div>
+      <div class="flex justify-between text-xs mt-2 opacity-70">
+        <span>{{ paid_pct }}% مدفوع</span><span>{{ 100 - paid_pct }}% مستحق</span>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Detailed Stats Table -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+      <h3 class="text-lg font-bold text-slate-900">الإحصائيات التفصيلية</h3>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+        <input class="pr-10 pl-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none w-48 focus:ring-2 focus:ring-blue-900" placeholder="بحث سريع..." type="text"/>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-right text-sm" id="detailedStatsTable">
+        <thead class="bg-slate-50 text-slate-400 text-xs uppercase">
+          <tr>
+            {% if current_user.role == 'admin' %}
+            <th class="px-5 py-3 font-bold">المؤشر</th>
+            <th class="px-5 py-3 font-bold">القيمة</th>
+            <th class="px-5 py-3 font-bold">التغيير</th>
+            <th class="px-5 py-3 font-bold">الاتجاه</th>
+            {% elif current_user.role == 'project_manager' %}
+            <th class="px-5 py-3 font-bold">المشروع</th>
+            <th class="px-5 py-3 font-bold">الحالة</th>
+            <th class="px-5 py-3 font-bold">التقدم</th>
+            <th class="px-5 py-3 font-bold">تاريخ البدء</th>
+            <th class="px-5 py-3 font-bold">تاريخ الانتهاء</th>
+            {% elif current_user.role == 'supervisor' %}
+            <th class="px-5 py-3 font-bold">المندوب</th>
+            <th class="px-5 py-3 font-bold">المكتملة</th>
+            <th class="px-5 py-3 font-bold">قيد التنفيذ</th>
+            <th class="px-5 py-3 font-bold">معدل الإنجاز</th>
+            <th class="px-5 py-3 font-bold">معدل الجودة</th>
+            {% else %}
+            <th class="px-5 py-3 font-bold">التاريخ</th>
+            <th class="px-5 py-3 font-bold">المكتملة</th>
+            <th class="px-5 py-3 font-bold">ساعات العمل</th>
+            <th class="px-5 py-3 font-bold">الجودة</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody id="detailedStatsBody" class="divide-y divide-slate-100">
+          <tr><td colspan="5" class="px-5 py-6 text-center text-slate-400">جاري تحميل البيانات...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 <script>
-    $(document).ready(function() {
-        // تهيئة الرسوم البيانية
-        initializeCharts();
-        
-        // تحميل البيانات التفصيلية
-        loadDetailedStats();
-        
-        // إعداد معالجات الأحداث
-        setupEventHandlers();
-        
-        // تحديث البيانات كل 5 دقائق
-        setInterval(updateAnalyticsData, 5 * 60 * 1000);
+let statusChart, trendsChart, distributionChart;
+
+const COLORS = { primary:'#00236f', secondary:'#0058be', success:'#10b981', warning:'#f59e0b', danger:'#ef4444', neutral:'#94a3b8' };
+const STATUS_LABELS = { active:'نشط', pending:'معلق', planning:'تخطيط', completed:'مكتمل', on_hold:'موقوف', cancelled:'ملغي', in_progress:'قيد التنفيذ' };
+
+function getStatusLabel(s) { return STATUS_LABELS[s] || s; }
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCharts();
+  loadDetailedStats();
+  setInterval(updateAnalyticsData, 5 * 60 * 1000);
+});
+
+function initCharts() {
+  // Trends
+  trendsChart = new Chart(document.getElementById('trendsChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+      datasets: [
+        { label:'المشاريع', data:[12,19,15,25,22,30,28,35,32,40,38,45], borderColor:COLORS.primary, backgroundColor:'rgba(0,35,111,0.05)', fill:true, tension:0.4, borderWidth:2, pointRadius:3 },
+        { label:'المهام', data:[30,45,40,55,50,65,60,75,70,80,78,90], borderColor:COLORS.secondary, backgroundColor:'rgba(0,88,190,0.05)', fill:true, tension:0.4, borderWidth:2, pointRadius:3 }
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top', rtl:true } }, scales:{ x:{ grid:{ display:false } }, y:{ beginAtZero:true } } }
+  });
+
+  // Status
+  {% if current_user.role in ['admin','project_manager'] %}
+  const statusRaw = {{ analytics_data.projects_by_status|tojson|safe if analytics_data.projects_by_status else '{}' }};
+  {% else %}
+  const statusRaw = {{ analytics_data.tasks_by_status|tojson|safe if analytics_data.tasks_by_status else '{}' }};
+  {% endif %}
+  const sLabels = Object.keys(statusRaw).map(getStatusLabel);
+  const sData = Object.values(statusRaw);
+  const sBg = [COLORS.primary, COLORS.secondary, COLORS.success, COLORS.warning, COLORS.danger, COLORS.neutral];
+  statusChart = new Chart(document.getElementById('statusChart').getContext('2d'), {
+    type: 'doughnut',
+    data: { labels:sLabels, datasets:[{ data:sData, backgroundColor:sBg, borderWidth:0 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', rtl:true } } }
+  });
+
+  // Distribution
+  {% if current_user.role == 'admin' %}
+  const distRaw = {{ analytics_data.users_by_role|tojson|safe if analytics_data.users_by_role else '{}' }};
+  {% else %}
+  const distRaw = {{ analytics_data.projects_by_status|tojson|safe if analytics_data.projects_by_status else '{}' }};
+  {% endif %}
+  distributionChart = new Chart(document.getElementById('distributionChart').getContext('2d'), {
+    type: 'bar',
+    data: { labels:Object.keys(distRaw).map(getStatusLabel), datasets:[{ data:Object.values(distRaw), backgroundColor:COLORS.primary, borderRadius:6 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ display:false } }, y:{ beginAtZero:true } } }
+  });
+}
+
+function changeStatusChartType(type) {
+  statusChart.config.type = type;
+  statusChart.update();
+}
+
+function updateCharts(range) { console.log('Updating for range:', range); }
+function updateAnalyticsData() { location.reload(); }
+function exportAnalytics(format) { window.open('/dashboard/analytics/export?format=' + format, '_blank'); }
+function exportPerformance() { window.open('/dashboard/analytics/performance/export', '_blank'); }
+
+function loadDetailedStats() {
+  fetch('/api/dashboard/detailed-stats')
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.rows) {
+        const tbody = document.getElementById('detailedStatsBody');
+        tbody.innerHTML = data.rows.map(row => `<tr class="hover:bg-slate-50 transition-colors">${row.cells.map(c=>`<td class="px-5 py-4 text-sm">${c}</td>`).join('')}</tr>`).join('');
+      }
+    }).catch(() => {
+      document.getElementById('detailedStatsBody').innerHTML = '<tr><td colspan="5" class="px-5 py-6 text-center text-slate-400">لا توجد بيانات</td></tr>';
     });
-    
-    let statusChart, trendsChart, distributionChart;
-    
-    function initializeCharts() {
-        // Chart 1: Status Distribution
-        const statusCtx = document.getElementById('statusChart').getContext('2d');
-        
-        {% if current_user.role in ['admin', 'project_manager'] %}
-        const statusData = prepareProjectsStatusData();
-        {% else %}
-        const statusData = prepareTasksStatusData();
-        {% endif %}
-        
-        statusChart = new Chart(statusCtx, {
-            type: 'pie',
-            data: statusData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        rtl: true
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = Math.round((value / total) * 100);
-                                return `${label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Chart 2: Trends
-        const trendsCtx = document.getElementById('trendsChart').getContext('2d');
-        
-        {% if current_user.role in ['admin', 'project_manager'] %}
-        const trendsData = prepareMonthlyTrendsData();
-        {% else %}
-        const trendsData = prepareProductivityTrendsData();
-        {% endif %}
-        
-        trendsChart = new Chart(trendsCtx, {
-            type: 'line',
-            data: trendsData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value;
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        rtl: true
-                    }
-                }
-            }
-        });
-        
-        // Chart 3: Distribution
-        const distributionCtx = document.getElementById('distributionChart').getContext('2d');
-        
-        {% if current_user.role == 'admin' %}
-        const distributionData = prepareUsersByRoleData();
-        {% elif current_user.role == 'project_manager' %}
-        const distributionData = prepareProjectsByTypeData();
-        {% elif current_user.role == 'supervisor' %}
-        const distributionData = prepareTasksByProjectData();
-        {% else %}
-        const distributionData = preparePerformanceByTypeData();
-        {% endif %}
-        
-        distributionChart = new Chart(distributionCtx, {
-            type: 'bar',
-            data: distributionData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    },
-                    y: {
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
-    }
-    
-    function prepareProjectsStatusData() {
-        const projectsByStatus = {{ analytics_data.projects_by_status|tojson|safe }};
-        const labels = [];
-        const data = [];
-        const backgroundColors = [];
-        
-        // ألوان الحالات
-        const statusColors = {
-            'active': '#28a745',
-            'pending': '#ffc107',
-            'planning': '#17a2b8',
-            'completed': '#007bff',
-            'on_hold': '#6c757d',
-            'cancelled': '#dc3545'
-        };
-        
-        for (const [status, count] of Object.entries(projectsByStatus)) {
-            labels.push(getStatusLabel(status));
-            data.push(count);
-            backgroundColors.push(statusColors[status] || '#6c757d');
-        }
-        
-        return {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: backgroundColors,
-                borderWidth: 1
-            }]
-        };
-    }
-    
-    function prepareTasksStatusData() {
-        const tasksByStatus = {{ analytics_data.tasks_by_status|tojson|safe }};
-        const labels = [];
-        const data = [];
-        const backgroundColors = [];
-        
-        // ألوان الحالات
-        const statusColors = {
-            'completed': '#28a745',
-            'in_progress': '#007bff',
-            'pending': '#ffc107',
-            'on_hold': '#6c757d',
-            'cancelled': '#dc3545'
-        };
-        
-        for (const [status, count] of Object.entries(tasksByStatus)) {
-            labels.push(getStatusLabel(status));
-            data.push(count);
-            backgroundColors.push(statusColors[status] || '#6c757d');
-        }
-        
-        return {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: backgroundColors,
-                borderWidth: 1
-            }]
-        };
-    }
-    
-    function prepareMonthlyTrendsData() {
-        // بيانات شهرية وهمية (يجب استبدالها ببيانات حقيقية)
-        const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'];
-        
-        return {
-            labels: months,
-            datasets: [{
-                label: 'المشاريع الجديدة',
-                data: [12, 19, 15, 25, 22, 30],
-                borderColor: '#3498db',
-                backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                tension: 0.4
-            }, {
-                label: 'المشاريع المكتملة',
-                data: [8, 12, 10, 18, 15, 22],
-                borderColor: '#2ecc71',
-                backgroundColor: 'rgba(46, 204, 113, 0.1)',
-                tension: 0.4
-            }]
-        };
-    }
-    
-    function prepareProductivityTrendsData() {
-        const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'];
-        
-        return {
-            labels: months,
-            datasets: [{
-                label: 'المهام المكتملة',
-                data: [15, 22, 18, 25, 30, 28],
-                borderColor: '#2ecc71',
-                backgroundColor: 'rgba(46, 204, 113, 0.1)',
-                tension: 0.4
-            }, {
-                label: 'ساعات العمل',
-                data: [120, 140, 130, 160, 180, 175],
-                borderColor: '#3498db',
-                backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                tension: 0.4
-            }]
-        };
-    }
-    
-    function prepareUsersByRoleData() {
-        const usersByRole = {{ analytics_data.users_by_role|tojson|safe }};
-        const labels = [];
-        const data = [];
-        const backgroundColors = [];
-        
-        // ألوان الأدوار
-        const roleColors = {
-            'admin': '#e74c3c',
-            'project_manager': '#3498db',
-            'supervisor': '#9b59b6',
-            'delegate': '#2ecc71',
-            'employee': '#f39c12'
-        };
-        
-        for (const [role, count] of Object.entries(usersByRole)) {
-            labels.push(getRoleLabel(role));
-            data.push(count);
-            backgroundColors.push(roleColors[role] || '#6c757d');
-        }
-        
-        return {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: backgroundColors,
-                borderWidth: 1
-            }]
-        };
-    }
-    
-    function prepareProjectsByTypeData() {
-        const projectsByType = {{ analytics_data.projects_by_type|tojson|safe }};
-        const labels = [];
-        const data = [];
-        const backgroundColors = ['#3498db', '#2ecc71', '#9b59b6', '#f39c12', '#e74c3c'];
-        
-        for (const [type, count] of Object.entries(projectsByType)) {
-            labels.push(type || 'غير محدد');
-            data.push(count);
-        }
-        
-        return {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: backgroundColors.slice(0, labels.length),
-                borderWidth: 1
-            }]
-        };
-    }
-    
-    function prepareTasksByProjectData() {
-        const tasksByProject = {{ analytics_data.tasks_by_project|tojson|safe }};
-        const labels = [];
-        const data = [];
-        const backgroundColors = [];
-        
-        let colorIndex = 0;
-        const colorPalette = ['#3498db', '#2ecc71', '#9b59b6', '#f39c12', '#e74c3c', '#1abc9c'];
-        
-        for (const [project, count] of Object.entries(tasksByProject)) {
-            labels.push(project.length > 20 ? project.substring(0, 20) + '...' : project);
-            data.push(count);
-            backgroundColors.push(colorPalette[colorIndex % colorPalette.length]);
-            colorIndex++;
-        }
-        
-        return {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: backgroundColors,
-                borderWidth: 1
-            }]
-        };
-    }
-    
-    function getStatusLabel(status) {
-        const labels = {
-            'active': 'نشط',
-            'pending': 'معلق',
-            'planning': 'تخطيط',
-            'completed': 'مكتمل',
-            'on_hold': 'معلق',
-            'cancelled': 'ملغي',
-            'in_progress': 'قيد التنفيذ'
-        };
-        return labels[status] || status;
-    }
-    
-    function getRoleLabel(role) {
-        const labels = {
-            'admin': 'مدير',
-            'project_manager': 'مدير مشاريع',
-            'supervisor': 'مشرف',
-            'delegate': 'مندوب',
-            'employee': 'موظف'
-        };
-        return labels[role] || role;
-    }
-    
-    function setupEventHandlers() {
-        // تغيير نوع مخطط الحالة
-        $('#statusChartType').change(function() {
-            statusChart.config.type = $(this).val();
-            statusChart.update();
-        });
-        
-        // تغيير الفترة الزمنية
-        $('[data-range]').click(function() {
-            const range = $(this).data('range');
-            $('[data-range]').removeClass('active');
-            $(this).addClass('active');
-            
-            updateChartsForRange(range);
-        });
-        
-        // تطبيق النطاق الزمني المخصص
-        $('#applyDateRange').click(function() {
-            const startDate = $('#startDate').val();
-            const endDate = $('#endDate').val();
-            
-            if (startDate && endDate) {
-                updateChartsForCustomRange(startDate, endDate);
-            }
-        });
-        
-        // تحديث التاريخ الافتراضي
-        const today = new Date().toISOString().split('T')[0];
-        const lastMonth = new Date();
-        lastMonth.setMonth(lastMonth.getMonth() - 1);
-        $('#startDate').val(lastMonth.toISOString().split('T')[0]);
-        $('#endDate').val(today);
-    }
-    
-    function updateChartsForRange(range) {
-        // في التطبيق الحقيقي، سيتم استدعاء API للحصول على بيانات النطاق
-        showNotification('تحديث', `جارٍ تحديث البيانات للفترة: ${range}`, 'info');
-        
-        $.ajax({
-            url: `/api/analytics/range/${range}`,
-            method: 'GET',
-            success: function(response) {
-                if (response.success) {
-                    updateChartsWithData(response.data);
-                    loadDetailedStats();
-                }
-            }
-        });
-    }
-    
-    function updateChartsForCustomRange(startDate, endDate) {
-        $.ajax({
-            url: `/api/analytics/custom-range`,
-            method: 'GET',
-            data: { start: startDate, end: endDate },
-            success: function(response) {
-                if (response.success) {
-                    updateChartsWithData(response.data);
-                    loadDetailedStats();
-                }
-            }
-        });
-    }
-    
-    function updateChartsWithData(data) {
-        // تحديث الرسوم البيانية بالبيانات الجديدة
-        // (سيتم تنفيذ هذا في التطبيق الحقيقي)
-        console.log('تم تحديث البيانات:', data);
-    }
-    
-    function loadDetailedStats() {
-        $.ajax({
-            url: '/api/analytics/detailed-stats',
-            method: 'GET',
-            success: function(response) {
-                if (response.success) {
-                    displayDetailedStats(response.data);
-                }
-            }
-        });
-    }
-    
-    function displayDetailedStats(data) {
-        const tbody = $('#detailedStatsBody');
-        tbody.empty();
-        
-        if (!data || data.length === 0) {
-            tbody.html('<tr><td colspan="5" class="text-center text-muted">لا توجد بيانات</td></tr>');
-            return;
-        }
-        
-        data.forEach(item => {
-            let rowHtml = '<tr>';
-            
-            if ('{{ current_user.role }}' === 'admin') {
-                rowHtml += `
-                    <td>${item.metric || ''}</td>
-                    <td>${item.value || ''}</td>
-                    <td>${item.change || ''}</td>
-                    <td>
-                        <span class="trend-indicator ${item.trend || 'stable'}"></span>
-                    </td>
-                `;
-            } else if ('{{ current_user.role }}' === 'project_manager') {
-                rowHtml += `
-                    <td>${item.project || ''}</td>
-                    <td><span class="badge bg-${item.status_color || 'secondary'}">${item.status || ''}</span></td>
-                    <td>
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar" style="width: ${item.progress || 0}%"></div>
-                        </div>
-                        <small>${item.progress || 0}%</small>
-                    </td>
-                    <td>${item.start_date || ''}</td>
-                    <td>${item.end_date || ''}</td>
-                `;
-            } else if ('{{ current_user.role }}' === 'supervisor') {
-                rowHtml += `
-                    <td>${item.delegate || ''}</td>
-                    <td>${item.completed_tasks || 0}</td>
-                    <td>${item.in_progress_tasks || 0}</td>
-                    <td>${item.completion_rate || 0}%</td>
-                    <td>${item.quality_rate || 0}%</td>
-                `;
-            } else {
-                rowHtml += `
-                    <td>${item.date || ''}</td>
-                    <td>${item.completed_tasks || 0}</td>
-                    <td>${item.work_hours || 0}</td>
-                    <td>${item.quality_score || 0}%</td>
-                    <td>
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar bg-success" style="width: ${item.efficiency || 0}%"></div>
-                        </div>
-                        <small>${item.efficiency || 0}%</small>
-                    </td>
-                `;
-            }
-            
-            rowHtml += '</tr>';
-            tbody.append(rowHtml);
-        });
-    }
-    
-    function refreshTrendsChart() {
-        trendsChart.data.datasets.forEach(dataset => {
-            dataset.data = dataset.data.map(() => Math.floor(Math.random() * 100));
-        });
-        trendsChart.update();
-        
-        showNotification('تحديث', 'تم تحديث بيانات الاتجاهات', 'success');
-    }
-    
-    function exportAnalytics(format) {
-        $.ajax({
-            url: `/api/analytics/export/${format}`,
-            method: 'GET',
-            xhrFields: {
-                responseType: 'blob'
-            },
-            success: function(blob) {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `تحليلات_${new Date().toISOString().split('T')[0]}.${format}`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                a.remove();
-                
-                showNotification('تصدير', 'تم تصدير البيانات بنجاح', 'success');
-            },
-            error: function() {
-                showNotification('خطأ', 'حدث خطأ أثناء التصدير', 'danger');
-            }
-        });
-    }
-    
-    function exportPerformance() {
-        // تصدير بيانات الأداء
-        // (تنفيذ مشابه لـ exportAnalytics)
-    }
-    
-    function printAnalytics() {
-        window.print();
-    }
-    
-    function updateAnalyticsData() {
-        $.ajax({
-            url: '/api/analytics/refresh',
-            method: 'GET',
-            success: function(response) {
-                if (response.success) {
-                    // تحديث الرسوم البيانية
-                    updateChartsWithData(response.data);
-                    
-                    // تحديث الإحصائيات
-                    if (response.data.stats) {
-                        Object.keys(response.data.stats).forEach(stat => {
-                            $(`#${stat}`).text(response.data.stats[stat]);
-                        });
-                    }
-                    
-                    // تحديث الجدول التفصيلي
-                    loadDetailedStats();
-                }
-            }
-        });
-    }
-    
-    // تنشيط تحديث البيانات
-    $(window).on('focus', updateAnalyticsData);
+}
 </script>
 {% endblock %}

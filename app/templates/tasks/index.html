@@ -1,1273 +1,409 @@
 {% extends "company/base.html" %}
-
 {% block title %}المهام - {{ g.company.name }}{% endblock %}
-
-{% block page_title %}المهام{% endblock %}
-{% block page_subtitle %}إدارة وتتبع جميع مهام المشاريع{% endblock %}
+{% block page_title %}لوحة إدارة المهام{% endblock %}
+{% block page_subtitle %}تتبع سير العمل في مشاريعك{% endblock %}
 
 {% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
-    /* Header Actions */
-    .view-toggle {
-        display: inline-flex;
-        background: #eef2f7;
-        border-radius: 12px;
-        padding: 4px;
-    }
-    
-    .view-toggle-btn {
-        border: none;
-        background: transparent;
-        padding: 0.5rem 1.2rem;
-        border-radius: 10px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: #6c757d;
-        transition: all 0.3s;
-        cursor: pointer;
-    }
-    
-    .view-toggle-btn.active {
-        background: white;
-        color: var(--primary);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    
-    .view-toggle-btn i {
-        margin-left: 0.3rem;
-    }
-    
-    /* Filter Card */
-    .card {
-        background: white;
-        border-radius: 20px;
-        border: none;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
-        margin-bottom: 2rem;
-    }
-    
-    .form-label {
-        font-weight: 600;
-        color: var(--dark);
-        margin-bottom: 0.5rem;
-        font-size: 0.9rem;
-    }
-    
-    .form-select, .form-control {
-        border: 2px solid #eef2f7;
-        border-radius: 12px;
-        padding: 0.6rem 1rem;
-        transition: all 0.3s;
-        font-size: 0.95rem;
-    }
-    
-    .form-select:focus, .form-control:focus {
-        border-color: var(--primary);
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-    }
-    
-    .filter-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-top: 1rem;
-    }
-    
-    .filter-tag {
-        display: inline-flex;
-        align-items: center;
-        background: #eef2f7;
-        color: var(--dark);
-        padding: 0.4rem 1rem;
-        border-radius: 30px;
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
-    
-    .filter-tag.active {
-        background: rgba(67, 97, 238, 0.1);
-        color: var(--primary);
-    }
-    
-    .filter-tag i {
-        margin-right: 0.5rem;
-        cursor: pointer;
-        font-size: 0.8rem;
-    }
-    
-    .filter-tag i:hover {
-        color: var(--danger);
-    }
-    
-    /* Kanban Board */
-    .kanban-container {
-        overflow-x: auto;
-        padding-bottom: 1rem;
-    }
-    
-    .task-board {
-        display: flex;
-        gap: 1.5rem;
-        min-width: 1000px;
-    }
-    
-    .task-column {
-        flex: 1;
-        background: #f8f9fa;
-        border-radius: 20px;
-        min-height: 500px;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .column-header {
-        padding: 1.2rem;
-        border-bottom: 2px solid white;
-    }
-    
-    .column-header h6 {
-        font-weight: 700;
-        color: var(--dark);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    
-    .column-header .badge {
-        padding: 0.4rem 0.8rem;
-        border-radius: 10px;
-        font-size: 0.8rem;
-    }
-    
-    .column-pending .column-header {
-        border-bottom-color: #6c757d;
-    }
-    
-    .column-in_progress .column-header {
-        border-bottom-color: var(--primary);
-    }
-    
-    .column-completed .column-header {
-        border-bottom-color: var(--success);
-    }
-    
-    .column-on_hold .column-header {
-        border-bottom-color: var(--warning);
-    }
-    
-    .task-list {
-        flex: 1;
-        padding: 1rem;
-        min-height: 400px;
-    }
-    
-    .task-list.drag-over {
-        background: rgba(67, 97, 238, 0.05);
-        border-radius: 12px;
-    }
-    
-    /* Task Card */
-    .task-card {
-        background: white;
-        border-radius: 15px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        transition: all 0.3s;
-        cursor: grab;
-        border-right: 4px solid transparent;
-    }
-    
-    .task-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    }
-    
-    .task-card:active {
-        cursor: grabbing;
-    }
-    
-    .task-card.dragging {
-        opacity: 0.5;
-        transform: scale(0.95);
-    }
-    
-    .task-card[data-status="pending"] {
-        border-right-color: #6c757d;
-    }
-    
-    .task-card[data-status="in_progress"] {
-        border-right-color: var(--primary);
-    }
-    
-    .task-card[data-status="completed"] {
-        border-right-color: var(--success);
-        opacity: 0.8;
-    }
-    
-    .task-card[data-status="on_hold"] {
-        border-right-color: var(--warning);
-    }
-    
-    .task-card[data-status="cancelled"] {
-        border-right-color: var(--danger);
-        opacity: 0.6;
-    }
-    
-    .task-priority {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        margin-left: 0.5rem;
-    }
-    
-    .priority-high {
-        background: var(--danger);
-    }
-    
-    .priority-medium {
-        background: var(--warning);
-    }
-    
-    .priority-low {
-        background: var(--success);
-    }
-    
-    .task-deadline {
-        font-size: 0.85rem;
-    }
-    
-    .deadline-overdue {
-        color: var(--danger);
-    }
-    
-    .deadline-today {
-        color: var(--warning);
-    }
-    
-    .deadline-future {
-        color: var(--success);
-    }
-    
-    .task-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 0.8rem;
-        padding-top: 0.8rem;
-        border-top: 1px solid #eef2f7;
-    }
-    
-    /* Empty Column */
-    .empty-column {
-        text-align: center;
-        padding: 2rem 1rem;
-        color: #6c757d;
-    }
-    
-    .empty-column i {
-        color: #adb5bd;
-    }
-    
-    /* Table View */
-    .task-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0 0.5rem;
-    }
-    
-    .task-table thead th {
-        background: #f8f9fa;
-        padding: 1rem;
-        font-weight: 600;
-        color: var(--dark);
-        border: none;
-        font-size: 0.9rem;
-    }
-    
-    .task-table tbody tr {
-        background: white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        border-radius: 15px;
-        transition: all 0.3s;
-    }
-    
-    .task-table tbody tr:hover {
-        box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-    }
-    
-    .task-table tbody td {
-        padding: 1rem;
-        vertical-align: middle;
-        border: none;
-    }
-    
-    .task-table .avatar {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        overflow: hidden;
-    }
-    
-    .task-table .avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .task-table .progress {
-        height: 6px;
-        border-radius: 3px;
-        background: #eef2f7;
-        min-width: 80px;
-    }
-    
-    .task-table .progress-bar {
-        background: var(--primary);
-        border-radius: 3px;
-    }
-    
-    /* Badge Status */
-    .badge {
-        padding: 0.5rem 0.8rem;
-        border-radius: 30px;
-        font-weight: 500;
-        font-size: 0.8rem;
-    }
-    
-    .badge.bg-secondary {
-        background: #6c757d !important;
-    }
-    
-    .badge.bg-primary {
-        background: var(--primary) !important;
-    }
-    
-    .badge.bg-success {
-        background: var(--success) !important;
-    }
-    
-    .badge.bg-warning {
-        background: var(--warning) !important;
-        color: white;
-    }
-    
-    .badge.bg-danger {
-        background: var(--danger) !important;
-    }
-    
-    /* Bulk Actions */
-    #bulkAction {
-        border: 2px solid #eef2f7;
-        border-radius: 12px;
-        padding: 0.4rem 2rem 0.4rem 1rem;
-        font-size: 0.9rem;
-    }
-    
-    /* Quick Actions */
-    .quick-actions {
-        position: fixed;
-        bottom: 2rem;
-        left: 2rem;
-        z-index: 1000;
-    }
-    
-    .action-btn {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        border: none;
-        color: white;
-        font-size: 1.5rem;
-        box-shadow: 0 5px 20px rgba(67, 97, 238, 0.3);
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .action-btn:hover {
-        transform: scale(1.1);
-        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
-    }
-    
-    /* Modal */
-    .modal-content {
-        border: none;
-        border-radius: 20px;
-    }
-    
-    .modal-header {
-        border-bottom: 2px solid #eef2f7;
-        padding: 1.5rem;
-    }
-    
-    .modal-title {
-        font-weight: 700;
-        color: var(--dark);
-    }
-    
-    .modal-body {
-        padding: 1.5rem;
-    }
-    
-    .modal-footer {
-        border-top: 2px solid #eef2f7;
-        padding: 1.5rem;
-    }
-    
-    .modal .btn-primary {
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        border: none;
-        border-radius: 12px;
-        padding: 0.6rem 1.5rem;
-    }
-    
-    .modal .btn-secondary {
-        background: #eef2f7;
-        border: none;
-        color: #6c757d;
-        border-radius: 12px;
-        padding: 0.6rem 1.5rem;
-    }
-    
-    /* Responsive */
-    @media (max-width: 992px) {
-        .view-toggle {
-            margin-bottom: 1rem;
-        }
-        
-        .task-board {
-            min-width: 800px;
-        }
-    }
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-family:'Material Symbols Outlined';display:inline-block;line-height:1;white-space:nowrap;direction:ltr;}
+body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif;}
+.scrollbar-thin::-webkit-scrollbar{width:4px;height:4px;}
+.scrollbar-thin::-webkit-scrollbar-thumb{background:#dce9ff;border-radius:10px;}
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Header Actions -->
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
-    <div></div> <!-- Empty div for spacing -->
-    
-    <div class="d-flex align-items-center gap-2">
-        <div class="view-toggle">
-            <button class="view-toggle-btn active" data-view="board">
-                <i class="fas fa-columns me-1"></i> لوحة
-            </button>
-            <button class="view-toggle-btn" data-view="list">
-                <i class="fas fa-list me-1"></i> قائمة
-            </button>
-        </div>
-        
-        {% if current_user.role in ['org_admin', 'project_manager', 'supervisor'] %}
-        <a href="{{ url_for('task.create') }}" class="btn-primary-gradient">
-            <i class="fas fa-plus me-2"></i> مهمة جديدة
-        </a>
-        {% endif %}
-    </div>
-</div>
+<div class="space-y-5">
 
-<!-- Filters -->
-<div class="card">
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label">المشروع</label>
-                <select class="form-select" id="projectFilter">
-                    <option value="">جميع المشاريع</option>
-                    {% for project in projects|unique(attribute='id') %}
-                    <option value="{{ project.id }}">{{ project.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">الحالة</label>
-                <select class="form-select" id="statusFilter">
-                    <option value="">جميع الحالات</option>
-                    <option value="pending">معلقة</option>
-                    <option value="in_progress">قيد التنفيذ</option>
-                    <option value="completed">مكتملة</option>
-                    <option value="on_hold">متوقفة</option>
-                    <option value="cancelled">ملغاة</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">المشرف</label>
-                <select class="form-select" id="supervisorFilter">
-                    <option value="">جميع المشرفين</option>
-                    {% for supervisor in supervisors|unique(attribute='id') %}
-                    <option value="{{ supervisor.id }}">{{ supervisor.full_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">الترتيب</label>
-                <select class="form-select" id="sortFilter">
-                    <option value="deadline">الموعد النهائي</option>
-                    <option value="priority">الأولوية</option>
-                    <option value="created">الأحدث</option>
-                    <option value="progress">التقدم</option>
-                </select>
-            </div>
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900">لوحة إدارة المهام</h2>
+      <p class="text-sm text-slate-500 flex items-center gap-1 mt-0.5">
+        <span class="material-symbols-outlined text-base">folder_open</span> تتبع سير العمل في مشاريعك
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <!-- View Toggle -->
+      <div class="flex bg-slate-100 rounded-xl p-1 gap-1">
+        <button id="boardViewBtn" onclick="switchView('board')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white text-blue-900 shadow-sm transition-all">
+          <span class="material-symbols-outlined text-base">view_kanban</span> لوحة
+        </button>
+        <button id="listViewBtn" onclick="switchView('list')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-500 transition-all">
+          <span class="material-symbols-outlined text-base">list</span> قائمة
+        </button>
+      </div>
+      <button class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 shadow-sm">
+        <span class="material-symbols-outlined text-base text-slate-500">filter_alt</span> تصفية
+      </button>
+      {% if current_user.role in ['org_admin','project_manager','supervisor'] %}
+      <a href="{{ url_for('task.create') }}" class="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-xl text-sm font-bold hover:bg-blue-800 shadow-sm">
+        <span class="material-symbols-outlined text-base">add</span> مهمة جديدة
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Filters Bar -->
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">المشروع</label>
+        <select id="projectFilter" class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-900">
+          <option value="">جميع المشاريع</option>
+          {% for project in projects|unique(attribute='id') %}
+          <option value="{{ project.id }}">{{ project.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">الحالة</label>
+        <select id="statusFilter" class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-900">
+          <option value="">جميع الحالات</option>
+          <option value="pending">معلقة</option>
+          <option value="in_progress">قيد التنفيذ</option>
+          <option value="completed">مكتملة</option>
+          <option value="on_hold">متوقفة</option>
+          <option value="cancelled">ملغاة</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">المشرف</label>
+        <select id="supervisorFilter" class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-900">
+          <option value="">جميع المشرفين</option>
+          {% for supervisor in supervisors|unique(attribute='id') %}
+          <option value="{{ supervisor.id }}">{{ supervisor.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">بحث</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-base">search</span>
+          <input id="searchInput" type="text" placeholder="ابحث في المهام..." class="w-full text-sm border border-slate-200 rounded-xl pr-9 pl-3 py-2 outline-none focus:ring-2 focus:ring-blue-900"/>
         </div>
-        
-        <div class="row mt-3">
-            <div class="col-12">
-                <div class="input-group">
-                    <input type="text" class="form-control" id="searchInput" placeholder="ابحث في المهام...">
-                    <button class="btn btn-outline-primary" type="button" id="searchBtn">
-                        <i class="fas fa-search"></i>
-                    </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOARD VIEW -->
+  <div id="boardView" class="overflow-x-auto scrollbar-thin pb-2">
+    <div class="flex gap-4 min-w-[1100px]">
+
+      {% set columns = [
+        ('pending',     'قيد الانتظار', 'bg-slate-400',   'bg-slate-50',  'bg-slate-100 text-slate-600'),
+        ('in_progress', 'قيد التنفيذ',  'bg-blue-900',    'bg-blue-50',   'bg-blue-900 text-white'),
+        ('completed',   'مكتمل',        'bg-emerald-500', 'bg-emerald-50','bg-emerald-100 text-emerald-700'),
+        ('on_hold',     'متوقف',        'bg-amber-500',   'bg-amber-50',  'bg-amber-100 text-amber-700'),
+      ] %}
+
+      {% for status, label, bar_cls, bg_cls, badge_cls in columns %}
+      {% set col_tasks = tasks|selectattr('status','equalto',status)|list %}
+      <div class="flex-1 min-w-[260px] flex flex-col {{ bg_cls }} rounded-2xl p-3" data-status="{{ status }}">
+        <div class="flex items-center justify-between mb-3 px-1">
+          <div class="flex items-center gap-2">
+            <div class="w-1.5 h-6 {{ bar_cls }} rounded-full"></div>
+            <h3 class="text-base font-bold text-slate-900">{{ label }}</h3>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full {{ badge_cls }}">{{ col_tasks|length }}</span>
+          </div>
+          {% if current_user.role in ['org_admin','project_manager','supervisor'] %}
+          <a href="{{ url_for('task.create') }}" class="material-symbols-outlined text-slate-400 hover:text-blue-900 text-xl transition-colors">add</a>
+          {% endif %}
+        </div>
+
+        <div class="flex flex-col gap-3 flex-1 overflow-y-auto scrollbar-thin task-list" id="{{ status }}Tasks" data-status="{{ status }}">
+          {% for task in col_tasks %}
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-grab group"
+               draggable="true" data-task-id="{{ task.id }}" data-status="{{ task.status }}"
+               data-project-id="{{ task.project_id }}" data-supervisor-id="{{ task.supervisor_id }}">
+
+            <div class="flex justify-between items-center mb-2">
+              {% if task.project %}
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-900">{{ task.project.project_code }}</span>
+              {% endif %}
+              <span class="text-xs font-bold flex items-center gap-0.5
+                {% if task.priority == 'high' or task.priority == 5 %}text-red-500
+                {% elif task.priority == 'medium' or task.priority == 3 %}text-amber-500
+                {% else %}text-emerald-500{% endif %}">
+                <span class="material-symbols-outlined text-sm">
+                  {% if task.priority == 'high' or task.priority == 5 %}error
+                  {% elif task.priority == 'medium' or task.priority == 3 %}trending_up
+                  {% else %}keyboard_double_arrow_down{% endif %}
+                </span>
+                {% if task.priority == 'high' or task.priority == 5 %}عالي
+                {% elif task.priority == 'medium' or task.priority == 3 %}متوسط
+                {% else %}منخفض{% endif %}
+              </span>
+            </div>
+
+            <h4 class="text-sm font-bold text-slate-900 mb-1 group-hover:text-blue-900 transition-colors leading-snug">{{ task.task_name }}</h4>
+            {% if task.description %}
+            <p class="text-xs text-slate-400 mb-3 line-clamp-2">{{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}</p>
+            {% endif %}
+
+            {% if status == 'in_progress' %}
+            <div class="mb-3">
+              <div class="flex justify-between text-xs text-slate-400 mb-1">
+                <span>التقدم</span><span class="font-bold text-blue-900">{{ task.progress_percentage|round(0)|int }}%</span>
+              </div>
+              <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-1.5 bg-blue-900 rounded-full" style="width:{{ task.progress_percentage }}%"></div>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="flex justify-between items-center pt-3 border-t border-slate-100">
+              <div class="flex items-center gap-1">
+                {% if task.supervisor %}
+                <div class="w-6 h-6 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold">
+                  {{ task.supervisor.full_name[0] if task.supervisor.full_name else '?' }}
                 </div>
+                {% endif %}
+              </div>
+              <div class="flex items-center gap-2">
+                {% if task.planned_end_date %}
+                {% set days = (task.planned_end_date - now.date()).days %}
+                <span class="flex items-center gap-0.5 text-xs
+                  {% if days < 0 %}text-red-500 font-bold{% elif days == 0 %}text-amber-500 font-bold{% else %}text-slate-400{% endif %}">
+                  <span class="material-symbols-outlined text-sm">event</span>
+                  {{ task.planned_end_date.strftime('%d/%m') }}
+                </span>
+                {% endif %}
+                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <a href="{{ url_for('task.view', task_id=task.id) }}" class="p-1 rounded-lg hover:bg-slate-100 transition-colors">
+                    <span class="material-symbols-outlined text-sm text-slate-400 hover:text-blue-900">visibility</span>
+                  </a>
+                  {% if current_user.role in ['org_admin','project_manager','supervisor'] %}
+                  <a href="{{ url_for('task.edit', task_id=task.id) }}" class="p-1 rounded-lg hover:bg-slate-100 transition-colors">
+                    <span class="material-symbols-outlined text-sm text-slate-400 hover:text-blue-900">edit</span>
+                  </a>
+                  {% endif %}
+                </div>
+              </div>
             </div>
+          </div>
+          {% else %}
+          <div class="text-center py-8 text-slate-300">
+            <span class="material-symbols-outlined text-4xl block mb-2">inbox</span>
+            <p class="text-xs">لا توجد مهام</p>
+          </div>
+          {% endfor %}
         </div>
-        
-        <!-- Active Filters -->
-        <div class="filter-tags" id="activeFilters">
-            <!-- Filters will be added here dynamically -->
-        </div>
+      </div>
+      {% endfor %}
     </div>
-</div>
+  </div>
 
-<!-- Kanban Board View -->
-<div class="kanban-container" id="boardView">
-    <div class="task-board">
-        <!-- Pending Column -->
-        <div class="task-column column-pending" data-status="pending">
-            <div class="column-header">
-                <h6>
-                    <i class="fas fa-clock me-2"></i> معلقة
-                    <span class="badge bg-secondary" id="pendingCount">0</span>
-                </h6>
-            </div>
-            <div class="task-list" id="pendingTasks">
-                {% for task in tasks if task.status == 'pending' %}
-                {% include 'tasks/_task_card.html' %}
-                {% endfor %}
-            </div>
-            {% if not tasks|selectattr('status', 'equalto', 'pending')|list %}
-            <div class="empty-column">
-                <i class="fas fa-clock fa-2x mb-2"></i>
-                <p class="mb-0">لا توجد مهام معلقة</p>
-            </div>
-            {% endif %}
-        </div>
-        
-        <!-- In Progress Column -->
-        <div class="task-column column-in_progress" data-status="in_progress">
-            <div class="column-header">
-                <h6>
-                    <i class="fas fa-spinner me-2"></i> قيد التنفيذ
-                    <span class="badge bg-primary" id="progressCount">0</span>
-                </h6>
-            </div>
-            <div class="task-list" id="progressTasks">
-                {% for task in tasks if task.status == 'in_progress' %}
-                {% include 'tasks/_task_card.html' %}
-                {% endfor %}
-            </div>
-            {% if not tasks|selectattr('status', 'equalto', 'in_progress')|list %}
-            <div class="empty-column">
-                <i class="fas fa-spinner fa-2x mb-2"></i>
-                <p class="mb-0">لا توجد مهام قيد التنفيذ</p>
-            </div>
-            {% endif %}
-        </div>
-        
-        <!-- Completed Column -->
-        <div class="task-column column-completed" data-status="completed">
-            <div class="column-header">
-                <h6>
-                    <i class="fas fa-check-circle me-2"></i> مكتملة
-                    <span class="badge bg-success" id="completedCount">0</span>
-                </h6>
-            </div>
-            <div class="task-list" id="completedTasks">
-                {% for task in tasks if task.status == 'completed' %}
-                {% include 'tasks/_task_card.html' %}
-                {% endfor %}
-            </div>
-            {% if not tasks|selectattr('status', 'equalto', 'completed')|list %}
-            <div class="empty-column">
-                <i class="fas fa-check-circle fa-2x mb-2"></i>
-                <p class="mb-0">لا توجد مهام مكتملة</p>
-            </div>
-            {% endif %}
-        </div>
-        
-        <!-- On Hold Column -->
-        <div class="task-column column-on_hold" data-status="on_hold">
-            <div class="column-header">
-                <h6>
-                    <i class="fas fa-pause-circle me-2"></i> متوقفة
-                    <span class="badge bg-warning" id="holdCount">0</span>
-                </h6>
-            </div>
-            <div class="task-list" id="holdTasks">
-                {% for task in tasks if task.status == 'on_hold' %}
-                {% include 'tasks/_task_card.html' %}
-                {% endfor %}
-            </div>
-            {% if not tasks|selectattr('status', 'equalto', 'on_hold')|list %}
-            <div class="empty-column">
-                <i class="fas fa-pause-circle fa-2x mb-2"></i>
-                <p class="mb-0">لا توجد مهام متوقفة</p>
-            </div>
-            {% endif %}
-        </div>
+  <!-- LIST VIEW -->
+  <div id="listView" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+    <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+      <h3 class="text-base font-bold text-slate-900">قائمة المهام</h3>
+      <div class="flex items-center gap-3 text-sm text-slate-400">
+        <span><span id="selectedCount" class="font-bold text-slate-900">0</span> من <span id="totalCount" class="font-bold text-slate-900">{{ tasks|length }}</span> محددة</span>
+        <select id="bulkAction" class="text-sm border border-slate-200 rounded-lg px-2 py-1.5 outline-none">
+          <option value="">إجراء جماعي</option>
+          <option value="complete">إكمال</option>
+          <option value="move_to_progress">نقل لقيد التنفيذ</option>
+          <option value="move_to_hold">نقل لمتوقفة</option>
+          <option value="delete">حذف</option>
+        </select>
+        <button id="applyBulkAction" class="px-3 py-1.5 bg-blue-900 text-white text-sm rounded-lg disabled:opacity-50" disabled>تطبيق</button>
+      </div>
     </div>
-</div>
-
-<!-- List View -->
-<div class="d-none" id="listView">
-    <div class="card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table task-table">
-                    <thead>
-                        <tr>
-                            <th width="50">
-                                <input type="checkbox" class="form-check-input" id="selectAll">
-                            </th>
-                            <th>المهمة</th>
-                            <th>المشروع</th>
-                            <th>المشرف</th>
-                            <th>الحالة</th>
-                            <th>التقدم</th>
-                            <th>الموعد</th>
-                            <th>المسار الحرج</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="taskTableBody">
-                        {% for task in tasks %}
-                        <tr data-task-id="{{ task.id }}" data-status="{{ task.status }}" 
-                            data-project-id="{{ task.project_id }}" data-supervisor-id="{{ task.supervisor_id }}">
-                            <td>
-                                <input type="checkbox" class="form-check-input task-checkbox" value="{{ task.id }}">
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-start">
-                                    <div class="ms-2">
-                                        <span class="task-priority priority-{{ task.priority or 'medium' }}"></span>
-                                    </div>
-                                    <div>
-                                        <strong class="d-block">{{ task.task_name }}</strong>
-                                        <small class="text-muted">{{ task.task_code }}</small>
-                                        {% if task.description %}
-                                        <p class="mb-0 mt-1 small text-muted">{{ task.description[:100] }}{% if task.description|length > 100 %}...{% endif %}</p>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                {% if task.project %}
-                                <div class="d-flex align-items-center">
-                                    <div class="ms-2">
-                                        <span class="badge bg-secondary">{{ task.project.project_code }}</span>
-                                    </div>
-                                    <div>
-                                        <small class="d-block">{{ task.project.name }}</small>
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if task.supervisor %}
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar ms-2">
-                                        {% if task.supervisor.profile_image %}
-                                        <img src="{{ task.supervisor.avatar_url }}" class="rounded-circle" width="30" height="30" alt="صورة الملف الشخصي">
-                                        {% else %}
-                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; font-size: 0.75rem;">
-                                            {{ task.supervisor.full_name[0] }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                    <div>
-                                        <small class="d-block">{{ task.supervisor.full_name }}</small>
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if task.status == 'pending' %}
-                                <span class="badge bg-secondary">معلقة</span>
-                                {% elif task.status == 'in_progress' %}
-                                <span class="badge bg-primary">قيد التنفيذ</span>
-                                {% elif task.status == 'completed' %}
-                                <span class="badge bg-success">مكتملة</span>
-                                {% elif task.status == 'on_hold' %}
-                                <span class="badge bg-warning">متوقفة</span>
-                                {% elif task.status == 'cancelled' %}
-                                <span class="badge bg-danger">ملغاة</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="progress flex-grow-1 ms-2" style="height: 6px;">
-                                        <div class="progress-bar" style="width: {{ task.progress_percentage }}%"></div>
-                                    </div>
-                                    <small>{{ task.progress_percentage|round(0) }}%</small>
-                                </div>
-                            </td>
-                            <td>
-                                {% if task.planned_end_date %}
-                                {% set days_remaining = (task.planned_end_date - now.date()).days %}
-                                <div class="task-deadline 
-                                    {% if days_remaining < 0 %}deadline-overdue
-                                    {% elif days_remaining == 0 %}deadline-today
-                                    {% else %}deadline-future{% endif %}">
-                                    <i class="fas fa-calendar me-1"></i>
-                                    {{ task.planned_end_date.strftime('%Y-%m-%d') }}
-                                    {% if days_remaining < 0 %}
-                                    <br><small>متأخرة {{ -days_remaining }} يوم</small>
-                                    {% elif days_remaining == 0 %}
-                                    <br><small>اليوم</small>
-                                    {% else %}
-                                    <br><small>{{ days_remaining }} يوم متبقي</small>
-                                    {% endif %}
-                                </div>
-                                {% else %}
-                                <span class="text-muted">غير محدد</span>
-                                {% endif %}
-                            </td>
-                             <td>
-                                {% if task.project and task.project.primavera_data %}
-                                    {% set primavera_activity = task.primavera_activity %}
-                                    {% if primavera_activity and primavera_activity.is_critical %}
-                                    <span class="badge bg-danger">
-                                        <i class="fas fa-exclamation-triangle me-1"></i> حرج
-                                    </span>
-                                    {% else %}
-                                    <span class="badge bg-secondary">غير حرج</span>
-                                    {% endif %}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{{ url_for('task.view', task_id=task.id) }}" class="action-btn" title="عرض">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    {% if current_user.role in ['org_admin', 'project_manager', 'supervisor'] %}
-                                    <a href="{{ url_for('task.edit', task_id=task.id) }}" class="action-btn" title="تعديل">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    {% endif %}
-                                    {% if current_user.role in ['org_admin', 'project_manager', 'supervisor'] and task.status != 'completed' %}
-                                    <button class="action-btn task-action" data-action="complete" data-task-id="{{ task.id }}" title="إكمال">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    {% endif %}
-                                    {% if task.project and task.project.primavera_data %}
-                                    <a href="{{ url_for('primavera.activities_list', project_id=task.project.primavera_data.id) }}?activity={{ task.task_code }}" 
-                                    class="btn btn-sm btn-outline-info" title="عرض في Primavera">
-                                        <i class="fas fa-chart-line"></i>
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Bulk Actions -->
-            <div class="p-3 d-flex justify-content-between align-items-center">
+    <div class="overflow-x-auto">
+      <table class="w-full text-right text-sm">
+        <thead class="bg-slate-50 text-slate-400 text-xs uppercase">
+          <tr>
+            <th class="px-4 py-3 w-8"><input type="checkbox" id="selectAll" class="rounded"/></th>
+            <th class="px-4 py-3 font-bold">المهمة</th>
+            <th class="px-4 py-3 font-bold">المشروع</th>
+            <th class="px-4 py-3 font-bold">المشرف</th>
+            <th class="px-4 py-3 font-bold">الحالة</th>
+            <th class="px-4 py-3 font-bold">التقدم</th>
+            <th class="px-4 py-3 font-bold">الموعد</th>
+            <th class="px-4 py-3 font-bold">المسار الحرج</th>
+            <th class="px-4 py-3 font-bold">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="taskTableBody" class="divide-y divide-slate-100">
+          {% set st_cls = {'pending':'bg-slate-100 text-slate-600','in_progress':'bg-blue-50 text-blue-900','completed':'bg-emerald-50 text-emerald-700','on_hold':'bg-amber-50 text-amber-700','cancelled':'bg-red-50 text-red-600'} %}
+          {% set st_lbl = {'pending':'معلقة','in_progress':'قيد التنفيذ','completed':'مكتملة','on_hold':'متوقفة','cancelled':'ملغاة'} %}
+          {% for task in tasks %}
+          <tr class="hover:bg-slate-50 transition-colors" data-task-id="{{ task.id }}" data-status="{{ task.status }}" data-project-id="{{ task.project_id }}" data-supervisor-id="{{ task.supervisor_id }}">
+            <td class="px-4 py-3"><input type="checkbox" class="task-checkbox rounded" value="{{ task.id }}"/></td>
+            <td class="px-4 py-3">
+              <div class="flex items-start gap-2">
+                <span class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0
+                  {% if task.priority=='high' or task.priority==5 %}bg-red-500
+                  {% elif task.priority=='medium' or task.priority==3 %}bg-amber-500
+                  {% else %}bg-emerald-500{% endif %}"></span>
                 <div>
-                    <select class="form-select form-select-sm d-inline-block w-auto" id="bulkAction">
-                        <option value="">إجراء جماعي</option>
-                        <option value="complete">إكمال</option>
-                        <option value="move_to_progress">نقل إلى قيد التنفيذ</option>
-                        <option value="move_to_hold">نقل إلى متوقفة</option>
-                        <option value="delete">حذف</option>
-                    </select>
-                    <button class="btn-primary-gradient btn-sm ms-2" id="applyBulkAction" disabled>
-                        تطبيق
-                    </button>
+                  <p class="font-bold text-slate-900">{{ task.task_name }}</p>
+                  <p class="text-xs text-slate-400">{{ task.task_code }}</p>
+                  {% if task.description %}<p class="text-xs text-slate-400 mt-0.5">{{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}</p>{% endif %}
                 </div>
-                
-                <div class="text-muted">
-                    <span id="selectedCount">0</span> من <span id="totalCount">{{ tasks|length }}</span> مهمة محددة
-                </div>
-            </div>
-        </div>
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              {% if task.project %}
+              <span class="text-xs bg-blue-50 text-blue-900 font-bold px-2 py-0.5 rounded">{{ task.project.project_code }}</span>
+              <p class="text-xs text-slate-400 mt-0.5">{{ task.project.name }}</p>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3">
+              {% if task.supervisor %}
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{{ task.supervisor.full_name[0] }}</div>
+                <span class="text-xs text-slate-600">{{ task.supervisor.full_name }}</span>
+              </div>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 rounded-full text-xs font-bold {{ st_cls.get(task.status,'bg-slate-100 text-slate-600') }}">{{ st_lbl.get(task.status, task.status) }}</span>
+            </td>
+            <td class="px-4 py-3 w-36">
+              <div class="flex items-center gap-2">
+                <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-1.5 bg-blue-900 rounded-full" style="width:{{ task.progress_percentage }}%"></div></div>
+                <span class="text-xs font-bold text-slate-600">{{ task.progress_percentage|round(0)|int }}%</span>
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              {% if task.planned_end_date %}
+              {% set days = (task.planned_end_date - now.date()).days %}
+              <span class="text-xs {% if days < 0 %}text-red-500 font-bold{% elif days == 0 %}text-amber-500 font-bold{% else %}text-slate-500{% endif %}">
+                {{ task.planned_end_date.strftime('%Y-%m-%d') }}
+              </span>
+              <p class="text-xs {% if days < 0 %}text-red-500{% elif days == 0 %}text-amber-500{% else %}text-slate-400{% endif %}">
+                {% if days < 0 %}متأخرة {{ -days }} يوم{% elif days == 0 %}اليوم{% else %}{{ days }} يوم{% endif %}
+              </p>
+              {% else %}<span class="text-xs text-slate-400">غير محدد</span>{% endif %}
+            </td>
+            <td class="px-4 py-3">
+              {% if task.project and task.project.primavera_data %}
+                {% set pa = task.primavera_activity %}
+                {% if pa and pa.is_critical %}
+                <span class="text-xs bg-red-50 text-red-600 font-bold px-2 py-0.5 rounded-full">حرج</span>
+                {% else %}
+                <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">غير حرج</span>
+                {% endif %}
+              {% else %}-{% endif %}
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-1">
+                <a href="{{ url_for('task.view', task_id=task.id) }}" class="p-1.5 rounded-lg hover:bg-blue-50 transition-colors">
+                  <span class="material-symbols-outlined text-sm text-slate-400 hover:text-blue-900">visibility</span>
+                </a>
+                {% if current_user.role in ['org_admin','project_manager','supervisor'] %}
+                <a href="{{ url_for('task.edit', task_id=task.id) }}" class="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                  <span class="material-symbols-outlined text-sm text-slate-400 hover:text-blue-900">edit</span>
+                </a>
+                {% if task.status != 'completed' %}
+                <button class="p-1.5 rounded-lg hover:bg-emerald-50 transition-colors task-action" data-action="complete" data-task-id="{{ task.id }}">
+                  <span class="material-symbols-outlined text-sm text-slate-400 hover:text-emerald-600">check_circle</span>
+                </button>
+                {% endif %}
+                {% endif %}
+                {% if task.project and task.project.primavera_data %}
+                <a href="{{ url_for('primavera.activities_list', project_id=task.project.primavera_data.id) }}?activity={{ task.task_code }}" class="p-1.5 rounded-lg hover:bg-sky-50 transition-colors">
+                  <span class="material-symbols-outlined text-sm text-slate-400 hover:text-sky-600">timeline</span>
+                </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="px-4 py-10 text-center text-slate-400">لا توجد مهام</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </div>
 </div>
 
-<!-- Empty State -->
-{% if not tasks %}
-<div class="text-center py-5">
-    <i class="fas fa-tasks fa-4x text-muted mb-3"></i>
-    <h4 class="text-muted mb-3">لا توجد مهام</h4>
-    <p class="text-muted mb-4">لم يتم إنشاء أي مهام بعد. ابدأ بإنشاء مهمة جديدة لإدارة أعمالك.</p>
-    {% if current_user.role in ['org_admin', 'project_manager', 'supervisor'] %}
-    <a href="{{ url_for('task.create') }}" class="btn-primary-gradient">
-        <i class="fas fa-plus me-2"></i> إنشاء مهمة جديدة
-    </a>
-    {% endif %}
-</div>
+<!-- FAB -->
+{% if current_user.role in ['org_admin','project_manager','supervisor'] %}
+<a href="{{ url_for('task.create') }}" class="fixed bottom-8 left-8 bg-blue-900 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-50">
+  <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1;">add</span>
+</a>
 {% endif %}
-
-<!-- Quick Actions -->
-{% if current_user.role in ['org_admin', 'project_manager', 'supervisor'] %}
-<div class="quick-actions">
-    <button type="button" class="action-btn" data-bs-toggle="modal" data-bs-target="#quickTaskModal">
-        <i class="fas fa-plus"></i>
-    </button>
-</div>
-{% endif %}
-
-<!-- Quick Task Modal -->
-<div class="modal fade" id="quickTaskModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-plus-circle me-2 text-primary"></i>مهمة سريعة</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" action="{{ url_for('task.create') }}">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label required-field">اسم المهمة</label>
-                        <input type="text" class="form-control" name="task_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label required-field">المشروع</label>
-                        <select class="form-select" name="project_id" required>
-                            <option value="">اختر مشروع</option>
-                            {% for project in projects|unique(attribute='id') %}
-                            <option value="{{ project.id }}">{{ project.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">المشرف</label>
-                        <select class="form-select" name="supervisor_id">
-                            <option value="">اختر مشرف</option>
-                            {% for supervisor in supervisors|unique(attribute='id') %}
-                            <option value="{{ supervisor.id }}">{{ supervisor.full_name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">الموعد النهائي</label>
-                        <input type="date" class="form-control" name="planned_end_date">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn-primary-gradient">إنشاء المهمة</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    let draggableTask = null;
-    let currentView = 'board';
-    
-    // Initialize counts
-    updateTaskCounts();
-    
-    // View toggle
-    $('.view-toggle-btn').click(function() {
-        $('.view-toggle-btn').removeClass('active');
-        $(this).addClass('active');
-        
-        currentView = $(this).data('view');
-        if (currentView === 'board') {
-            $('#boardView').removeClass('d-none');
-            $('#listView').addClass('d-none');
-        } else {
-            $('#boardView').addClass('d-none');
-            $('#listView').removeClass('d-none');
-        }
-    });
-    
-    // Filter functionality
-    function applyFilters() {
-        const projectId = $('#projectFilter').val();
-        const status = $('#statusFilter').val();
-        const supervisorId = $('#supervisorFilter').val();
-        const searchTerm = $('#searchInput').val().toLowerCase();
-        const sortBy = $('#sortFilter').val();
-        
-        // Update active filters display
-        updateActiveFilters(projectId, status, supervisorId, searchTerm);
-        
-        // Filter tasks in board view
-        if (currentView === 'board') {
-            $('.task-card').each(function() {
-                const $task = $(this);
-                const taskProject = $task.data('project-id');
-                const taskStatus = $task.data('status');
-                const taskSupervisor = $task.data('supervisor-id');
-                const taskText = $task.text().toLowerCase();
-                
-                let show = true;
-                
-                if (projectId && taskProject != projectId) show = false;
-                if (status && taskStatus != status) show = false;
-                if (supervisorId && taskSupervisor != supervisorId) show = false;
-                if (searchTerm && !taskText.includes(searchTerm)) show = false;
-                
-                if (show) {
-                    $task.show();
-                } else {
-                    $task.hide();
-                }
-            });
-            
-            // Update column counts
-            updateTaskCounts();
-        } else {
-            // Filter tasks in list view
-            $('#taskTableBody tr').each(function() {
-                const $row = $(this);
-                const taskProject = $row.data('project-id');
-                const taskStatus = $row.data('status');
-                const taskSupervisor = $row.data('supervisor-id');
-                const taskText = $row.text().toLowerCase();
-                
-                let show = true;
-                
-                if (projectId && taskProject != projectId) show = false;
-                if (status && taskStatus != status) show = false;
-                if (supervisorId && taskSupervisor != supervisorId) show = false;
-                if (searchTerm && !taskText.includes(searchTerm)) show = false;
-                
-                if (show) {
-                    $row.show();
-                } else {
-                    $row.hide();
-                }
-            });
-        }
-        
-        // Sort tasks
-        sortTasks(sortBy);
-    }
-    
-    function updateActiveFilters(projectId, status, supervisorId, searchTerm) {
-        $('#activeFilters').empty();
-        
-        if (projectId) {
-            const projectName = $('#projectFilter option:selected').text();
-            $('#activeFilters').append(`
-                <span class="filter-tag active">
-                    المشروع: ${projectName}
-                    <i class="fas fa-times" onclick="removeFilter('project')"></i>
-                </span>
-            `);
-        }
-        
-        if (status) {
-            const statusText = $('#statusFilter option:selected').text();
-            $('#activeFilters').append(`
-                <span class="filter-tag active">
-                    الحالة: ${statusText}
-                    <i class="fas fa-times" onclick="removeFilter('status')"></i>
-                </span>
-            `);
-        }
-        
-        if (supervisorId) {
-            const supervisorName = $('#supervisorFilter option:selected').text();
-            $('#activeFilters').append(`
-                <span class="filter-tag active">
-                    المشرف: ${supervisorName}
-                    <i class="fas fa-times" onclick="removeFilter('supervisor')"></i>
-                </span>
-            `);
-        }
-        
-        if (searchTerm) {
-            $('#activeFilters').append(`
-                <span class="filter-tag active">
-                    بحث: ${searchTerm}
-                    <i class="fas fa-times" onclick="removeFilter('search')"></i>
-                </span>
-            `);
-        }
-    }
-    
-    window.removeFilter = function(filterType) {
-        switch(filterType) {
-            case 'project':
-                $('#projectFilter').val('');
-                break;
-            case 'status':
-                $('#statusFilter').val('');
-                break;
-            case 'supervisor':
-                $('#supervisorFilter').val('');
-                break;
-            case 'search':
-                $('#searchInput').val('');
-                break;
-        }
-        applyFilters();
-    };
-    
-    function sortTasks(sortBy) {
-        if (currentView === 'board') {
-            // Sort tasks within each column
-            $('.task-list').each(function() {
-                const $list = $(this);
-                const tasks = $list.children('.task-card').get();
-                
-                tasks.sort(function(a, b) {
-                    const $a = $(a);
-                    const $b = $(b);
-                    
-                    switch(sortBy) {
-                        case 'deadline':
-                            const dateA = $a.data('deadline') || '9999-12-31';
-                            const dateB = $b.data('deadline') || '9999-12-31';
-                            return new Date(dateA) - new Date(dateB);
-                        case 'priority':
-                            const priorityOrder = { high: 1, medium: 2, low: 3 };
-                            const priorityA = priorityOrder[$a.data('priority')] || 2;
-                            const priorityB = priorityOrder[$b.data('priority')] || 2;
-                            return priorityA - priorityB;
-                        case 'created':
-                            return $b.data('created') - $a.data('created');
-                        case 'progress':
-                            return $b.data('progress') - $a.data('progress');
-                        default:
-                            return 0;
-                    }
-                });
-                
-                $.each(tasks, function(idx, task) {
-                    $list.append(task);
-                });
-            });
-        } else {
-            // Sort tasks in table
-            const $tbody = $('#taskTableBody');
-            const rows = $tbody.children('tr').get();
-            
-            rows.sort(function(a, b) {
-                const $a = $(a);
-                const $b = $(b);
-                
-                switch(sortBy) {
-                    case 'deadline':
-                        const dateA = $a.find('.task-deadline').text().split('\n')[0] || '9999-12-31';
-                        const dateB = $b.find('.task-deadline').text().split('\n')[0] || '9999-12-31';
-                        return new Date(dateA) - new Date(dateB);
-                    case 'priority':
-                        const priorityOrder = { high: 1, medium: 2, low: 3 };
-                        const priorityA = priorityOrder[$a.data('priority')] || 2;
-                        const priorityB = priorityOrder[$b.data('priority')] || 2;
-                        return priorityA - priorityB;
-                    case 'created':
-                        return $b.data('created') - $a.data('created');
-                    case 'progress':
-                        const progressA = parseFloat($a.find('.progress-bar').width() || 0);
-                        const progressB = parseFloat($b.find('.progress-bar').width() || 0);
-                        return progressB - progressA;
-                    default:
-                        return 0;
-                }
-            });
-            
-            $.each(rows, function(idx, row) {
-                $tbody.append(row);
-            });
-        }
-    }
-    
-    function updateTaskCounts() {
-        $('#pendingCount').text($('#pendingTasks .task-card:visible').length);
-        $('#progressCount').text($('#progressTasks .task-card:visible').length);
-        $('#completedCount').text($('#completedTasks .task-card:visible').length);
-        $('#holdCount').text($('#holdTasks .task-card:visible').length);
-    }
-    
-    // Event listeners for filters
-    $('#projectFilter, #statusFilter, #supervisorFilter, #sortFilter').change(applyFilters);
-    $('#searchInput').on('input', applyFilters);
-    $('#searchBtn').click(applyFilters);
-    
-    // Bulk actions
-    $('#selectAll').change(function() {
-        const isChecked = $(this).prop('checked');
-        $('.task-checkbox').prop('checked', isChecked);
-        updateSelectedCount();
-    });
-    
-    $('.task-checkbox').change(updateSelectedCount);
-    
-    function updateSelectedCount() {
-        const selectedCount = $('.task-checkbox:checked').length;
-        $('#selectedCount').text(selectedCount);
-        $('#applyBulkAction').prop('disabled', selectedCount === 0);
-    }
-    
-    $('#applyBulkAction').click(function() {
-        const action = $('#bulkAction').val();
-        if (!action) return;
-        
-        const selectedTasks = $('.task-checkbox:checked').map(function() {
-            return $(this).val();
-        }).get();
-        
-        if (selectedTasks.length === 0) return;
-        
-        Swal.fire({
-            title: 'تأكيد الإجراء',
-            text: `هل أنت متأكد من تطبيق الإجراء على ${selectedTasks.length} مهمة؟`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: 'var(--primary)',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'نعم',
-            cancelButtonText: 'إلغاء'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Implement bulk action logic here
-                Swal.fire({
-                    icon: 'success',
-                    title: 'تم',
-                    text: 'تم تطبيق الإجراء بنجاح',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            }
-        });
-    });
-    
-    // Task actions
-    $('.task-action').click(function() {
-        const action = $(this).data('action');
-        const taskId = $(this).data('task-id');
-        
-        if (action === 'complete') {
-            Swal.fire({
-                title: 'تأكيد الإكمال',
-                text: 'هل أنت متأكد من إكمال هذه المهمة؟',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: 'var(--success)',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'نعم، أكمل',
-                cancelButtonText: 'إلغاء'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Implement task completion logic here
-                    $.ajax({
-                        url: `/company/tasks/${taskId}/complete`,
-                        method: 'POST',
-                        success: function(response) {
-                            if (response.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'تم',
-                                    text: 'تم إكمال المهمة بنجاح',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'خطأ',
-                                    text: response.error || 'حدث خطأ أثناء إكمال المهمة'
-                                });
-                            }
-                        }
-                    });
-                }
-            });
-        }
-    });
-    
-    // Drag and drop for kanban board
-    $('.task-card').on('dragstart', function(e) {
-        draggableTask = $(this);
-        e.originalEvent.dataTransfer.setData('text/plain', $(this).attr('id'));
-        $(this).addClass('dragging');
-    });
-    
-    $('.task-card').on('dragend', function() {
-        $(this).removeClass('dragging');
-        draggableTask = null;
-    });
-    
-    $('.task-list').on('dragover', function(e) {
-        e.preventDefault();
-        $(this).addClass('drag-over');
-    });
-    
-    $('.task-list').on('dragleave', function() {
-        $(this).removeClass('drag-over');
-    });
-    
-    $('.task-list').on('drop', function(e) {
-        e.preventDefault();
-        $(this).removeClass('drag-over');
-        
-        if (draggableTask) {
-            const newStatus = $(this).closest('.task-column').data('status');
-            const taskId = draggableTask.data('task-id');
-            
-            // Update task status via AJAX
-            $.ajax({
-                url: `/tasks/tasks/${taskId}/update-progress`,
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    progress_percentage: newStatus === 'completed' ? 100 : draggableTask.data('progress'),
-                    status: newStatus
-                }),
-                success: function(response) {
-                    if (response.success) {
-                        // Move task to new column
-                        draggableTask.remove();
-                        $(e.target).closest('.task-list').append(draggableTask);
-                        draggableTask.data('status', newStatus);
-                        
-                        // Update task counts
-                        updateTaskCounts();
-                        
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'تم',
-                            text: 'تم تحديث حالة المهمة',
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'خطأ',
-                            text: 'حدث خطأ أثناء تحديث حالة المهمة'
-                        });
-                    }
-                }
-            });
-        }
-    });
-    
-    // Make tasks draggable
-    $('.task-card').attr('draggable', true);
-    
-    // Apply initial filters
-    applyFilters();
+// View switcher
+function switchView(view) {
+  const board = document.getElementById('boardView');
+  const list = document.getElementById('listView');
+  const boardBtn = document.getElementById('boardViewBtn');
+  const listBtn = document.getElementById('listViewBtn');
+  if (view === 'board') {
+    board.classList.remove('hidden'); list.classList.add('hidden');
+    boardBtn.classList.add('bg-white','text-blue-900','shadow-sm'); boardBtn.classList.remove('text-slate-500');
+    listBtn.classList.remove('bg-white','text-blue-900','shadow-sm'); listBtn.classList.add('text-slate-500');
+  } else {
+    list.classList.remove('hidden'); board.classList.add('hidden');
+    listBtn.classList.add('bg-white','text-blue-900','shadow-sm'); listBtn.classList.remove('text-slate-500');
+    boardBtn.classList.remove('bg-white','text-blue-900','shadow-sm'); boardBtn.classList.add('text-slate-500');
+  }
+}
+
+// Drag & Drop
+document.querySelectorAll('[draggable]').forEach(card => {
+  card.addEventListener('dragstart', e => { e.dataTransfer.setData('taskId', card.dataset.taskId); card.classList.add('opacity-50'); });
+  card.addEventListener('dragend', () => card.classList.remove('opacity-50'));
+});
+document.querySelectorAll('.task-list').forEach(col => {
+  col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('bg-blue-50/50'); });
+  col.addEventListener('dragleave', () => col.classList.remove('bg-blue-50/50'));
+  col.addEventListener('drop', e => {
+    e.preventDefault(); col.classList.remove('bg-blue-50/50');
+    const taskId = e.dataTransfer.getData('taskId');
+    const newStatus = col.dataset.status;
+    fetch(`/tasks/${taskId}/update-status`, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content||''}, body: JSON.stringify({status: newStatus}) })
+      .then(r => r.json()).then(d => { if(d.success) location.reload(); });
+  });
+});
+
+// Filters
+function applyFilters() {
+  const project = document.getElementById('projectFilter').value;
+  const status = document.getElementById('statusFilter').value;
+  const supervisor = document.getElementById('supervisorFilter').value;
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('[data-task-id]').forEach(el => {
+    const matchP = !project || el.dataset.projectId == project;
+    const matchS = !status || el.dataset.status == status;
+    const matchSup = !supervisor || el.dataset.supervisorId == supervisor;
+    const matchQ = !search || el.innerText.toLowerCase().includes(search);
+    el.style.display = (matchP && matchS && matchSup && matchQ) ? '' : 'none';
+  });
+}
+['projectFilter','statusFilter','supervisorFilter'].forEach(id => document.getElementById(id)?.addEventListener('change', applyFilters));
+document.getElementById('searchInput')?.addEventListener('input', applyFilters);
+
+// Select all
+document.getElementById('selectAll')?.addEventListener('change', function() {
+  document.querySelectorAll('.task-checkbox').forEach(cb => cb.checked = this.checked);
+  updateSelected();
+});
+document.querySelectorAll('.task-checkbox').forEach(cb => cb.addEventListener('change', updateSelected));
+function updateSelected() {
+  const n = document.querySelectorAll('.task-checkbox:checked').length;
+  document.getElementById('selectedCount').textContent = n;
+  document.getElementById('applyBulkAction').disabled = n === 0;
+}
+
+// Task actions
+document.querySelectorAll('.task-action').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const taskId = this.dataset.taskId;
+    const action = this.dataset.action;
+    fetch(`/tasks/${taskId}/action`, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content||''}, body: JSON.stringify({action}) })
+      .then(r => r.json()).then(d => { if(d.success) location.reload(); });
+  });
 });
 </script>
 {% endblock %}
