@@ -48,7 +48,9 @@
                     <h5 class="card-title"><i class="fas fa-chart-line me-2"></i>{{ _('reports.companies_growth') }}</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="companiesGrowthChart" height="300"></canvas>
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="companiesGrowthChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -60,7 +62,9 @@
                     <h5 class="card-title"><i class="fas fa-chart-line me-2"></i>{{ _('reports.users_growth') }}</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="usersGrowthChart" height="300"></canvas>
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="usersGrowthChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -72,7 +76,9 @@
                     <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>{{ _('reports.companies_by_plan') }}</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="companiesByPlanChart" height="250"></canvas>
+                    <div style="position: relative; height: 250px; width: 100%;">
+                        <canvas id="companiesByPlanChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -84,7 +90,9 @@
                     <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>{{ _('reports.users_by_role') }}</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="usersByRoleChart" height="250"></canvas>
+                    <div style="position: relative; height: 250px; width: 100%;">
+                        <canvas id="usersByRoleChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -96,7 +104,9 @@
                     <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i></h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="companiesBySizeChart" height="250"></canvas>
+                    <div style="position: relative; height: 250px; width: 100%;">
+                        <canvas id="companiesBySizeChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -124,7 +134,7 @@ $(document).ready(function() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: { display: false }
             }
@@ -149,7 +159,7 @@ $(document).ready(function() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true
+            maintainAspectRatio: false
         }
     });
     
@@ -167,7 +177,7 @@ $(document).ready(function() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: { position: 'bottom' }
             }
@@ -188,7 +198,7 @@ $(document).ready(function() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: { position: 'bottom' }
             }
@@ -209,7 +219,7 @@ $(document).ready(function() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: { display: false }
             }
