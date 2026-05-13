@@ -97,7 +97,9 @@
                     <h5 class="card-title mb-0">{{ _('dashboard.monthly_revenue') }}</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="revenueChart" height="300"></canvas>
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -108,7 +110,9 @@
                     <h5 class="card-title mb-0">{{ _('dashboard.companies_growth') }}</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="growthChart" height="300"></canvas>
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="growthChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -216,7 +220,7 @@
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     display: false
@@ -258,7 +262,7 @@
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     display: false
