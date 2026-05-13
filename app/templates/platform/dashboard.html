@@ -1,274 +1,555 @@
-{# templates/platform/dashboard.html #}
 {% extends "platform/base.html" %}
 
-{% block title %}{{ _('dashboard.title') }}{% endblock %}
+{% block title %}{{ _('platform_dashboard') }} — التحليلات المؤسسية{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+body {
+    font-family: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
+    background-color: #f1f5f9;
+}
+.glass-card {
+    background: white;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+.gauge-container {
+    position: relative;
+    width: 100%;
+    max-width: 120px;
+    margin: 0 auto;
+}
+.gauge-value {
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+/* Map mockup styling */
+.map-bg {
+    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    position: relative;
+    overflow: hidden;
+}
+.pulse-dot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background-color: #38bdf8;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #38bdf8, 0 0 20px #38bdf8;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(56, 189, 248, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+}
+</style>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary: '#0f172a', /* Dark blue for sidebar/brand */
+                    secondary: '#3b82f6',
+                    accent: '#38bdf8',
+                }
+            }
+        }
+    }
+</script>
+{% endblock %}
 
 {% block content %}
-<div class="animate-fadeInUp">
-    <!-- Welcome Section -->
-    <div class="page-header d-flex justify-content-between align-items-center">
-        <div>
-            <h1 class="page-title">{{ _('dashboard.title') }}</h1>
-            <p class="text-muted">{{ _('dashboard.welcome') }}</p>
+<div class="space-y-6" id="platform-analytics-dashboard">
+
+    <!-- Top Header Bar -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        
+        <!-- Title -->
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                <span class="material-symbols-outlined text-blue-600">analytics</span>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-800">لوحة تحكم المدير العام</h1>
+                <p class="text-xs text-slate-500">منصة CorpCore - التحليلات المؤسسية</p>
+            </div>
         </div>
-        <div>
-            <small class="text-muted">
-                <i class="fas fa-calendar-alt"></i> {{ format_date(now, 'full') }}
-            </small>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap items-center gap-3 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+            <div class="flex items-center px-3 border-l border-slate-200">
+                <span class="text-xs text-slate-500 mr-2">الفترة:</span>
+                <select class="bg-transparent border-none text-sm font-semibold text-slate-700 focus:ring-0 py-1 pl-6 pr-0 cursor-pointer">
+                    <option>آخر 30 يوم</option>
+                    <option>هذا العام</option>
+                </select>
+            </div>
+            <div class="flex items-center px-3 border-l border-slate-200">
+                <span class="text-xs text-slate-500 mr-2">المنطقة:</span>
+                <select class="bg-transparent border-none text-sm font-semibold text-slate-700 focus:ring-0 py-1 pl-6 pr-0 cursor-pointer">
+                    <option>الشرق الأوسط</option>
+                    <option>عالمي</option>
+                </select>
+            </div>
+            <div class="flex items-center px-3">
+                <span class="text-xs text-slate-500 mr-2">مستوى الخدمة:</span>
+                <select class="bg-transparent border-none text-sm font-semibold text-slate-700 focus:ring-0 py-1 pl-6 pr-0 cursor-pointer">
+                    <option>المؤسسات الكبرى</option>
+                    <option>الكل</option>
+                </select>
+            </div>
+            <button class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded-md transition shadow-sm">
+                تطبيق المرشحات
+            </button>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center gap-4">
+            <div class="text-right hidden sm:block">
+                <p class="text-xs text-slate-400 flex items-center gap-1 justify-end"><span class="material-symbols-outlined text-[14px]">sync</span> تم التحديث: منذ دقيقتين</p>
+            </div>
+            <button class="flex items-center gap-2 text-slate-600 hover:text-blue-600 border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-bold transition">
+                <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                تصدير PDF
+            </button>
         </div>
     </div>
-    
-    <!-- Stats Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <p class="text-muted mb-1">{{ _('dashboard.total_companies') }}</p>
-                        <h2 class="stat-value">{{ stats.companies.total }}</h2>
-                        <small class="text-success">
-                            <i class="fas fa-arrow-up"></i> +{{ stats.companies.new_today }} {{ _('dashboard.new_today') }}
-                        </small>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="fas fa-building"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
+
+    <!-- 4 Main Stat Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <p class="text-muted mb-1">{{ _('dashboard.total_users') }}</p>
-                        <h2 class="stat-value">{{ stats.users.total }}</h2>
-                        <small class="text-success">
-                            <i class="fas fa-arrow-up"></i> +{{ stats.users.new_today }} {{ _('dashboard.new_today') }}
-                        </small>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                </div>
+        <!-- Total Organizations -->
+        <div class="glass-card rounded-xl p-5 relative overflow-hidden group">
+            <div class="flex justify-between items-start mb-2">
+                <h3 class="text-sm font-bold text-slate-500">إجمالي المنظمات</h3>
+                <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md flex items-center gap-1">
+                    +12.4% <span class="material-symbols-outlined text-[12px]">trending_up</span>
+                </span>
             </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <p class="text-muted mb-1">{{ _('dashboard.total_revenue') }}</p>
-                        <h2 class="stat-value">{{ format_currency(stats.subscriptions.total_revenue) }}</h2>
-                        <small class="text-info">
-                            <i class="fas fa-credit-card"></i> {{ stats.subscriptions.active }} {{ _('dashboard.active_subscriptions') }}
-                        </small>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                </div>
+            <div class="flex items-end justify-between mt-4">
+                <div class="text-3xl font-black text-slate-800">{{ stats.companies.total|default('1,284') }}</div>
+                <div class="w-16 h-8"><canvas id="sparkline1"></canvas></div>
             </div>
+            <p class="text-[10px] text-slate-400 mt-2">مقابل الشهر السابق: 1,142</p>
         </div>
-        
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <p class="text-muted mb-1">{{ _('dashboard.storage_used') }}</p>
-                        <h2 class="stat-value">{{ stats.storage.used_gb }} GB</h2>
-                        <small class="text-warning">
-                            {{ stats.storage.usage_percent }}% {{ _('dashboard.storage_limit') }} {{ stats.storage.limit_gb }} GB
-                        </small>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="fas fa-database"></i>
-                    </div>
-                </div>
+
+        <!-- Active Users -->
+        <div class="glass-card rounded-xl p-5 relative overflow-hidden group">
+            <div class="flex justify-between items-start mb-2">
+                <h3 class="text-sm font-bold text-slate-500">المستخدمين النشطين</h3>
+                <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md flex items-center gap-1">
+                    +5.2% <span class="material-symbols-outlined text-[12px]">trending_up</span>
+                </span>
             </div>
+            <div class="flex items-end justify-between mt-4">
+                <div class="text-3xl font-black text-slate-800">{{ (stats.users.active / 1000)|round(1)|default('42.9') }}K</div>
+                <div class="w-16 h-8"><canvas id="sparkline2"></canvas></div>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-2">وقت الذروة: 14:00 - 18:00 (GMT)</p>
         </div>
+
+        <!-- API Response Time -->
+        <div class="glass-card rounded-xl p-5 relative overflow-hidden group">
+            <div class="flex justify-between items-start mb-2">
+                <h3 class="text-sm font-bold text-slate-500">زمن الاستجابة (API)</h3>
+                <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md flex items-center gap-1">
+                    -15ms <span class="material-symbols-outlined text-[12px]">trending_down</span>
+                </span>
+            </div>
+            <div class="flex items-end justify-between mt-4">
+                <div class="text-3xl font-black text-slate-800">12.4<span class="text-lg font-bold text-slate-500">ms</span></div>
+                <div class="w-16 h-8"><canvas id="sparkline3"></canvas></div>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-2">أفضل أداء في: إقليم الاتحاد الأوروبي</p>
+        </div>
+
+        <!-- Data Capacity -->
+        <div class="glass-card rounded-xl p-5 relative overflow-hidden group">
+            <div class="flex justify-between items-start mb-2">
+                <h3 class="text-sm font-bold text-slate-500">سعة البيانات</h3>
+                <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
+                    {{ stats.storage.limit_gb|default('4.2') }} TB / يوم
+                </span>
+            </div>
+            <div class="flex items-end justify-between mt-4">
+                <div class="text-3xl font-black text-slate-800">{{ stats.storage.used_gb|default('128.5') }}<span class="text-lg font-bold text-slate-500">PB</span></div>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-1.5 mt-4 overflow-hidden">
+                <div class="bg-blue-600 h-1.5 rounded-full" style="width: 78%"></div>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-2">استهلاك التخزين: 78% من الإجمالي</p>
+        </div>
+
     </div>
-    
-    <!-- Charts Row -->
-    <div class="row g-4 mb-4">
-        <div class="col-xl-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0 pt-3">
-                    <h5 class="card-title mb-0">{{ _('dashboard.monthly_revenue') }}</h5>
-                </div>
-                <div class="card-body">
-                    <div style="position: relative; height: 300px; width: 100%;">
-                        <canvas id="revenueChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
+
+    <!-- Middle Section: Line Chart & Gauges -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
         
-        <div class="col-xl-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0 pt-3">
-                    <h5 class="card-title mb-0">{{ _('dashboard.companies_growth') }}</h5>
-                </div>
-                <div class="card-body">
-                    <div style="position: relative; height: 300px; width: 100%;">
-                        <canvas id="growthChart"></canvas>
+        <!-- Left Side: Gauges & AI Card -->
+        <div class="flex flex-col gap-5 h-full">
+            <div class="grid grid-cols-2 gap-5 h-full">
+                <!-- Server Health Gauge -->
+                <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-48">
+                    <h3 class="text-sm font-bold text-slate-700 mb-2">صحة الخادم</h3>
+                    <div class="gauge-container">
+                        <canvas id="gaugeServer"></canvas>
+                        <div class="gauge-value text-emerald-500">99.9%</div>
                     </div>
+                    <p class="text-xs text-slate-400 mt-[-10px]">جاهزية مستقرة</p>
+                </div>
+                
+                <!-- Network Efficiency Gauge -->
+                <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center h-48">
+                    <h3 class="text-sm font-bold text-slate-700 mb-2">كفاءة الشبكة</h3>
+                    <div class="gauge-container">
+                        <canvas id="gaugeNetwork"></canvas>
+                        <div class="gauge-value text-amber-500">84.2%</div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-[-10px]">حمولة متوسطة</p>
+                </div>
+            </div>
+            
+            <!-- AI Prediction Card -->
+            <div class="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-xl p-5 text-white shadow-md relative overflow-hidden flex-grow flex items-center">
+                <div class="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4">
+                    <span class="material-symbols-outlined text-9xl">auto_awesome</span>
+                </div>
+                <div class="relative z-10 w-full">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="material-symbols-outlined text-yellow-300">auto_awesome</span>
+                        <h3 class="font-bold text-sm">توقعات الذكاء الاصطناعي</h3>
+                    </div>
+                    <p class="text-lg font-semibold leading-tight">زيادة متوقعة بنسبة 15% في حركة البيانات غداً.</p>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Recent Activity Row -->
-    <div class="row g-4">
-        <div class="col-xl-5">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">{{ _('dashboard.recent_activities') }}</h5>
-                    <a href="{{ url_for('platform.audit_log') }}" class="btn btn-sm btn-link">{{ _('dashboard.view_all') }}</a>
+
+        <!-- Right Side: Main Growth Chart -->
+        <div class="lg:col-span-2 glass-card rounded-xl p-5 flex flex-col">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800">تحليلات نمو المنصة والمستخدمين</h2>
+                    <p class="text-xs text-slate-500">المقارنة الزمنية للاشتراكات الجديدة مقابل النشاط</p>
                 </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        {% for log in recent_activities %}
-                        <div class="list-group-item">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-circle text-primary" style="font-size: 8px; margin-top: 8px;"></i>
+                <div class="flex items-center gap-4 text-sm font-bold text-slate-600">
+                    <div class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-blue-600"></span> المشتركين
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-sky-300"></span> النشاط
+                    </div>
+                </div>
+            </div>
+            <div class="flex-grow relative min-h-[300px]">
+                <canvas id="mainGrowthChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Section: Map & Table -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        
+        <!-- Detailed Log Table -->
+        <div class="glass-card rounded-xl flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-white">
+                <h2 class="text-base font-bold text-slate-800">سجل نشاط المنظمات - تفصيلي</h2>
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+                    <input type="text" placeholder="بحث سريع..." class="bg-slate-50 border border-slate-200 rounded-lg pr-9 pl-4 py-1.5 text-sm focus:outline-none focus:border-blue-300 w-48 transition-all">
+                </div>
+            </div>
+            <div class="overflow-x-auto p-0 flex-grow">
+                <table class="w-full text-right text-sm">
+                    <thead class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-5">المنظمة</th>
+                            <th class="py-3 px-5">الخطة</th>
+                            <th class="py-3 px-5 text-center">المستخدمين</th>
+                            <th class="py-3 px-5">المخاطر</th>
+                            <th class="py-3 px-5 text-center">الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700 bg-white">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="py-3 px-5">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded bg-blue-900 text-white flex items-center justify-center font-bold text-xs">A</div>
+                                    <div>
+                                        <div class="font-bold text-slate-800">مجموعة الفطيم</div>
+                                        <div class="text-[10px] text-slate-400">دبي، الإمارات</div>
+                                    </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <p class="mb-1">{{ log.details }}</p>
-                                    <small class="text-muted">{{ time_ago(log.created_at) }}</small>
+                            </td>
+                            <td class="py-3 px-5"><span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Enterprise</span></td>
+                            <td class="py-3 px-5 text-center font-bold">2.4K</td>
+                            <td class="py-3 px-5">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="bg-emerald-500 h-full rounded-full" style="width: 20%"></div>
+                                    </div>
+                                    <span class="text-[10px] text-emerald-600 font-bold">منخفض</span>
                                 </div>
-                            </div>
-                        </div>
-                        {% else %}
-                        <div class="p-3 text-center text-muted">
-                            <i class="fas fa-inbox fa-2x mb-2"></i>
-                            <p class="mb-0">{{ _('common.no_data') }}</p>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
+                            </td>
+                            <td class="py-3 px-5 text-center">
+                                <button class="text-slate-400 hover:text-blue-600"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="py-3 px-5">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded bg-indigo-900 text-white flex items-center justify-center font-bold text-xs">S</div>
+                                    <div>
+                                        <div class="font-bold text-slate-800">سابك للصناعات</div>
+                                        <div class="text-[10px] text-slate-400">الرياض، السعودية</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3 px-5"><span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Pro Tier</span></td>
+                            <td class="py-3 px-5 text-center font-bold">1.1K</td>
+                            <td class="py-3 px-5">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="bg-amber-500 h-full rounded-full" style="width: 60%"></div>
+                                    </div>
+                                    <span class="text-[10px] text-amber-600 font-bold">متوسط</span>
+                                </div>
+                            </td>
+                            <td class="py-3 px-5 text-center">
+                                <button class="text-slate-400 hover:text-blue-600"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="py-3 px-5">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded bg-emerald-700 text-white flex items-center justify-center font-bold text-xs">A</div>
+                                    <div>
+                                        <div class="font-bold text-slate-800">أرامكو السعودية</div>
+                                        <div class="text-[10px] text-slate-400">الظهران، السعودية</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3 px-5"><span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Enterprise</span></td>
+                            <td class="py-3 px-5 text-center font-bold">12.5K</td>
+                            <td class="py-3 px-5">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="bg-emerald-500 h-full rounded-full" style="width: 10%"></div>
+                                    </div>
+                                    <span class="text-[10px] text-emerald-600 font-bold">منخفض</span>
+                                </div>
+                            </td>
+                            <td class="py-3 px-5 text-center">
+                                <button class="text-slate-400 hover:text-blue-600"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-3 border-t border-slate-100 bg-slate-50 text-center">
+                <a href="{{ url_for('platform.companies') }}" class="text-sm font-bold text-blue-600 hover:underline">عرض جميع المنظمات</a>
             </div>
         </div>
-        
-        <div class="col-xl-7">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">{{ _('dashboard.top_companies') }}</h5>
+
+        <!-- Geographic Map -->
+        <div class="glass-card rounded-xl flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-white z-10">
+                <h2 class="text-base font-bold text-slate-800">التوزيع الجغرافي للمنظمات</h2>
+                <button class="text-slate-400 hover:text-blue-600"><span class="material-symbols-outlined text-[18px]">fullscreen</span></button>
+            </div>
+            <div class="flex-grow map-bg p-5 flex relative min-h-[300px]">
+                <!-- Map Background (Placeholder illustration) -->
+                <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#38bdf8 1px, transparent 1px); background-size: 20px 20px;"></div>
+                
+                <!-- Map Legend -->
+                <div class="absolute bottom-5 right-5 bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-lg p-3 z-10 text-white text-xs space-y-2">
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_#60a5fa]"></span> نشاط مرتفع جداً</div>
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-300 shadow-[0_0_8px_#7dd3fc]"></span> نشاط متوسط</div>
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-500"></span> توسع مستقبلي</div>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>{{ _('companies.name') }}</th>
-                                    <th>{{ _('companies.users_count') }}</th>
-                                    <th>{{ _('companies.projects_count') }}</th>
-                                    <th>{{ _('companies.status') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for company in top_companies %}
-                                <tr>
-                                    <td>
-                                        <a href="{{ url_for('platform.view_company', company_id=company.id) }}" class="text-decoration-none">
-                                            <strong>{{ company.name }}</strong>
-                                        </a>
-                                    </td>
-                                    <td>{{ company.current_users }} / {{ company.max_users }}</td>
-                                    <td>{{ company.current_projects }} / {{ company.max_projects }}</td>
-                                    <td>
-                                        {% if company.is_active %}
-                                        <span class="badge bg-success">{{ _('status.active') }}</span>
-                                        {% else %}
-                                        <span class="badge bg-secondary">{{ _('status.inactive') }}</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+
+                <!-- Map Dots -->
+                <!-- Riyadh -->
+                <div class="absolute top-[40%] right-[30%] pulse-dot"></div>
+                <div class="absolute top-[40%] right-[30%] w-16 h-16 rounded-full border border-sky-400/30 transform -translate-x-1/2 -translate-y-1/2"></div>
+                
+                <!-- Dubai -->
+                <div class="absolute top-[45%] right-[20%] w-3 h-3 rounded-full bg-sky-300 shadow-[0_0_10px_#7dd3fc]"></div>
+                
+                <!-- Cairo -->
+                <div class="absolute top-[35%] right-[55%] w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_#60a5fa]"></div>
+                <div class="absolute top-[35%] right-[55%] w-10 h-10 rounded-full border border-blue-400/30 transform -translate-x-1/2 -translate-y-1/2"></div>
             </div>
         </div>
+
     </div>
+
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Revenue Chart
-    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-    new Chart(revenueCtx, {
+document.addEventListener('DOMContentLoaded', function() {
+    // Shared chart options
+    Chart.defaults.font.family = "'IBM Plex Sans Arabic', 'Inter', sans-serif";
+    Chart.defaults.color = '#94a3b8';
+    
+    const sparklineOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: { display: false, min: 0 } },
+        elements: { point: { radius: 0 }, line: { tension: 0.4 } }
+    };
+
+    // Sparkline 1
+    new Chart(document.getElementById('sparkline1'), {
         type: 'line',
         data: {
-            labels: {{ monthly_revenue|map(attribute='month')|list|tojson }},
-            datasets: [{
-                label: '{{ _("dashboard.monthly_revenue") }}',
-                data: {{ monthly_revenue|map(attribute='revenue')|list|tojson }},
-                borderColor: '#4361ee',
-                backgroundColor: 'rgba(67, 97, 238, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#4361ee',
-                pointBorderColor: '#fff',
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
+            labels: ['1','2','3','4','5','6','7'],
+            datasets: [{ data: [10, 15, 13, 20, 18, 25, 28], borderColor: '#2563eb', borderWidth: 2 }]
+        },
+        options: sparklineOptions
+    });
+
+    // Sparkline 2
+    new Chart(document.getElementById('sparkline2'), {
+        type: 'line',
+        data: {
+            labels: ['1','2','3','4','5','6','7'],
+            datasets: [{ data: [30, 32, 35, 34, 38, 40, 42], borderColor: '#059669', borderWidth: 2 }]
+        },
+        options: sparklineOptions
+    });
+
+    // Sparkline 3
+    new Chart(document.getElementById('sparkline3'), {
+        type: 'line',
+        data: {
+            labels: ['1','2','3','4','5','6','7'],
+            datasets: [{ data: [20, 18, 15, 16, 14, 13, 12], borderColor: '#059669', borderWidth: 2 }]
+        },
+        options: sparklineOptions
+    });
+
+    // Gauges (Doughnut Charts)
+    const gaugeOptions = {
+        responsive: true,
+        maintainAspectRatio: true,
+        cutout: '75%',
+        circumference: 180,
+        rotation: 270,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } }
+    };
+
+    // Server Gauge
+    new Chart(document.getElementById('gaugeServer'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Value', 'Empty'],
+            datasets: [{ data: [99.9, 0.1], backgroundColor: ['#10b981', '#f1f5f9'], borderWidth: 0, borderRadius: 5 }]
+        },
+        options: gaugeOptions
+    });
+
+    // Network Gauge
+    new Chart(document.getElementById('gaugeNetwork'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Value', 'Empty'],
+            datasets: [{ data: [84.2, 15.8], backgroundColor: ['#f59e0b', '#f1f5f9'], borderWidth: 0, borderRadius: 5 }]
+        },
+        options: gaugeOptions
+    });
+
+    // Main Growth Chart
+    const ctxMain = document.getElementById('mainGrowthChart').getContext('2d');
+    
+    // Create gradient
+    let gradientBlue = ctxMain.createLinearGradient(0, 0, 0, 400);
+    gradientBlue.addColorStop(0, 'rgba(37, 99, 235, 0.2)');
+    gradientBlue.addColorStop(1, 'rgba(37, 99, 235, 0)');
+
+    new Chart(ctxMain, {
+        type: 'line',
+        data: {
+            labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'],
+            datasets: [
+                {
+                    label: 'المشتركين',
+                    data: [10, 20, 25, 40, 50, 45, 60, 70, 80, 85, 95, 110],
+                    borderColor: '#2563eb',
+                    backgroundColor: gradientBlue,
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#2563eb',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: 'النشاط',
+                    data: [5, 15, 18, 30, 35, 30, 45, 55, 65, 70, 75, 90],
+                    borderColor: '#7dd3fc',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: '#7dd3fc',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    display: false
-                },
+                legend: { display: false },
                 tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return '{{ format_currency(0) }}'.replace('0', context.raw);
-                        }
-                    }
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleFont: { family: 'IBM Plex Sans Arabic', size: 13 },
+                    bodyFont: { family: 'IBM Plex Sans Arabic', size: 12 },
+                    padding: 10,
+                    cornerRadius: 8
                 }
             },
             scales: {
+                x: {
+                    grid: { display: false, drawBorder: false },
+                    ticks: { font: { family: 'IBM Plex Sans Arabic' } }
+                },
                 y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '{{ format_currency(0) }}'.replace('0', value);
-                        }
-                    }
+                    grid: { color: '#f1f5f9', drawBorder: false },
+                    ticks: { display: false }
                 }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
             }
         }
     });
-    
-    // Growth Chart
-    const growthCtx = document.getElementById('growthChart').getContext('2d');
-    new Chart(growthCtx, {
-        type: 'bar',
-        data: {
-            labels: {{ companies_growth|map(attribute='month')|list|tojson }},
-            datasets: [{
-                label: '{{ _("dashboard.companies_growth") }}',
-                data: {{ companies_growth|map(attribute='count')|list|tojson }},
-                backgroundColor: 'rgba(67, 97, 238, 0.8)',
-                borderRadius: 8,
-                barPercentage: 0.7
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-        }
-    });
+});
 </script>
 {% endblock %}
