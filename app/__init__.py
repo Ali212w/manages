@@ -13,7 +13,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import json
 from flask_babel import Babel
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_wtf.csrf import generate_csrf
 from app.services.smart_scheduler import SmartProjectManager
 from app.services.translator import Translator, _
@@ -873,6 +873,7 @@ def create_app(config_name='default'):
             'current_user': current_user,
             'config': app.config,
             'now': datetime.now(),
+            'timedelta': timedelta,
             'get_user_notifications': get_user_notifications
         }
 
