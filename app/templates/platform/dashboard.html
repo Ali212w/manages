@@ -379,10 +379,13 @@ body {
             </div>
             
             <!-- Map Area -->
-            <div class="flex-grow p-0 flex relative min-h-[350px] bg-[#596b7a] overflow-hidden" style="background-image: url('data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'2\' cy=\'2\' r=\'1\' fill=\'rgba(255,255,255,0.1)\'/%3E%3C/svg%3E'); background-size: 10px 10px;">
+            <div class="flex-grow p-0 flex relative min-h-[350px] overflow-hidden bg-[#3b4b5c]">
                 
-                <!-- SVG World Map Outline (Placeholder for visual effect) -->
-                <div class="absolute inset-0 opacity-30" style="background: radial-gradient(circle at 50% 50%, rgba(125, 211, 252, 0.4) 0%, transparent 70%);"></div>
+                <!-- Dotted World Map Mask -->
+                <div class="absolute inset-0 opacity-50" style="background-color: #93c5fd; mask-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/World_Map_Dot_Representation.svg/1000px-World_Map_Dot_Representation.svg.png'); mask-size: cover; mask-position: center; mask-repeat: no-repeat; -webkit-mask-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/World_Map_Dot_Representation.svg/1000px-World_Map_Dot_Representation.svg.png'); -webkit-mask-size: cover; -webkit-mask-position: center; -webkit-mask-repeat: no-repeat;"></div>
+                
+                <!-- Center Gradient Glow -->
+                <div class="absolute inset-0 opacity-40" style="background: radial-gradient(circle at 50% 50%, rgba(125, 211, 252, 0.5) 0%, transparent 60%); pointer-events: none;"></div>
 
                 <!-- Floating Cards -->
                 <!-- Riyadh Card -->
