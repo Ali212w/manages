@@ -37,8 +37,8 @@
                             <label for="email" class="form-label">البريد الإلكتروني</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                                <input type="email" class="form-control" id="email" name="email" 
-                                       placeholder="admin@platform.com" required autofocus>
+                                <input type="email" class="form-control text-start" id="email" name="email" 
+                                       placeholder="admin@example.com" dir="ltr" required autofocus>
                             </div>
                         </div>
                         
@@ -46,8 +46,8 @@
                             <label for="password" class="form-label">كلمة المرور</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                <input type="password" class="form-control" id="password" 
-                                       name="password" placeholder="••••••••" required>
+                                <input type="password" class="form-control text-start" id="password" 
+                                       name="password" placeholder="••••••••" dir="ltr" required>
                                 <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password')">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -82,26 +82,7 @@
                 </div>
             </div>
             
-            <!-- معلومات الدخول التجريبي -->
-            <div class="card mt-4 bg-light border-0">
-                <div class="card-body">
-                    <h6 class="fw-bold"><i class="fas fa-flask text-primary me-2"></i>بيانات الدخول التجريبية:</h6>
-                    <div class="row mt-2">
-                        <div class="col-6">
-                            <div class="p-2 bg-white rounded">
-                                <small class="text-muted d-block">البريد:</small>
-                                <strong dir="ltr">admin@platform.com</strong>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-2 bg-white rounded">
-                                <small class="text-muted d-block">كلمة المرور:</small>
-                                <strong>Admin123!</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
             
             <!-- تذكير أمني -->
             <div class="text-center mt-3">
