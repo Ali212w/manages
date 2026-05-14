@@ -40,11 +40,10 @@ body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif; background-color: #f
     <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
       <div class="flex justify-between items-start">
         <span class="material-symbols-outlined p-2.5 bg-blue-50 text-blue-900 rounded-xl">corporate_fare</span>
-        <span class="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">+12% <span class="material-symbols-outlined text-[10px]">trending_up</span></span>
       </div>
       <div class="mt-2">
-        <p class="text-slate-400 font-bold text-xs uppercase tracking-wider">إجمالي الأقسام/المؤسسات</p>
-        <h3 class="text-4xl font-black text-slate-900 mt-1">{{ stats.total_departments|default('24') }}</h3>
+        <p class="text-slate-400 font-bold text-xs uppercase tracking-wider">إجمالي الأقسام</p>
+        <h3 class="text-4xl font-black text-slate-900 mt-1">{{ stats.total_departments|default('0') }}</h3>
       </div>
     </div>
     
@@ -52,7 +51,6 @@ body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif; background-color: #f
     <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
       <div class="flex justify-between items-start">
         <span class="material-symbols-outlined p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">groups</span>
-        <span class="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">+5.4% <span class="material-symbols-outlined text-[10px]">trending_up</span></span>
       </div>
       <div class="mt-2">
         <p class="text-slate-400 font-bold text-xs uppercase tracking-wider">المستخدمون النشطون</p>
@@ -60,27 +58,25 @@ body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif; background-color: #f
       </div>
     </div>
     
-    <!-- Uptime Stats -->
+    <!-- Total Projects Stats -->
     <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
       <div class="flex justify-between items-start">
-        <span class="material-symbols-outlined p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">speed</span>
-        <span class="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full">مستقر</span>
+        <span class="material-symbols-outlined p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">assignment</span>
       </div>
       <div class="mt-2">
-        <p class="text-slate-400 font-bold text-xs uppercase tracking-wider">جاهزية النظام</p>
-        <h3 class="text-4xl font-black text-slate-900 mt-1">99.99%</h3>
+        <p class="text-slate-400 font-bold text-xs uppercase tracking-wider">إجمالي المشاريع</p>
+        <h3 class="text-4xl font-black text-slate-900 mt-1">{{ stats.total_projects|default('0') }}</h3>
       </div>
     </div>
     
-    <!-- Usage Stats -->
+    <!-- Active Projects Stats -->
     <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
       <div class="flex justify-between items-start">
-        <span class="material-symbols-outlined p-2.5 bg-slate-100 text-slate-700 rounded-xl">database</span>
-        <span class="text-slate-600 font-bold text-xs bg-slate-100 px-2 py-0.5 rounded-full">4.2 TB / يوم</span>
+        <span class="material-symbols-outlined p-2.5 bg-amber-50 text-amber-600 rounded-xl">play_circle</span>
       </div>
       <div class="mt-2">
-        <p class="text-slate-400 font-bold text-xs uppercase tracking-wider">حجم تدفق البيانات</p>
-        <h3 class="text-4xl font-black text-slate-900 mt-1">128.5 <span class="text-lg">PB</span></h3>
+        <p class="text-slate-400 font-bold text-xs uppercase tracking-wider">المشاريع النشطة</p>
+        <h3 class="text-4xl font-black text-slate-900 mt-1">{{ stats.active_projects|default('0') }}</h3>
       </div>
     </div>
   </div>
@@ -200,14 +196,14 @@ body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif; background-color: #f
         <div class="relative z-10">
           <div class="flex items-center gap-2 mb-2">
             <span class="material-symbols-outlined text-amber-400">auto_awesome</span>
-            <h4 class="text-sm font-bold text-blue-50">رؤى الذكاء الاصطناعي</h4>
+            <h4 class="text-sm font-bold text-blue-50">رؤى النظام</h4>
           </div>
           <p class="text-xs leading-relaxed text-blue-100">
-             يتوقع النظام زيادة بنسبة 15% في حركة المرور الأسبوع القادم بسبب بدء الفعاليات الموسمية.
+             تم تحديث البيانات بناءً على الأنشطة الحديثة. لديك <strong>{{ stats.pending_approvals }}</strong> طلبات في الانتظار.
           </p>
-          <button class="mt-4 w-full bg-white text-blue-900 py-2 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors shadow-sm">
-             توسيع البنية التحتية
-          </button>
+          <a href="{{ url_for('admin.users') if 'admin.users' in request.endpoint else '#' }}" class="mt-4 w-full bg-white text-blue-900 py-2 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors shadow-sm text-center block">
+             مراجعة الطلبات
+          </a>
         </div>
         <div class="absolute -bottom-4 -left-4 opacity-10">
           <span class="material-symbols-outlined text-9xl">bolt</span>
@@ -217,31 +213,21 @@ body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif; background-color: #f
       <!-- System Health -->
       <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
         <h4 class="text-base font-bold text-slate-900 mb-4">صحة النظام والخدمات</h4>
+        {% if system_metrics %}
         <div class="space-y-4">
+          {% for metric in system_metrics[:3] %}
           <div class="flex justify-between items-center p-3 border border-slate-100 rounded-xl hover:bg-slate-50">
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-              <span class="text-xs font-bold text-slate-700">بوابة API</span>
+              <span class="text-xs font-bold text-slate-700">{{ metric.metric_name }}</span>
             </div>
-            <span class="text-xs font-black text-slate-900">12ms</span>
+            <span class="text-xs font-black text-slate-900">{{ metric.value }}</span>
           </div>
-          
-          <div class="flex justify-between items-center p-3 border border-slate-100 rounded-xl hover:bg-slate-50">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-              <span class="text-xs font-bold text-slate-700">قواعد البيانات</span>
-            </div>
-            <span class="text-xs font-black text-slate-900">99.98%</span>
-          </div>
-          
-          <div class="flex justify-between items-center p-3 border border-slate-100 rounded-xl hover:bg-red-50 transition-colors border-r-2 border-r-red-500">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-              <span class="text-xs font-bold text-slate-700">شبكة CDN</span>
-            </div>
-            <span class="text-[10px] font-bold text-red-600 uppercase">ضغط عالي</span>
-          </div>
+          {% endfor %}
         </div>
+        {% else %}
+        <p class="text-sm text-slate-500 text-center py-4">الخدمات تعمل بشكل طبيعي ومستقر</p>
+        {% endif %}
       </div>
       
     </div>
@@ -259,10 +245,10 @@ body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif; background-color: #f
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
+                    labels: {{ chart_data.labels | tojson | safe }},
                     datasets: [{
                         label: 'المستخدمون الجدد',
-                        data: [12, 19, 15, 25, 22, 30],
+                        data: {{ chart_data.users_data | tojson | safe }},
                         borderColor: '#1e3a8a',
                         backgroundColor: 'rgba(30, 58, 138, 0.1)',
                         borderWidth: 3,
@@ -270,7 +256,7 @@ body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif; background-color: #f
                         fill: true
                     }, {
                         label: 'المشاريع الجديدة',
-                        data: [5, 8, 7, 12, 10, 15],
+                        data: {{ chart_data.projects_data | tojson | safe }},
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         borderWidth: 3,

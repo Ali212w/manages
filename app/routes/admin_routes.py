@@ -44,17 +44,60 @@ def dashboard():
     # مقاييس النظام
     system_metrics = get_system_metrics()
     
+    # بيانات المخطط البياني (نمو المستخدمين والمشاريع في آخر 6 أشهر)
+    chart_data = {
+        'labels': [],
+        'users_data': [],
+        'projects_data': []
+    }
+    months_ar = {1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل', 5: 'مايو', 6: 'يونيو', 7: 'يوليو', 8: 'أغسطس', 9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر'}
+    
+    today = date.today()
+    for i in range(5, -1, -1):
+        target_month = today.month - i
+        target_year = today.year
+        if target_month <= 0:
+            target_month += 12
+            target_year -= 1
+            
+        chart_data['labels'].append(months_ar.get(target_month, str(target_month)))
+        
+        first_day = date(target_year, target_month, 1)
+        if target_month == 12:
+            next_first_day = date(target_year + 1, 1, 1)
+        else:
+            next_first_day = date(target_year, target_month + 1, 1)
+            
+        users_count = User.query.filter(User.org_id == current_user.id, User.created_at >= first_day, User.created_at < next_first_day).count()
+        projects_count = Project.query.filter(Project.org_id == current_user.id, Project.created_at >= first_day, Project.created_at < next_first_day).count()
+        
+        chart_data['users_data'].append(users_count)
+        chart_data['projects_data'].append(projects_count)
+
     return render_template('admin/dashboard.html',
                          stats=stats,
                          recent_activities=recent_activities,
                          new_users=new_users,
                          new_projects=new_projects,
-                         system_metrics=system_metrics)
+                         system_metrics=system_metrics,
+                         chart_data=chart_data)
 
 def get_recent_activities():
     """الحصول على الأنشطة الأخيرة"""
-    # TODO: تنفيذ سجل الأنشطة
-    return []
+    try:
+        from app.models.ai_models import AuditLog
+        logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).limit(10).all()
+        activities = []
+        for log in logs:
+            activities.append({
+                'user': log.user.full_name if log.user else 'النظام',
+                'action': log.action,
+                'time': log.timestamp.strftime('%Y-%m-%d %H:%M')
+            })
+        return activities
+    except Exception as e:
+        print(f"Error fetching recent activities: {e}")
+        return []
 
 def get_system_metrics():
     """الحصول على مقاييس النظام"""
