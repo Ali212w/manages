@@ -1,219 +1,306 @@
-{% extends "auth_base.html" %}
+<!DOCTYPE html>
+<html dir="{{ current_dir|default('rtl') }}" lang="{{ current_lang|default('ar') }}">
+<head>
+<meta charset="UTF-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{{ _('register_company') }} | {{ _('app_name') }}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
+<style>
+  body { font-family: 'IBM Plex Sans Arabic', 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; font-family:'Material Symbols Outlined'; display:inline-block; line-height:1; white-space:nowrap; direction:ltr; }
+  /* Hide scrollbar for clean aesthetic */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+</style>
+</head>
+<body class="min-h-screen bg-slate-50 flex items-center justify-center p-4 py-8">
 
-{% block title %}{{ _('register_company') }}{% endblock %}
-
-{% block content %}
-<div class="auth-container" style="max-width: 720px;" x-data="{ step: 1, showPwd: false, showPwd2: false }">
-    <div class="auth-brand">
-        <div class="auth-brand-icon"><i class="fas fa-building"></i></div>
-        <div class="auth-brand-text">{{ _('register_company') }}</div>
-        <div class="auth-brand-subtitle">{{ _('start_journey') }}</div>
+<div class="w-full max-w-4xl" x-data="{ step: 1, showPwd: false, showPwd2: false }">
+    
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-600/20 mx-auto mb-4">
+            <span class="material-symbols-outlined text-3xl">apartment</span>
+        </div>
+        <h1 class="text-3xl font-bold text-slate-900 mb-2">{{ _('register_company') }}</h1>
+        <p class="text-slate-500">{{ _('start_journey') }}</p>
     </div>
 
-    <div class="auth-card">
-        <div class="auth-card-header">
-            <h1 class="auth-title">{{ _('register_company') }}</h1>
-            <p class="auth-subtitle">{{ _('fill_form_to_create_account') }}</p>
+    <!-- Main Card -->
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+        
+        <!-- Stepper -->
+        <div class="bg-slate-50/50 border-b border-slate-100 px-8 py-6">
+            <div class="flex items-center justify-between max-w-2xl mx-auto relative">
+                <!-- Connecting Line -->
+                <div class="absolute top-1/2 left-0 right-0 h-1 bg-slate-200 -translate-y-1/2 z-0 rounded-full"></div>
+                <div class="absolute top-1/2 right-0 h-1 bg-blue-600 -translate-y-1/2 z-0 rounded-full transition-all duration-500"
+                     :style="'width: ' + ((step - 1) * 50) + '%'"></div>
+
+                <!-- Steps -->
+                <div class="relative z-10 flex flex-col items-center gap-2 cursor-pointer group" @click="if(step > 1) step = 1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 shadow-sm"
+                         :class="step >= 1 ? 'bg-blue-600 text-white ring-4 ring-blue-50' : 'bg-white text-slate-400 border border-slate-200'">
+                         <span x-show="step > 1" class="material-symbols-outlined text-lg">check</span>
+                         <span x-show="step === 1">1</span>
+                    </div>
+                    <span class="text-xs font-bold transition-colors" :class="step >= 1 ? 'text-blue-900' : 'text-slate-400'">{{ _('company_info') }}</span>
+                </div>
+
+                <div class="relative z-10 flex flex-col items-center gap-2 cursor-pointer group" @click="if(step > 2) step = 2">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 shadow-sm"
+                         :class="step >= 2 ? 'bg-blue-600 text-white ring-4 ring-blue-50' : 'bg-white text-slate-400 border border-slate-200'">
+                         <span x-show="step > 2" class="material-symbols-outlined text-lg">check</span>
+                         <span x-show="step === 2">2</span>
+                    </div>
+                    <span class="text-xs font-bold transition-colors" :class="step >= 2 ? 'text-blue-900' : 'text-slate-400'">{{ _('admin_account') }}</span>
+                </div>
+
+                <div class="relative z-10 flex flex-col items-center gap-2">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 shadow-sm"
+                         :class="step >= 3 ? 'bg-blue-600 text-white ring-4 ring-blue-50' : 'bg-white text-slate-400 border border-slate-200'">
+                         3
+                    </div>
+                    <span class="text-xs font-bold transition-colors" :class="step >= 3 ? 'text-blue-900' : 'text-slate-400'">{{ _('plan_selection') }}</span>
+                </div>
+            </div>
         </div>
 
-        {# stepper #}
-        <div class="stepper">
-            <div class="stepper-item" :class="{ active: step >= 1, done: step > 1 }">
-                <div class="stepper-dot">1</div>
-                <div class="stepper-label">{{ _('company_info') }}</div>
-            </div>
-            <div class="stepper-line"></div>
-            <div class="stepper-item" :class="{ active: step >= 2, done: step > 2 }">
-                <div class="stepper-dot">2</div>
-                <div class="stepper-label">{{ _('admin_account') }}</div>
-            </div>
-            <div class="stepper-line"></div>
-            <div class="stepper-item" :class="{ active: step >= 3 }">
-                <div class="stepper-dot">3</div>
-                <div class="stepper-label">{{ _('plan_selection') }}</div>
-            </div>
-        </div>
-
-        <div class="auth-card-body">
+        <div class="p-8 md:p-10">
             <form method="POST" action="{{ url_for('auth.register_company') }}" id="registerForm" enctype="multipart/form-data">
                 {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
 
-                {# Step 1 — company info #}
-                <div x-show="step === 1" x-transition>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="form-group">
-                            <label class="form-label" for="company_name">{{ _('company_name') }} *</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-building input-icon"></i>
-                                <input type="text" class="form-control" id="company_name" name="company_name" required>
+                <!-- Step 1: Company Info -->
+                <div x-show="step === 1" x-transition.opacity.duration.300ms>
+                    <div class="mb-6">
+                        <h2 class="text-xl font-bold text-slate-900">{{ _('company_info') }}</h2>
+                        <p class="text-sm text-slate-500 mt-1">الرجاء إدخال البيانات الأساسية لمؤسستك</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="company_name">{{ _('company_name') }} *</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">domain</span>
+                                <input class="w-full pr-12 pl-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm" id="company_name" name="company_name" required>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="company_name_en">{{ _('company_name_en') }}</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-building input-icon"></i>
-                                <input type="text" class="form-control" id="company_name_en" name="company_name_en">
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="company_name_en">{{ _('company_name_en') }}</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">translate</span>
+                                <input class="w-full pr-12 pl-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm" id="company_name_en" name="company_name_en" dir="ltr" placeholder="Company Name Ltd">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="commercial_register">{{ _('commercial_register') }}</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-id-card input-icon"></i>
-                                <input type="text" class="form-control" id="commercial_register" name="commercial_register">
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="commercial_register">{{ _('commercial_register') }}</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">badge</span>
+                                <input class="w-full pr-12 pl-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm text-left" id="commercial_register" name="commercial_register" dir="ltr">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="tax_number">{{ _('tax_number') }}</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-receipt input-icon"></i>
-                                <input type="text" class="form-control" id="tax_number" name="tax_number">
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="tax_number">{{ _('tax_number') }}</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">receipt_long</span>
+                                <input class="w-full pr-12 pl-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm text-left" id="tax_number" name="tax_number" dir="ltr">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="company_phone">{{ _('phone') }}</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-phone input-icon"></i>
-                                <input type="tel" class="form-control" id="company_phone" name="company_phone">
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="company_phone">{{ _('phone') }}</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">call</span>
+                                <input type="tel" class="w-full pr-12 pl-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm text-left" id="company_phone" name="company_phone" dir="ltr">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="company_email">{{ _('company_email') }} *</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-envelope input-icon"></i>
-                                <input type="email" class="form-control" id="company_email" name="company_email" required>
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="company_email">{{ _('company_email') }} *</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">mail</span>
+                                <input type="email" class="w-full pr-12 pl-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm text-left" id="company_email" name="company_email" dir="ltr" required>
                             </div>
                         </div>
-                        <div class="form-group" style="grid-column: 1/-1;">
-                            <label class="form-label" for="company_address">{{ _('address') }}</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-map-marker-alt input-icon"></i>
-                                <input type="text" class="form-control" id="company_address" name="company_address">
+                        <div class="md:col-span-2">
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="company_address">{{ _('address') }}</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-4 text-slate-400">location_on</span>
+                                <textarea class="w-full pr-12 pl-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm" id="company_address" name="company_address" rows="2"></textarea>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex justify-between mt-4">
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-right"></i> {{ _('back_to_login') }}
+                    <div class="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
+                        <a href="{{ url_for('auth.login') }}" class="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors">
+                            {{ _('back_to_login') }}
                         </a>
-                        <button type="button" class="btn btn-primary" @click="step = 2">
-                            {{ _('next') }} <i class="fas fa-arrow-left"></i>
+                        <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-md shadow-blue-600/20 transition-all active:scale-[0.98]" @click="step = 2">
+                            {{ _('next') }}
                         </button>
                     </div>
                 </div>
 
-                {# Step 2 — admin account #}
-                <div x-show="step === 2" x-transition x-cloak>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="form-group">
-                            <label class="form-label" for="admin_name">{{ _('full_name') }} *</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-user input-icon"></i>
-                                <input type="text" class="form-control" id="admin_name" name="admin_name" required>
+                <!-- Step 2: Admin Account -->
+                <div x-show="step === 2" x-transition.opacity.duration.300ms x-cloak>
+                    <div class="mb-6">
+                        <h2 class="text-xl font-bold text-slate-900">{{ _('admin_account') }}</h2>
+                        <p class="text-sm text-slate-500 mt-1">إنشاء بيانات الدخول للمدير الرئيسي للمؤسسة</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="admin_name">{{ _('full_name') }} *</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">person</span>
+                                <input class="w-full pr-12 pl-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm" id="admin_name" name="admin_name" required>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="admin_email">{{ _('email_address') }} *</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-envelope input-icon"></i>
-                                <input type="email" class="form-control" id="admin_email" name="admin_email" required>
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="admin_email">{{ _('email_address') }} *</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">alternate_email</span>
+                                <input type="email" class="w-full pr-12 pl-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm text-left" id="admin_email" name="admin_email" dir="ltr" required>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="admin_phone">{{ _('mobile') }}</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-mobile input-icon"></i>
-                                <input type="tel" class="form-control" id="admin_phone" name="admin_phone">
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="username">{{ _('username') }} *</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">account_circle</span>
+                                <input class="w-full pr-12 pl-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm text-left" id="username" name="username" dir="ltr" required>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="username">{{ _('username') }} *</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-at input-icon"></i>
-                                <input type="text" class="form-control" id="username" name="username" required>
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="admin_phone">{{ _('mobile') }}</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">smartphone</span>
+                                <input type="tel" class="w-full pr-12 pl-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm text-left" id="admin_phone" name="admin_phone" dir="ltr">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="password">{{ _('password') }} *</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-lock input-icon"></i>
-                                <input :type="showPwd ? 'text' : 'password'" class="form-control" id="password" name="password" required minlength="8">
-                                <button class="input-action" type="button" @click="showPwd = !showPwd" tabindex="-1">
-                                    <i :class="showPwd ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="password">{{ _('password') }} *</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
+                                <input :type="showPwd ? 'text' : 'password'" class="w-full pr-12 pl-12 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm text-left" id="password" name="password" dir="ltr" required minlength="8">
+                                <button class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors" type="button" @click="showPwd = !showPwd" tabindex="-1">
+                                    <span class="material-symbols-outlined" x-text="showPwd ? 'visibility_off' : 'visibility'"></span>
                                 </button>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="confirm_password">{{ _('confirm_password') }} *</label>
-                            <div class="input-group-modern">
-                                <i class="fas fa-lock input-icon"></i>
-                                <input :type="showPwd2 ? 'text' : 'password'" class="form-control" id="confirm_password" name="confirm_password" required>
-                                <button class="input-action" type="button" @click="showPwd2 = !showPwd2" tabindex="-1">
-                                    <i :class="showPwd2 ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 mb-2 block" for="confirm_password">{{ _('confirm_password') }} *</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">lock_reset</span>
+                                <input :type="showPwd2 ? 'text' : 'password'" class="w-full pr-12 pl-12 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 bg-slate-50 focus:bg-white transition-all outline-none text-sm text-left" id="confirm_password" name="confirm_password" dir="ltr" required minlength="8">
+                                <button class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors" type="button" @click="showPwd2 = !showPwd2" tabindex="-1">
+                                    <span class="material-symbols-outlined" x-text="showPwd2 ? 'visibility_off' : 'visibility'"></span>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex justify-between mt-4">
-                        <button type="button" class="btn btn-outline-secondary" @click="step = 1">
-                            <i class="fas fa-arrow-right"></i> {{ _('back') }}
+                    <div class="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
+                        <button type="button" class="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors" @click="step = 1">
+                            السابق
                         </button>
-                        <button type="button" class="btn btn-primary" @click="step = 3">
-                            {{ _('next') }} <i class="fas fa-arrow-left"></i>
+                        <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-md shadow-blue-600/20 transition-all active:scale-[0.98]" @click="step = 3">
+                            {{ _('next') }}
                         </button>
                     </div>
                 </div>
 
-                {# Step 3 — plan selection #}
-                <div x-show="step === 3" x-transition x-cloak>
+                <!-- Step 3: Plan Selection -->
+                <div x-show="step === 3" x-transition.opacity.duration.300ms x-cloak>
+                    <div class="mb-6">
+                        <h2 class="text-xl font-bold text-slate-900">{{ _('plan_selection') }}</h2>
+                        <p class="text-sm text-slate-500 mt-1">اختر الباقة الأنسب لحجم وأعمال مؤسستك</p>
+                    </div>
+
                     {% set plan_options = plans if plans else [
-                        {'id':'free','name':_('plan_free'),'price':'0','features':[_('users_5'), _('projects_3'), _('storage_5gb')]},
-                        {'id':'pro','name':_('plan_pro'),'price':'199','features':[_('users_25'), _('projects_unlimited'), _('storage_50gb'), _('priority_support')], 'recommended': True},
-                        {'id':'enterprise','name':_('plan_enterprise'),'price':_('contact_us'),'features':[_('users_unlimited'), _('projects_unlimited'), _('storage_unlimited'), _('dedicated_support'), _('custom_integrations')]}
+                        {'id':'free','name':'الباقة الأساسية','price':'0','features':['إدارة 5 مستخدمين', 'إدارة 3 مشاريع', 'مساحة تخزين 5GB']},
+                        {'id':'pro','name':'الباقة الاحترافية','price':'199','features':['إدارة 25 مستخدم', 'مشاريع غير محدودة', 'مساحة تخزين 50GB', 'دعم فني ذو أولوية'], 'recommended': True},
+                        {'id':'enterprise','name':'باقة الشركات','price':'تواصل معنا','features':['مستخدمين غير محدود', 'مشاريع غير محدودة', 'مساحة تخزين لا محدودة', 'دعم فني مخصص', 'ربط برمجي API']}
                     ] %}
-                    <div class="grid grid-cols-3 gap-3">
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {% for p in plan_options %}
-                        <label class="plan-card {% if p.recommended %}recommended{% endif %}">
-                            <input type="radio" name="plan" value="{{ p.id }}" {% if loop.first or p.recommended %}checked{% endif %} class="plan-card-radio">
-                            {% if p.recommended %}<span class="plan-card-badge">{{ _('recommended') }}</span>{% endif %}
-                            <div class="plan-card-name">{{ p.name }}</div>
-                            <div class="plan-card-price">{{ p.price }}<small class="text-xs text-muted-foreground"> {{ _('sar_month') }}</small></div>
-                            <ul class="plan-card-features">
-                                {% for f in p.features %}<li><i class="fas fa-check text-primary"></i> {{ f }}</li>{% endfor %}
-                            </ul>
+                        <label class="relative block cursor-pointer group">
+                            <input type="radio" name="plan" value="{{ p.id }}" class="peer sr-only" {% if loop.first or p.recommended %}checked{% endif %}>
+                            
+                            <div class="h-full rounded-2xl border-2 transition-all p-6 bg-white 
+                                peer-checked:border-blue-600 peer-checked:ring-4 peer-checked:ring-blue-600/10 peer-checked:shadow-md
+                                border-slate-200 hover:border-slate-300">
+                                
+                                {% if p.recommended %}
+                                <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm whitespace-nowrap">
+                                    الأكثر طلباً
+                                </div>
+                                {% endif %}
+
+                                <!-- Checked Icon Indicator -->
+                                <div class="absolute top-4 left-4 w-6 h-6 rounded-full border-2 border-slate-200 flex items-center justify-center opacity-0 peer-checked:opacity-100 peer-checked:border-blue-600 peer-checked:bg-blue-600 transition-all">
+                                    <span class="material-symbols-outlined text-white text-sm">check</span>
+                                </div>
+                                <div class="absolute top-4 left-4 w-6 h-6 rounded-full border-2 border-slate-200 flex items-center justify-center peer-checked:opacity-0 transition-all"></div>
+
+                                <div class="text-center mb-6 mt-2">
+                                    <h3 class="text-lg font-bold text-slate-900 mb-2">{{ p.name }}</h3>
+                                    <div class="text-3xl font-bold text-blue-900">
+                                        {{ p.price }}
+                                        {% if p.price != 'تواصل معنا' %}
+                                        <span class="text-sm font-medium text-slate-500">ر.س / شهر</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <ul class="space-y-3">
+                                    {% for f in p.features %}
+                                    <li class="flex items-start gap-2 text-sm text-slate-600">
+                                        <span class="material-symbols-outlined text-blue-600 text-lg shrink-0">check_circle</span>
+                                        {{ f }}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
                         </label>
                         {% endfor %}
                     </div>
 
-                    <div class="form-group mt-4">
-                        <label class="checkbox-row">
-                            <input type="checkbox" name="agree_terms" required>
-                            <span class="text-sm">
-                                {{ _('i_agree_to') }}
-                                <a href="#" class="text-primary">{{ _('terms_of_service') }}</a>
-                                {{ _('and') }}
-                                <a href="#" class="text-primary">{{ _('privacy_policy') }}</a>
+                    <div class="mt-8 pt-6 border-t border-slate-100">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" name="agree_terms" required class="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600">
+                            <span class="text-sm text-slate-600">
+                                أوافق على 
+                                <a href="#" class="font-bold text-blue-600 hover:underline">الشروط والأحكام</a>
+                                و
+                                <a href="#" class="font-bold text-blue-600 hover:underline">سياسة الخصوصية</a>
                             </span>
                         </label>
                     </div>
 
-                    <div class="flex justify-between mt-4">
-                        <button type="button" class="btn btn-outline-secondary" @click="step = 2">
-                            <i class="fas fa-arrow-right"></i> {{ _('back') }}
+                    <div class="flex items-center justify-between mt-8">
+                        <button type="button" class="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors" @click="step = 2">
+                            السابق
                         </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-check"></i> {{ _('create_account') }}
+                        <button type="submit" class="bg-blue-900 hover:bg-slate-900 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-xl shadow-blue-900/20 transition-all active:scale-[0.98] flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">rocket_launch</span>
+                            {{ _('create_account') }}
                         </button>
                     </div>
                 </div>
+
             </form>
         </div>
 
-        <div class="auth-card-footer">
-            <span class="text-muted-foreground">{{ _('have_account') }}</span>
-            <a href="{{ url_for('auth.login') }}" class="text-primary font-semibold">{{ _('login') }}</a>
+        <div class="bg-slate-50 px-8 py-4 border-t border-slate-100 text-center">
+            <span class="text-sm text-slate-500">{{ _('have_account') }}</span>
+            <a href="{{ url_for('auth.login') }}" class="text-sm font-bold text-blue-600 hover:underline mx-1">{{ _('login') }}</a>
         </div>
+
     </div>
 </div>
-{% endblock %}
+
+</body>
+</html>
