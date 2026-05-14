@@ -1419,7 +1419,8 @@ def profile():
             user.phone = request.form.get('phone', user.phone)
             user.mobile = request.form.get('mobile', user.mobile)
             user.job_title = request.form.get('job_title', user.job_title)
-            user.job_title_ar = request.form.get('job_title_ar', user.job_title_ar)
+            if hasattr(user, 'job_title_ar'):
+                user.job_title_ar = request.form.get('job_title_ar', getattr(user, 'job_title_ar', ''))
             
             # تحديث كلمة المرور إذا تم إدخالها
             new_password = request.form.get('new_password')

@@ -59,7 +59,7 @@ body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif;}
       <div class="pt-14 pb-5 px-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-3">
         <div>
           <h1 class="text-xl font-bold text-slate-900">{{ current_user.full_name }}</h1>
-          <p class="text-sm text-slate-400">{{ current_user.job_title or 'موظف' }} • {{ current_user.department.name if current_user.department else '' }}</p>
+          <p class="text-sm text-slate-400">{{ current_user.job_title or 'موظف' }} {% if current_user.department is defined and current_user.department %}• {{ current_user.department.name }}{% endif %}</p>
           <div class="flex flex-wrap gap-2 mt-2">
             <span class="text-xs bg-blue-50 text-blue-900 font-bold px-2.5 py-1 rounded-full border border-blue-100">{{ current_user.role }}</span>
             <span class="text-xs {% if current_user.is_active %}bg-emerald-50 text-emerald-700 border-emerald-100{% else %}bg-red-50 text-red-600 border-red-100{% endif %} font-bold px-2.5 py-1 rounded-full border">
@@ -108,7 +108,7 @@ body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif;}
             {% set basic_info = [
               ('email','البريد الإلكتروني', current_user.email),
               ('phone','الهاتف', current_user.phone or 'غير محدد'),
-              ('badge','رقم الموظف', current_user.employee_id or 'غير محدد'),
+              ('badge','رقم الموظف', current_user.employee_id if current_user.employee_id is defined else 'غير محدد'),
             ] %}
             {% for icon, label, val in basic_info %}
             <div class="flex items-center gap-3 px-5 py-3">
@@ -130,9 +130,9 @@ body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif;}
           </div>
           <div class="divide-y divide-slate-100">
             {% set work_info = [
-              ('business','القسم', current_user.department.name if current_user.department else 'غير محدد'),
+              ('business','القسم', current_user.department.name if current_user.department is defined and current_user.department else 'غير محدد'),
               ('manage_accounts','الدور', current_user.role),
-              ('event','تاريخ التعيين', current_user.hire_date.strftime('%Y-%m-%d') if current_user.hire_date else 'غير محدد'),
+              ('event','تاريخ التعيين', current_user.hire_date.strftime('%Y-%m-%d') if current_user.hire_date is defined and current_user.hire_date else 'غير محدد'),
             ] %}
             {% for icon, label, val in work_info %}
             <div class="flex items-center gap-3 px-5 py-3">
@@ -176,11 +176,11 @@ body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif;}
             {{ form.hidden_tag() if form is defined }}
             {% set fields = [
               ('full_name','الاسم الكامل (إنجليزي)','text', current_user.full_name),
-              ('full_name_ar','الاسم الكامل (عربي)','text', current_user.full_name_ar or ''),
+              ('full_name_ar','الاسم الكامل (عربي)','text', current_user.full_name_ar if current_user.full_name_ar is defined else ''),
               ('phone','رقم الهاتف','tel', current_user.phone or ''),
               ('mobile','رقم الجوال','tel', current_user.mobile or ''),
               ('job_title','المسمى الوظيفي (إنجليزي)','text', current_user.job_title or ''),
-              ('job_title_ar','المسمى الوظيفي (عربي)','text', current_user.job_title_ar or ''),
+              ('job_title_ar','المسمى الوظيفي (عربي)','text', current_user.job_title_ar if current_user.job_title_ar is defined else ''),
             ] %}
             {% for name, label, type, val in fields %}
             <div>

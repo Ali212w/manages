@@ -4,143 +4,211 @@
 {% block title %}{{ _('profile.title') }}{% endblock %}
 
 {% block content %}
-<div class="animate-fadeInUp">
-    <!-- Page Header -->
-    <div class="page-header mb-4">
-        <h1 class="page-title">{{ _('profile.title') }}</h1>
-        <p class="text-muted mb-0">{{ _('profile.description') }}</p>
-    </div>
+<div class="animate-fadeInUp" dir="rtl">
     
-    <div class="row g-4">
-        <!-- Profile Card -->
-        <div class="col-xl-4">
-            <div class="card border-0 shadow-sm text-center">
-                <div class="card-body p-4">
-                    <div class="profile-avatar mx-auto mb-3">
-                        <div class="bg-gradient-primary rounded-circle d-flex align-items-center justify-content-center text-white mx-auto" style="width: 120px; height: 120px; font-size: 48px;">
-                            {{ admin.full_name[0]|upper }}
-                        </div>
-                    </div>
-                    <h4>{{ admin.full_name }}</h4>
-                    {% if admin.full_name_ar %}
-                    <p class="text-muted">{{ admin.full_name_ar }}</p>
-                    {% endif %}
-                    
-                    <div class="mt-3">
-                        <span class="badge bg-primary">
-                            {% if admin.role == 'super_admin' %}
-                            {{ _('admins.role_super_admin') }}
-                            {% elif admin.role == 'admin' %}
-                            {{ _('admins.role_admin') }}
-                            {% elif admin.role == 'support' %}
-                            {{ _('admins.role_support') }}
-                            {% elif admin.role == 'finance' %}
-                            {{ _('admins.role_finance') }}
+    <div class="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
+
+        <!-- Sidebar -->
+        <aside class="w-full lg:w-64 flex-shrink-0">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 sticky top-24">
+                <div class="mb-5">
+                    <h2 class="text-lg font-bold text-slate-900">الإعدادات</h2>
+                    <p class="text-xs text-slate-400 mt-1">تحكم في تفضيلات حسابك</p>
+                </div>
+                
+                <nav class="flex flex-col gap-1.5">
+                    <button class="flex items-center gap-3 p-3 rounded-xl text-sm font-bold bg-blue-50 text-blue-900 w-full text-right transition-colors">
+                        <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">person</span>
+                        الملف الشخصي
+                    </button>
+                    <button class="flex items-center gap-3 p-3 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 w-full text-right transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">notifications</span>
+                        الإشعارات
+                    </button>
+                    <button class="flex items-center gap-3 p-3 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 w-full text-right transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">lock</span>
+                        الأمان والخصوصية
+                    </button>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 space-y-6">
+            
+            <!-- Profile Header Card -->
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden relative pb-6">
+                <!-- Cover Photo -->
+                <div class="h-32 bg-[#002f6c] w-full relative"></div>
+                
+                <!-- Avatar & Info -->
+                <div class="px-8 -mt-12 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+                    <div class="flex flex-col sm:flex-row items-center sm:items-end gap-5">
+                        <div class="w-24 h-24 rounded-full border-4 border-white bg-blue-100 flex items-center justify-center shadow-md overflow-hidden relative z-10 flex-shrink-0">
+                            {% if admin.profile_image %}
+                            <img src="{{ url_for('static', filename='uploads/profiles/' + admin.profile_image) }}" class="w-full h-full object-cover">
+                            {% else %}
+                            <span class="text-3xl font-bold text-blue-900">{{ admin.full_name[0]|upper }}</span>
                             {% endif %}
-                        </span>
+                        </div>
+                        <div class="text-center sm:text-right pb-1">
+                            <h1 class="text-2xl font-bold text-slate-900">{{ admin.full_name }}</h1>
+                            <p class="text-sm text-slate-500 mt-1">مدير المنصة • إدارة النظام</p>
+                        </div>
                     </div>
                     
-                    <hr class="my-4">
-                    
-                    <div class="text-start">
-                        <div class="info-row d-flex py-2 border-bottom">
-                            <div class="label text-muted" style="width: 100px;">{{ _('profile.email') }}</div>
-                            <div class="value">{{ admin.email }}</div>
-                        </div>
-                        <div class="info-row d-flex py-2 border-bottom">
-                            <div class="label text-muted" style="width: 100px;">{{ _('profile.phone') }}</div>
-                            <div class="value">{{ admin.phone or '-' }}</div>
-                        </div>
-                        <div class="info-row d-flex py-2 border-bottom">
-                            <div class="label text-muted" style="width: 100px;">{{ _('profile.username') }}</div>
-                            <div class="value">{{ admin.username }}</div>
-                        </div>
-                        <div class="info-row d-flex py-2">
-                            <div class="label text-muted" style="width: 100px;">{{ _('profile.member_since') }}</div>
-                            <div class="value">{{ format_date(admin.created_at) }}</div>
-                        </div>
+                    <div class="pb-1">
+                        <button class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold transition-colors">
+                            <span class="material-symbols-outlined text-[18px]">edit</span>
+                            تغيير الصورة
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Edit Form -->
-        <div class="col-xl-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0 pt-3">
-                    <h5 class="card-title"><i class="fas fa-user-edit me-2"></i>{{ _('profile.personal_info') }}</h5>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left Column: Notifications & Security -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Notifications -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm">
+                        <h3 class="text-sm font-bold text-slate-900 mb-4">تفضيلات الإشعارات</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">تنبيهات البريد</p>
+                                    <p class="text-xs text-slate-500">تحديثات النشاط الأسبوعية</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" value="" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">رسائل النظام</p>
+                                    <p class="text-xs text-slate-500">تحديثات الأمان الهامة</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" value="" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <a href="#" class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 mt-5">
+                            <span class="material-symbols-outlined text-[14px]">arrow_back</span>
+                            عرض كافة الإعدادات
+                        </a>
+                    </div>
+                    
+                    <!-- Session Stats -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm">
+                        <h3 class="text-sm font-bold text-slate-900 mb-4">نشاط الحساب</h3>
+                        
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-slate-500">آخر دخول</span>
+                                <span class="font-semibold text-slate-900" dir="ltr">{{ format_datetime(admin.last_login) if admin.last_login else '-' }}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-slate-500">عدد مرات الدخول</span>
+                                <span class="font-semibold text-slate-900">{{ admin.login_count or 0 }} مرة</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-slate-500">عضو منذ</span>
+                                <span class="font-semibold text-slate-900" dir="ltr">{{ format_date(admin.created_at) }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form id="profileForm" method="POST">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">{{ _('profile.full_name') }} *</label>
-                                <input type="text" name="full_name" class="form-control" value="{{ admin.full_name }}" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">{{ _('profile.full_name_ar') }}</label>
-                                <input type="text" name="full_name_ar" class="form-control" value="{{ admin.full_name_ar or '' }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">{{ _('profile.email') }}</label>
-                                <input type="email" class="form-control" value="{{ admin.email }}" disabled>
-                                <div class="form-text text-muted">{{ _('profile.email_cannot_change') }}</div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">{{ _('profile.phone') }}</label>
-                                <input type="tel" name="phone" class="form-control" value="{{ admin.phone or '' }}">
-                            </div>
+
+                <!-- Right Column: Forms -->
+                <div class="lg:col-span-2 space-y-6">
+                    
+                    <!-- Personal Info Form -->
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                            <h3 class="text-base font-bold text-slate-900">المعلومات الشخصية</h3>
                         </div>
                         
-                        <hr class="my-4">
-                        
-                        <h5 class="mb-3">{{ _('profile.change_password') }}</h5>
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="form-label">{{ _('profile.current_password') }}</label>
-                                <input type="password" name="current_password" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">{{ _('profile.new_password') }}</label>
-                                <input type="password" name="new_password" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">{{ _('profile.confirm_password') }}</label>
-                                <input type="password" name="confirm_password" class="form-control">
-                            </div>
+                        <div class="p-6">
+                            <form id="profileForm" method="POST">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-2">الاسم الكامل (إنجليزي) *</label>
+                                        <input type="text" name="full_name" value="{{ admin.full_name }}" required
+                                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#002f6c] focus:border-[#002f6c] outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-2">الاسم الكامل (عربي)</label>
+                                        <input type="text" name="full_name_ar" value="{{ admin.full_name_ar or '' }}"
+                                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#002f6c] focus:border-[#002f6c] outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-2">البريد الإلكتروني</label>
+                                        <input type="email" value="{{ admin.email }}" disabled
+                                            class="w-full border border-slate-200 bg-slate-50 text-slate-500 rounded-xl px-4 py-2.5 text-sm cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-2">رقم الهاتف</label>
+                                        <input type="tel" name="phone" value="{{ admin.phone or '' }}" dir="ltr"
+                                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#002f6c] focus:border-[#002f6c] outline-none transition-all text-right">
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-8 flex gap-3">
+                                    <button type="submit" class="bg-[#002f6c] hover:bg-blue-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">
+                                        حفظ التغييرات
+                                    </button>
+                                    <button type="button" class="bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">
+                                        إلغاء
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Security / Password Form -->
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div class="bg-slate-50 px-6 py-4 border-b border-slate-100">
+                            <h3 class="text-base font-bold text-slate-900">الأمان وتغيير كلمة المرور</h3>
                         </div>
                         
-                        <div class="mt-4">
-                            <button type="submit" class="btn btn-gradient px-4">
-                                <i class="fas fa-save me-2"></i>{{ _('profile.update') }}
-                            </button>
+                        <div class="p-6">
+                            <form id="passwordForm" method="POST">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div class="md:col-span-2">
+                                        <label class="block text-xs font-bold text-slate-600 mb-2">كلمة المرور الحالية</label>
+                                        <input type="password" name="current_password"
+                                            class="w-full md:w-1/2 border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#002f6c] focus:border-[#002f6c] outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-2">كلمة المرور الجديدة</label>
+                                        <input type="password" name="new_password"
+                                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#002f6c] focus:border-[#002f6c] outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-2">تأكيد كلمة المرور</label>
+                                        <input type="password" name="confirm_password"
+                                            class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#002f6c] focus:border-[#002f6c] outline-none transition-all">
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-6">
+                                    <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">
+                                        تحديث كلمة المرور
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                    </form>
+                    </div>
+
                 </div>
             </div>
             
-            <!-- Session Info -->
-            <div class="card border-0 shadow-sm mt-4">
-                <div class="card-header bg-transparent border-0 pt-3">
-                    <h5 class="card-title"><i class="fas fa-shield-alt me-2"></i>{{ _('profile.session_info') }}</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="info-row d-flex py-2">
-                                <div class="label text-muted" style="width: 120px;">{{ _('profile.last_login') }}</div>
-                                <div class="value">{{ format_datetime(admin.last_login) if admin.last_login else '-' }}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-row d-flex py-2">
-                                <div class="label text-muted" style="width: 120px;">{{ _('profile.login_count') }}</div>
-                                <div class="value">{{ admin.login_count or 0 }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -149,44 +217,51 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    $('#profileForm').submit(function(e) {
-        e.preventDefault();
-        
-        const newPassword = $('input[name="new_password"]').val();
-        const confirmPassword = $('input[name="confirm_password"]').val();
-        
-        if (newPassword && newPassword !== confirmPassword) {
-            toastr.error('{{ _("profile.password_mismatch") }}');
-            return;
-        }
-        
-        if (newPassword && newPassword.length < 8) {
-            toastr.error('{{ _("profile.password_weak") }}');
-            return;
-        }
-        
-        const formData = $(this).serialize();
-        
+    function submitForm(formElement) {
+        const formData = $(formElement).serialize();
         $.ajax({
             url: "{{ url_for('platform.profile') }}",
             method: 'POST',
             data: formData,
             success: function(response) {
                 if (response.success) {
-                    toastr.success(response.message);
+                    // Create a custom modern alert or use native
+                    alert(response.message || 'تم حفظ التغييرات بنجاح');
                     if (response.password_changed) {
                         setTimeout(() => {
                             window.location.href = "{{ url_for('auth.logout') }}";
                         }, 2000);
                     }
                 } else {
-                    toastr.error(response.error);
+                    alert('خطأ: ' + (response.error || 'حدث خطأ غير معروف'));
                 }
             },
             error: function() {
-                toastr.error('{{ _("common.error") }}');
+                alert('حدث خطأ في الاتصال بالخادم.');
             }
         });
+    }
+
+    $('#profileForm').submit(function(e) {
+        e.preventDefault();
+        submitForm(this);
+    });
+    
+    $('#passwordForm').submit(function(e) {
+        e.preventDefault();
+        const newPassword = $('input[name="new_password"]').val();
+        const confirmPassword = $('input[name="confirm_password"]').val();
+        
+        if (newPassword && newPassword !== confirmPassword) {
+            alert('كلمتا المرور غير متطابقتين!');
+            return;
+        }
+        
+        if (newPassword && newPassword.length < 8) {
+            alert('يجب أن تكون كلمة المرور 8 أحرف على الأقل!');
+            return;
+        }
+        submitForm(this);
     });
 });
 </script>
