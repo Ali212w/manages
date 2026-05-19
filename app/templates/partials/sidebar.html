@@ -63,9 +63,24 @@
 
             {% else %}
             {# Normal User Sidebar #}
-            <a class="sidebar-link" href="{{ url_for('dashboard.index') }}">
-                <i class="fas fa-tachometer-alt"></i><span>{{ _('dashboard') | default('لوحة التحكم', true) }}</span>
-            </a>
+            <div class="sidebar-group">
+                <a class="sidebar-link sidebar-group-toggle" href="javascript:void(0)">
+                    <i class="fas fa-tachometer-alt"></i><span>{{ _('dashboards') | default('لوحات التحكم', true) }}</span>
+                    <i class="fas fa-chevron-down chevron"></i>
+                </a>
+                <div class="sidebar-submenu">
+                    <a class="sidebar-link" href="{{ url_for('dashboard.index') }}">
+                        <i class="fas fa-chart-pie"></i><span>{{ _('dashboard') | default('لوحة التحكم الرئيسية', true) }}</span>
+                    </a>
+                    <a class="sidebar-link" href="{{ url_for('dashboard.advanced_dashboard') }}">
+                        <i class="fas fa-chart-line"></i><span>{{ _('advanced_dashboard') | default('لوحة التحكم المتقدمة', true) }}</span>
+                    </a>
+                    <a class="sidebar-link" href="{{ url_for('company.executive_dashboard') }}">
+                        <i class="fas fa-chart-bar"></i><span>{{ _('executive_dashboard') | default('لوحة التحكم التنفيذية', true) }}</span>
+                        <span class="badge bg-danger live-badge ms-2" style="font-size: 0.65rem; padding: 2px 5px; animation: pulse 2s infinite;">{{ _('live') | default('مباشر', true) }}</span>
+                    </a>
+                </div>
+            </div>
 
             <div class="sidebar-group">
                 <a class="sidebar-link sidebar-group-toggle" href="javascript:void(0)">
@@ -93,24 +108,124 @@
                 </div>
             </div>
 
+            <div class="sidebar-group">
+                <a class="sidebar-link sidebar-group-toggle" href="javascript:void(0)">
+                    <i class="fas fa-comments"></i><span>{{ _('collaboration_meetings') | default('العمل المشترك والاجتماعات', true) }}</span>
+                    <i class="fas fa-chevron-down chevron"></i>
+                </a>
+                <div class="sidebar-submenu">
+                    <a class="sidebar-link" href="{{ url_for('company.meetings_list') }}">
+                        <i class="fas fa-calendar-alt"></i><span>{{ _('meetings') | default('الاجتماعات', true) }}</span>
+                        {% if g.upcoming_meetings_count is defined and g.upcoming_meetings_count > 0 %}
+                            <span class="badge bg-danger ms-auto" style="font-size: 0.7rem; border-radius: 50%; min-width: 18px; text-align: center; padding: 2px 6px;">{{ g.upcoming_meetings_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a class="sidebar-link" href="{{ url_for('company.issues_list') }}">
+                        <i class="fas fa-bug"></i><span>{{ _('issues') | default('المشكلات', true) }}</span>
+                        {% if g.open_issues_count is defined and g.open_issues_count > 0 %}
+                            <span class="badge bg-danger ms-auto" style="font-size: 0.7rem; border-radius: 50%; min-width: 18px; text-align: center; padding: 2px 6px;">{{ g.open_issues_count }}</span>
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+
+            <a class="sidebar-link" href="{{ url_for('ai.index') }}">
+                <i class="fas fa-robot text-primary"></i><span>{{ _('ai_command_center') | default('مركز التحكم الذكي', true) }}</span>
+                <span class="badge bg-primary ms-2" style="font-size: 0.65rem; padding: 2px 5px; background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;">AI</span>
+            </a>
+
             <a class="sidebar-link" href="{{ url_for('document.index') }}">
                 <i class="fas fa-file-alt"></i><span>{{ _('documents') | default('المستندات', true) }}</span>
             </a>
 
-            {% if current_user.role in ['admin', 'project_manager', 'org_admin'] %}
-            <div class="sidebar-section-title">{{ _('management') | default('الإدارة', true) }}</div>
-            <a class="sidebar-link" href="{{ url_for('dashboard.analytics') }}">
-                <i class="fas fa-chart-bar"></i><span>{{ _('analytics') | default('التحليلات', true) }}</span>
-            </a>
-            {% endif %}
+            <div class="sidebar-section-title">{{ _('resources_procurement') | default('الموارد والمشتريات', true) }}</div>
+            <div class="sidebar-group">
+                <a class="sidebar-link sidebar-group-toggle" href="javascript:void(0)">
+                    <i class="fas fa-truck-loading"></i><span>{{ _('procurement_management') | default('إدارة التوريد والموارد', true) }}</span>
+                    <i class="fas fa-chevron-down chevron"></i>
+                </a>
+                <div class="sidebar-submenu">
+                    <a class="sidebar-link" href="{{ url_for('resource.index') }}">
+                        <i class="fas fa-tools"></i><span>{{ _('resources') | default('الموارد', true) }}</span>
+                    </a>
+                    <a class="sidebar-link" href="{{ url_for('supplier.requests_list') }}">
+                        <i class="fas fa-truck"></i><span>{{ _('supply_requests') | default('طلبات التوريد', true) }}</span>
+                        {% if g.pending_deliveries_count is defined and g.pending_deliveries_count > 0 %}
+                            <span class="badge bg-danger ms-auto" style="font-size: 0.7rem; border-radius: 50%; min-width: 18px; text-align: center; padding: 2px 6px;">{{ g.pending_deliveries_count }}</span>
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+
+            <div class="sidebar-section-title">{{ _('reports_analytics') | default('التقارير والتحليلات', true) }}</div>
+            <div class="sidebar-group">
+                <a class="sidebar-link sidebar-group-toggle" href="javascript:void(0)">
+                    <i class="fas fa-chart-line"></i><span>{{ _('analytics_reports') | default('التحليلات والمتابعة', true) }}</span>
+                    <i class="fas fa-chevron-down chevron"></i>
+                </a>
+                <div class="sidebar-submenu">
+                    {% if current_user.role in ['admin', 'project_manager', 'org_admin'] %}
+                    <a class="sidebar-link" href="{{ url_for('dashboard.analytics') }}">
+                        <i class="fas fa-chart-bar"></i><span>{{ _('analytics') | default('التحليلات المتقدمة', true) }}</span>
+                    </a>
+                    {% endif %}
+                    <a class="sidebar-link" href="{{ url_for('company.reports') }}">
+                        <i class="fas fa-file-invoice"></i><span>{{ _('reports') | default('التقارير العامة', true) }}</span>
+                    </a>
+                    <a class="sidebar-link" href="{{ url_for('tracking.delays_report') }}">
+                        <i class="fas fa-clock"></i><span>{{ _('delays_report') | default('تقرير التأخير', true) }}</span>
+                        {% if g.delayed_tasks_count is defined and g.delayed_tasks_count > 0 %}
+                            <span class="badge bg-danger ms-auto" style="font-size: 0.7rem; border-radius: 50%; min-width: 18px; text-align: center; padding: 2px 6px;">{{ g.delayed_tasks_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a class="sidebar-link" href="{{ url_for('tracking.pending_verifications') }}">
+                        <i class="fas fa-clipboard-check"></i><span>{{ _('verification_requests') | default('طلبات التحقق', true) }}</span>
+                        {% set pending_count = get_pending_verifications_count() if get_pending_verifications_count is defined else 0 %}
+                        {% if pending_count > 0 %}
+                            <span class="badge bg-danger ms-auto" style="font-size: 0.7rem; border-radius: 50%; min-width: 18px; text-align: center; padding: 2px 6px;">{{ pending_count }}</span>
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+
+            <div class="sidebar-section-title">{{ _('primavera_enterprise') | default('بريمافيرا والمؤسسة', true) }}</div>
+            <div class="sidebar-group">
+                <a class="sidebar-link sidebar-group-toggle" href="javascript:void(0)">
+                    <i class="fas fa-sitemap"></i><span>{{ _('enterprise_structure_menu') | default('هيكلية المؤسسة والمشاريع', true) }}</span>
+                    <i class="fas fa-chevron-down chevron"></i>
+                </a>
+                <div class="sidebar-submenu">
+                    <a class="sidebar-link" href="{{ url_for('company.eps_hierarchy') }}">
+                        <i class="fas fa-building"></i><span>{{ _('departments') | default('الأقسام / الهيكل الإداري', true) }}</span>
+                    </a>
+                    <a class="sidebar-link" href="{{ url_for('primavera.eps_list') }}">
+                        <i class="fas fa-network-wired"></i><span>EPS - {{ _('enterprise_structure') | default('هيكل المشاريع EPS', true) }}</span>
+                    </a>
+                    <a class="sidebar-link" href="{{ url_for('enterprise.index') }}">
+                        <i class="fas fa-cubes"></i><span>{{ _('enterprise_center') | default('مركز المؤسسة', true) }}</span>
+                    </a>
+                </div>
+            </div>
 
             {% if current_user.role in ['admin', 'org_admin'] %}
-            <a class="sidebar-link" href="{{ url_for('admin.dashboard') }}">
-                <i class="fas fa-shield-alt"></i><span>{{ _('admin') | default('الإدارة', true) }}</span>
-            </a>
-            <a class="sidebar-link" href="{{ url_for('admin.users') }}">
-                <i class="fas fa-user-cog"></i><span>{{ _('users') | default('المستخدمين', true) }}</span>
-            </a>
+            <div class="sidebar-section-title">{{ _('administration') | default('الإدارة والنظام', true) }}</div>
+            <div class="sidebar-group">
+                <a class="sidebar-link sidebar-group-toggle" href="javascript:void(0)">
+                    <i class="fas fa-shield-alt"></i><span>{{ _('admin') | default('لوحة الإشراف', true) }}</span>
+                    <i class="fas fa-chevron-down chevron"></i>
+                </a>
+                <div class="sidebar-submenu">
+                    <a class="sidebar-link" href="{{ url_for('admin.dashboard') }}">
+                        <i class="fas fa-tachometer-alt"></i><span>{{ _('admin_dashboard') | default('لوحة التحكم للإدارة', true) }}</span>
+                    </a>
+                    <a class="sidebar-link" href="{{ url_for('admin.users') }}">
+                        <i class="fas fa-user-cog"></i><span>{{ _('users') | default('المستخدمين', true) }}</span>
+                    </a>
+                    <a class="sidebar-link" href="{{ url_for('company.settings') }}">
+                        <i class="fas fa-cog"></i><span>{{ _('settings') | default('إعدادات المؤسسة', true) }}</span>
+                    </a>
+                </div>
+            </div>
             {% endif %}
 
             <div class="sidebar-section-title">{{ _('account') | default('حسابي', true) }}</div>
