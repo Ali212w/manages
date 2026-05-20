@@ -95,10 +95,14 @@
                     <i class="fas fa-chevron-down chevron"></i>
                 </a>
                 <div class="sidebar-submenu">
+                    {% if current_user.role in ['admin', 'org_admin', 'project_manager', 'super_admin'] %}
                     <a class="sidebar-link" href="{{ url_for('projects.list_projects') }}"><i class="fas fa-list"></i><span>{{ _('all_projects') | default('جميع المشاريع', true) }}</span></a>
                     <a class="sidebar-link" href="{{ url_for('projects.create_project') }}"><i class="fas fa-plus-circle"></i><span>{{ _('new_project') | default('مشروع جديد', true) }}</span></a>
+                    {% endif %}
+                    {% if current_user.role in ['employee', 'delegate', 'supervisor', 'client'] %}
                     <a class="sidebar-link" href="{{ url_for('employee.my_projects') }}"><i class="fas fa-user-circle"></i><span>{{ _('my_projects') | default('مشاريعي', true) }}</span></a>
                     <a class="sidebar-link" href="{{ url_for('employee.calendar') }}"><i class="fas fa-calendar-alt"></i><span>{{ _('calendar') | default('التقويم', true) }}</span></a>
+                    {% endif %}
                 </div>
             </div>
 

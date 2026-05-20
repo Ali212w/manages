@@ -119,7 +119,8 @@ def employee_required(f):
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or current_user.role not in ['employee', 'delegate', 'supervisor']:
             flash('غير مصرح بالوصول إلى هذه الصفحة', 'danger')
-            return redirect(url_for('employee.dashboard'))
+            from app.routes.auth_routes import redirect_to_user_dashboard
+            return redirect_to_user_dashboard()
         return f(*args, **kwargs)
     return decorated_function
 
@@ -128,7 +129,8 @@ def supervisor_required(f):
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or current_user.role != 'supervisor':
             flash('غير مصرح بالوصول - هذه الصفحة للمشرفين فقط', 'danger')
-            return redirect(url_for('employee.dashboard'))
+            from app.routes.auth_routes import redirect_to_user_dashboard
+            return redirect_to_user_dashboard()
         return f(*args, **kwargs)
     return decorated_function
 
@@ -137,7 +139,8 @@ def delegate_required(f):
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or current_user.role != 'delegate':
             flash('غير مصرح بالوصول - هذه الصفحة للمناديب فقط', 'danger')
-            return redirect(url_for('employee.dashboard'))
+            from app.routes.auth_routes import redirect_to_user_dashboard
+            return redirect_to_user_dashboard()
         return f(*args, **kwargs)
     return decorated_function
 
