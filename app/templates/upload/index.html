@@ -622,19 +622,22 @@ async function createProject() {
         const result = await response.json();
         
         if (result.success) {
+            const projectId = result.project.id;
+            const projectName = result.project.name;
+            const tasksCount = result.tasks_count;
             Swal.fire({
                 icon: 'success',
                 title: 'تم بنجاح!',
                 html: `
-                    <strong>${result.project.name}</strong><br>
-                    تم إنشاء المشروع و ${result.tasks_count} مهام
+                    <strong>${projectName}</strong><br>
+                    تم إنشاء المشروع و ${tasksCount} مهام
                 `,
                 confirmButtonText: 'عرض المشروع',
                 showCancelButton: true,
                 cancelButtonText: 'رفع المزيد'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = `/company/projects/${result.project.id}`;
+            }).then((swalResult) => {
+                if (swalResult.isConfirmed) {
+                    window.location.href = `/company/projects/${projectId}`;
                 } else {
                     clearFiles();
                 }
