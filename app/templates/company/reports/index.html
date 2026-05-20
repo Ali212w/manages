@@ -197,13 +197,13 @@ body{font-family:'IBM Plex Sans Arabic','Inter',sans-serif;}
     <h3 class="text-base font-bold text-slate-900 mb-4">تصدير سريع</h3>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       {% set exports = [
-        ('picture_as_pdf','text-red-500','bg-red-50','تصدير PDF'),
-        ('table_view','text-emerald-600','bg-emerald-50','تصدير Excel'),
-        ('print','text-blue-900','bg-blue-50','طباعة'),
-        ('email','text-sky-600','bg-sky-50','إرسال بالبريد'),
+        ('picture_as_pdf','text-red-500','bg-red-50','تصدير PDF', 'exportPDF()'),
+        ('table_view','text-emerald-600','bg-emerald-50','تصدير Excel', 'exportExcel()'),
+        ('print','text-blue-900','bg-blue-50','طباعة', 'printReport()'),
+        ('email','text-sky-600','bg-sky-50','إرسال بالبريد', 'emailReport()'),
       ] %}
-      {% for icon, tcls, bg, label in exports %}
-      <button class="{{ bg }} rounded-2xl p-4 flex flex-col items-center gap-2 hover:shadow-md transition-all group">
+      {% for icon, tcls, bg, label, onclick in exports %}
+      <button onclick="{{ onclick }}" class="{{ bg }} rounded-2xl p-4 flex flex-col items-center gap-2 hover:shadow-md transition-all group">
         <span class="material-symbols-outlined {{ tcls }} text-2xl group-hover:scale-110 transition-transform" style="font-variation-settings:'FILL' 1;">{{ icon }}</span>
         <span class="text-xs font-bold text-slate-700">{{ label }}</span>
       </button>
@@ -395,5 +395,66 @@ document.getElementById('teamSearch')?.addEventListener('input',function(){
     r.style.display=(!q||r.textContent.toLowerCase().includes(q))?'':'none';
   });
 });
+
+// Dynamic SweetAlert2 Quick Export Actions & Loader
+if (typeof Swal === 'undefined') {
+    var script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+    document.head.appendChild(script);
+}
+
+function exportPDF() {
+    Swal.fire({
+        title: 'تصدير تقرير بصيغة PDF',
+        text: 'الرجاء اختيار التقرير المراد تصديره وطباعته:',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#00236f',
+        cancelButtonColor: '#cbd5e1',
+        confirmButtonText: 'تقرير المشاريع 📂',
+        denyButtonText: 'تقرير المهام 📝',
+        showDenyButton: true,
+        denyButtonColor: '#0f766e',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.open("{{ url_for('company.projects_report') }}?print=true", '_blank');
+        } else if (result.isDenied) {
+            window.open("{{ url_for('company.tasks_report') }}?print=true", '_blank');
+        }
+    });
+}
+
+function exportExcel() {
+    Swal.fire({
+        title: 'تصدير تقرير بصيغة Excel',
+        text: 'الرجاء اختيار التقرير لتنزيله مباشرة:',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#00236f',
+        cancelButtonColor: '#cbd5e1',
+        confirmButtonText: 'تقرير المشاريع 📂',
+        denyButtonText: 'تقرير المهام 📝',
+        showDenyButton: true,
+        denyButtonColor: '#0f766e',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = "{{ url_for('company.export_report', report_type='projects') }}";
+        } else if (result.isDenied) {
+            window.location.href = "{{ url_for('company.export_report', report_type='tasks') }}";
+        }
+    });
+}
+
+function printReport() {
+    window.print();
+}
+
+function emailReport() {
+    const subject = encodeURIComponent("تقارير أداء العمليات والمشاريع");
+    const body = encodeURIComponent("السلام عليكم ورحمة الله وبركاته،\n\nالرجاء الاطلاع على تقارير الأداء والمشاريع المحدثة بنظام إدارة العمليات عبر الرابط المرفق.\n\nتحياتنا،");
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+}
 </script>
 {% endblock %}

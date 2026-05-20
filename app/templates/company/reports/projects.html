@@ -140,27 +140,20 @@
 
 <script>
 function exportToExcel() {
-    Swal.fire({
-        title: 'جاري التصدير',
-        text: 'يرجى الانتظار...',
-        timerProgressBar: true,
-        didOpen: () => {
-            Swal.showLoading();
-        }
-    });
-    
-    setTimeout(() => {
-        Swal.fire({
-            icon: 'success',
-            title: 'تم',
-            text: 'تم تصدير التقرير بنجاح',
-            timer: 2000
-        });
-    }, 2000);
+    window.location.href = "{{ url_for('company.export_report', report_type='projects') }}";
 }
 
 function exportToPDF() {
-    // TODO: تصدير PDF
+    window.print();
 }
+
+document.addEventListener("DOMContentLoaded", function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('print') || urlParams.has('export')) {
+        setTimeout(() => {
+            window.print();
+        }, 850);
+    }
+});
 </script>
 {% endblock %}

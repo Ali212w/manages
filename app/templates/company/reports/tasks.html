@@ -106,4 +106,18 @@
         </table>
     </div>
 </div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('print') || urlParams.has('export')) {
+        setTimeout(() => {
+            window.print();
+        }, 850);
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}

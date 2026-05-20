@@ -108,6 +108,17 @@
 
             <div class="sidebar-group">
                 <a class="sidebar-link sidebar-group-toggle" href="javascript:void(0)">
+                    <i class="fas fa-sitemap"></i><span>{{ _('activities') | default('الأنشطة (WBS)', true) }}</span>
+                    <i class="fas fa-chevron-down chevron"></i>
+                </a>
+                <div class="sidebar-submenu">
+                    <a class="sidebar-link" href="{{ url_for('activities.list_activities') }}"><i class="fas fa-list"></i><span>{{ _('all_activities') | default('جميع الأنشطة', true) }}</span></a>
+                    <a class="sidebar-link" href="{{ url_for('activities.create_activity') }}"><i class="fas fa-plus-circle"></i><span>{{ _('new_activity') | default('نشاط جديد', true) }}</span></a>
+                </div>
+            </div>
+
+            <div class="sidebar-group">
+                <a class="sidebar-link sidebar-group-toggle" href="javascript:void(0)">
                     <i class="fas fa-tasks"></i><span>{{ _('tasks') | default('المهام', true) }}</span>
                     <i class="fas fa-chevron-down chevron"></i>
                 </a>

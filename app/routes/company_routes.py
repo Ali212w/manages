@@ -3058,11 +3058,65 @@ def users_report():
 @company_bp.route('/reports/export/<report_type>')
 @login_required
 def export_report(report_type):
-    """تصدير التقارير"""
+    """تصدير التقارير التفاعلية بصيغة Excel المتوافقة مع اللغة العربية"""
+    import csv
+    import io
+    from flask import Response
+    from datetime import datetime
     
-    # TODO: تنفيذ تصدير التقارير (CSV, Excel, PDF)
-    flash('جاري تجهيز التقرير...', 'info')
-    return redirect(url_for('company.reports'))
+    output = io.StringIO()
+    # Write UTF-8 BOM to force Excel to render Arabic correctly
+    output.write('\ufeff')
+    writer = csv.writer(output)
+    
+    if report_type == 'projects':
+        writer.writerow(['اسم المشروع', 'كود المشروع', 'الحالة', 'التقدم', 'المدير', 'تاريخ البداية', 'تاريخ النهاية', 'القيمة المقدرة (ر.س)'])
+        projects = Project.query.filter_by(org_id=current_user.org_id).all()
+        for p in projects:
+            writer.writerow([
+                p.name, p.project_code, p.status, f"{p.progress_percentage}%",
+                p.manager.full_name if p.manager else 'غير محدد',
+                p.planned_start_date.strftime('%Y-%m-%d') if p.planned_start_date else '',
+                p.planned_end_date.strftime('%Y-%m-%d') if p.planned_end_date else '',
+                p.estimated_cost or 0
+            ])
+        filename = f"projects_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        
+    elif report_type == 'tasks':
+        writer.writerow(['اسم المهمة', 'المشروع', 'الحالة', 'المنفذ', 'المشرف', 'تاريخ البداية', 'تاريخ النهاية', 'التقدم'])
+        projects = Project.query.filter_by(org_id=current_user.org_id).all()
+        project_ids = [p.id for p in projects]
+        tasks = Task.query.filter(Task.project_id.in_(project_ids)).all() if project_ids else []
+        for t in tasks:
+            writer.writerow([
+                t.title, t.project.name if t.project else '', t.status,
+                t.assigned_to_user.full_name if t.assigned_to_user else 'غير محدد',
+                t.supervisor.full_name if t.supervisor else 'غير محدد',
+                t.start_date.strftime('%Y-%m-%d') if t.start_date else '',
+                t.due_date.strftime('%Y-%m-%d') if t.due_date else '',
+                f"{t.progress_percentage}%"
+            ])
+        filename = f"tasks_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        
+    elif report_type == 'users':
+        writer.writerow(['الاسم الكامل', 'البريد الإلكتروني', 'الدور الوظيفي', 'الحالة'])
+        users = User.query.filter_by(org_id=current_user.org_id).all()
+        for u in users:
+            writer.writerow([
+                u.full_name, u.email, u.role, 'نشط' if u.is_user_active else 'غير نشط'
+            ])
+        filename = f"users_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        
+    else:
+        flash('نوع تصدير غير معروف', 'danger')
+        return redirect(url_for('company.reports'))
+        
+    output.seek(0)
+    return Response(
+        output.getvalue().encode('utf-8'),
+        mimetype='text/csv',
+        headers={"Content-disposition": f"attachment; filename={filename}"}
+    )
 
 # ============================================
 # API Routes
