@@ -16,28 +16,28 @@ def dashboard():
     # التحقق من الصلاحية
     if current_user.role != 'admin':
         flash('غير مصرح بالوصول إلى لوحة التحكم', 'danger')
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('dashboard.index'))
     
     # إحصائيات النظام
     stats = {
-        'total_users': User.query.filter_by(org_id=current_user.id).count(),
-        'active_users': User.query.filter_by(org_id=current_user.id, is_active=True).count(),
-        'total_projects': Project.query.filter_by(org_id=current_user.id).count(),
-        'active_projects': Project.query.filter_by(org_id=current_user.id, status='active').count(),
-        'total_departments': Department.query.filter_by(org_id=current_user.id).count(),
-        'pending_approvals': User.query.filter_by(org_id=current_user.id, is_verified=False).count()
+        'total_users': User.query.filter_by(org_id=current_user.org_id).count(),
+        'active_users': User.query.filter_by(org_id=current_user.org_id, is_active=True).count(),
+        'total_projects': Project.query.filter_by(org_id=current_user.org_id).count(),
+        'active_projects': Project.query.filter_by(org_id=current_user.org_id, status='active').count(),
+        'total_departments': Department.query.filter_by(org_id=current_user.org_id).count(),
+        'pending_approvals': User.query.filter_by(org_id=current_user.org_id, is_verified=False).count()
     }
     
     # النشاط الأخير
     recent_activities = get_recent_activities()
     
     # المستخدمون الجدد
-    new_users = User.query.filter_by(org_id=current_user.id).order_by(
+    new_users = User.query.filter_by(org_id=current_user.org_id).order_by(
         User.created_at.desc()
     ).limit(5).all()
     
     # المشاريع الجديدة
-    new_projects = Project.query.filter_by(org_id=current_user.id).order_by(
+    new_projects = Project.query.filter_by(org_id=current_user.org_id).order_by(
         Project.created_at.desc()
     ).limit(5).all()
     
@@ -68,8 +68,8 @@ def dashboard():
         else:
             next_first_day = date(target_year, target_month + 1, 1)
             
-        users_count = User.query.filter(User.org_id == current_user.id, User.created_at >= first_day, User.created_at < next_first_day).count()
-        projects_count = Project.query.filter(Project.org_id == current_user.id, Project.created_at >= first_day, Project.created_at < next_first_day).count()
+        users_count = User.query.filter(User.org_id == current_user.org_id, User.created_at >= first_day, User.created_at < next_first_day).count()
+        projects_count = Project.query.filter(Project.org_id == current_user.org_id, Project.created_at >= first_day, Project.created_at < next_first_day).count()
         
         chart_data['users_data'].append(users_count)
         chart_data['projects_data'].append(projects_count)

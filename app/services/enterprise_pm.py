@@ -233,9 +233,9 @@ class EnterpriseProjectManager:
         user_skills = {}
         
         for user in users:
-            current_tasks = TaskAssignment.query.filter_by(
-                user_id=user.id,
-                status.in_(['assigned', 'accepted', 'in_progress'])
+            current_tasks = TaskAssignment.query.filter(
+                TaskAssignment.user_id == user.id,
+                TaskAssignment.status.in_(['assigned', 'accepted', 'in_progress'])
             ).count()
             
             user_load[user.id] = {

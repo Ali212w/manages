@@ -176,7 +176,9 @@ class ProjectDocument(db.Model):
     description = db.Column(db.Text)
     category = db.Column(db.String(100))  # engineering, financial, legal, etc.
     
+    from sqlalchemy.orm import synonym
     file_type = db.Column(db.String(100), nullable=False)  # contract, drawing, specification, report
+    document_type = synonym('file_type')
     file_extension = db.Column(db.String(20))
     file_size = db.Column(db.Integer)  # بالبايت
 
@@ -190,8 +192,8 @@ class ProjectDocument(db.Model):
     approval_status = db.Column(db.String(50), default='pending')  # pending, approved, rejected
     
     # الصلاحيات
-    # is_public = db.Column(db.Boolean, default=False)
-    # access_level = db.Column(db.String(50), default='team')  # public, organization, team, restricted
+    is_public = db.Column(db.Boolean, default=False)
+    access_level = db.Column(db.String(50), default='team')  # public, organization, team, restricted
     
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)

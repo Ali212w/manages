@@ -95,10 +95,10 @@
                     <i class="fas fa-chevron-down chevron"></i>
                 </a>
                 <div class="sidebar-submenu">
-                    <a class="sidebar-link" href="{{ url_for('project.index') }}"><i class="fas fa-list"></i><span>{{ _('all_projects') | default('جميع المشاريع', true) }}</span></a>
-                    <a class="sidebar-link" href="{{ url_for('project.create') }}"><i class="fas fa-plus-circle"></i><span>{{ _('new_project') | default('مشروع جديد', true) }}</span></a>
-                    <a class="sidebar-link" href="{{ url_for('project.my_projects') }}"><i class="fas fa-user-circle"></i><span>{{ _('my_projects') | default('مشاريعي', true) }}</span></a>
-                    <a class="sidebar-link" href="{{ url_for('project.calendar') }}"><i class="fas fa-calendar-alt"></i><span>{{ _('calendar') | default('التقويم', true) }}</span></a>
+                    <a class="sidebar-link" href="{{ url_for('projects.list_projects') }}"><i class="fas fa-list"></i><span>{{ _('all_projects') | default('جميع المشاريع', true) }}</span></a>
+                    <a class="sidebar-link" href="{{ url_for('projects.create_project') }}"><i class="fas fa-plus-circle"></i><span>{{ _('new_project') | default('مشروع جديد', true) }}</span></a>
+                    <a class="sidebar-link" href="{{ url_for('employee.my_projects') }}"><i class="fas fa-user-circle"></i><span>{{ _('my_projects') | default('مشاريعي', true) }}</span></a>
+                    <a class="sidebar-link" href="{{ url_for('employee.calendar') }}"><i class="fas fa-calendar-alt"></i><span>{{ _('calendar') | default('التقويم', true) }}</span></a>
                 </div>
             </div>
 
@@ -108,10 +108,10 @@
                     <i class="fas fa-chevron-down chevron"></i>
                 </a>
                 <div class="sidebar-submenu">
-                    <a class="sidebar-link" href="{{ url_for('task.index') }}"><i class="fas fa-list"></i><span>{{ _('all_tasks') | default('جميع المهام', true) }}</span></a>
-                    <a class="sidebar-link" href="{{ url_for('task.my_tasks') }}"><i class="fas fa-user-check"></i><span>{{ _('my_tasks') | default('مهامي', true) }}</span></a>
-                    <a class="sidebar-link" href="{{ url_for('task.create') }}"><i class="fas fa-plus"></i><span>{{ _('new_task') | default('مهمة جديدة', true) }}</span></a>
-                    <a class="sidebar-link" href="{{ url_for('task.board') }}"><i class="fas fa-columns"></i><span>{{ _('task_board') | default('لوحة المهام', true) }}</span></a>
+                    <a class="sidebar-link" href="{{ url_for('tasks.list_tasks') }}"><i class="fas fa-list"></i><span>{{ _('all_tasks') | default('جميع المهام', true) }}</span></a>
+                    <a class="sidebar-link" href="{{ url_for('tasks.my_tasks') }}"><i class="fas fa-user-check"></i><span>{{ _('my_tasks') | default('مهامي', true) }}</span></a>
+                    <a class="sidebar-link" href="{{ url_for('tasks.create_task') }}"><i class="fas fa-plus"></i><span>{{ _('new_task') | default('مهمة جديدة', true) }}</span></a>
+                    <a class="sidebar-link" href="{{ url_for('tasks.list_tasks') }}"><i class="fas fa-columns"></i><span>{{ _('task_board') | default('لوحة المهام', true) }}</span></a>
                 </div>
             </div>
 
@@ -237,7 +237,7 @@
             <div class="sidebar-actions p-3 mt-4 border-top border-border">
                 <small class="text-muted-foreground d-block mb-2 text-xs font-semibold" style="letter-spacing: 0.05em;">إجراءات سريعة</small>
                 <div class="d-grid gap-2">
-                    <a href="{{ url_for('task.create') }}" class="btn btn-sm btn-primary w-100">
+                    <a href="{{ url_for('tasks.create_task') }}" class="btn btn-sm btn-primary w-100">
                         <i class="fas fa-plus-circle"></i><span>{{ _('new_task') | default('مهمة جديدة', true) }}</span>
                     </a>
                     {% if current_user.role == 'admin' %}

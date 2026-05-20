@@ -3712,10 +3712,14 @@ def meetings_list():
     if current_user.role != 'org_admin':
         flash('غير مصرح', 'danger')
         return redirect(url_for('company.dashboard'))
-    projeces=Project.query.filter_by(org_id=current_user.org_id).first()
-    meetings = Meeting.query.filter_by(project_id=projeces.id).order_by(
-        Meeting.scheduled_date.desc()
-    ).all()
+    projects = Project.query.filter_by(org_id=current_user.org_id).all()
+    project_ids = [p.id for p in projects]
+    if project_ids:
+        meetings = Meeting.query.filter(Meeting.project_id.in_(project_ids)).order_by(
+            Meeting.scheduled_date.desc()
+        ).all()
+    else:
+        meetings = []
     
     # إحصائيات
     stats = {

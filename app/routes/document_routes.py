@@ -16,7 +16,7 @@ def index():
     """قائمة المستندات"""
     
     # الحصول على المستندات حسب دور المستخدم
-    if current_user.role == 'admin':
+    if current_user.role in ['admin', 'org_admin']:
         documents = ProjectDocument.query.join(Project).filter(
             Project.org_id == current_user.org_id
         ).all()
@@ -150,7 +150,7 @@ def upload():
             flash(f'حدث خطأ: {str(e)}', 'danger')
     
     # الحصول على المشاريع المتاحة
-    if current_user.role == 'admin':
+    if current_user.role in ['admin', 'org_admin']:
         projects = Project.query.filter_by(org_id=current_user.org_id).all()
     elif current_user.role == 'project_manager':
         projects = Project.query.filter_by(project_manager_id=current_user.id).all()
@@ -163,9 +163,9 @@ def upload():
     
     return render_template('documents/upload.html', projects=projects)
 
-def can_upload_to_project(self, project, user):
+def can_upload_to_project(project, user):
     """التحقق من صلاحية رفع مستندات للمشروع"""
-    if user.role == 'admin':
+    if user.role in ['admin', 'org_admin']:
         return project.org_id == user.org_id
     elif user.role == 'project_manager':
         return project.project_manager_id == user.id
@@ -205,7 +205,7 @@ def view(document_id):
                          related_documents=related_documents,
                          bill_items=bill_items)
 
-def has_document_access(self, document, user):
+def has_document_access(document, user):
     """التحقق من صلاحية الوصول للمستند"""
     # إذا كان المستند عاماً
     if document.is_public:
@@ -226,9 +226,9 @@ def has_document_access(self, document, user):
     
     return False
 
-def has_project_access(self, project, user):
+def has_project_access(project, user):
     """التحقق من صلاحية الوصول للمشروع"""
-    if user.role == 'admin':
+    if user.role in ['admin', 'org_admin']:
         return project.org_id == user.org_id
     elif user.role == 'project_manager':
         return project.project_manager_id == user.id
@@ -303,9 +303,9 @@ def approve_document(document_id):
     
     return redirect(url_for('document.view', document_id=document_id))
 
-def can_approve_document(self, document, user):
+def can_approve_document(document, user):
     """التحقق من صلاحية الموافقة على المستند"""
-    if user.role == 'admin':
+    if user.role in ['admin', 'org_admin']:
         return document.project.org_id == user.org_id
     elif user.role == 'project_manager':
         return document.project.project_manager_id == user.id
@@ -408,9 +408,9 @@ def delete_document(document_id):
     
     return redirect(url_for('document.index'))
 
-def can_delete_document(self, document, user):
+def can_delete_document(document, user):
     """التحقق من صلاحية حذف المستند"""
-    if user.role == 'admin':
+    if user.role in ['admin', 'org_admin']:
         return document.project.org_id == user.org_id
     elif user.role == 'project_manager':
         return document.project.project_manager_id == user.id

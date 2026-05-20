@@ -488,6 +488,43 @@ def profile():
             user.job_title = request.form.get('job_title', user.job_title)
             user.job_title_ar = request.form.get('job_title_ar', user.job_title_ar)
             
+            # تحديث الصورة الشخصية إذا تم رفعها
+            if 'profile_image' in request.files:
+                file = request.files['profile_image']
+                if file and file.filename != '':
+                    from flask import current_app
+                    import os
+                    import time
+                    from werkzeug.utils import secure_filename
+                    
+                    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+                    filename = secure_filename(file.filename)
+                    file_extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+                    
+                    if file_extension in allowed_extensions:
+                        # إنشاء مجلد الرفع الخاص بالرمزيات الشخصية
+                        avatars_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars')
+                        os.makedirs(avatars_folder, exist_ok=True)
+                        
+                        # اسم فريد للملف لمنع التعارض والتبديل بشكل آمن
+                        unique_filename = f"avatar_{user.id}_{int(time.time())}.{file_extension}"
+                        file_path = os.path.join(avatars_folder, unique_filename)
+                        
+                        # حذف الصورة القديمة إذا لم تكن الافتراضية
+                        if user.profile_image and user.profile_image != 'default.jpg':
+                            old_file_path = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars', user.profile_image)
+                            if os.path.exists(old_file_path):
+                                try:
+                                    os.remove(old_file_path)
+                                except Exception as e:
+                                    current_app.logger.error(f"Error removing old avatar: {e}")
+                        
+                        file.save(file_path)
+                        # حفظ المسار النسبي في قاعدة البيانات
+                        user.profile_image = unique_filename
+                    else:
+                        flash('امتداد الصورة غير مسموح به (مسموح فقط بـ png, jpg, jpeg, gif)', 'danger')
+            
             # تحديث كلمة المرور إذا تم إدخالها
             new_password = request.form.get('new_password')
             if new_password:

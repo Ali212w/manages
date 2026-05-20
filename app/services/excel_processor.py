@@ -390,4 +390,47 @@ class SmartExcelProcessor:
             if 'unit' in column_mapping:
                 col_idx = column_mapping['unit']['index']
                 if col_idx < len(row):
-                    bill_item['unit'] = str(row[col_idx]).
+                    bill_item['unit'] = str(row[col_idx]).strip()
+            
+            # استخراج الكمية
+            if 'quantity' in column_mapping:
+                col_idx = column_mapping['quantity']['index']
+                if col_idx < len(row):
+                    try:
+                        bill_item['quantity'] = float(str(row[col_idx]).replace(',', ''))
+                    except:
+                        bill_item['quantity'] = 0.0
+            
+            # استخراج سعر الوحدة
+            if 'unit_price' in column_mapping:
+                col_idx = column_mapping['unit_price']['index']
+                if col_idx < len(row):
+                    try:
+                        bill_item['unit_price'] = float(str(row[col_idx]).replace(',', ''))
+                    except:
+                        bill_item['unit_price'] = 0.0
+            
+            # استخراج السعر الإجمالي
+            if 'total_price' in column_mapping:
+                col_idx = column_mapping['total_price']['index']
+                if col_idx < len(row):
+                    try:
+                        bill_item['total_price'] = float(str(row[col_idx]).replace(',', ''))
+                    except:
+                        bill_item['total_price'] = 0.0
+            
+            # استخراج الفئة أو الملاحظات
+            if 'category' in column_mapping:
+                col_idx = column_mapping['category']['index']
+                if col_idx < len(row):
+                    bill_item['category'] = str(row[col_idx]).strip()
+            
+            if 'notes' in column_mapping:
+                col_idx = column_mapping['notes']['index']
+                if col_idx < len(row):
+                    bill_item['notes'] = str(row[col_idx]).strip()
+                    
+            return bill_item
+        except Exception as e:
+            logger.error(f"Error extracting bill item from row: {e}")
+            return None

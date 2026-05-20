@@ -82,6 +82,23 @@ def create_app(config_name='default'):
         from app.models import core_models, task_models, primavera_models
         from app.models import project_models, enterprise_models
 
+        # Safe migration for project_documents columns
+        try:
+            from sqlalchemy import text
+            db.session.execute(text("ALTER TABLE project_documents ADD COLUMN is_public BOOLEAN DEFAULT FALSE"))
+            db.session.commit()
+            logger.info("✅ Added is_public column to project_documents")
+        except Exception as e:
+            db.session.rollback()
+            
+        try:
+            from sqlalchemy import text
+            db.session.execute(text("ALTER TABLE project_documents ADD COLUMN access_level VARCHAR(50) DEFAULT 'team'"))
+            db.session.commit()
+            logger.info("✅ Added access_level column to project_documents")
+        except Exception as e:
+            db.session.rollback()
+
         # ⭐ تسجيل أحداث التحديث التلقائي للتكاليف
         try:
             from app.models.events import register_events
