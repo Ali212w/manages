@@ -4,11 +4,14 @@ activity_routes.py - مسارات إدارة الأنشطة المتكاملة
 
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_required, current_user
-from app.models.integrated_models import (
-    db, Activity, ActivityStep, ActivityExpense, ActivityRisk,
+from app.extensions import db
+from app.models.primavera_models import (
+    Activity, ActivityStep, ActivityExpense, ActivityRisk,
     ActivityFeedback, ActivityDocument, ActivityResource,
-    ActivityRelationship, Project, WBS, Calendar, Resource, User
+    ActivityRelationship, WBS, Calendar, Resource
 )
+from app.models.project_models import Project
+from app.models.core_models import User
 from datetime import datetime, date
 import os
 from werkzeug.utils import secure_filename
