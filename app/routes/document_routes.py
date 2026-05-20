@@ -10,6 +10,50 @@ import os
 from werkzeug.utils import secure_filename
 from app.services.document_parser import DocumentParser
 
+@document_bp.context_processor
+def inject_document_helpers():
+    from app.helpers.document_helpers import get_document_type_label, format_file_size
+    
+    def document_types_counts():
+        if not current_user.is_authenticated:
+            return []
+        
+        # الحصول على المستندات حسب دور المستخدم
+        if current_user.role in ['admin', 'org_admin']:
+            documents = ProjectDocument.query.join(Project).filter(
+                Project.org_id == current_user.org_id
+            ).all()
+        elif current_user.role == 'project_manager':
+            documents = ProjectDocument.query.join(Project).filter(
+                Project.project_manager_id == current_user.id
+            ).all()
+        else:
+            projects = Project.query.join(Task).filter(
+                (Task.supervisor_id == current_user.id) |
+                (Task.delegate_id == current_user.id) |
+                (Task.assignments.any(user_id=current_user.id))
+            ).distinct().all()
+            
+            documents = ProjectDocument.query.filter(
+                ProjectDocument.project_id.in_([p.id for p in projects])
+            ).all()
+        
+        # حساب التكرارات لكل نوع
+        counts = {}
+        for d in documents:
+            t = d.document_type or 'other'
+            counts[t] = counts.get(t, 0) + 1
+        
+        # إرجاع القائمة كـ (النوع، العدد)
+        return list(counts.items())
+        
+    return dict(
+        get_document_type_label=get_document_type_label,
+        format_file_size=format_file_size,
+        can_delete_document=can_delete_document,
+        document_types_counts=document_types_counts
+    )
+
 @document_bp.route('/documents')
 @login_required
 def index():
