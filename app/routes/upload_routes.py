@@ -243,7 +243,7 @@ def api_upload_files():
         import shutil
         shutil.rmtree(upload_folder, ignore_errors=True)
 
-def _merge_extracted_data(self, extracted_list):
+def _merge_extracted_data(extracted_list):
     """دمج البيانات المستخرجة من عدة ملفات"""
     if not extracted_list:
         return None
