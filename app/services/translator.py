@@ -140,10 +140,9 @@ class Translator:
         return current
     
     @classmethod
-    @lru_cache(maxsize=1000)
     def get_text(cls, key, lang=None, **kwargs):
         """
-        الحصول على نص مترجم مع caching
+        الحصول على نص مترجم
         
         Args:
             key: مفتاح الترجمة (يدعم النقاط للمفاتيح المتداخلة مثل 'navigation.dashboard')
@@ -156,6 +155,20 @@ class Translator:
         if lang is None:
             lang = cls.get_current_lang()
         
+        text = cls._get_cached_text(key, lang)
+        
+        # استبدال المتغيرات
+        if kwargs:
+            for var_name, var_value in kwargs.items():
+                placeholder = f'{{{{{var_name}}}}}'
+                text = text.replace(placeholder, str(var_value))
+        
+        return text
+
+    @classmethod
+    @lru_cache(maxsize=1000)
+    def _get_cached_text(cls, key, lang):
+        """الحصول على النص المخزن كاش بناءً على اللغة الفعلية المحددة"""
         # تحميل الترجمات إذا لم تكن محملة
         translations = cls.load_translations()
         
@@ -180,13 +193,7 @@ class Translator:
         # التأكد من أن النص هو string
         if not isinstance(text, str):
             text = key
-        
-        # استبدال المتغيرات
-        if kwargs:
-            for var_name, var_value in kwargs.items():
-                placeholder = f'{{{{{var_name}}}}}'
-                text = text.replace(placeholder, str(var_value))
-        
+            
         return text
     
     @classmethod
@@ -237,7 +244,7 @@ class Translator:
         cls._save_translations(lang)
         
         # مسح الكاش
-        cls.get_text.cache_clear()
+        cls._get_cached_text.cache_clear()
         
         return True
     
@@ -247,7 +254,7 @@ class Translator:
         cls._translations = {}
         cls._translations_loaded = False
         cls.load_translations(force=True)
-        cls.get_text.cache_clear()
+        cls._get_cached_text.cache_clear()
         logger.info("🔄 تم إعادة تحميل الترجمات")
 
 
