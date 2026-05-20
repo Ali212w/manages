@@ -267,6 +267,43 @@ def create_activity():
                          calendars=calendars,
                          users=users)
 
+
+@activity_bp.route('/<int:activity_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_activity(activity_id):
+    """تعديل نشاط موجود"""
+    activity = check_activity_access(activity_id)
+    if not activity:
+        flash('غير مصرح بالوصول', 'danger')
+        return redirect(url_for('activities.list_activities'))
+
+    if request.method == 'POST':
+        try:
+            activity.activity_name = request.form.get('activity_name', activity.activity_name)
+            activity.activity_name_ar = request.form.get('activity_name_ar', activity.activity_name_ar)
+            activity.description = request.form.get('description', activity.description)
+            activity.status = request.form.get('status', activity.status)
+            activity.priority = int(request.form.get('priority', activity.priority))
+            activity.progress_percentage = float(request.form.get('progress_percentage', activity.progress_percentage))
+            activity.original_duration = float(request.form.get('original_duration', activity.original_duration))
+
+            ps = request.form.get('planned_start')
+            pf = request.form.get('planned_finish')
+            if ps:
+                activity.planned_start = datetime.strptime(ps, '%Y-%m-%d')
+            if pf:
+                activity.planned_finish = datetime.strptime(pf, '%Y-%m-%d')
+
+            db.session.commit()
+            flash('تم تحديث النشاط بنجاح', 'success')
+            return redirect(url_for('activities.activity_detail', activity_id=activity.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'حدث خطأ: {str(e)}', 'danger')
+
+    return render_template('activities/edit.html', activity=activity)
+
+
 # ============================================
 # API Routes للأنشطة
 # ============================================

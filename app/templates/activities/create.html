@@ -1,0 +1,252 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('new_activity') | default('نشاط جديد', true) }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.create-header {
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--secondary) / 0.05));
+    border-radius: 1.5rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid hsl(var(--border));
+}
+.form-section {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.2s;
+}
+.form-section:hover { border-color: hsl(var(--primary) / 0.3); }
+.section-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px dashed hsl(var(--border));
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.section-title i { color: hsl(var(--primary)); }
+.form-label { font-weight: 600; font-size: 0.875rem; }
+.form-control, .form-select {
+    border: 1.5px solid hsl(var(--border));
+    border-radius: 0.625rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-control:focus, .form-select:focus {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
+}
+.type-card {
+    border: 2px solid hsl(var(--border));
+    border-radius: 0.75rem;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.type-card:hover { border-color: hsl(var(--primary) / 0.5); }
+input[type="radio"]:checked + .type-card {
+    border-color: hsl(var(--primary));
+    background: hsl(var(--primary) / 0.06);
+}
+.type-card i { font-size: 1.5rem; color: hsl(var(--primary)); margin-bottom: 0.5rem; }
+.type-card .type-title { font-weight: 600; font-size: 0.85rem; }
+.type-card .type-desc  { font-size: 0.75rem; color: hsl(var(--muted-foreground)); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3" style="max-width: 1100px;">
+
+    {# ── Header ── #}
+    <div class="create-header d-flex align-items-center gap-3">
+        <div class="rounded-circle d-flex align-items-center justify-content-center"
+             style="width:56px; height:56px; background:linear-gradient(135deg,hsl(var(--primary)),hsl(var(--secondary))); flex-shrink:0;">
+            <i class="fas fa-tasks text-white fs-5"></i>
+        </div>
+        <div>
+            <h1 class="h4 mb-0 fw-bold">{{ _('new_activity') | default('إنشاء نشاط جديد', true) }}</h1>
+            {% if project %}
+            <p class="mb-0 text-muted small"><i class="fas fa-project-diagram me-1"></i>{{ project.name }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="POST" id="activityForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if project %}
+        <input type="hidden" name="project_id" value="{{ project.id }}">
+        {% endif %}
+
+        {# ── Section 1: Basic Info ── #}
+        <div class="form-section">
+            <div class="section-title"><i class="fas fa-info-circle"></i> {{ _('basic_information') | default('المعلومات الأساسية', true) }}</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">{{ _('activity_name') | default('اسم النشاط', true) }} <span class="text-danger">*</span></label>
+                    <input type="text" name="activity_name" class="form-control" required
+                           placeholder="{{ _('activity_name') | default('اسم النشاط', true) }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ _('activity_name_ar') | default('اسم النشاط (عربي)', true) }}</label>
+                    <input type="text" name="activity_name_ar" class="form-control" dir="rtl"
+                           placeholder="{{ _('activity_name_ar') | default('اسم النشاط بالعربية', true) }}">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">{{ _('description') | default('الوصف', true) }}</label>
+                    <textarea name="description" class="form-control" rows="3"
+                              placeholder="{{ _('description') | default('وصف النشاط...', true) }}"></textarea>
+                </div>
+            </div>
+        </div>
+
+        {# ── Section 2: Project & WBS ── #}
+        {% if not project %}
+        <div class="form-section">
+            <div class="section-title"><i class="fas fa-project-diagram"></i> {{ _('project') | default('المشروع', true) }}</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">{{ _('project') | default('المشروع', true) }} <span class="text-danger">*</span></label>
+                    <select name="project_id" class="form-select" required>
+                        <option value="">— {{ _('select_project') | default('اختر المشروع', true) }} —</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Section 3: Activity Type ── #}
+        <div class="form-section">
+            <div class="section-title"><i class="fas fa-tag"></i> {{ _('activity_type') | default('نوع النشاط', true) }}</div>
+            <div class="row g-3">
+                {% set types = [
+                    ('task_dependent',    'fas fa-tasks',     'مهمة تنفيذية',  'نشاط عادي بمدة وجهد'),
+                    ('resource_dependent','fas fa-users',     'يعتمد على موارد','يتطلب موارد محددة'),
+                    ('level_of_effort',   'fas fa-chart-line','جهد متواصل',    'مستمر طوال المشروع'),
+                    ('start_milestone',   'fas fa-flag',      'معلم بداية',    'نقطة بداية رئيسية'),
+                    ('finish_milestone',  'fas fa-flag-checkered','معلم نهاية','نقطة نهاية رئيسية')
+                ] %}
+                {% for val, icon, title, desc in types %}
+                <div class="col-6 col-md" style="min-width:130px;">
+                    <input type="radio" name="activity_type" id="type_{{ val }}" value="{{ val }}"
+                           class="visually-hidden" {% if loop.first %}checked{% endif %}>
+                    <label for="type_{{ val }}" class="type-card d-block">
+                        <i class="{{ icon }} d-block mb-2"></i>
+                        <div class="type-title">{{ title }}</div>
+                        <div class="type-desc">{{ desc }}</div>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# ── Section 4: Schedule ── #}
+        <div class="form-section">
+            <div class="section-title"><i class="fas fa-clock"></i> {{ _('schedule') | default('الجدول الزمني', true) }}</div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('planned_start') | default('تاريخ البدء', true) }}</label>
+                    <input type="date" name="planned_start" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('planned_finish') | default('تاريخ الانتهاء', true) }}</label>
+                    <input type="date" name="planned_finish" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('original_duration') | default('المدة (أيام)', true) }}</label>
+                    <input type="number" name="original_duration" class="form-control" value="7" min="0.5" step="0.5">
+                </div>
+            </div>
+        </div>
+
+        {# ── Section 5: Structure ── #}
+        <div class="form-section">
+            <div class="section-title"><i class="fas fa-sitemap"></i> {{ _('structure') | default('الهيكل التنظيمي', true) }}</div>
+            <div class="row g-3">
+                {% if wbs_list %}
+                <div class="col-md-6">
+                    <label class="form-label">WBS</label>
+                    <select name="wbs_id" class="form-select">
+                        <option value="">— {{ _('no_wbs') | default('بدون WBS', true) }} —</option>
+                        {% for wbs in wbs_list %}
+                        <option value="{{ wbs.id }}">{{ wbs.wbs_code }} — {{ wbs.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                {% if calendars %}
+                <div class="col-md-6">
+                    <label class="form-label">{{ _('calendar') | default('التقويم', true) }}</label>
+                    <select name="calendar_id" class="form-select">
+                        <option value="">— {{ _('default_calendar') | default('التقويم الافتراضي', true) }} —</option>
+                        {% for cal in calendars %}
+                        <option value="{{ cal.id }}" {% if cal.is_default %}selected{% endif %}>{{ cal.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ── Section 6: Responsibility ── #}
+        <div class="form-section">
+            <div class="section-title"><i class="fas fa-user-tie"></i> {{ _('responsibility') | default('المسؤولية', true) }}</div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('responsible') | default('المسؤول', true) }}</label>
+                    <select name="responsible_id" class="form-select">
+                        <option value="">— {{ _('not_assigned') | default('غير معين', true) }} —</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.full_name }} ({{ user.role }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('weight') | default('الوزن', true) }}</label>
+                    <input type="number" name="weight" class="form-control" value="1" min="0" step="0.1">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('priority') | default('الأولوية', true) }}</label>
+                    <select name="priority" class="form-select">
+                        <option value="5">5 — {{ _('very_high') | default('عالية جداً', true) }}</option>
+                        <option value="4">4 — {{ _('high') | default('عالية', true) }}</option>
+                        <option value="3" selected>3 — {{ _('medium') | default('متوسطة', true) }}</option>
+                        <option value="2">2 — {{ _('low') | default('منخفضة', true) }}</option>
+                        <option value="1">1 — {{ _('very_low') | default('منخفضة جداً', true) }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        {# ── Actions ── #}
+        <div class="d-flex gap-2 justify-content-start pb-4">
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="fas fa-save me-2"></i>{{ _('save') | default('حفظ', true) }}
+            </button>
+            <a href="{{ url_for('activities.list_activities') }}" class="btn btn-outline-secondary px-4">
+                <i class="fas fa-times me-2"></i>{{ _('cancel') | default('إلغاء', true) }}
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Make type-card labels behave like radio inputs visually
+document.querySelectorAll('input[name="activity_type"]').forEach(r => {
+    r.addEventListener('change', () => {
+        document.querySelectorAll('.type-card').forEach(c => c.style.borderColor = '');
+        r.nextElementSibling.style.borderColor = 'hsl(var(--primary))';
+    });
+});
+</script>
+{% endblock %}

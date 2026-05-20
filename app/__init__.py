@@ -1148,6 +1148,7 @@ def register_blueprints(app):
     from app.routes.client_routes import client_bp
     from app.routes.consultant_routes import consultant_bp
     from app.routes.role_dashboard_routes import role_dashboard_bp
+    from app.routes.activity_routes import activity_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
@@ -1174,6 +1175,7 @@ def register_blueprints(app):
     app.register_blueprint(client_bp, url_prefix='/client')
     app.register_blueprint(consultant_bp, url_prefix='/consultant')
     app.register_blueprint(role_dashboard_bp)
+    app.register_blueprint(activity_bp, url_prefix='/activities')
 
 
 def register_error_handlers(app):

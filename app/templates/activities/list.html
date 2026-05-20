@@ -1,0 +1,215 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('activities') | default('الأنشطة', true) }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.activities-header {
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--secondary) / 0.05));
+    border-radius: 1.5rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid hsl(var(--border));
+}
+.stat-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 1rem;
+    padding: 1.25rem;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px hsl(var(--primary) / 0.12); }
+.stat-number { font-size: 2rem; font-weight: 700; color: hsl(var(--primary)); line-height: 1; }
+.stat-label  { font-size: 0.78rem; color: hsl(var(--muted-foreground)); margin-top: 0.35rem; }
+.activity-table thead th {
+    background: hsl(var(--muted) / 0.4);
+    font-weight: 600;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    border: none;
+    padding: 0.85rem 1rem;
+}
+.activity-table tbody tr {
+    border-bottom: 1px solid hsl(var(--border));
+    transition: background 0.15s;
+}
+.activity-table tbody tr:hover { background: hsl(var(--muted) / 0.3); cursor: pointer; }
+.activity-table tbody td { padding: 0.9rem 1rem; vertical-align: middle; border: none; }
+.badge-status {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.3rem 0.75rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 600;
+}
+.badge-not_started  { background: hsl(var(--muted) / 0.6); color: hsl(var(--muted-foreground)); }
+.badge-in_progress  { background: hsl(var(--primary) / 0.12); color: hsl(var(--primary)); }
+.badge-completed    { background: hsl(var(--success) / 0.12); color: hsl(var(--success)); }
+.badge-on_hold      { background: hsl(var(--warning) / 0.12); color: hsl(var(--warning)); }
+.critical-pill {
+    background: hsl(var(--destructive) / 0.1);
+    color: hsl(var(--destructive));
+    font-size: 0.7rem; font-weight: 700;
+    padding: 0.2rem 0.6rem; border-radius: 1rem;
+}
+.empty-state { text-align:center; padding: 4rem 2rem; color: hsl(var(--muted-foreground)); }
+.empty-state i { font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.3; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    {# ── Header ── #}
+    <div class="activities-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+            <h1 class="h3 mb-1 fw-bold">
+                <i class="fas fa-sitemap me-2 text-primary"></i>
+                {{ _('activities') | default('الأنشطة (WBS)', true) }}
+            </h1>
+            {% if project %}
+            <p class="mb-0 text-muted small">
+                <i class="fas fa-project-diagram me-1"></i>{{ project.name }}
+            </p>
+            {% endif %}
+        </div>
+        <div class="d-flex gap-2">
+            {% if project %}
+            <a href="{{ url_for('activities.create_activity', project_id=project.id) }}"
+               class="btn btn-primary d-flex align-items-center gap-2">
+                <i class="fas fa-plus-circle"></i>
+                <span>{{ _('new_activity') | default('نشاط جديد', true) }}</span>
+            </a>
+            {% else %}
+            <a href="{{ url_for('activities.create_activity') }}"
+               class="btn btn-primary d-flex align-items-center gap-2">
+                <i class="fas fa-plus-circle"></i>
+                <span>{{ _('new_activity') | default('نشاط جديد', true) }}</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── Stats Row ── #}
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.total }}</div>
+                <div class="stat-label">{{ _('all_activities') | default('إجمالي الأنشطة', true) }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card" style="border-top: 3px solid hsl(var(--primary));">
+                <div class="stat-number text-primary">{{ stats.in_progress }}</div>
+                <div class="stat-label">{{ _('in_progress') | default('قيد التنفيذ', true) }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card" style="border-top: 3px solid hsl(var(--success));">
+                <div class="stat-number" style="color:hsl(var(--success))">{{ stats.completed }}</div>
+                <div class="stat-label">{{ _('completed') | default('مكتملة', true) }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card" style="border-top: 3px solid hsl(var(--destructive));">
+                <div class="stat-number" style="color:hsl(var(--destructive))">{{ stats.critical }}</div>
+                <div class="stat-label">{{ _('critical_path') | default('المسار الحرج', true) }}</div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Table ── #}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            {% if activities %}
+            <div class="table-responsive">
+                <table class="table activity-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>{{ _('activity_code') | default('الكود', true) }}</th>
+                            <th>{{ _('activity_name') | default('اسم النشاط', true) }}</th>
+                            <th>{{ _('status') | default('الحالة', true) }}</th>
+                            <th>{{ _('progress') | default('التقدم', true) }}</th>
+                            <th>{{ _('planned_start') | default('تاريخ البدء', true) }}</th>
+                            <th>{{ _('planned_finish') | default('تاريخ الانتهاء', true) }}</th>
+                            <th>{{ _('original_duration') | default('المدة (أيام)', true) }}</th>
+                            <th>{{ _('critical_path') | default('المسار الحرج', true) }}</th>
+                            <th>{{ _('actions') | default('الإجراءات', true) }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in activities %}
+                        <tr onclick="window.location.href='{{ url_for('activities.activity_detail', activity_id=activity.id) }}'">
+                            <td>
+                                <code class="text-primary fw-bold">{{ activity.activity_code }}</code>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">{{ activity.activity_name }}</div>
+                                {% if activity.wbs %}
+                                <small class="text-muted">WBS: {{ activity.wbs.wbs_code }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge-status badge-{{ activity.status }}">
+                                    {% if activity.status == 'not_started' %}<i class="fas fa-circle"></i> {{ _('not_started') | default('لم تبدأ', true) }}
+                                    {% elif activity.status == 'in_progress' %}<i class="fas fa-spinner fa-spin"></i> {{ _('in_progress') | default('قيد التنفيذ', true) }}
+                                    {% elif activity.status == 'completed' %}<i class="fas fa-check-circle"></i> {{ _('completed') | default('مكتملة', true) }}
+                                    {% elif activity.status == 'on_hold' %}<i class="fas fa-pause-circle"></i> {{ _('on_hold') | default('متوقفة', true) }}
+                                    {% else %}{{ activity.status }}{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2" style="min-width:100px">
+                                    <div class="progress flex-grow-1" style="height:6px; border-radius:3px;">
+                                        <div class="progress-bar" role="progressbar"
+                                             style="width:{{ activity.progress_percentage }}%; background: hsl(var(--primary));"></div>
+                                    </div>
+                                    <small class="fw-semibold" style="min-width:34px">{{ activity.progress_percentage | round(0) }}%</small>
+                                </div>
+                            </td>
+                            <td>{{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start else '—' }}</td>
+                            <td>{{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish else '—' }}</td>
+                            <td>{{ activity.original_duration | int }} {{ _('days') | default('يوم', true) }}</td>
+                            <td>
+                                {% if activity.is_critical %}
+                                <span class="critical-pill"><i class="fas fa-exclamation-triangle me-1"></i>{{ _('critical') | default('حرج', true) }}</span>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td onclick="event.stopPropagation()">
+                                <div class="d-flex gap-1">
+                                    <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}"
+                                       class="btn btn-sm btn-outline-primary" title="{{ _('view') | default('عرض', true) }}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('activities.edit_activity', activity_id=activity.id) }}"
+                                       class="btn btn-sm btn-outline-secondary" title="{{ _('edit') | default('تعديل', true) }}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-sitemap d-block"></i>
+                <h5 class="mb-2">{{ _('no_activities') | default('لا توجد أنشطة', true) }}</h5>
+                <p class="mb-3">{{ _('add_first_activity') | default('أضف أول نشاط لبدء تنظيم العمل', true) }}</p>
+                {% if project %}
+                <a href="{{ url_for('activities.create_activity', project_id=project.id) }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>{{ _('new_activity') | default('نشاط جديد', true) }}
+                </a>
+                {% else %}
+                <a href="{{ url_for('activities.create_activity') }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>{{ _('new_activity') | default('نشاط جديد', true) }}
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,361 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ activity.activity_name }} — {{ _('activities') | default('الأنشطة', true) }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.detail-header {
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--secondary) / 0.05));
+    border-radius: 1.5rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid hsl(var(--border));
+}
+.progress-ring { position:relative; width:80px; height:80px; flex-shrink:0; }
+.progress-ring svg { transform: rotate(-90deg); }
+.progress-ring .label {
+    position:absolute; inset:0; display:flex;
+    align-items:center; justify-content:center;
+    font-size:0.95rem; font-weight:700; color:hsl(var(--primary));
+}
+.info-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 1rem;
+    padding: 1.5rem;
+    height: 100%;
+}
+.info-card .card-label {
+    font-size: 0.75rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 0.35rem;
+}
+.info-card .card-value { font-weight: 600; font-size: 0.95rem; }
+.badge-status {
+    display:inline-flex; align-items:center; gap:0.3rem;
+    padding:0.35rem 0.9rem; border-radius:2rem; font-size:0.8rem; font-weight:600;
+}
+.badge-not_started  { background:hsl(var(--muted)/0.6); color:hsl(var(--muted-foreground)); }
+.badge-in_progress  { background:hsl(var(--primary)/0.12); color:hsl(var(--primary)); }
+.badge-completed    { background:hsl(var(--success)/0.12); color:hsl(var(--success)); }
+.badge-on_hold      { background:hsl(var(--warning)/0.12); color:hsl(var(--warning)); }
+.critical-pill {
+    background:hsl(var(--destructive)/0.1); color:hsl(var(--destructive));
+    font-size:0.72rem; font-weight:700; padding:0.25rem 0.65rem; border-radius:1rem;
+}
+.nav-tabs .nav-link { font-weight:600; font-size:0.875rem; border-radius:0.5rem 0.5rem 0 0; }
+.nav-tabs .nav-link.active {
+    color: hsl(var(--primary)); border-bottom-color: hsl(var(--card));
+    background: hsl(var(--card));
+}
+.tab-pane { padding:1.5rem; background:hsl(var(--card)); border:1px solid hsl(var(--border));
+    border-top:none; border-radius:0 0.75rem 0.75rem 0.75rem; }
+.step-item {
+    display:flex; align-items:center; gap:1rem;
+    padding:0.75rem 1rem; border-radius:0.5rem; border:1px solid hsl(var(--border));
+    margin-bottom:0.5rem; background:hsl(var(--muted)/0.2);
+}
+.step-item.done { background:hsl(var(--success)/0.06); border-color:hsl(var(--success)/0.25); }
+.expense-row { padding:0.6rem 0; border-bottom:1px solid hsl(var(--border)/0.5); }
+.expense-row:last-child { border-bottom:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    {# ── Back link ── #}
+    <a href="{{ url_for('activities.list_activities', project_id=activity.project_id) }}"
+       class="btn btn-sm btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-right me-1"></i>
+        {{ _('back') | default('رجوع', true) }}
+    </a>
+
+    {# ── Header ── #}
+    <div class="detail-header">
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3 flex-grow-1">
+                {# Progress Ring #}
+                <div class="progress-ring">
+                    <svg viewBox="0 0 80 80" width="80" height="80">
+                        <circle cx="40" cy="40" r="32" fill="none"
+                                stroke="hsl(var(--muted))" stroke-width="8"/>
+                        <circle cx="40" cy="40" r="32" fill="none"
+                                stroke="hsl(var(--primary))" stroke-width="8"
+                                stroke-dasharray="{{ (activity.progress_percentage / 100 * 201.06) | round(1) }} 201.06"
+                                stroke-linecap="round"/>
+                    </svg>
+                    <div class="label">{{ activity.progress_percentage | round(0) | int }}%</div>
+                </div>
+
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                        <code class="text-primary fw-bold fs-6">{{ activity.activity_code }}</code>
+                        <span class="badge-status badge-{{ activity.status }}">
+                            {% if activity.status == 'not_started' %}<i class="fas fa-circle"></i>{{ _('not_started') | default('لم تبدأ', true) }}
+                            {% elif activity.status == 'in_progress' %}<i class="fas fa-spinner fa-spin"></i>{{ _('in_progress') | default('قيد التنفيذ', true) }}
+                            {% elif activity.status == 'completed' %}<i class="fas fa-check-circle"></i>{{ _('completed') | default('مكتملة', true) }}
+                            {% elif activity.status == 'on_hold' %}<i class="fas fa-pause-circle"></i>{{ _('on_hold') | default('متوقفة', true) }}
+                            {% else %}{{ activity.status }}{% endif %}
+                        </span>
+                        {% if activity.is_critical %}
+                        <span class="critical-pill"><i class="fas fa-exclamation-triangle me-1"></i>{{ _('critical') | default('مسار حرج', true) }}</span>
+                        {% endif %}
+                    </div>
+                    <h1 class="h4 fw-bold mb-1">{{ activity.activity_name }}</h1>
+                    {% if activity.description %}
+                    <p class="text-muted small mb-0">{{ activity.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Action Buttons #}
+            <div class="d-flex gap-2 flex-shrink-0">
+                <a href="{{ url_for('activities.edit_activity', activity_id=activity.id) }}"
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-edit me-1"></i>{{ _('edit') | default('تعديل', true) }}
+                </a>
+                <a href="{{ url_for('tasks.create_task', project_id=activity.project_id, activity_id=activity.id) }}"
+                   class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>{{ _('new_task') | default('مهمة جديدة', true) }}
+                </a>
+            </div>
+        </div>
+
+        {# ── Key Stats Row ── #}
+        <div class="row g-3 mt-3">
+            <div class="col-6 col-md-3">
+                <div class="info-card">
+                    <div class="card-label"><i class="fas fa-play me-1"></i>{{ _('planned_start') | default('البدء المخطط', true) }}</div>
+                    <div class="card-value">{{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start else '—' }}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="info-card">
+                    <div class="card-label"><i class="fas fa-stop me-1"></i>{{ _('planned_finish') | default('الانتهاء المخطط', true) }}</div>
+                    <div class="card-value">{{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish else '—' }}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="info-card">
+                    <div class="card-label"><i class="fas fa-hourglass me-1"></i>{{ _('original_duration') | default('المدة الأصلية', true) }}</div>
+                    <div class="card-value">{{ activity.original_duration | int }} {{ _('days') | default('يوم', true) }}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="info-card">
+                    <div class="card-label"><i class="fas fa-tasks me-1"></i>{{ _('tasks') | default('المهام', true) }}</div>
+                    <div class="card-value">{{ tasks | length }} {{ _('tasks') | default('مهمة', true) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Tabs ── #}
+    <ul class="nav nav-tabs mb-0" id="activityTabs">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#tab-tasks">
+                <i class="fas fa-tasks me-1"></i>{{ _('tasks') | default('المهام', true) }}
+                <span class="badge bg-primary ms-1">{{ tasks | length }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-steps">
+                <i class="fas fa-list-ol me-1"></i>{{ _('steps') | default('خطوات التنفيذ', true) }}
+                <span class="badge bg-secondary ms-1">{{ steps | length }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-expenses">
+                <i class="fas fa-dollar-sign me-1"></i>{{ _('expenses') | default('المصروفات', true) }}
+                <span class="badge bg-secondary ms-1">{{ expenses | length }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-risks">
+                <i class="fas fa-exclamation-triangle me-1"></i>{{ _('risks') | default('المخاطر', true) }}
+                <span class="badge bg-secondary ms-1">{{ risks | length }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-relations">
+                <i class="fas fa-project-diagram me-1"></i>{{ _('relationships') | default('العلاقات', true) }}
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="activityTabsContent">
+
+        {# Tasks Tab #}
+        <div class="tab-pane fade show active" id="tab-tasks">
+            {% if tasks %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ _('task_name') | default('اسم المهمة', true) }}</th>
+                            <th>{{ _('status') | default('الحالة', true) }}</th>
+                            <th>{{ _('assigned_to') | default('المعين', true) }}</th>
+                            <th>{{ _('due_date') | default('الاستحقاق', true) }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="fw-semibold text-decoration-none">
+                                    {{ task.title }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge-status badge-{{ task.status }}">{{ task.status }}</span>
+                            </td>
+                            <td>{{ task.assigned_user.full_name if task.assigned_user else '—' }}</td>
+                            <td>{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-tasks fa-2x mb-2 opacity-25 d-block"></i>
+                <p class="mb-3">{{ _('no_tasks') | default('لا توجد مهام مرتبطة بهذا النشاط', true) }}</p>
+                <a href="{{ url_for('tasks.create_task', project_id=activity.project_id, activity_id=activity.id) }}"
+                   class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i>{{ _('new_task') | default('إضافة مهمة', true) }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        {# Steps Tab #}
+        <div class="tab-pane fade" id="tab-steps">
+            {% if steps %}
+            {% for step in steps %}
+            <div class="step-item {{ 'done' if step.is_completed else '' }}">
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" {% if step.is_completed %}checked{% endif %} disabled>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">{{ step.step_name }}</div>
+                    {% if step.description %}<small class="text-muted">{{ step.description }}</small>{% endif %}
+                </div>
+                {% if step.is_completed %}
+                <span class="badge bg-success bg-opacity-10 text-success">{{ _('done') | default('مكتملة', true) }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <div class="mt-3 text-muted small">
+                {{ _('completed') | default('مكتمل', true) }}: {{ steps | selectattr('is_completed') | list | length }} / {{ steps | length }}
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-list-ol fa-2x mb-2 opacity-25 d-block"></i>
+                {{ _('no_steps') | default('لا توجد خطوات تنفيذ', true) }}
+            </div>
+            {% endif %}
+        </div>
+
+        {# Expenses Tab #}
+        <div class="tab-pane fade" id="tab-expenses">
+            {% if expenses %}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <strong>{{ _('total_expenses') | default('إجمالي المصروفات', true) }}:</strong>
+                    <span class="text-primary fw-bold ms-1">{{ total_expenses | round(2) }}</span>
+                </div>
+                <div class="text-success">
+                    {{ _('approved') | default('معتمد', true) }}: {{ approved_expenses | round(2) }}
+                </div>
+            </div>
+            {% for expense in expenses %}
+            <div class="expense-row d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="fw-semibold">{{ expense.description or _('expense') | default('مصروف', true) }}</div>
+                    <small class="text-muted">{{ expense.expense_type or '' }}</small>
+                </div>
+                <div class="text-end">
+                    <div class="fw-bold">{{ expense.amount | round(2) }}</div>
+                    {% if expense.is_approved %}
+                    <span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem">{{ _('approved') | default('معتمد', true) }}</span>
+                    {% else %}
+                    <span class="badge bg-warning bg-opacity-10 text-warning" style="font-size:0.7rem">{{ _('pending') | default('معلق', true) }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-dollar-sign fa-2x mb-2 opacity-25 d-block"></i>
+                {{ _('no_expenses') | default('لا توجد مصروفات مسجلة', true) }}
+            </div>
+            {% endif %}
+        </div>
+
+        {# Risks Tab #}
+        <div class="tab-pane fade" id="tab-risks">
+            {% if risks %}
+            {% for risk in risks %}
+            <div class="card mb-2 border-0" style="background:hsl(var(--muted)/0.3);">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="fw-semibold">{{ risk.risk_title or risk.description }}</div>
+                            {% if risk.mitigation_plan %}
+                            <small class="text-muted">{{ risk.mitigation_plan }}</small>
+                            {% endif %}
+                        </div>
+                        <span class="badge {% if risk.severity == 'high' %}bg-danger{% elif risk.severity == 'medium' %}bg-warning{% else %}bg-info{% endif %} bg-opacity-15 text-dark ms-2" style="font-size:0.72rem; white-space:nowrap;">
+                            {{ risk.severity or risk.probability or '' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-shield-alt fa-2x mb-2 opacity-25 d-block"></i>
+                {{ _('no_risks') | default('لا توجد مخاطر مسجلة', true) }}
+            </div>
+            {% endif %}
+        </div>
+
+        {# Relationships Tab #}
+        <div class="tab-pane fade" id="tab-relations">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-arrow-left me-1 text-primary"></i>{{ _('predecessors') | default('الأنشطة السابقة', true) }}</h6>
+                    {% if predecessors %}
+                    {% for rel in predecessors %}
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded" style="background:hsl(var(--muted)/0.3);">
+                        <code class="text-primary">{{ rel.predecessor.activity_id }}</code>
+                        <span class="flex-grow-1">{{ rel.predecessor.activity_name }}</span>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:0.72rem;">{{ rel.relationship_type }}</span>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted small">{{ _('no_predecessors') | default('لا توجد أنشطة سابقة', true) }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-arrow-right me-1 text-success"></i>{{ _('successors') | default('الأنشطة اللاحقة', true) }}</h6>
+                    {% if successors %}
+                    {% for rel in successors %}
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded" style="background:hsl(var(--muted)/0.3);">
+                        <code class="text-success">{{ rel.successor.activity_id }}</code>
+                        <span class="flex-grow-1">{{ rel.successor.activity_name }}</span>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:0.72rem;">{{ rel.relationship_type }}</span>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted small">{{ _('no_successors') | default('لا توجد أنشطة لاحقة', true) }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>{# end tab-content #}
+</div>
+{% endblock %}

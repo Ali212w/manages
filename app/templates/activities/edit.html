@@ -1,0 +1,99 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ _('edit') | default('تعديل', true) }} — {{ activity.activity_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3" style="max-width:1100px;">
+
+    <div class="d-flex align-items-center gap-3 mb-4 p-3 rounded-3"
+         style="background:hsl(var(--muted)/0.4); border:1px solid hsl(var(--border));">
+        <div class="rounded-circle d-flex align-items-center justify-content-center"
+             style="width:48px;height:48px;background:linear-gradient(135deg,hsl(var(--primary)),hsl(var(--secondary)));flex-shrink:0;">
+            <i class="fas fa-edit text-white"></i>
+        </div>
+        <div>
+            <h1 class="h5 fw-bold mb-0">{{ _('edit') | default('تعديل النشاط', true) }}</h1>
+            <small class="text-muted"><code>{{ activity.activity_code }}</code> — {{ activity.activity_name }}</small>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('activities.edit_activity', activity_id=activity.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">{{ _('activity_name') | default('اسم النشاط', true) }} <span class="text-danger">*</span></label>
+                        <input type="text" name="activity_name" class="form-control"
+                               value="{{ activity.activity_name }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">{{ _('activity_name_ar') | default('اسم النشاط (عربي)', true) }}</label>
+                        <input type="text" name="activity_name_ar" class="form-control" dir="rtl"
+                               value="{{ activity.activity_name_ar or '' }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">{{ _('description') | default('الوصف', true) }}</label>
+                        <textarea name="description" class="form-control" rows="3">{{ activity.description or '' }}</textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">{{ _('status') | default('الحالة', true) }}</label>
+                        <select name="status" class="form-select">
+                            {% for s in ['not_started','in_progress','completed','on_hold'] %}
+                            <option value="{{ s }}" {% if activity.status == s %}selected{% endif %}>
+                                {% if s == 'not_started' %}{{ _('not_started') | default('لم تبدأ', true) }}
+                                {% elif s == 'in_progress' %}{{ _('in_progress') | default('قيد التنفيذ', true) }}
+                                {% elif s == 'completed' %}{{ _('completed') | default('مكتملة', true) }}
+                                {% elif s == 'on_hold' %}{{ _('on_hold') | default('متوقفة', true) }}
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">{{ _('planned_start') | default('تاريخ البدء', true) }}</label>
+                        <input type="date" name="planned_start" class="form-control"
+                               value="{{ activity.planned_start.strftime('%Y-%m-%d') if activity.planned_start else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">{{ _('planned_finish') | default('تاريخ الانتهاء', true) }}</label>
+                        <input type="date" name="planned_finish" class="form-control"
+                               value="{{ activity.planned_finish.strftime('%Y-%m-%d') if activity.planned_finish else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">{{ _('original_duration') | default('المدة (أيام)', true) }}</label>
+                        <input type="number" name="original_duration" class="form-control"
+                               value="{{ activity.original_duration }}" min="0.5" step="0.5">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">{{ _('progress') | default('التقدم %', true) }}</label>
+                        <input type="number" name="progress_percentage" class="form-control"
+                               value="{{ activity.progress_percentage | round(0) | int }}" min="0" max="100">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">{{ _('priority') | default('الأولوية', true) }}</label>
+                        <select name="priority" class="form-select">
+                            {% for p in [5,4,3,2,1] %}
+                            <option value="{{ p }}" {% if activity.priority == p %}selected{% endif %}>
+                                {{ p }} — {% if p==5 %}{{ _('very_high')|default('عالية جداً',true) }}{% elif p==4 %}{{ _('high')|default('عالية',true) }}{% elif p==3 %}{{ _('medium')|default('متوسطة',true) }}{% elif p==2 %}{{ _('low')|default('منخفضة',true) }}{% else %}{{ _('very_low')|default('منخفضة جداً',true) }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="fas fa-save me-2"></i>{{ _('save_changes') | default('حفظ التغييرات', true) }}
+            </button>
+            <a href="{{ url_for('activities.activity_detail', activity_id=activity.id) }}"
+               class="btn btn-outline-secondary px-4">
+                <i class="fas fa-times me-2"></i>{{ _('cancel') | default('إلغاء', true) }}
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
