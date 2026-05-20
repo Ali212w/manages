@@ -755,6 +755,7 @@
   "contact": "اتصل بنا",
   "contact_support": "تواصل مع الدعم",
   "contact_us": "اتصل بنا",
+  "contact_us_for_pricing": "تواصل معنا للسعر",
   "cookie_policy": "سياسة ملفات تعريف الارتباط",
   "coordination_meeting": "اجتماع تنسيق",
   "cost": "تكلفة",
@@ -1155,6 +1156,7 @@
   "enter_new_password_below": "أدخل كلمة المرور الجديدة أدناه",
   "enter_resolution_notes": "أدخل ملاحظات الحل...",
   "enter_review_notes": "أدخل ملاحظات المراجعة...",
+  "enterprise": "المؤسسات",
   "enterprise_center": "مركز المؤسسة",
   "enterprise_structure": "هيكل المؤسسة",
   "entries": "مدخلات",
@@ -1241,6 +1243,7 @@
   "july": "يوليو",
   "june": "يونيو",
   "language": "اللغة",
+  "language_changed_successfully": "تم تغيير اللغة بنجاح",
   "last": "الأخير",
   "last_updated": "آخر تحديث",
   "legal": "قانوني",
@@ -1258,6 +1261,7 @@
   "lowercase_letter": "حرف صغير واحد على الأقل (a-z)",
   "main_menu": "القائمة الرئيسية",
   "manage_all_issues": "إدارة جميع القضايا",
+  "manage_users": "إدارة المستخدمين",
   "management": "الإدارة",
   "management_meeting": "اجتماع إداري",
   "march": "مارس",
@@ -1411,7 +1415,13 @@
   "other": "أخرى",
   "overall_completion": "نسبة الإكمال الإجمالية",
   "overdue": "متأخر",
+  "password": "كلمة المرور",
   "password_changed_success": "تم تغيير كلمة المرور بنجاح",
+  "password_levels": {
+    "medium": "متوسطة",
+    "strong": "قوية",
+    "weak": "ضعيفة"
+  },
   "password_mismatch": "كلمات المرور غير متطابقة",
   "password_requirements": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
   "password_requirements_title": "كلمة المرور يجب أن تحتوي على:",
@@ -1651,6 +1661,7 @@
   "quarter": "ربع سنة",
   "quick_actions": "إجراءات سريعة",
   "quick_links": "روابط سريعة",
+  "quick_stats": "إحصائيات سريعة",
   "real_time_data": "بيانات في الوقت الفعلي",
   "reassign": "إعادة تعيين",
   "receive_daily_summary_email": "استلام بريد إلكتروني يومي بالملخص",
@@ -1935,6 +1946,7 @@
   "to_date": "إلى تاريخ",
   "today": "اليوم",
   "today_reviews": "مراجعات اليوم",
+  "toggle_sidebar": "تبديل الشريط الجانبي",
   "toggle_theme": "تبديل الوضع",
   "tomorrow": "غداً",
   "top_performers": "أفضل المؤدين",
@@ -2013,15 +2025,5 @@
   "yes_delete": "نعم، احذف",
   "yes_force_complete": "نعم، إكمال قسري",
   "yesterday": "أمس",
-  "zoom_changed_to": "تم تغيير مستوى التكبير إلى",
-  "password_levels": {
-    "medium": "متوسطة",
-    "strong": "قوية",
-    "weak": "ضعيفة"
-  },
-  "password": "كلمة المرور",
-  "enterprise": "المؤسسات",
-  "contact_us_for_pricing": "تواصل معنا للسعر",
-  "language_changed_successfully": "تم تغيير اللغة بنجاح",
-  "toggle_sidebar": "تبديل الشريط الجانبي"
+  "zoom_changed_to": "تم تغيير مستوى التكبير إلى"
 }
